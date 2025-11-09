@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# Distribution / packaging
+/build/*
+/dist/*
+*.egg-info/
+
+# pytest
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+
+/api/migrations/
+/tmp/*
+/uploaded/*
+
+# Environments
+.env
+.env.dev
+.env.pro
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+config/dev.ini
+static/
+media/
+/logs/*
+# tempfile
+*.xlsx
+*.csv
+*.xls
+
+# localconfig
+local_config.yaml
+www/
+.pyc
+*.json
+data/
+logs/
+.DS_Store
+docs/
