@@ -83,38 +83,106 @@ class RedisClient:
         self.set_json(key, depth_data)
 
         # 同步计算 Top10 聚合指标
-        # 若 ts 未提供，使用当前时间戳（秒）
+        # 若 ts 未提供，使用当前时间戳（毫秒整数）
         if ts is None:
-            ts = time.time()
+            ts = int(time.time()*1000)
         self._update_top_depth(symbol, depth_data, ts)
 
     def _update_top_depth(self, symbol: str, depth_data: dict, ts: int = None, top_n: int = 10):
         """
         聚合深度信息，存到 ticks:binance:{symbol} 最新值
+        加固内容：
+        - 安全的浮点数转换
+        - 数据验证与过滤
+        - 统一字符串化写入
+        - 详细日志输出
         """
-        bids = depth_data.get("bids", [])[:top_n]
-        asks = depth_data.get("asks", [])[:top_n]
+        bids_raw = depth_data.get("bids", [])
+        asks_raw = depth_data.get("asks", [])
 
-        if not bids or not asks:
+        # 基础校验：必须为可迭代的列表
+        if not isinstance(bids_raw, list) or not isinstance(asks_raw, list):
+            print(f"[TOP_DEPTH] {symbol} bids/asks 不是列表，跳过。")
             return
 
-        best_bid = float(bids[0][0])
-        best_ask = float(asks[0][0])
-        bid_qty_sum = sum(float(b[1]) for b in bids)
-        ask_qty_sum = sum(float(a[1]) for a in asks)
+        # 仅保留前 top_n
+        bids_raw = bids_raw[:top_n]
+        asks_raw = asks_raw[:top_n]
 
-        # 可选加权平均价
-        bid_depth_weighted = sum(float(b[0]) * float(b[1]) for b in bids) / max(bid_qty_sum, 1e-9)
-        ask_depth_weighted = sum(float(a[0]) * float(a[1]) for a in asks) / max(ask_qty_sum, 1e-9)
+        if not bids_raw or not asks_raw:
+            print(f"[TOP_DEPTH] {symbol} bids/asks 空，跳过。")
+            return
+
+        def safe_parse_pair(pair):
+            """安全解析 [price, qty]，返回 (price_f, qty_f) 或 None。"""
+            try:
+                if (
+                    isinstance(pair, (list, tuple)) and len(pair) == 2 and
+                    pair[0] is not None and pair[1] is not None
+                ):
+                    pf = float(pair[0])
+                    qf = float(pair[1])
+                    # 过滤 NaN/Inf
+                    if not (pf == pf and qf == qf):  # NaN 检查
+                        return None
+                    if pf in (float('inf'), float('-inf')) or qf in (float('inf'), float('-inf')):
+                        return None
+                    return pf, qf
+            except Exception:
+                return None
+            return None
+
+        # 过滤与安全解析
+        bids = [safe_parse_pair(p) for p in bids_raw]
+        asks = [safe_parse_pair(p) for p in asks_raw]
+        bids = [x for x in bids if x is not None]
+        asks = [x for x in asks if x is not None]
+
+        if not bids or not asks:
+            print(f"[TOP_DEPTH] {symbol} 有无效价格对，过滤后为空，跳过。原始 bids={bids_raw} asks={asks_raw}")
+            return
+
+        # 计算最优价与数量和
+        try:
+            best_bid = bids[0][0]
+            best_ask = asks[0][0]
+            bid_qty_sum = sum(b[1] for b in bids)
+            ask_qty_sum = sum(a[1] for a in asks)
+        except Exception as e:
+            print(f"[TOP_DEPTH] {symbol} 计算最优价/数量失败：{e}")
+            return
+
+        # 加权平均价（除零保护）
+        try:
+            bid_depth_weighted = sum(b[0] * b[1] for b in bids) / max(bid_qty_sum, 1e-9)
+            ask_depth_weighted = sum(a[0] * a[1] for a in asks) / max(ask_qty_sum, 1e-9)
+        except Exception as e:
+            print(f"[TOP_DEPTH] {symbol} 计算加权均价失败：{e}")
+            return
+
+        # 统一字段命名：bid/ask 与 ticks 流保持一致，并尽量补齐 price
+        # 优先从最新价格哈希读取；没有则使用中间价
+        latest_key = f"price:binance:{symbol}"
+        price_val = None
+        try:
+            pv = self.conn.hget(latest_key, "price")
+            if pv is not None:
+                price_val = float(pv)
+        except Exception:
+            price_val = None
+        if price_val is None:
+            try:
+                price_val = (best_bid + best_ask) / 2.0
+            except Exception:
+                price_val = best_bid
 
         top_depth_summary = {
             "ts": ts,
-            "best_bid": best_bid,
-            "best_ask": best_ask,
-            "bid_qty": bid_qty_sum,
-            "ask_qty": ask_qty_sum,
-            "bid_weighted": bid_depth_weighted,
-            "ask_weighted": ask_depth_weighted,
+            "price": price_val,
+            "bid": bid_qty_sum,
+            "ask": ask_qty_sum,
+            # "bid_weighted": bid_depth_weighted,
+            # "ask_weighted": ask_depth_weighted,
         }
 
         # # 存到 ticks:binance:{symbol} 最新值（方便 SpikeDetector 快速读取）
@@ -123,10 +191,13 @@ class RedisClient:
 
         # 存到 Redis Stream，保留历史
         stream_key = f"ticks:binance:{symbol}"
+        # 统一字符串化（避免空字段），但确保 ts 为毫秒整数字符串
+        payload = {k: (str(int(v)) if k == "ts" else str(v)) for k, v in top_depth_summary.items()}
         try:
-            self.conn.xadd(stream_key, {k: v for k, v in top_depth_summary.items()}, maxlen=1000, approximate=True)
+            self.conn.xadd(stream_key, payload, maxlen=1000, approximate=True)
+            print(f"[TOP_DEPTH] {symbol} 写入 {stream_key}: {payload}")
         except Exception as e:
-            print("Redis XADD error:", e)
+            print(f"[TOP_DEPTH] {symbol} Redis XADD 失败: {e}. payload={payload}")
 
     def get_depth(self, symbol: str):
         key = f"depth:{symbol}"

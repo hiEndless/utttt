@@ -143,30 +143,44 @@ class SpikeDetector:
                 "times": deque(maxlen=self.ticks_cache_len),
             }
 
+    def _to_ms(self, ts):
+        try:
+            v = float(ts)
+            # 秒级 -> 毫秒；已是毫秒则直接返回
+            return int(v*1000) if v < 1e12 else int(v)
+        except Exception:
+            return int(time.time()*1000)
+
     async def add_tick_and_persist(self, symbol, price, bid_liq, ask_liq, ts=None):
         """
         在收到每个 tick 时调用：
         - 将 tick 写入 Redis Stream（用于后续追溯/agent 消费）
         - 更新内存滑动窗口并执行检测
         """
+        # 统一：流里写毫秒整数；缓冲区用秒浮点
         if ts is None:
-            ts = time.time()
+            now_s = time.time()
+            ts_ms = int(now_s*1000)
+            ts_s = now_s
+        else:
+            ts_ms = self._to_ms(ts)
+            ts_s = ts_ms / 1000.0
         self._ensure_symbol(symbol)
 
         buf = self.buffers[symbol]
         buf["prices"].append(float(price))
         buf["bids"].append(float(bid_liq))
         buf["asks"].append(float(ask_liq))
-        buf["times"].append(float(ts))
+        buf["times"].append(float(ts_s))
 
         # persist to redis stream（XADD）
         stream_key = self.stream_key_template.format(symbol=symbol)
         latest_key = self.latest_key_template.format(symbol=symbol)
         # 分开捕获，便于定位具体错误键
         try:
-            # XADD: 支持 capped stream
+            # XADD: 支持 capped stream（字段统一：ts,bid,ask,price；ts 为毫秒整数）
             await self.redis.xadd(stream_key, {
-                "ts": ts,
+                "ts": ts_ms,
                 "price": float(price),
                 "bid": float(bid_liq),
                 "ask": float(ask_liq)
@@ -180,8 +194,8 @@ class SpikeDetector:
             print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
 
         try:
-            # 也保持一个最新值，便于快速查询（Hash）
-            await self.redis.hset(latest_key, mapping={"ts": ts, "price": price, "bid": bid_liq, "ask": ask_liq})
+            # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
+            await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
         except Exception as e:
             # 打印出错的键与其当前类型
             try:
