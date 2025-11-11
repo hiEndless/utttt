@@ -27,6 +27,74 @@ def _sum_liquidity(levels):
             return 0.0
 
 
+def _cleanup_symbol_keys(symbol: str, max_retries: int = 3):
+    """更健壮的清理：扫描并批量删除与 symbol 关联的所有 Redis 键。
+    - 使用 scan_iter 匹配大小写两种 symbol
+    - 支持重试与删除统计
+    - 终端直接 print 日志，确保可见
+    - 同时清理本地缓存，以避免后续残留写入
+    """
+    # 构建匹配模式（大小写都覆盖）
+    syms = {symbol, symbol.lower(), symbol.upper()}
+    patterns = []
+    for sym in syms:
+        patterns.extend([
+            f"price:binance:{sym}",
+            f"depth:binance:{sym}",
+            f"ticks:binance:{sym}",
+            f"alerts:binance:{sym}",
+        ])
+
+    # 扫描待删除键集合
+    to_delete = set()
+    for pat in patterns:
+        try:
+            for k in redis_client.conn.scan_iter(pat):
+                to_delete.add(k)
+        except Exception as e:
+            print(f"[CLEANUP] scan pattern={pat} error: {e}")
+
+    # 删除前清理本地缓存
+    try:
+        _price_cache.pop(symbol, None)
+        _depth_liq_cache.pop(symbol, None)
+    except Exception:
+        pass
+
+    if not to_delete:
+        print(f"[CLEANUP] no keys matched for {symbol}")
+        return
+
+    # 重试批量删除
+    remaining = to_delete
+    attempt = 0
+    while attempt < max_retries and remaining:
+        attempt += 1
+        try:
+            pipe = redis_client.conn.pipeline(transaction=False)
+            for k in list(remaining):
+                pipe.delete(k)
+            pipe.execute()
+        except Exception as e:
+            print(f"[CLEANUP] pipeline delete error attempt={attempt}: {e}")
+
+        # 重新扫描剩余
+        still = set()
+        for pat in patterns:
+            try:
+                for k in redis_client.conn.scan_iter(pat):
+                    still.add(k)
+            except Exception as e:
+                print(f"[CLEANUP] rescan pattern={pat} error: {e}")
+        print(f"[CLEANUP] attempt {attempt}: tried {len(remaining)} deletions; remaining {len(still)}")
+        remaining = still
+
+    if remaining:
+        # 最终仍有残留，打印示例键方便排查
+        sample = sorted(list(remaining))[:10]
+        print(f"[CLEANUP] warning: {len(remaining)} keys still present for {symbol}: {sample}")
+
+
 class BinanceFuturesWS:
     BASE_URL = "wss://fstream.binance.com"
 
@@ -184,6 +252,8 @@ async def monitor_symbols(ws, poll_interval=1.0):
                 print("移除订阅:", symbols)
                 await ws.remove_stream(f"{sym.lower()}@aggTrade")
                 await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
+                # 清理对应的 Redis 键
+                _cleanup_symbol_keys(sym.upper())
                 active_symbols.remove(sym)
 
             await asyncio.sleep(poll_interval)
@@ -280,3 +350,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    # _cleanup_symbol_keys("BTCUSDT")
