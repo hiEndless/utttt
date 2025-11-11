@@ -3,10 +3,28 @@ import json
 import websockets
 import logging
 import ssl
+import time
 
 from data_server.exchange_market.binance.utils.reids_connect import RedisClient
+from data_server.exchange_market.binance.utils.spike_trigger import SpikeDetector
 
 redis_client = RedisClient()
+
+# ---- SpikeDetector integration state ----
+detector = SpikeDetector()
+_price_cache = {}
+_depth_liq_cache = {}  # symbol -> (bid_liq, ask_liq)
+
+
+def _sum_liquidity(levels):
+    """Sum quantities from depth levels [[price, qty], ...]."""
+    try:
+        return sum(float(q) for _, q in levels)
+    except Exception:
+        try:
+            return sum(float(l[1]) for l in levels)
+        except Exception:
+            return 0.0
 
 
 class BinanceFuturesWS:
@@ -164,8 +182,8 @@ async def monitor_symbols(ws, poll_interval=1.0):
             # 移除订阅
             for sym in active_symbols - symbols:
                 print("移除订阅:", symbols)
-                await ws.remove_stream(f"{sym}@aggTrade")
-                await ws.remove_stream(f"{sym}@depth10@100ms")
+                await ws.remove_stream(f"{sym.lower()}@aggTrade")
+                await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
                 active_symbols.remove(sym)
 
             await asyncio.sleep(poll_interval)
@@ -182,13 +200,53 @@ async def on_msg(msg):
     if "e" in msg and msg["e"] == "depthUpdate":
         symbol = msg["s"]
         ts = msg["T"]
+        # Aggregate liquidity from top10 depth
+        try:
+            bid_liq = _sum_liquidity(msg.get("b", []))
+            ask_liq = _sum_liquidity(msg.get("a", []))
+            _depth_liq_cache[symbol] = (bid_liq, ask_liq)
+        except Exception as e:
+            logging.warning(f"[WS] depth parse error: {e}")
+            bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
+
         redis_client.update_depth(symbol, {
             "bids": msg["b"],
             "asks": msg["a"]
         }, ts)
+        # Feed detector using latest price cache if available
+        try:
+            if detector is not None and symbol in _price_cache:
+                p = _price_cache[symbol]
+                ts_sec = float(ts) / 1000.0 if isinstance(ts, (int, float)) else None
+                asyncio.create_task(detector.add_tick_and_persist(symbol, p, bid_liq, ask_liq, ts_sec))
+        except Exception as e:
+            logging.warning(f"[WS] detector depth feed error: {e}")
     elif "e" in msg and msg["e"] == "aggTrade":
         symbol = msg["s"]
-        redis_client.set_raw(f"price:{symbol}", msg["p"])
+        # Consolidate price/ts extraction, then write hash and feed detector
+        key = f"price:binance:{symbol}"
+        ts_raw = msg.get("T")
+        ts_sec = float(ts_raw) / 1000.0 if isinstance(ts_raw, (int, float)) else time.time()
+        try:
+            price_val = float(msg["p"]) if msg.get("p") is not None else None
+        except Exception:
+            price_val = None
+
+        if price_val is not None:
+            # Update price in Redis as hash via RedisClient
+            try:
+                redis_client.set_hash(key, {"ts": ts_sec, "price": price_val}, check_type=True)
+            except Exception as e:
+                logging.warning(f"redis write error on HSET key={key}: {e}")
+
+            # Cache price and feed detector with latest depth liquidity
+            try:
+                _price_cache[symbol] = price_val
+                bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
+                if detector is not None:
+                    asyncio.create_task(detector.add_tick_and_persist(symbol, price_val, bid_liq, ask_liq, ts_sec))
+            except Exception as e:
+                logging.warning(f"[WS] detector trade feed error: {e}")
 
 
 async def main():
@@ -197,16 +255,27 @@ async def main():
         streams=[],
         on_message=on_msg
     )
+    global detector
 
     try:
+        await detector.start()
         await ws.start()
         print("已启动")
         asyncio.create_task(monitor_symbols(ws))
+        while True:
+            await asyncio.sleep(1)
     except Exception as e:
         logging.warning(f"[WS] error: {e}")
-
-    while True:
-        await asyncio.sleep(1)
+    finally:
+        try:
+            await ws.stop()
+        except Exception:
+            pass
+        try:
+            if detector is not None:
+                await detector.stop()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

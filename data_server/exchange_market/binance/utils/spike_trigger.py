@@ -51,8 +51,8 @@ class SpikeDetector:
     def __init__(
         self,
         redis_url=None,
-        stream_key_template="ticks:{symbol}",
-        latest_key_template="price:{symbol}",
+        stream_key_template="ticks:binance:{symbol}",
+        latest_key_template="price:binance:{symbol}",
         max_stream_len=10000,
         window_seconds=1.0,
         ticks_per_second_estimate=10,
@@ -162,6 +162,7 @@ class SpikeDetector:
         # persist to redis stream（XADD）
         stream_key = self.stream_key_template.format(symbol=symbol)
         latest_key = self.latest_key_template.format(symbol=symbol)
+        # 分开捕获，便于定位具体错误键
         try:
             # XADD: 支持 capped stream
             await self.redis.xadd(stream_key, {
@@ -170,11 +171,24 @@ class SpikeDetector:
                 "bid": float(bid_liq),
                 "ask": float(ask_liq)
             }, maxlen=self.max_stream_len, approximate=True)
-            # 也保持一个最新值，便于快速查询
+        except Exception as e:
+            # 打印出错的键与其当前类型
+            try:
+                ktype = await self.redis.type(stream_key)
+            except Exception:
+                ktype = "unknown"
+            print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+
+        try:
+            # 也保持一个最新值，便于快速查询（Hash）
             await self.redis.hset(latest_key, mapping={"ts": ts, "price": price, "bid": bid_liq, "ask": ask_liq})
         except Exception as e:
-            # 不要因为 redis 写失败阻塞检测，记录日志即可
-            print("redis write error:", e)
+            # 打印出错的键与其当前类型
+            try:
+                ktype = await self.redis.type(latest_key)
+            except Exception:
+                ktype = "unknown"
+            print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
 
         # 非阻塞触发检测
         asyncio.create_task(self._evaluate(symbol))
@@ -252,7 +266,7 @@ class SpikeDetector:
 
     async def _notify_alert(self, symbol, alert_type, details):
         # 将警报写入 redis 专门的 stream 或者调用回调
-        alert_stream = f"alerts:{symbol}"
+        alert_stream = f"alerts:binance:{symbol}"
         payload = {"ts": time.time(), "type": alert_type, "details": json.dumps(details)}
         try:
             await self.redis.xadd(alert_stream, payload, maxlen=1000, approximate=True)
@@ -309,7 +323,7 @@ class SpikeDetector:
 #        * 检测器可以在内存中以更高频率运行（100ms）以捕获瞬时波动，但告警下游可合并/去噪。
 #
 # 4) 是否实时计算趋势并标记特殊键：
-#    - 是的。推荐：在 detector 触发特殊行情时，写入一个 alerts:{symbol} stream 以及在 redis 做一个短期标记键（EX 5s~60s），
+#    - 是的。推荐：在 detector 触发特殊行情时，写入一个 alerts:binance:{symbol} stream 以及在 redis 做一个短期标记键（EX 5s~60s），
 #      例如 SET special:{symbol}:{type} = 1 EX 10。
 #    - 这样其他 agent 可以快速查询是否处于特殊行情并调整行为（比如暂停下单或降低仓位）。
 #

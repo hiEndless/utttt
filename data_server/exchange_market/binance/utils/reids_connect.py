@@ -38,6 +38,38 @@ class RedisClient:
     def get_raw(self, key: str):
         return self.conn.get(key)
 
+    def set_hash(self, key: str, mapping_dict: dict, check_type: bool = True):
+        """存储哈希类型。默认检查现有键类型，非 hash 则删除避免 WRONGTYPE。
+        Args:
+            key: Redis 键名
+            mapping_dict: 要写入的字段字典
+            check_type: 是否检查并处理现有键类型
+        """
+        try:
+            if check_type:
+                ktype = self.conn.type(key)
+                if ktype and ktype != "hash":
+                    if ktype != "none":
+                        self.conn.delete(key)
+            self.conn.hset(key, mapping=mapping_dict)
+        except Exception as e:
+            try:
+                ktype = self.conn.type(key)
+            except Exception:
+                ktype = "unknown"
+            print(f"Redis HSET error on key={key} type={ktype}: {e}")
+
+    def get_hash(self, key: str):
+        """读取整个哈希。若键不是 hash 或不存在，则返回 None。"""
+        try:
+            ktype = self.conn.type(key)
+            if ktype != "hash":
+                return None
+            return self.conn.hgetall(key)
+        except Exception as e:
+            print(f"Redis HGETALL error on key={key}: {e}")
+            return None
+
     # ========== depth 专用 API ==========
     def update_depth(self, symbol: str, depth_data: dict, ts: int = None):
         """
@@ -47,7 +79,7 @@ class RedisClient:
             "asks": [["price1","qty1"], ...]
         }
         """
-        key = f"depth:{symbol}"
+        key = f"depth:binance:{symbol}"
         self.set_json(key, depth_data)
 
         # 同步计算 Top10 聚合指标
@@ -58,7 +90,7 @@ class RedisClient:
 
     def _update_top_depth(self, symbol: str, depth_data: dict, ts: int = None, top_n: int = 10):
         """
-        聚合深度信息，存到 ticks:{symbol} 最新值
+        聚合深度信息，存到 ticks:binance:{symbol} 最新值
         """
         bids = depth_data.get("bids", [])[:top_n]
         asks = depth_data.get("asks", [])[:top_n]
@@ -85,12 +117,12 @@ class RedisClient:
             "ask_weighted": ask_depth_weighted,
         }
 
-        # # 存到 ticks:{symbol} 最新值（方便 SpikeDetector 快速读取）
+        # # 存到 ticks:binance:{symbol} 最新值（方便 SpikeDetector 快速读取）
         # ticks_key = f"ticks:{symbol}"
         # self.set_json(ticks_key, top_depth_summary)
 
         # 存到 Redis Stream，保留历史
-        stream_key = f"ticks:{symbol}"
+        stream_key = f"ticks:binance:{symbol}"
         try:
             self.conn.xadd(stream_key, {k: v for k, v in top_depth_summary.items()}, maxlen=1000, approximate=True)
         except Exception as e:
