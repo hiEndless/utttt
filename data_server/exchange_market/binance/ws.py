@@ -152,13 +152,13 @@ async def monitor_symbols(ws, poll_interval=1.0):
             symbols = set()
             if key_type == "set":
                 raw = redis_client.conn.smembers(key_name)
-                symbols = {str(x).lower() for x in raw}
+                symbols = {str(x) for x in raw}
 
             # 新增订阅
             for sym in symbols - active_symbols:
                 print("新增订阅:", symbols)
-                await ws.add_stream(f"{sym}@aggTrade")
-                await ws.add_stream(f"{sym}@depth10@100ms")
+                await ws.add_stream(f"{sym.lower()}@aggTrade")
+                await ws.add_stream(f"{sym.lower()}@depth10@100ms")
                 active_symbols.add(sym)
 
             # 移除订阅
@@ -180,14 +180,14 @@ async def on_msg(msg):
     """数据处理"""
     print("收到:", msg)
     if "e" in msg and msg["e"] == "depthUpdate":
-        symbol = msg["s"].lower()
+        symbol = msg["s"]
         ts = msg["T"]
         redis_client.update_depth(symbol, {
             "bids": msg["b"],
             "asks": msg["a"]
         }, ts)
     elif "e" in msg and msg["e"] == "aggTrade":
-        symbol = msg["s"].lower()
+        symbol = msg["s"]
         redis_client.set_raw(f"price:{symbol}", msg["p"])
 
 

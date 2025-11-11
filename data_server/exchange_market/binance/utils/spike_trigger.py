@@ -101,6 +101,7 @@ class SpikeDetector:
         self.pct_change_th = pct_change_th
         self.zscore_th = zscore_th
         self.depth_ratio_th = depth_ratio_th
+        self.use_zscore = use_zscore
 
         # debounce/cooldown
         self.debounce_ms = debounce_ms

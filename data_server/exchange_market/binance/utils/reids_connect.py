@@ -1,6 +1,7 @@
 import redis
 import json
 import os
+import time
 
 
 class RedisClient:
@@ -50,6 +51,9 @@ class RedisClient:
         self.set_json(key, depth_data)
 
         # 同步计算 Top10 聚合指标
+        # 若 ts 未提供，使用当前时间戳（秒）
+        if ts is None:
+            ts = time.time()
         self._update_top_depth(symbol, depth_data, ts)
 
     def _update_top_depth(self, symbol: str, depth_data: dict, ts: int = None, top_n: int = 10):
@@ -101,5 +105,5 @@ if __name__ == "__main__":
     rc = RedisClient()
     # 使用集合类型：先删除旧键，避免类型不匹配
     # rc.conn.delete("symbol:binance")
-    rc.conn.sadd("symbol:binance", "btcusdt")
+    rc.conn.sadd("symbol:binance", "BTCUSDT")
     print(rc.conn.smembers("symbol:binance"))
