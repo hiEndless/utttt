@@ -56,12 +56,15 @@ class SpikeDetector:
         max_stream_len=10000,
         window_seconds=1.0,
         ticks_per_second_estimate=10,
-        pct_change_th=0.005,
-        zscore_th=4.0,
-        depth_ratio_th=0.3,
-        debounce_ms=200,
-        cooldown_s=2,
+        pct_change_th=0.01,
+        zscore_th=5.0,
+        depth_ratio_th=0.2,
+        debounce_ms=1000,
+        cooldown_s=10,
         use_zscore=True,
+        confirm_ticks=4,
+        min_depth_liq=5.0,
+        aggregate_window_ms=2000,
     ):
         """
         参数说明：
@@ -102,12 +105,17 @@ class SpikeDetector:
         self.zscore_th = zscore_th
         self.depth_ratio_th = depth_ratio_th
         self.use_zscore = use_zscore
+        self.confirm_ticks = max(2, int(confirm_ticks))
+        self.min_depth_liq = float(min_depth_liq)
+        self.aggregate_window_ms = int(aggregate_window_ms)
 
         # debounce/cooldown
         self.debounce_ms = debounce_ms
         self.cooldown_s = cooldown_s
         self.last_alert_time = {}  # symbol -> timestamp
         self.last_alert_type = {}
+        self.streaks = {}  # symbol -> {ask_c:int, bid_c:int, up:int, down:int}
+        self.stats = {"counts": {}, "last": {}}
 
         # callbacks
         self.alert_callback = None
@@ -142,6 +150,8 @@ class SpikeDetector:
                 "asks": deque(maxlen=self.ticks_cache_len),
                 "times": deque(maxlen=self.ticks_cache_len),
             }
+        if symbol not in self.streaks:
+            self.streaks[symbol] = {"ask_c": 0, "bid_c": 0, "up": 0, "down": 0}
 
     def _to_ms(self, ts):
         try:
@@ -249,22 +259,58 @@ class SpikeDetector:
             ask_now = asks[-1]
             bid_mean = sum(bids[:-1]) / max(1, len(bids[:-1]))
             ask_mean = sum(asks[:-1]) / max(1, len(asks[:-1]))
-            if bid_mean > 0 and bid_now / bid_mean <= self.depth_ratio_th:
-                alerts.append(("bid_collapse", {"ratio": float(bid_now/bid_mean), "bid_now": bid_now, "bid_mean": bid_mean}))
-            if ask_mean > 0 and ask_now / ask_mean <= self.depth_ratio_th:
-                alerts.append(("ask_collapse", {"ratio": float(ask_now/ask_mean), "ask_now": ask_now, "ask_mean": ask_mean}))
+            # 绝对深度门槛：低于门槛时不触发，以免流动性稀薄导致误报
+            if bid_mean >= self.min_depth_liq:
+                if bid_mean > 0 and bid_now / bid_mean <= self.depth_ratio_th:
+                    self.streaks[symbol]["bid_c"] = self.streaks[symbol]["bid_c"] + 1
+                else:
+                    self.streaks[symbol]["bid_c"] = 0
+            else:
+                self.streaks[symbol]["bid_c"] = 0
+
+            if ask_mean >= self.min_depth_liq:
+                if ask_mean > 0 and ask_now / ask_mean <= self.depth_ratio_th:
+                    self.streaks[symbol]["ask_c"] = self.streaks[symbol]["ask_c"] + 1
+                else:
+                    self.streaks[symbol]["ask_c"] = 0
+            else:
+                self.streaks[symbol]["ask_c"] = 0
+
+            if self.streaks[symbol]["bid_c"] >= self.confirm_ticks:
+                alerts.append(("bid_collapse", {"ratio": float(bid_now/bid_mean), "bid_now": bid_now, "bid_mean": bid_mean, "streak": self.streaks[symbol]["bid_c"]}))
+            if self.streaks[symbol]["ask_c"] >= self.confirm_ticks:
+                alerts.append(("ask_collapse", {"ratio": float(ask_now/ask_mean), "ask_now": ask_now, "ask_mean": ask_mean, "streak": self.streaks[symbol]["ask_c"]}))
 
         # 4) 单边行情检测（连续上涨/下跌）
         if len(prices) >= 3:
-            ups = sum(1 for i in range(1, len(prices)) if prices[i] > prices[i-1])
-            downs = sum(1 for i in range(1, len(prices)) if prices[i] < prices[i-1])
-            if ups == len(prices)-1:
-                alerts.append(("one_side_up", {"count": ups, "len": len(prices)}))
-            if downs == len(prices)-1:
-                alerts.append(("one_side_down", {"count": downs, "len": len(prices)}))
+            last_ret = prices[-1] - prices[-2]
+            if last_ret > 0:
+                self.streaks[symbol]["up"] += 1
+                self.streaks[symbol]["down"] = 0
+            elif last_ret < 0:
+                self.streaks[symbol]["down"] += 1
+                self.streaks[symbol]["up"] = 0
+            # 单边需满足：连续 confirm_ticks 次同方向，且总涨跌幅达到阈值
+            total_pct = abs(pct_change)
+            if self.streaks[symbol]["up"] >= self.confirm_ticks and total_pct >= self.pct_change_th:
+                alerts.append(("one_side_up", {"count": int(self.streaks[symbol]["up"]), "len": len(prices), "pct": float(pct_change)}))
+            if self.streaks[symbol]["down"] >= self.confirm_ticks and total_pct >= self.pct_change_th:
+                alerts.append(("one_side_down", {"count": int(self.streaks[symbol]["down"]), "len": len(prices), "pct": float(pct_change)}))
+
+        # 事件聚合：短时间内的多个相关事件合并
+        aggregated = []
+        collapse_events = [a for a in alerts if a[0] in ("ask_collapse", "bid_collapse")]
+        other_events = [a for a in alerts if a[0] not in ("ask_collapse", "bid_collapse")]
+        if collapse_events:
+            agg_details = {"types": [t for (t, _) in collapse_events], "count": len(collapse_events)}
+            for _, d in collapse_events:
+                for k, v in d.items():
+                    agg_details.setdefault(k, []).append(v)
+            aggregated.append(("liquidity_collapse", agg_details))
+        aggregated.extend(other_events)
 
         # 合并与去抖：检查冷却时间与去抖
-        for atype, details in alerts:
+        for atype, details in aggregated:
             last_t = self.last_alert_time.get(symbol, 0)
             last_type = self.last_alert_type.get(symbol)
             # 冷却
@@ -281,7 +327,8 @@ class SpikeDetector:
     async def _notify_alert(self, symbol, alert_type, details):
         # 将警报写入 redis 专门的 stream 或者调用回调
         alert_stream = f"alerts:binance:{symbol}"
-        payload = {"ts": time.time(), "type": alert_type, "details": json.dumps(details)}
+        # 统一为毫秒整数时间戳
+        payload = {"ts": int(time.time()*1000), "type": alert_type, "details": json.dumps(details)}
         try:
             await self.redis.xadd(alert_stream, payload, maxlen=1000, approximate=True)
         except Exception as e:
