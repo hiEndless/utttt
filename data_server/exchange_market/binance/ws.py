@@ -181,10 +181,11 @@ async def on_msg(msg):
     print("收到:", msg)
     if "e" in msg and msg["e"] == "depthUpdate":
         symbol = msg["s"].lower()
+        ts = msg["T"]
         redis_client.update_depth(symbol, {
             "bids": msg["b"],
             "asks": msg["a"]
-        })
+        }, ts)
     elif "e" in msg and msg["e"] == "aggTrade":
         symbol = msg["s"].lower()
         redis_client.set_raw(f"price:{symbol}", msg["p"])
