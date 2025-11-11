@@ -152,13 +152,13 @@ class RedisClient:
             print(f"[TOP_DEPTH] {symbol} 计算最优价/数量失败：{e}")
             return
 
-        # 加权平均价（除零保护）
-        try:
-            bid_depth_weighted = sum(b[0] * b[1] for b in bids) / max(bid_qty_sum, 1e-9)
-            ask_depth_weighted = sum(a[0] * a[1] for a in asks) / max(ask_qty_sum, 1e-9)
-        except Exception as e:
-            print(f"[TOP_DEPTH] {symbol} 计算加权均价失败：{e}")
-            return
+        # # 加权平均价（除零保护）
+        # try:
+        #     bid_depth_weighted = sum(b[0] * b[1] for b in bids) / max(bid_qty_sum, 1e-9)
+        #     ask_depth_weighted = sum(a[0] * a[1] for a in asks) / max(ask_qty_sum, 1e-9)
+        # except Exception as e:
+        #     print(f"[TOP_DEPTH] {symbol} 计算加权均价失败：{e}")
+        #     return
 
         # 统一字段命名：bid/ask 与 ticks 流保持一致，并尽量补齐 price
         # 优先从最新价格哈希读取；没有则使用中间价
@@ -180,14 +180,8 @@ class RedisClient:
             "ts": ts,
             "price": price_val,
             "bid": bid_qty_sum,
-            "ask": ask_qty_sum,
-            # "bid_weighted": bid_depth_weighted,
-            # "ask_weighted": ask_depth_weighted,
+            "ask": ask_qty_sum
         }
-
-        # # 存到 ticks:binance:{symbol} 最新值（方便 SpikeDetector 快速读取）
-        # ticks_key = f"ticks:{symbol}"
-        # self.set_json(ticks_key, top_depth_summary)
 
         # 存到 Redis Stream，保留历史
         stream_key = f"ticks:binance:{symbol}"
