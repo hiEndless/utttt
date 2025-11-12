@@ -1,7 +1,5 @@
-# spike_trigger.py
-
 """
-项目集成版 - 暴涨暴跌 & 单边行情触发器
+暴涨暴跌 & 单边行情触发器
 
 说明：
 - 使用 Redis Streams 存储高频价格（XADD，保留固定长度）。
@@ -25,6 +23,36 @@
     await detector.start()
     # 在 ws 接收循环中：
     await detector.add_tick_and_persist(symbol, price, bid_liq, ask_liq, ts)
+
+事件与字段名对照（中文说明）
+- pct_change_up / pct_change_down：短窗口价格涨跌幅超过阈值
+  * pct：相对涨跌幅（末价相对首价）
+  * p0：窗口首价
+  * pN：窗口末价
+- zscore_spike：基于收益的 z 分数异常，识别突发波动
+  * z：最后一次收益的 z 分数
+  * last_ret：最后一次收益（Δp / 前一价）
+- bid_collapse：买盘深度相对历史均值显著下降（连续满足）
+  * ratio：当前买盘深度 / 历史均值
+  * bid_now：当前买盘汇总深度
+  * bid_mean：历史窗口买盘平均深度
+  * streak：连续满足崩塌条件的次数
+- ask_collapse：卖盘深度相对历史均值显著下降（连续满足）
+  * ratio：当前卖盘深度 / 历史均值
+  * ask_now：当前卖盘汇总深度
+  * ask_mean：历史窗口卖盘平均深度
+  * streak：连续满足崩塌条件的次数
+- one_side_up / one_side_down：单边行情（连续上涨/下跌且总幅度达标）
+  * count：连续同方向次数
+  * len：窗口内价格点数量
+  * pct：窗口总涨跌幅（末价相对首价）
+- liquidity_collapse（聚合崩塌事件）：在一个评估周期内合并多个崩塌信号
+  * types：包含的事件类型列表
+  * count：被合并的事件总数
+  * ratio[]：每次事件的当前/均值比
+  * bid_now[] / ask_now[]：每次事件的当前深度
+  * bid_mean[] / ask_mean[]：每次事件的历史平均深度
+  * streak[]：每次事件的连续计数
 
 """
 
