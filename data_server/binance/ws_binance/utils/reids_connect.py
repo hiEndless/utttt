@@ -1,5 +1,5 @@
 import json
-from data_server.exchange_market.binance.utils.redis_client import get_sync_redis
+from data_server.binance.ws_binance.utils.redis_client import get_sync_redis
 
 
 class RedisClient:

@@ -5,10 +5,10 @@ import logging
 import ssl
 import time
 
-from data_server.exchange_market.binance.utils.force_order import handle_force_order
-from data_server.exchange_market.binance.utils.reids_connect import RedisClient
-from data_server.exchange_market.binance.utils.spike_trigger import SpikeDetector
-from data_server.exchange_market.binance.utils.depth import update_depth
+from data_server.binance.ws_binance.utils.force_order import handle_force_order
+from data_server.binance.ws_binance.utils.reids_connect import RedisClient
+from data_server.binance.ws_binance.utils.spike_trigger import SpikeDetector
+from data_server.binance.ws_binance.utils.depth import update_depth
 
 redis_client = RedisClient()
 

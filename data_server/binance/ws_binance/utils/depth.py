@@ -1,7 +1,7 @@
 import json
 import time
 import os
-from data_server.exchange_market.binance.utils.redis_client import (
+from data_server.binance.ws_binance.utils.redis_client import (
     get_sync_redis,
     key_ticks,
     key_latest_price,

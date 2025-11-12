@@ -62,7 +62,7 @@ from collections import deque
 import math
 import json
 import os
-from data_server.exchange_market.binance.utils.redis_client import (
+from data_server.binance.ws_binance.utils.redis_client import (
     build_url,
     get_async_redis,
     key_alerts,

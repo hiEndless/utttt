@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from data_server.exchange_market.binance.utils.redis_client import (
+from data_server.binance.ws_binance.utils.redis_client import (
     get_async_redis,
     key_force_stream,
     key_force_stats,
