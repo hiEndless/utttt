@@ -11,7 +11,24 @@ from data_server.exchange_market.binance.utils.spike_trigger import SpikeDetecto
 redis_client = RedisClient()
 
 # ---- SpikeDetector integration state ----
-detector = SpikeDetector()
+# 使用更稳健的触发器参数，降低高频误报：
+# - 1% 百分比阈值、zscore >= 5
+# - 去抖 1000ms，冷却 10s
+# - 连续确认 4 tick；深度最低门槛 5.0
+# - 聚合窗口 2000ms 合并流动性崩塌事件
+detector = SpikeDetector(
+    window_seconds=1.0,
+    ticks_per_second_estimate=10,
+    pct_change_th=0.01,
+    zscore_th=5.0,
+    depth_ratio_th=0.2,
+    debounce_ms=1000,
+    cooldown_s=10,
+    use_zscore=True,
+    confirm_ticks=4,
+    min_depth_liq=5.0,
+    aggregate_window_ms=2000,
+)
 _price_cache = {}
 _depth_liq_cache = {}  # symbol -> (bid_liq, ask_liq)
 
@@ -243,15 +260,17 @@ async def monitor_symbols(ws, poll_interval=1.0):
             # 新增订阅
             for sym in symbols - active_symbols:
                 print("新增订阅:", symbols)
-                await ws.add_stream(f"{sym.lower()}@aggTrade")
-                await ws.add_stream(f"{sym.lower()}@depth10@100ms")
+                # await ws.add_stream(f"{sym.lower()}@aggTrade")
+                # await ws.add_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.add_stream(f"{sym.lower()}@forceOrder")
                 active_symbols.add(sym)
 
             # 移除订阅
             for sym in active_symbols - symbols:
                 print("移除订阅:", symbols)
-                await ws.remove_stream(f"{sym.lower()}@aggTrade")
-                await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
+                # await ws.remove_stream(f"{sym.lower()}@aggTrade")
+                # await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.remove_stream(f"{sym.lower()}@forceOrder")
                 # 清理对应的 Redis 键
                 _cleanup_symbol_keys(sym.upper())
                 active_symbols.remove(sym)
