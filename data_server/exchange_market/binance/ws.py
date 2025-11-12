@@ -7,6 +7,7 @@ import time
 
 from data_server.exchange_market.binance.utils.reids_connect import RedisClient
 from data_server.exchange_market.binance.utils.spike_trigger import SpikeDetector
+from data_server.exchange_market.binance.utils.depth import update_depth
 
 redis_client = RedisClient()
 
@@ -260,16 +261,16 @@ async def monitor_symbols(ws, poll_interval=1.0):
             # 新增订阅
             for sym in symbols - active_symbols:
                 print("新增订阅:", symbols)
-                # await ws.add_stream(f"{sym.lower()}@aggTrade")
-                # await ws.add_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.add_stream(f"{sym.lower()}@aggTrade")
+                await ws.add_stream(f"{sym.lower()}@depth10@100ms")
                 await ws.add_stream(f"{sym.lower()}@forceOrder")
                 active_symbols.add(sym)
 
             # 移除订阅
             for sym in active_symbols - symbols:
                 print("移除订阅:", symbols)
-                # await ws.remove_stream(f"{sym.lower()}@aggTrade")
-                # await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.remove_stream(f"{sym.lower()}@aggTrade")
+                await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
                 await ws.remove_stream(f"{sym.lower()}@forceOrder")
                 # 清理对应的 Redis 键
                 _cleanup_symbol_keys(sym.upper())
@@ -298,7 +299,7 @@ async def on_msg(msg):
             logging.warning(f"[WS] depth parse error: {e}")
             bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
 
-        redis_client.update_depth(symbol, {
+        update_depth(symbol, {
             "bids": msg["b"],
             "asks": msg["a"]
         }, ts)
