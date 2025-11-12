@@ -1,6 +1,5 @@
-import redis
 import json
-import os
+from data_server.exchange_market.binance.utils.redis_client import get_sync_redis
 
 
 class RedisClient:
@@ -10,13 +9,7 @@ class RedisClient:
                  password=None,
                  db=None,):
 
-        self.conn = redis.Redis(
-            host=host or os.environ.get("REDIS_HOST", "127.0.0.1"),
-            port=port or int(os.environ.get("REDIS_PORT", 6379)),
-            password=password or os.environ.get("REDIS_PASSWORD", None),
-            db=db or int(os.environ.get("REDIS_DB", 1)),
-            decode_responses=True,
-        )
+        self.conn = get_sync_redis(host=host, port=port, password=password, db=db)
 
     # ========== 通用 set/get ==========
     def set_json(self, key: str, value):

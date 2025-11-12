@@ -1,15 +1,13 @@
 import json
 import time
-import redis
 import os
+from data_server.exchange_market.binance.utils.redis_client import (
+    get_sync_redis,
+    key_ticks,
+    key_latest_price,
+)
 
-conn = redis.Redis(
-            host=os.environ.get("REDIS_HOST", "127.0.0.1"),
-            port=int(os.environ.get("REDIS_PORT", 6379)),
-            password=os.environ.get("REDIS_PASSWORD", None),
-            db=int(os.environ.get("REDIS_DB", 1)),
-            decode_responses=True,
-        )
+conn = get_sync_redis()
 
 
 def update_depth(symbol, depth_data, ts=None):
@@ -78,7 +76,7 @@ def _update_top_depth(symbol, depth_data, ts=None, top_n=10):
         print(f"[TOP_DEPTH] {symbol} 计算最优价/数量失败：{e}")
         return
 
-    latest_key = f"price:binance:{symbol}"
+    latest_key = key_latest_price(symbol)
     price_val = None
     try:
         pv = conn.hget(latest_key, "price")
@@ -94,7 +92,7 @@ def _update_top_depth(symbol, depth_data, ts=None, top_n=10):
 
     top_depth_summary = {"ts": ts, "price": price_val, "bid": bid_qty_sum, "ask": ask_qty_sum}
 
-    stream_key = f"ticks:binance:{symbol}"
+    stream_key = key_ticks(symbol)
     payload = {k: (str(int(v)) if k == "ts" else str(v)) for k, v in top_depth_summary.items()}
     try:
         conn.xadd(stream_key, payload, maxlen=1000, approximate=True)
@@ -109,4 +107,3 @@ def get_depth(symbol):
     if not data:
         return None
     return json.loads(data)
-

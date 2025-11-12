@@ -34,6 +34,11 @@ from collections import deque
 import math
 import json
 import os
+from data_server.exchange_market.binance.utils.redis_client import (
+    build_url,
+    get_async_redis,
+    key_alerts,
+)
 
 try:
     import numpy as np
@@ -80,17 +85,7 @@ class SpikeDetector:
             raise RuntimeError("redis.asyncio 未安装，请安装 redis>=4.2 或者改成 aioredis")
 
         # 从环境变量读取 Redis 连接参数，如果未显式传入 redis_url 则组装
-        if not redis_url:
-            host = os.environ.get("REDIS_HOST", "127.0.0.1")
-            port = os.environ.get("REDIS_PORT", "6379")
-            db = os.environ.get("REDIS_DB", "1")
-            password = os.environ.get("REDIS_PASSWORD", None)
-            if password:
-                self.redis_url = f"redis://:{password}@{host}:{port}/{db}"
-            else:
-                self.redis_url = f"redis://{host}:{port}/{db}"
-        else:
-            self.redis_url = redis_url
+        self.redis_url = redis_url or build_url()
         self.stream_key_template = stream_key_template
         self.latest_key_template = latest_key_template
         self.max_stream_len = max_stream_len
@@ -121,7 +116,7 @@ class SpikeDetector:
         self.alert_callback = None
 
         # redis client
-        self.redis = redis.from_url(self.redis_url, decode_responses=True)
+        self.redis = get_async_redis(self.redis_url)
 
         # control
         self._running = False
@@ -326,7 +321,7 @@ class SpikeDetector:
 
     async def _notify_alert(self, symbol, alert_type, details):
         # 将警报写入 redis 专门的 stream 或者调用回调
-        alert_stream = f"alerts:binance:{symbol}"
+        alert_stream = key_alerts(symbol)
         # 统一为毫秒整数时间戳
         payload = {"ts": int(time.time()*1000), "type": alert_type, "details": json.dumps(details)}
         try:

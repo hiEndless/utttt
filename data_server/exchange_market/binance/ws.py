@@ -5,6 +5,7 @@ import logging
 import ssl
 import time
 
+from data_server.exchange_market.binance.utils.force_order import handle_force_order
 from data_server.exchange_market.binance.utils.reids_connect import RedisClient
 from data_server.exchange_market.binance.utils.spike_trigger import SpikeDetector
 from data_server.exchange_market.binance.utils.depth import update_depth
@@ -338,6 +339,8 @@ async def on_msg(msg):
                     asyncio.create_task(detector.add_tick_and_persist(symbol, price_val, bid_liq, ask_liq, ts_ms))
             except Exception as e:
                 logging.warning(f"[WS] detector trade feed error: {e}")
+    elif "e" in msg and msg["e"] == "forceOrder":
+        await handle_force_order(msg)
 
 
 async def main():
