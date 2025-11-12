@@ -11,9 +11,10 @@ conn = get_sync_redis()
 
 
 def update_depth(symbol, depth_data, ts=None):
-    key = f"depth:binance:{symbol}"
-    print(depth_data)
-    conn.set(key, json.dumps(depth_data))
+    # 当前10档深度
+    # key = f"depth:binance:{symbol}"
+    # print(depth_data)
+    # conn.set(key, json.dumps(depth_data))
     if ts is None:
         ts = int(time.time() * 1000)
     _update_top_depth(symbol, depth_data, ts)

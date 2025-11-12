@@ -62,6 +62,8 @@ def _cleanup_symbol_keys(symbol: str, max_retries: int = 3):
             f"depth:binance:{sym}",
             f"ticks:binance:{sym}",
             f"alerts:binance:{sym}",
+            f"force_stream:binance:{sym}",
+            f"stats:binance:{sym}",
         ])
 
     # 扫描待删除键集合
