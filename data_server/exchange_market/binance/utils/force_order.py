@@ -1,16 +1,13 @@
 import asyncio
 import json
 import time
-import os
 from data_server.exchange_market.binance.utils.redis_client import (
     get_async_redis,
     key_force_stream,
     key_force_stats,
 )
 
-
 EXPIRE_SECONDS = 180  # 3分钟无新数据则过期
-
 redis_client = get_async_redis()
 
 
@@ -24,26 +21,46 @@ async def handle_force_order(data: dict):
         qty = float(o.get("q", 0))
         ts = int(o.get("T", time.time() * 1000))
 
-        # === 写入 Stream ===
+        # === 写入 Stream（保留近100条记录） ===
         await redis_client.xadd(
             key_force_stream(symbol),
             {"side": side, "symbol": symbol, "price": price, "qty": qty, "ts": ts},
-            maxlen=100
+            maxlen=100,
         )
 
-        # === 更新统计 Key ===
-        exists = await redis_client.exists(key_force_stats(symbol))
+        # === 获取当前统计数据 ===
+        stats_key = key_force_stats(symbol)
+        exists = await redis_client.exists(stats_key)
+
         if exists:
-            current = await redis_client.get(key_force_stats(symbol))
+            current = await redis_client.get(stats_key)
             stats = json.loads(current)
-            stats[side] = stats.get(side, 0) + 1
         else:
-            stats = {"SELL": 0, "BUY": 0, "timestamp": ts, side: 1}
+            # 初始化结构
+            stats = {
+                "SELL": 0,
+                "BUY": 0,
+                "SELL_QTY": 0.0,
+                "BUY_QTY": 0.0,
+                "timestamp": ts,
+            }
 
-        # 更新 Redis 并设置过期
-        await redis_client.set(key_force_stats(symbol), json.dumps(stats), ex=EXPIRE_SECONDS)
+        # === 累加次数和数量 ===
+        if side == "SELL":
+            stats["SELL"] += 1
+            stats["SELL_QTY"] += qty
+        elif side == "BUY":
+            stats["BUY"] += 1
+            stats["BUY_QTY"] += qty
 
-        print(f"[更新统计] {symbol} {side} 强平 {qty}@{price}，当前统计: {stats}")
+        # === 写回 Redis，设置过期时间 ===
+        await redis_client.set(stats_key, json.dumps(stats), ex=EXPIRE_SECONDS)
+
+        print(
+            f"[强平更新] {symbol} {side} {qty}@{price} "
+            f"→ 当前统计: SELL={stats['SELL']}({stats['SELL_QTY']:.2f}) | "
+            f"BUY={stats['BUY']}({stats['BUY_QTY']:.2f})"
+        )
 
     except Exception as e:
         print(f"[错误] 处理强平数据出错: {e}")
