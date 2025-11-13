@@ -116,7 +116,7 @@ def _cleanup_symbol_keys(symbol: str, max_retries: int = 3):
         print(f"[CLEANUP] warning: {len(remaining)} keys still present for {symbol}: {sample}")
 
 
-class BinanceFuturesWS:
+class BinanceMarketWS:
     BASE_URL = "wss://fstream.binance.com"
 
     def __init__(

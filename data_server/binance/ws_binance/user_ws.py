@@ -1,0 +1,131 @@
+import asyncio
+import websockets
+import json
+import time
+import hmac
+import hashlib
+from urllib.parse import urlencode
+import ssl
+
+
+class BinanceUserWS:
+    """
+    Binance USDT-M Futures 用户信息 WebSocket
+    - 使用官方 API Key + Secret 做 HMAC-SHA256 签名
+    - 自动重连 + 心跳 ping/pong
+    - 异常捕获与 SSL 容错
+    """
+
+    def __init__(
+            self,
+            api_key: str,
+            api_secret: str,
+            ws_url: str = "wss://ws-fapi.binance.com/ws-fapi/v1",
+            ping_interval: int = 20,
+            reconnect_delay: int = 5,
+    ):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.ws_url = ws_url
+        self.ping_interval = ping_interval
+        self.reconnect_delay = reconnect_delay
+        self._ws = None
+        self._running = False
+        self._callback = None
+
+        # SSL context（可解决 self-signed 证书问题）
+        self.ssl_context = ssl.create_default_context()
+        # 测试环境可暂时禁用证书验证
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
+
+    def register_callback(self, cb):
+        """
+        注册消息回调
+        cb(data: dict)
+        """
+        self._callback = cb
+
+    def _sign_params(self, params: dict) -> str:
+        """HMAC-SHA256 签名"""
+        query_string = urlencode(sorted(params.items()))
+        signature = hmac.new(
+            self.api_secret.encode(),
+            query_string.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        return signature
+
+    def _request(self):
+        timestamp = int(time.time() * 1000)
+        params = {"apiKey": self.api_key, "timestamp": timestamp}
+        signature = self._sign_params(params)
+        params["signature"] = signature
+
+        request = {
+            "id": f"605a6d20-6588-4cb9-afa0-b0ab087507ba",
+            "method": "v2/account.status",
+            "params": params
+        }
+        return request
+
+    async def _connect(self):
+        async with websockets.connect(
+                self.ws_url,
+                ping_interval=20,  # 底层 WebSocket 自动 ping
+                ssl=self.ssl_context
+        ) as ws:
+            self._ws = ws
+            await ws.send(json.dumps(self._request()))
+
+            while self._running:
+                try:
+                    message = await asyncio.wait_for(ws.recv(), timeout=1)  # 主动超时实现每秒请求
+                    data = json.loads(message)
+                    if self._callback:
+                        if asyncio.iscoroutinefunction(self._callback):
+                            await self._callback(data)
+                        else:
+                            self._callback(data)
+                except asyncio.TimeoutError:
+                    await ws.send(json.dumps(self._request()))
+                except websockets.ConnectionClosed as e:
+                    print(f"⚠️ WS closed: {e}")
+                    break
+                except Exception as e:
+                    print(f"❌ Message processing error: {e}")
+
+    async def run(self):
+        self._running = True
+        while self._running:
+            try:
+                await self._connect()
+            except Exception as e:
+                print(f"❌ WS connection error: {e}, reconnecting in {self.reconnect_delay}s")
+                await asyncio.sleep(self.reconnect_delay)
+
+    async def stop(self):
+        self._running = False
+        if self._ws:
+            try:
+                await self._ws.close()
+            except Exception:
+                pass
+            self._ws = None
+
+
+async def user_callback(data):
+    balance = data.get("result").get("totalMarginBalance")
+    positions = data.get("result").get("positions")
+    print("账户余额:", balance)
+    print("持仓:", positions)
+
+
+if __name__ == "__main__":
+    api_key = "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0"
+    api_secret = "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B"
+
+    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
+    ws_client.register_callback(user_callback)
+
+    asyncio.run(ws_client.run())
