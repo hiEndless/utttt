@@ -6,6 +6,10 @@ import hmac
 import hashlib
 from urllib.parse import urlencode
 import ssl
+from data_server.binance.ws_binance.utils.redis_client import get_async_redis
+from data_server.binance.ws_binance.utils.binance_pos_analysis import BinanceAnalysisService
+
+redis_client = get_async_redis()
 
 
 class BinanceUserWS:
@@ -38,6 +42,7 @@ class BinanceUserWS:
         # 测试环境可暂时禁用证书验证
         self.ssl_context.check_hostname = False
         self.ssl_context.verify_mode = ssl.CERT_NONE
+        
 
     def register_callback(self, cb):
         """
@@ -80,7 +85,7 @@ class BinanceUserWS:
 
             while self._running:
                 try:
-                    message = await asyncio.wait_for(ws.recv(), timeout=1)  # 主动超时实现每秒请求
+                    message = await asyncio.wait_for(ws.recv(), timeout=4)  # 主动超时实现每秒请求
                     data = json.loads(message)
                     if self._callback:
                         if asyncio.iscoroutinefunction(self._callback):
@@ -119,6 +124,11 @@ async def user_callback(data):
     positions = data.get("result").get("positions")
     print("账户余额:", balance)
     print("持仓:", positions)
+    try:
+        await redis_client.set("balance:binance", str(balance) if balance is not None else "")
+        BinanceAnalysisService().analysis(positions)
+    except Exception as e:
+        print(f"Redis 写入错误: {e}")
 
 
 if __name__ == "__main__":

@@ -347,7 +347,7 @@ async def on_msg(msg):
 
 async def main():
     """主程序"""
-    ws = BinanceFuturesWS(
+    ws = BinanceMarketWS(
         streams=[],
         on_message=on_msg
     )
