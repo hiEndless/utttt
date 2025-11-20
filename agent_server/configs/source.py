@@ -1,23 +1,27 @@
 def query_db_env():
     return {
         "news": {
-            "model_id": "gpt-4o-mini",
-            "llm_base_url": None,
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
             "a2a_url": "http://localhost:10002/",
         },
         "technical": {
-            "model_id": "gpt-4o-mini",
-            "llm_base_url": None,
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
             "a2a_url": "http://localhost:10001/",
         },
         "risk": {
-            "model_id": "gpt-4o-mini",
-            "llm_base_url": None,
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
             "a2a_url": "http://localhost:10003/",
         },
         "portfolio": {
-            "model_id": "gpt-4o-mini",
-            "llm_base_url": None,
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
             "a2a_url": "http://localhost:10004/",
         },
     }
