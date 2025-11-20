@@ -3,6 +3,7 @@ from a2a.types import (
     AgentCapabilities,
     AgentSkill,
 )
+from agent_server.configs.source import get_agent_config
 
 
 def _base_card(name: str, description: str, skill: AgentSkill, url: str) -> AgentCard:
@@ -19,6 +20,12 @@ def _base_card(name: str, description: str, skill: AgentSkill, url: str) -> Agen
     )
 
 
+def _load_agent_url(name: str, default_url: str) -> str:
+    cfg = get_agent_config(name)
+    url = cfg.get("a2a_url")
+    return url or default_url
+
+
 def news_card() -> AgentCard:
     skill = AgentSkill(
         id="news_analysis",
@@ -27,7 +34,7 @@ def news_card() -> AgentCard:
         tags=["news", "market", "summary"],
         examples=["Summarize latest market news", "Key headlines for BTC"],
     )
-    return _base_card("News Expert", "Professional news analysis agent", skill, url="http://localhost:10002/")
+    return _base_card("News Expert", "Professional news analysis agent", skill, url=_load_agent_url("news", "http://localhost:10002/"))
 
 
 def technical_card() -> AgentCard:
@@ -38,7 +45,7 @@ def technical_card() -> AgentCard:
         tags=["technical", "indicators", "trend"],
         examples=["Analyze BTC trend", "RSI and MACD summary"],
     )
-    return _base_card("Technical Expert", "Technical analysis agent", skill, url="http://localhost:10001/")
+    return _base_card("Technical Expert", "Technical analysis agent", skill, url=_load_agent_url("technical", "http://localhost:10001/"))
 
 
 def risk_card() -> AgentCard:
@@ -49,7 +56,7 @@ def risk_card() -> AgentCard:
         tags=["risk", "exposure", "scenario"],
         examples=["Assess drawdown risk", "Volatility risk overview"],
     )
-    return _base_card("Risk Expert", "Risk assessment agent", skill, url="http://localhost:10003/")
+    return _base_card("Risk Expert", "Risk assessment agent", skill, url=_load_agent_url("risk", "http://localhost:10003/"))
 
 
 def portfolio_card() -> AgentCard:
@@ -60,7 +67,7 @@ def portfolio_card() -> AgentCard:
         tags=["portfolio", "allocation", "position"],
         examples=["Adjust BTCUSDT position", "Rebalance suggestions"],
     )
-    return _base_card("Portfolio Expert", "Portfolio management agent", skill, url="http://localhost:10004/")
+    return _base_card("Portfolio Expert", "Portfolio management agent", skill, url=_load_agent_url("portfolio", "http://localhost:10004/"))
 
 
 def get_agent_card(name: str) -> AgentCard:
