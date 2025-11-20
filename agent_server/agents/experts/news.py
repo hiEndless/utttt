@@ -8,7 +8,9 @@ class NewsExpert:
         from agno.agent import Agent
         from agno.models.openai import OpenAILike
         from agent_server.configs.source import get_agent_config
+        from agent_server.agents.instructions import build_instruction
         import os
+        from agent_server.tools import web_json, calc_rsi
 
         cfg = get_agent_config(self.name)
 
@@ -21,6 +23,6 @@ class NewsExpert:
         except TypeError:
             model = OpenAILike(id=model_id)
 
-        agent = Agent(model=model, instructions="Summarize market-related news context")
+        agent = Agent(model=model, instructions=build_instruction(self.name, "Summarize market-related news context"), tools=[web_json, calc_rsi])
         resp = await agent.arun(query)
         return str(resp.content)

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List
 from a2a.utils import new_agent_text_message, get_message_text
 
 
@@ -23,10 +23,3 @@ class A2ACommunicator:
         for i, p in enumerate(prompts):
             variants.append(self._wrap(sender=f"variant-{i}", content=p))
         return [get_message_text(m) for m in variants]
-
-    async def reflect(self, texts: List[str]) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
-        for t in texts:
-            score = min(1.0, max(0.0, len(t) / 1000.0))
-            results.append({"text": t, "score": score})
-        return results

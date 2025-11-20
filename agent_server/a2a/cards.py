@@ -6,6 +6,22 @@ from a2a.types import (
 from agent_server.configs.source import get_agent_config
 
 
+def get_agent_card(name: str) -> AgentCard:
+    if name == "news":
+        return news_card()
+    if name == "technical":
+        return technical_card()
+    if name == "risk":
+        return risk_card()
+    if name == "portfolio":
+        return portfolio_card()
+    if name == "reflection":
+        return reflection_card()
+    if name == "fusion":
+        return fusion_card()
+    return technical_card()
+
+
 def _base_card(name: str, description: str, skill: AgentSkill, url: str) -> AgentCard:
     return AgentCard(
         name=name,
@@ -70,13 +86,23 @@ def portfolio_card() -> AgentCard:
     return _base_card("Portfolio Expert", "Portfolio management agent", skill, url=_load_agent_url("portfolio", "http://localhost:10004/"))
 
 
-def get_agent_card(name: str) -> AgentCard:
-    if name == "news":
-        return news_card()
-    if name == "technical":
-        return technical_card()
-    if name == "risk":
-        return risk_card()
-    if name == "portfolio":
-        return portfolio_card()
-    return technical_card()
+def reflection_card() -> AgentCard:
+    skill = AgentSkill(
+        id="reflection_round",
+        name="Reflect and critique outputs",
+        description="Critique multi-agent outputs and derive reflection scores",
+        tags=["reflection", "critique", "scoring"],
+        examples=["Reflect on outputs", "Assign reflection scores"],
+    )
+    return _base_card("Reflection Agent", "Reflection agent", skill, url=_load_agent_url("reflection", "http://localhost:10005/"))
+
+
+def fusion_card() -> AgentCard:
+    skill = AgentSkill(
+        id="fusion_round",
+        name="Fuse outputs with weights",
+        description="Weighted fusion using base weights and reflection/autoscores",
+        tags=["fusion", "weights", "combine"],
+        examples=["Fuse outputs", "Produce weighted result"],
+    )
+    return _base_card("Fusion Agent", "Fusion agent", skill, url=_load_agent_url("fusion", "http://localhost:10006/"))

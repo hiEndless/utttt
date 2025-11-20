@@ -26,3 +26,11 @@ SCORING_WEIGHTS: Dict[str, float] = {
     "risk": 0.25,
     "portfolio": 0.15,
 }
+
+# Control optional stages per mode
+PIPELINE_OPTIONS: Dict[str, Dict[str, bool]] = {
+    "default": {"reflection": False, "fusion": True},
+    "delphi": {"reflection": True, "fusion": True},
+    "debate": {"reflection": True, "fusion": True},
+    "n_variant": {"reflection": True, "fusion": True},
+}

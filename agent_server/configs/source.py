@@ -24,6 +24,18 @@ def query_db_env():
             "llm_api_key": None,
             "a2a_url": "http://localhost:10004/",
         },
+        "reflection": {
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
+            "a2a_url": "http://localhost:10005/",
+        },
+        "fusion": {
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": None,
+            "a2a_url": "http://localhost:10006/",
+        },
     }
 
 

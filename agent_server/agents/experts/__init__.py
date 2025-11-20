@@ -4,6 +4,8 @@ from .news import NewsExpert
 from .technical import TechnicalExpert
 from .risk import RiskExpert
 from .portfolio import PortfolioExpert
+from .reflection import ReflectionExpert
+from .fusion import FusionExpert
 from agent_server.a2a.cards import get_agent_card
 
 
@@ -16,6 +18,10 @@ def load_expert(name: str) -> Any:
         return RiskExpert()
     if name == "portfolio":
         return PortfolioExpert()
+    if name == "reflection":
+        return ReflectionExpert()
+    if name == "fusion":
+        return FusionExpert()
     return TechnicalExpert()
 
 
