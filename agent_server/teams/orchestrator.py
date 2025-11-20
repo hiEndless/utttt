@@ -1,57 +1,51 @@
 from typing import List, Dict
 
 from agent_server.communication import A2ACommunicator
+from agent_server.communication.a2a import A2ASession
 from agent_server.config import SCORING_WEIGHTS, PIPELINE_OPTIONS
 from agent_server.teams.scoring import auto_score
 from agent_server.a2a.cards import get_agent_card
 
 
+class Debate:
+    def __init__(self):
+        self.c = A2ACommunicator()
+
+    async def run(self, prompts: List[str]) -> List[str]:
+        return await self.c.debate(prompts)
+
+
+class Delphi:
+    def __init__(self):
+        self.c = A2ACommunicator()
+
+    async def run(self, prompts: List[str]) -> List[str]:
+        return await self.c.delphi(prompts)
+
+
+class NVariant:
+    def __init__(self):
+        self.c = A2ACommunicator()
+
+    async def run(self, prompts: List[str]) -> List[str]:
+        return await self.c.n_variant(prompts)
+
+
 class TeamOrchestrator:
     def __init__(self):
-        self.a2a = A2ACommunicator()
+        self.session = A2ASession()
 
     async def run(self, mode: str, agents: List, query: str) -> Dict:
-        # agents can be either list of agent instances, or dicts with agent+card
-        cards = []
-        if agents and isinstance(agents[0], dict):
-            names = [a.get("name") or getattr(a["agent"], "name", "agent") for a in agents]
-            cards = [a.get("card") for a in agents]
-            prompts = []
-            import uuid
-            from a2a.client import ClientFactory, ClientConfig
-            from a2a.types import Message, Part, TextPart, Role, TransportProtocol
-            from a2a.utils import get_message_text
-            config = ClientConfig(streaming=False, supported_transports=[TransportProtocol.jsonrpc], use_client_preference=False)
-            factory = ClientFactory(config)
-            for i, a in enumerate(agents):
-                card = cards[i]
-                try:
-                    client = factory.create(card)
-                    msg = Message(role=Role.user, parts=[Part(root=TextPart(text=query))], message_id=str(uuid.uuid4()))
-                    got = None
-                    async for event in client.send_message(msg):
-                        if hasattr(event, "parts"):
-                            got = get_message_text(event)
-                            break
-                        break
-                    if got is not None:
-                        prompts.append(got)
-                        continue
-                except Exception:
-                    pass
-                try:
-                    res = await a["agent"].run(query)
-                    prompts.append(str(res))
-                except Exception:
-                    prompts.append("")
-        else:
+        if not agents or not isinstance(agents[0], dict):
             raise RuntimeError("Agents must be provided with cards for A2A communication")
+        names = [a.get("name") or getattr(a["agent"], "name", "agent") for a in agents]
+        prompts = await self.session.broadcast(agents, query)
         if mode == "debate":
-            outputs = await self.a2a.debate(prompts)
+            outputs = await Debate().run(prompts)
         elif mode == "delphi":
-            outputs = await self.a2a.delphi(prompts)
+            outputs = await Delphi().run(prompts)
         elif mode == "n_variant":
-            outputs = await self.a2a.n_variant(prompts)
+            outputs = await NVariant().run(prompts)
         else:
             outputs = prompts
         import json

@@ -1,0 +1,35 @@
+{
+  "name": "Technical Expert",
+  "description": "Technical analysis agent",
+  "url": "http://localhost:10001/",
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "text",
+    "text/plain"
+  ],
+  "defaultOutputModes": [
+    "text",
+    "text/plain"
+  ],
+  "skills": [
+    {
+      "id": "technical_analysis",
+      "name": "Analyze technical indicators and trends",
+      "description": "Perform technical analysis and trend assessment",
+      "tags": [
+        "technical",
+        "indicators",
+        "trend"
+      ],
+      "examples": [
+        "Analyze BTC trend",
+        "RSI and MACD summary"
+      ]
+    }
+  ]
+}

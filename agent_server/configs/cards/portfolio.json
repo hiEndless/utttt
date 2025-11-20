@@ -1,0 +1,35 @@
+{
+  "name": "Portfolio Expert",
+  "description": "Portfolio management agent",
+  "url": "http://localhost:10004/",
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "text",
+    "text/plain"
+  ],
+  "defaultOutputModes": [
+    "text",
+    "text/plain"
+  ],
+  "skills": [
+    {
+      "id": "portfolio_management",
+      "name": "Suggest portfolio adjustments",
+      "description": "Propose position sizing and adjustments",
+      "tags": [
+        "portfolio",
+        "allocation",
+        "position"
+      ],
+      "examples": [
+        "Adjust BTCUSDT position",
+        "Rebalance suggestions"
+      ]
+    }
+  ]
+}
