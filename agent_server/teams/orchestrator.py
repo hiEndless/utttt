@@ -141,4 +141,38 @@ class TeamOrchestrator:
         else:
             fused = "\n".join(outputs)
             weights = {}
+        try:
+            payload_obj = json.loads(query)
+        except Exception:
+            payload_obj = {}
+        trade_id = payload_obj.get("trade_id") or payload_obj.get("id") or payload_obj.get("symbol")
+        if trade_id:
+            try:
+                from agent_server.memory.store import MemoryStore
+                ms = MemoryStore()
+                await ms.log_event(str(trade_id), {
+                    "type": "a2a_analysis",
+                    "payload": payload_obj,
+                    "outputs": outputs,
+                    "reflection": refl_obj,
+                    "fusion": fused,
+                    "weights": weights,
+                })
+            except Exception:
+                pass
+            try:
+                mem_card = get_agent_card("memory")
+                mem_client = factory.create(mem_card)
+                mem_payload = json.dumps({
+                    "trade_id": str(trade_id),
+                    "fused": fused,
+                    "outputs": outputs,
+                    "reflection": refl_obj,
+                    "weights": weights,
+                    "event": payload_obj,
+                }, ensure_ascii=False)
+                async for _ in mem_client.send_message(Message(role=Role.user, parts=[Part(root=TextPart(text=mem_payload))])):
+                    break
+            except Exception:
+                pass
         return {"names": names, "outputs": outputs, "scores": scores, "reflection": refl_obj, "fusion": fused, "weights": weights}
