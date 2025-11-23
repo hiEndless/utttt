@@ -1,0 +1,65 @@
+version: 1
+default_priority: low
+priorities:
+  - name: low
+    weight: 10
+  - name: medium
+    weight: 50
+  - name: high
+    weight: 80
+  - name: critical
+    weight: 100
+instant_rules:
+  - id: l0_unrealized_20
+    description: 单笔浮亏达到或超过20%
+    match:
+      type: position_update
+      payload:
+        unrealized_pnl_pct: "<= -20"
+    priority: critical
+  - id: l0_unrealized_10
+    description: 单笔浮亏达到或超过10%
+    match:
+      type: position_update
+      payload:
+        unrealized_pnl_pct: "<= -10"
+    priority: high
+  - id: l0_add_position_freq
+    description: 短时间内频繁加仓
+    match:
+      type: position_change
+      payload:
+        action: add
+    priority: low
+aggregation_rules:
+  - id: a1_cumulative_losses
+    description: 30分钟内累计出现3次浮亏>=5%
+    lookback_seconds: 1800
+    group_by: account_id
+    condition:
+      event_filter:
+        type: position_update
+        payload:
+          unrealized_pnl_pct: "<= -5"
+      count:
+        operator: ">="
+        value: 3
+    result_priority: high
+  - id: a2_add_pos_spike
+    description: 10分钟内连续3次加仓
+    lookback_seconds: 600
+    group_by: account_id
+    condition:
+      event_filter:
+        type: position_change
+        payload:
+          action: add
+      count:
+        operator: ">="
+        value: 3
+    result_priority: medium
+combine_strategy: max_priority
+suppression:
+  - name: cooldown_same_rule
+    rule_id: a1_cumulative_losses
+    cooldown_seconds: 900
