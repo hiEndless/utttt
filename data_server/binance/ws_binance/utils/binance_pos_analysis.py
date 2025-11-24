@@ -93,11 +93,13 @@ class BinanceAnalysisService:
                     old_pnl_ratio = float(str(i.get('pnl_ratio', '0')))
                 except Exception:
                     old_amt = 0.0
+                    old_pnl_ratio = 0.0
                 try:
                     new_amt = float(str(j.get('positionAmt', '0')))
                     new_pnl_ratio = float(str(j.get('pnl_ratio', '0')))
                 except Exception:
                     new_amt = 0.0
+                    new_pnl_ratio = 0.0
                 if old_amt != new_amt:
                     change = 'increase' if abs(new_amt) > abs(old_amt) else 'decrease'
                     results.append({
