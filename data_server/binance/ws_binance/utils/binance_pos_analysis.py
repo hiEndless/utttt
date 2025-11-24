@@ -156,7 +156,11 @@ if __name__ == "__main__":
     new_data = [
         {'symbol': '1000PEPEUSDT', 'positionSide': 'LONG', 'positionAmt': '852', 'unrealizedProfit': '0.00930384',
          'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343',
-         'maintMargin': '0.03262502', 'updateTime': 1763031017638, 'trade_id': '2e317d6f9ace4114a4c44624eff952f5'}]
+         'maintMargin': '0.03262502', 'updateTime': 1763031017638},
+        {'symbol': '1000PEPEUSDT', 'positionSide': 'SHORT', 'positionAmt': '852', 'unrealizedProfit': '0.00930384',
+         'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343',
+         'maintMargin': '0.03262502', 'updateTime': 1763031017638},
+    ]
     obj = BinanceAnalysisService()
     obj.set_old_data(old_data)
     obj.analysis(new_data)
