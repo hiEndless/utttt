@@ -19,6 +19,21 @@ class BinanceAnalysisService:
                     filtered.append(p)
         return filtered
 
+    def add_pnl_ratio(self, positions):
+        if isinstance(positions, list):
+            for p in positions:
+                try:
+                    up = float(str(p.get('unrealizedProfit', '0')))
+                except Exception:
+                    up = 0.0
+                try:
+                    im = float(str(p.get('initialMargin', '0')))
+                except Exception:
+                    im = 0.0
+                ratio = 0.0 if im == 0.0 else (up / im)
+                p['pnl_ratio'] = ratio
+        return positions
+
     def get_old_data(self):
         return previous_data
 
@@ -32,7 +47,7 @@ class BinanceAnalysisService:
             x for x in new_data
             if (x.get('symbol'), x.get('isolatedMargin'), x.get('positionSide')) not in old_set
         ]
-        # print("新增：", added_items)
+        print("新增：", added_items)
         return added_items
 
     def find_removed_items(self, old_data, new_data):
@@ -41,16 +56,52 @@ class BinanceAnalysisService:
             i for i in old_data
             if (i.get('symbol'), i.get('isolatedMargin'), i.get('positionSide')) not in new_set
         ]
-        # print("移除：", removed_items)
+        print("移除：", removed_items)
         return removed_items
+
+    def find_changed_items(self, old_data, new_data):
+        old_map = {}
+        for i in old_data:
+            key = (i.get('symbol'), i.get('positionSide'))
+            old_map[key] = i
+
+        results = []
+        for j in new_data:
+            key = (j.get('symbol'), j.get('positionSide'))
+            if key in old_map:
+                i = old_map[key]
+                try:
+                    old_amt = float(str(i.get('positionAmt', '0')))
+                    old_pnl_ratio = float(str(i.get('pnl_ratio', '0')))
+                except Exception:
+                    old_amt = 0.0
+                try:
+                    new_amt = float(str(j.get('positionAmt', '0')))
+                    new_pnl_ratio = float(str(j.get('pnl_ratio', '0')))
+                except Exception:
+                    new_amt = 0.0
+                if old_amt != new_amt:
+                    change = 'increase' if abs(new_amt) > abs(old_amt) else 'decrease'
+                    results.append({
+                        'symbol': j.get('symbol'),
+                        'side': j.get('positionSide'),
+                        'old_position_amt': old_amt,
+                        'new_position_amt': new_amt,
+                        'old_pnl_ratio': old_pnl_ratio,
+                        'new_pnl_ratio': new_pnl_ratio,
+                        'change': change
+                    })
+        print("修改：", results)
+        return results
 
     def analysis(self, new_data):
         new_data = self.data_clean(new_data)
+        new_data = self.add_pnl_ratio(new_data)
         old_data = self.get_old_data()
 
-        if old_data is None:
-            self.set_old_data(new_data)
-            return
+        # if old_data is None:
+        #     self.set_old_data(new_data)
+        #     return
 
         if new_data != old_data:
             self.set_old_data(new_data)
@@ -72,6 +123,10 @@ class BinanceAnalysisService:
 if __name__ == "__main__":
     new_data = []
     old_data = [{'symbol': '1000PEPEUSDT', 'positionSide': 'LONG', 'positionAmt': '852', 'unrealizedProfit': '0.00930384', 'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343', 'maintMargin': '0.03262502', 'updateTime': 1763031017638}]
+    new_data = [{'symbol': '1000PEPEUSDT', 'positionSide': 'LONG', 'positionAmt': '851', 'unrealizedProfit': '0.00930384', 'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343', 'maintMargin': '0.03262502', 'updateTime': 1763031017638}]
     obj = BinanceAnalysisService()
-    obj.find_removed_items(old_data, new_data)
-    obj.find_added_items(old_data, new_data)
+    obj.set_old_data(old_data)
+    # obj.analysis(new_data)
+    # obj.find_removed_items(old_data, new_data)
+    # obj.find_added_items(old_data, new_data)
+    obj.find_changed_items(old_data, new_data)
