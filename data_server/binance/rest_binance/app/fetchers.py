@@ -12,7 +12,6 @@ except ImportError:
     from config import settings
 
 KLINE_LIMITERS = {k: TokenBucket(rate=1 / v, capacity=1) for k, v in settings.kline_rate_limits_seconds.items()}
-DEFAULT_KLINE_LIMITER = TokenBucket(rate=1 / settings.rate_limits['kline'], capacity=1)
 OPEN_INTEREST_LIMITER = TokenBucket(rate=1 / settings.rate_limits['open_interest'], capacity=1)
 FUNDING_RATE_LIMITER = TokenBucket(rate=1 / settings.rate_limits['funding'], capacity=1)
 
@@ -26,11 +25,10 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
         'interval': interval,
         'limit': limit
     }
-    limiter = KLINE_LIMITERS.get(interval, DEFAULT_KLINE_LIMITER)
+    limiter = KLINE_LIMITERS.get(interval)
     async with limiter:
         data = await http_client.request("GET", url, params=params)
         print(data)
-        logger.info("kline %s %s", symbol, data[0] if isinstance(data, list) and data else data)
 
 
 async def kline_poller(symbol: str, interval: str, limit: int = 200):
