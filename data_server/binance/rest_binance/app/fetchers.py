@@ -147,6 +147,20 @@ async def spider_poller(symbol: str, interval: str, limit: int = 200):
         except Exception as e:
             logger.error("kline_poller_error interval=%s %s", interval, e)
 
+async def ticker24hr_poller(symbol: str):
+    while True:
+        try:
+            await fetch_ticker24hr(symbol)
+        except Exception as e:
+            logger.error("ticker24hr_poller_error %s", e)
+
+async def fundingRate_poller(symbol: str):
+    while True:
+        try:
+            await fetch_fundingRate(symbol)
+        except Exception as e:
+            logger.error("fundingRate_poller_error %s", e)
+
 
 async def _main():
     try:
@@ -157,8 +171,8 @@ async def _main():
             asyncio.create_task(spider_poller("BTCUSDT", "4h", 200)),
             asyncio.create_task(spider_poller("BTCUSDT", "12h", 200)),
             asyncio.create_task(spider_poller("BTCUSDT", "1d", 200)),
-            await fetch_ticker24hr("BTCUSDT"),
-            await fetch_fundingRate("BTCUSDT")
+            asyncio.create_task(ticker24hr_poller("BTCUSDT")),
+            asyncio.create_task(fundingRate_poller("BTCUSDT")),
         ]
         await asyncio.gather(*tasks)
     finally:
