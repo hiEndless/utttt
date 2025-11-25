@@ -1,5 +1,9 @@
 import asyncio
 import redis.asyncio as aioredis
+try:
+    from .config import settings
+except ImportError:
+    from config import settings
 
 
 class RedisSymbolWatcher:
@@ -33,3 +37,17 @@ class RedisSymbolWatcher:
                 break
             except Exception:
                 await asyncio.sleep(poll_interval)
+
+
+async def _test():
+    redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port, db=settings.redis_db, decode_responses=True)
+    try:
+        pong = await redis.ping()
+        symbols = await RedisSymbolWatcher(redis).list_symbols()
+        print({"ping": pong, "symbols": list(symbols)})
+    finally:
+        await redis.close()
+
+
+if __name__ == "__main__":
+    asyncio.run(_test())

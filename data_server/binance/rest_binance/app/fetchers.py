@@ -33,11 +33,9 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
 async def fetch_topLongShortAccountRatio(symbol: str, period: str):
     """大户账户数多空比"""
     url = BASE_URL + '/futures/data/topLongShortAccountRatio'
-    if period == '1m':
-        period = '5m'
     params = {
         'symbol': symbol,
-        'period': period,
+        'period': '5m' if period == '1m' else period,
         'limit': 30
     }
     limiter = LIMITERS.get(period)
@@ -50,11 +48,9 @@ async def fetch_topLongShortAccountRatio(symbol: str, period: str):
 async def fetch_topLongShortPositionRatio(symbol: str, period: str):
     """大户持仓多空比"""
     url = BASE_URL + '/futures/data/topLongShortPositionRatio'
-    if period == '1m':
-        period = '5m'
     params = {
         'symbol': symbol,
-        'period': period,
+        'period': '5m' if period == '1m' else period,
         'limit': 30
     }
     limiter = LIMITERS.get(period)
@@ -67,11 +63,9 @@ async def fetch_topLongShortPositionRatio(symbol: str, period: str):
 async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
     """全局账户多空比"""
     url = BASE_URL + '/futures/data/globalLongShortAccountRatio'
-    if period == '1m':
-        period = '5m'
     params = {
         'symbol': symbol,
-        'period': period,
+        'period': '5m' if period == '1m' else period,
         'limit': 30
     }
     limiter = LIMITERS.get(period)
@@ -84,11 +78,9 @@ async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
 async def fetch_takerlongshortRatio(symbol: str, period: str):
     """ 合约主动买卖量 """
     url = BASE_URL + '/futures/data/takerlongshortRatio'
-    if period == '1m':
-        period = '5m'
     params = {
         'symbol': symbol,
-        'period': period,
+        'period': '5m' if period == '1m' else period,
         'limit': 30
     }
     limiter = LIMITERS.get(period)
