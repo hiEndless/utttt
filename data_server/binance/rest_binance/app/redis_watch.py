@@ -6,17 +6,31 @@ from .config import settings
 class RedisSymbolWatcher:
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
-        self.monitor_set = settings.monitor_set
+        self.monitor_set = "symbol:binance"
 
     async def list_symbols(self):
-        members = await self.redis.smembers(self.monitor_set)
-        return set(members or [])
+        try:
+            key_type = await self.redis.type(self.monitor_set)
+            if isinstance(key_type, (bytes, bytearray)):
+                key_type = key_type.decode()
+            symbols = set()
+            if key_type == "set":
+                raw = await self.redis.smembers(self.monitor_set)
+                symbols = {str(x) for x in (raw or [])}
+            return symbols
+        except Exception:
+            return set()
 
     async def watch_changes(self, poll_interval: float = 1.0):
         prev = set()
         while True:
-            cur = await self.list_symbols()
-            if cur != prev:
-                yield cur
-                prev = cur
-            await asyncio.sleep(poll_interval)
+            try:
+                cur = await self.list_symbols()
+                if cur != prev:
+                    yield cur
+                    prev = cur
+                await asyncio.sleep(poll_interval)
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                await asyncio.sleep(poll_interval)
