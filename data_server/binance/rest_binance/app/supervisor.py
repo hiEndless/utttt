@@ -1,6 +1,6 @@
 import asyncio
 from typing import Callable
-from .utils import logger, backoff_sleep
+from utils import logger, backoff_sleep
 
 
 async def supervise_task(make_coro: Callable, name: str, max_restarts: int = 5):

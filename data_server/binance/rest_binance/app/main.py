@@ -2,18 +2,18 @@ import asyncio
 import signal
 import logging
 import redis.asyncio as aioredis
-from .config import settings
-from .manager import SymbolTaskManager
-from .redis_watch import RedisSymbolWatcher
-from .fetchers import fetch_kline, fetch_open_interest, fetch_funding_rate
-from .http_client import http_client
-from .utils import logger
+from config import settings
+from manager import SymbolTaskManager
+from redis_watch import RedisSymbolWatcher
+from fetchers import fetch_kline
+from http_client import http_client
+from utils import logger
 
 
 FETCH_PLAN = [
     {"name": "kline", "fn": fetch_kline, "interval": 1.0},
-    {"name": "open_interest", "fn": fetch_open_interest, "interval": 5.0},
-    {"name": "funding", "fn": fetch_funding_rate, "interval": 10.0},
+    # {"name": "open_interest", "fn": fetch_open_interest, "interval": 5.0},
+    # {"name": "funding", "fn": fetch_funding_rate, "interval": 10.0},
 ]
 
 

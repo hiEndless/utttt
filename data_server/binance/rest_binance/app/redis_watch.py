@@ -1,6 +1,5 @@
 import asyncio
 import redis.asyncio as aioredis
-from .config import settings
 
 
 class RedisSymbolWatcher:

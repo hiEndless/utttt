@@ -1,8 +1,12 @@
 import aiohttp
 import asyncio
 from typing import Optional
-from .config import settings
-from .utils import backoff_sleep, logger
+try:
+    from .config import settings
+    from .utils import backoff_sleep, logger
+except ImportError:
+    from config import settings
+    from utils import backoff_sleep, logger
 
 
 class HTTPClient:
@@ -24,12 +28,12 @@ class HTTPClient:
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def request(self, method: str, url: str, params: dict = None, headers: dict = None, json: dict = None, max_retries: int = 3):
+    async def request(self, method: str, url: str, params: dict = None, headers: dict = None, json: dict = None, max_retries: int = 3, ssl=False):
         attempt = 0
         session = await self.get_session()
         while True:
             try:
-                async with session.request(method, url, params=params, headers=headers, json=json) as resp:
+                async with session.request(method, url, params=params, headers=headers, json=json, ssl=ssl) as resp:
                     status = resp.status
                     if 200 <= status < 300:
                         return await resp.json()

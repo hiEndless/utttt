@@ -1,7 +1,7 @@
 import asyncio
 from typing import Dict, List
-from .scheduler import run_interval
-from .utils import logger
+from scheduler import run_interval
+from utils import logger
 
 
 class SymbolTaskManager:
