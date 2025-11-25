@@ -38,7 +38,7 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
     _limiter = get_limiter(("kline", symbol, interval), _sec)
     async with _limiter:
         data = await http_client.request("GET", url, params=params)
-        print(data)
+        print(data[:5])
 
 
 async def fetch_topLongShortAccountRatio(symbol: str, period: str):
