@@ -5,15 +5,43 @@ import redis.asyncio as aioredis
 from config import settings
 from manager import SymbolTaskManager
 from redis_watch import RedisSymbolWatcher
-from fetchers import fetch_kline
+from fetchers import (
+    fetch_kline,
+    fetch_takerlongshortRatio,
+    fetch_topLongShortAccountRatio,
+    fetch_topLongShortPositionRatio,
+    fetch_globalLongShortAccountRatio,
+    fetch_ticker24hr,
+    fetch_fundingRate,
+)
 from http_client import http_client
 from utils import logger
 
 
+def make_spider(interval: str, limit: int = 200):
+    async def run(symbol: str):
+        await fetch_kline(symbol, interval, limit)
+        await fetch_takerlongshortRatio(symbol, interval)
+        await fetch_topLongShortAccountRatio(symbol, interval)
+        await fetch_topLongShortPositionRatio(symbol, interval)
+        await fetch_globalLongShortAccountRatio(symbol, interval)
+    return run
+
+async def ticker24hr_task(symbol: str):
+    await fetch_ticker24hr(symbol)
+
+async def fundingRate_task(symbol: str):
+    await fetch_fundingRate(symbol)
+
 FETCH_PLAN = [
-    {"name": "kline", "fn": fetch_kline, "interval": 1.0},
-    # {"name": "open_interest", "fn": fetch_open_interest, "interval": 5.0},
-    # {"name": "funding", "fn": fetch_funding_rate, "interval": 10.0},
+    {"name": "spider_1m", "fn": make_spider("1m"), "interval": settings.rate_limits_seconds["1m"]},
+    {"name": "spider_30m", "fn": make_spider("30m"), "interval": settings.rate_limits_seconds["30m"]},
+    {"name": "spider_1h", "fn": make_spider("1h"), "interval": settings.rate_limits_seconds["1h"]},
+    {"name": "spider_4h", "fn": make_spider("4h"), "interval": settings.rate_limits_seconds["4h"]},
+    {"name": "spider_12h", "fn": make_spider("12h"), "interval": settings.rate_limits_seconds["12h"]},
+    {"name": "spider_1d", "fn": make_spider("1d"), "interval": settings.rate_limits_seconds["1d"]},
+    {"name": "ticker24hr", "fn": ticker24hr_task, "interval": settings.rate_limits_seconds["1h"]},
+    {"name": "fundingRate", "fn": fundingRate_task, "interval": settings.rate_limits_seconds["4h"]},
 ]
 
 
