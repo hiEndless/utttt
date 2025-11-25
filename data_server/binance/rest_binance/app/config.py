@@ -8,9 +8,14 @@ class Settings:
     redis_db: int = int(os.environ.get('REDIS_BD', 0))
     api_rate_limit_per_second: int = 20
     rate_limits: dict = {
-        'kline': 5,
         'open_interest': 20,
         'funding': 20,
+    }
+    kline_rate_limits_seconds: dict = {
+        '1m': 60,
+        '30m': 1800,
+        '1h': 3600,
+        '2h': 7200,
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"
