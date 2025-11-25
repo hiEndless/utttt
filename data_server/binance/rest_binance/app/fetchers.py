@@ -12,6 +12,16 @@ except ImportError:
     from config import settings
 
 LIMITERS = {k: TokenBucket(rate=1 / v, capacity=1) for k, v in settings.rate_limits_seconds.items()}
+LIMITER_CACHE = {}
+
+
+def get_limiter(key: tuple, seconds: int):
+    lim = LIMITER_CACHE.get(key)
+    if lim is None:
+        lim = TokenBucket(rate=1 / max(1, seconds), capacity=1)
+        LIMITER_CACHE[key] = lim
+    return lim
+
 
 BASE_URL = 'https://fapi.binance.com'
 
@@ -24,8 +34,9 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
         'interval': interval,
         'limit': limit
     }
-    limiter = LIMITERS.get(interval)
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get(interval, 60)
+    _limiter = get_limiter(("kline", symbol, interval), _sec)
+    async with _limiter:
         data = await http_client.request("GET", url, params=params)
         print(data)
 
@@ -33,13 +44,15 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
 async def fetch_topLongShortAccountRatio(symbol: str, period: str):
     """大户账户数多空比"""
     url = BASE_URL + '/futures/data/topLongShortAccountRatio'
+    _p = '5m' if period == '1m' else period
     params = {
         'symbol': symbol,
-        'period': '5m' if period == '1m' else period,
+        'period': _p,
         'limit': 30
     }
-    limiter = LIMITERS.get(period)
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get(_p, 60)
+    _limiter = get_limiter(("topLongShortAccountRatio", symbol, _p), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         # todo 首次获取数据整体添加，后续获取做增量更新
         print(res)
@@ -48,13 +61,15 @@ async def fetch_topLongShortAccountRatio(symbol: str, period: str):
 async def fetch_topLongShortPositionRatio(symbol: str, period: str):
     """大户持仓多空比"""
     url = BASE_URL + '/futures/data/topLongShortPositionRatio'
+    _p = '5m' if period == '1m' else period
     params = {
         'symbol': symbol,
-        'period': '5m' if period == '1m' else period,
+        'period': _p,
         'limit': 30
     }
-    limiter = LIMITERS.get(period)
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get(_p, 60)
+    _limiter = get_limiter(("topLongShortPositionRatio", symbol, _p), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         # todo 首次获取数据整体添加，后续获取做增量更新
         print(res)
@@ -63,13 +78,15 @@ async def fetch_topLongShortPositionRatio(symbol: str, period: str):
 async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
     """全局账户多空比"""
     url = BASE_URL + '/futures/data/globalLongShortAccountRatio'
+    _p = '5m' if period == '1m' else period
     params = {
         'symbol': symbol,
-        'period': '5m' if period == '1m' else period,
+        'period': _p,
         'limit': 30
     }
-    limiter = LIMITERS.get(period)
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get(_p, 60)
+    _limiter = get_limiter(("globalLongShortAccountRatio", symbol, _p), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         # todo 首次获取数据整体添加，后续获取做增量更新
         print(res)
@@ -78,13 +95,15 @@ async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
 async def fetch_takerlongshortRatio(symbol: str, period: str):
     """ 合约主动买卖量 """
     url = BASE_URL + '/futures/data/takerlongshortRatio'
+    _p = '5m' if period == '1m' else period
     params = {
         'symbol': symbol,
-        'period': '5m' if period == '1m' else period,
+        'period': _p,
         'limit': 30
     }
-    limiter = LIMITERS.get(period)
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get(_p, 60)
+    _limiter = get_limiter(("takerLongShortRatio", symbol, _p), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         # todo 首次获取数据整体添加，后续获取做增量更新
         print(res)
@@ -96,8 +115,9 @@ async def fetch_ticker24hr(symbol: str):
     params = {
         'symbol': symbol
     }
-    limiter = LIMITERS.get('1h')
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get('1h', 3600)
+    _limiter = get_limiter(("ticker24hr", symbol, '1h'), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         priceChangePercent = res.get('priceChangePercent')
         volume = res.get('volume')
@@ -121,8 +141,9 @@ async def fetch_fundingRate(symbol: str):
         'symbol': symbol,
         'limit': 200
     }
-    limiter = LIMITERS.get('4h')
-    async with limiter:
+    _sec = settings.rate_limits_seconds.get('4h', 14400)
+    _limiter = get_limiter(("fundingRate", symbol, '4h'), _sec)
+    async with _limiter:
         res = await http_client.request("GET", url, params=params)
         # todo 首次获取数据整体添加，后续获取做增量更新
         print(res)
@@ -139,12 +160,14 @@ async def spider_poller(symbol: str, interval: str, limit: int = 200):
         except Exception as e:
             logger.error("kline_poller_error interval=%s %s", interval, e)
 
+
 async def ticker24hr_poller(symbol: str):
     while True:
         try:
             await fetch_ticker24hr(symbol)
         except Exception as e:
             logger.error("ticker24hr_poller_error %s", e)
+
 
 async def fundingRate_poller(symbol: str):
     while True:
@@ -172,4 +195,5 @@ async def _main():
 
 
 if __name__ == "__main__":
-    asyncio.run(_main())
+    # asyncio.run(_main())
+    asyncio.run(fetch_fundingRate("BTCUSDT"))

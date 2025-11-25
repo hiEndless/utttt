@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import logging
+import time
 import redis.asyncio as aioredis
 from config import settings
 from manager import SymbolTaskManager
@@ -20,6 +21,7 @@ from utils import logger
 
 def make_spider(interval: str, limit: int = 200):
     async def run(symbol: str):
+        logger.info("task_trigger name=%s interval=%s time=%s", f"spider_{interval}", interval, time.strftime("%Y-%m-%d %H:%M:%S"))
         await fetch_kline(symbol, interval, limit)
         await fetch_takerlongshortRatio(symbol, interval)
         await fetch_topLongShortAccountRatio(symbol, interval)
@@ -28,9 +30,11 @@ def make_spider(interval: str, limit: int = 200):
     return run
 
 async def ticker24hr_task(symbol: str):
+    logger.info("task_trigger name=%s interval=%s time=%s", "ticker24hr", "1h", time.strftime("%Y-%m-%d %H:%M:%S"))
     await fetch_ticker24hr(symbol)
 
 async def fundingRate_task(symbol: str):
+    logger.info("task_trigger name=%s interval=%s time=%s", "fundingRate", "4h", time.strftime("%Y-%m-%d %H:%M:%S"))
     await fetch_fundingRate(symbol)
 
 FETCH_PLAN = [

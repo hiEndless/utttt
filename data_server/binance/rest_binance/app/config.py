@@ -8,6 +8,7 @@ class Settings:
     redis_db: int = int(os.environ.get('REDIS_BD', 1))
     rate_limits_seconds: dict = {
         '1m': 60,
+        '5m': 300,
         '30m': 1800,
         '1h': 3600,
         '4h': 14400,
