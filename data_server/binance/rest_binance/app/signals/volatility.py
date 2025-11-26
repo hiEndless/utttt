@@ -1,7 +1,6 @@
 
-
-
 import math
+
 
 class VolatilitySignal:
     def __init__(self, kline_data):
