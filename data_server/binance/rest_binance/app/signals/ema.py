@@ -1,6 +1,7 @@
 class EMA:
     def __init__(self, kline_data):
         self.kline_data = kline_data  # 二维K线数组
+        self.ema_5 = None
         self.ema_7 = None
         self.ema_12 = None
         self.ema_20 = None
@@ -35,6 +36,7 @@ class EMA:
         """
         closes = [float(item[4]) for item in self.kline_data]
 
+        self.ema_5 = self._calc_ema(closes, 5)
         self.ema_7 = self._calc_ema(closes, 7)
         self.ema_12 = self._calc_ema(closes, 12)
         self.ema_20 = self._calc_ema(closes, 20)
@@ -44,6 +46,7 @@ class EMA:
         self.ema_200 = self._calc_ema(closes, 200)
 
         return {
+            "ema5": round(self.ema_5, 2) if self.ema_5 else None,
             "ema7": round(self.ema_7, 2) if self.ema_7 else None,
             "ema12": round(self.ema_12, 2) if self.ema_12 else None,
             "ema20": round(self.ema_20, 2) if self.ema_20 else None,
