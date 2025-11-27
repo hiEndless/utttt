@@ -79,3 +79,48 @@ class EventPlugin:
             return True
         except Exception:
             return True
+
+
+class CompositeComboBase(EventPlugin):
+    bullish_signal = "combo_bullish"
+    bearish_signal = "combo_bearish"
+
+    def build_bullish_triggers(self, ind, prev_ind, kline):
+        return {}
+
+    def build_bearish_triggers(self, ind, prev_ind, kline):
+        return {}
+
+    def build_bullish_patterns(self, ind, prev_ind, kline):
+        return {}
+
+    def build_bearish_patterns(self, ind, prev_ind, kline):
+        return {}
+
+    def choose_direction(self, ind, prev_ind, kline):
+        return None
+
+    def base_payload(self, ind, prev_ind, kline):
+        return {}
+
+    def generate(self, symbol, kline, ind, prev_ind, interval):
+        res = []
+        bull_tr = {k: v for k, v in (self.build_bullish_triggers(ind, prev_ind, kline) or {}).items() if v}
+        bear_tr = {k: v for k, v in (self.build_bearish_triggers(ind, prev_ind, kline) or {}).items() if v}
+        bull_pt = {k: v for k, v in (self.build_bullish_patterns(ind, prev_ind, kline) or {}).items() if v}
+        bear_pt = {k: v for k, v in (self.build_bearish_patterns(ind, prev_ind, kline) or {}).items() if v}
+        direction = self.choose_direction(ind, prev_ind, kline)
+
+        if direction in (None, "bullish") and bull_tr:
+            strength = len(bull_tr) + len(bull_pt) * 2
+            payload = {"strength": strength, "triggers": bull_tr, "patterns": bull_pt}
+            payload.update(self.base_payload(ind, prev_ind, kline) or {})
+            res.append(build_event(symbol, kline, self.bullish_signal, payload, interval))
+
+        if direction in (None, "bearish") and bear_tr:
+            strength = len(bear_tr) + len(bear_pt) * 2
+            payload = {"strength": strength, "triggers": bear_tr, "patterns": bear_pt}
+            payload.update(self.base_payload(ind, prev_ind, kline) or {})
+            res.append(build_event(symbol, kline, self.bearish_signal, payload, interval))
+
+        return res
