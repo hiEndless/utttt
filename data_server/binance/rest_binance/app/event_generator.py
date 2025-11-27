@@ -1,16 +1,5 @@
 from signals import EMA, MA, MACD, RSI, KDJ, BollingerBandSignal, VolatilitySignal, SupportResistance
 from event_plugins import get_plugins
-import time
-
-
-def _last_ts(kline):
-    try:
-        return int(kline[-1][6])
-    except Exception:
-        try:
-            return int(kline[-1][0])
-        except Exception:
-            return int(time.time())
 
 
 def calculate_indicators(klines_data):
@@ -48,6 +37,8 @@ class EventGenerator:
                 prev_ind = None
         for p in self.plugins:
             try:
+                if hasattr(p, "supports") and not p.supports(self.symbol, self.interval, self.kline, self.ind):
+                    continue
                 self.events.extend(p.generate(self.symbol, self.kline, self.ind, prev_ind, self.interval))
             except Exception:
                 pass

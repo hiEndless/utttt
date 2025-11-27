@@ -7,6 +7,8 @@ class BollBreakoutFiltered:
     name = "boll_breakout_filtered"
     required_indicators = ["boll", "vol"]
     version = "1.2"
+    min_adx = 25
+    min_atr_ratio = 0.005
 
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []

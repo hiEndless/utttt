@@ -4,6 +4,7 @@ from .base import build_event
 
 @register_plugin
 class RSIExtremePlugin:
+    min_adx = 20
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []
         r = ind.get("rsi", {})

@@ -40,3 +40,42 @@ def prev_close(kline):
 class EventPlugin:
     def generate(self, symbol, kline, ind, prev_ind, interval):
         return []
+
+    def supports(self, symbol, interval, kline, ind):
+        try:
+            # interval filter
+            if hasattr(self, "supported_intervals"):
+                si = getattr(self, "supported_intervals") or []
+                if si and interval not in si:
+                    return False
+
+            # required indicators presence
+            req = getattr(self, "required_indicators", None)
+            if isinstance(req, (list, tuple)):
+                for key in req:
+                    if key not in ind:
+                        return False
+
+            # generic volatility gating
+            vol = ind.get("vol", {})
+            adx = vol.get("adx")
+            atr = vol.get("atr")
+            close = last_close(kline)
+
+            min_adx = getattr(self, "min_adx", None)
+            if min_adx is not None:
+                if adx is None or adx < min_adx:
+                    return False
+
+            min_atr_ratio = getattr(self, "min_atr_ratio", None)
+            if min_atr_ratio is not None:
+                if close is None or atr is None:
+                    return False
+                if close == 0:
+                    return False
+                if (atr / close) < min_atr_ratio:
+                    return False
+
+            return True
+        except Exception:
+            return True

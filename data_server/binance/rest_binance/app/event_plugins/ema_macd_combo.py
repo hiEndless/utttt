@@ -7,6 +7,7 @@ class EMAMacdCombo:
     name = "ema_macd_extended_combo"
     version = "2.0"
     required_indicators = ["ema", "macd", "vol"]
+    min_adx = 20
 
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []

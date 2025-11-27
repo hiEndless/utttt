@@ -4,6 +4,8 @@ from .base import build_event, last_close
 
 @register_plugin
 class SRBreakFiltered:
+    min_adx = 25
+    min_atr_ratio = 0.01
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []
         sr = ind.get("sr", {})
