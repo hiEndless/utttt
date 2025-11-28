@@ -1,94 +1,167 @@
 from . import register_plugin
-from .base import build_event, last_close
+from .base import build_event, last_close, prev_close, CompositeComboBase
 
 
 @register_plugin
-class RSIMACDCombo:
+class RSIMACDCombo(CompositeComboBase):
     name = "rsi_macd_combo"
-    version = "2.0"
+    version = "3.0"
     required_indicators = ["rsi", "macd"]
 
-    def generate(self, symbol, kline, ind, prev_ind, interval):
-        res = []
+    bullish_signal = "rsi_macd_bullish"
+    bearish_signal = "rsi_macd_bearish"
+
+    # ------------------------------
+    #   Bullish Triggers（快信号）
+    # ------------------------------
+    def build_bullish_triggers(self, ind, prev_ind, kline):
+        r = ind.get("rsi", {})
+        m = ind.get("macd", {})
+
+        pr = prev_ind.get("rsi", {}) if prev_ind else {}
+        pm = prev_ind.get("macd", {}) if prev_ind else {}
+
+        rsi = r.get("rsi14")
+        rsi_prev = pr.get("rsi14")
+
+        dif, dea, hist = m.get("dif"), m.get("dea"), m.get("hist")
+        dif_prev, dea_prev, hist_prev = pm.get("dif"), pm.get("dea"), pm.get("hist")
+
+        if None in (rsi, rsi_prev, dif, dea, hist, dif_prev, dea_prev, hist_prev):
+            return {}
+
+        return {
+            # 1. 经典 RSI 反转 + MACD 金叉
+            "rsi_macd_reversal": (rsi_prev <= 30 < rsi and dif_prev <= dea_prev and dif > dea),
+
+            # 2. RSI 超卖 + MACD 零轴下金叉
+            "rsi_oversold_macd_zero": (rsi < 30 and dif_prev <= dea_prev and dif > dea and dif < 0 and dea < 0),
+
+            # 4. RSI 突破50 + DIF 突破 0 轴
+            "rsi50_macd_zero_break": (rsi_prev <= 50 < rsi and dif_prev <= 0 < dif),
+
+            # 5. 顺趋势回踩（RSI 40-50 + DIF>DEA）
+            "rsi_pullback_bull": (40 <= rsi <= 50 and dif > dea),
+
+            # 6. RSI 极低反转 + MACD 柱子衰减
+            "rsi_oversold_hist_decay": (rsi < 30 and hist > hist_prev),
+
+            # 7. 强动能（RSI>70 + hist 加速）
+            "rsi_strong_bull": (rsi > 70 and hist > hist_prev > 0),
+        }
+
+    # ------------------------------
+    #   Bearish Triggers
+    # ------------------------------
+    def build_bearish_triggers(self, ind, prev_ind, kline):
+        r = ind.get("rsi", {})
+        m = ind.get("macd", {})
+
+        pr = prev_ind.get("rsi", {}) if prev_ind else {}
+        pm = prev_ind.get("macd", {}) if prev_ind else {}
+
+        rsi = r.get("rsi14")
+        rsi_prev = pr.get("rsi14")
+
+        dif, dea, hist = m.get("dif"), m.get("dea"), m.get("hist")
+        dif_prev, dea_prev, hist_prev = pm.get("dif"), pm.get("dea"), pm.get("hist")
+
+        if None in (rsi, rsi_prev, dif, dea, hist, dif_prev, dea_prev, hist_prev):
+            return {}
+
+        return {
+            # 1. 经典 RSI 回落 + MACD 死叉
+            "rsi_macd_reversal_bear": (rsi_prev >= 70 > rsi and dif_prev >= dea_prev and dif < dea),
+
+            # 2. RSI 超买 + MACD 零轴上死叉
+            "rsi_overbought_macd_zero": (rsi > 70 and dif_prev >= dea_prev and dif < dea and dif > 0 and dea > 0),
+
+            # 4. RSI 跌破 50 + DIF 跌破 0 轴
+            "rsi50_macd_zero_break_bear": (rsi_prev >= 50 > rsi and dif_prev >= 0 > dif),
+
+            # 5. 顺趋势回踩（RSI 50–60 + DIF < DEA）
+            "rsi_pullback_bear": (50 <= rsi <= 60 and dif < dea),
+
+            # 6. RSI 过热反转 + MACD 柱子衰减
+            "rsi_overbought_hist_decay": (rsi > 70 and hist < hist_prev),
+
+            # 7. 强动能（RSI<30 + hist 加速）
+            "rsi_strong_bear": (rsi < 30 and hist < hist_prev < 0),
+        }
+
+    # ------------------------------
+    #  Patterns（结构信号：背离）
+    # ------------------------------
+    def build_bullish_patterns(self, ind, prev_ind, kline):
+        if not prev_ind:
+            return {}
 
         r = ind.get("rsi", {})
-        p_r = prev_ind.get("rsi", {}) if prev_ind else {}
+        pr = prev_ind.get("rsi", {})
 
         m = ind.get("macd", {})
-        p_m = prev_ind.get("macd", {}) if prev_ind else {}
+        pm = prev_ind.get("macd", {})
 
-        if (
-            r.get("rsi14") is None or p_r.get("rsi14") is None or
-            m.get("dif") is None or m.get("dea") is None or m.get("hist") is None or
-            p_m.get("dif") is None or p_m.get("dea") is None or p_m.get("hist") is None
-        ):
-            return res
+        rsi = r.get("rsi14")
+        rsi_prev = pr.get("rsi14")
 
-        rsi, rsi_prev = r["rsi14"], p_r["rsi14"]
-        dif, dea, hist = m["dif"], m["dea"], m["hist"]
-        dif_prev, dea_prev, hist_prev = p_m["dif"], p_m["dea"], p_m["hist"]
+        dif, hist = m.get("dif"), m.get("hist")
+        dif_prev, hist_prev = pm.get("dif"), pm.get("hist")
 
-        # =============== 1. 经典反转 ===============
-        if rsi_prev <= 30 < rsi and dif_prev <= dea_prev and dif > dea:
-            res.append(build_event(symbol, kline, "rsi_macd_reversal_bull",
-                                   {"rsi14": rsi, "dif": dif, "dea": dea}, interval))
+        if None in (rsi, rsi_prev, dif, dif_prev, hist, hist_prev):
+            return {}
 
-        if rsi_prev >= 70 > rsi and dif_prev >= dea_prev and dif < dea:
-            res.append(build_event(symbol, kline, "rsi_macd_reversal_bear",
-                                   {"rsi14": rsi, "dif": dif, "dea": dea}, interval))
+        close = last_close(kline)
+        prev_c = prev_close(kline)
 
-        # =============== 2. RSI超卖 + MACD 零轴下金叉 ===============
-        if rsi < 30 and dif_prev <= dea_prev and dif > dea and dif < 0 and dea < 0:
-            res.append(build_event(symbol, kline, "rsi_oversold_macd_zero_bull",
-                                   {"rsi14": rsi, "dif": dif, "dea": dea}, interval))
+        return {
+            # RSI 底背离
+            "rsi_bull_divergence": (close is not None and prev_c is not None and rsi is not None and rsi_prev is not None and close < prev_c and rsi > rsi_prev),
 
-        if rsi > 70 and dif_prev >= dea_prev and dif < dea and dif > 0 and dea > 0:
-            res.append(build_event(symbol, kline, "rsi_overbought_macd_zero_bear",
-                                   {"rsi14": rsi, "dif": dif, "dea": dea}, interval))
+            # MACD 底背离
+            "macd_bull_divergence": (close is not None and prev_c is not None and dif is not None and dif_prev is not None and close < prev_c and dif > dif_prev),
+        }
 
-        # =============== 3. RSI 背离 + MACD 金叉/死叉确认 ===============
-        if rsi > rsi_prev and hist > hist_prev and hist > 0 and dif > dea:
-            res.append(build_event(symbol, kline, "rsi_macd_bull_divergence_confirm",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+    def build_bearish_patterns(self, ind, prev_ind, kline):
+        if not prev_ind:
+            return {}
 
-        if rsi < rsi_prev and hist < hist_prev and hist < 0 and dif < dea:
-            res.append(build_event(symbol, kline, "rsi_macd_bear_divergence_confirm",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+        r = ind.get("rsi", {})
+        pr = prev_ind.get("rsi", {})
 
-        # =============== 4. RSI 突破 50 + MACD 零轴突破 ===============
-        if rsi_prev <= 50 < rsi and dif_prev <= 0 < dif:
-            res.append(build_event(symbol, kline, "rsi50_macd_zero_break_bull",
-                                   {"rsi14": rsi, "dif": dif}, interval))
+        m = ind.get("macd", {})
+        pm = prev_ind.get("macd", {})
 
-        if rsi_prev >= 50 > rsi and dif_prev >= 0 > dif:
-            res.append(build_event(symbol, kline, "rsi50_macd_zero_break_bear",
-                                   {"rsi14": rsi, "dif": dif}, interval))
+        rsi = r.get("rsi14")
+        rsi_prev = pr.get("rsi14")
 
-        # =============== 5. 顺趋势的 RSI 回踩确认 ===============
-        if 40 <= rsi <= 50 and dif > dea:
-            res.append(build_event(symbol, kline, "rsi_pullback_bull",
-                                   {"rsi14": rsi, "dif": dif}, interval))
+        dif, dea = m.get("dif"), m.get("dea")
+        dif_prev, dea_prev = pm.get("dif"), pm.get("dea")
 
-        if 50 <= rsi <= 60 and dif < dea:
-            res.append(build_event(symbol, kline, "rsi_pullback_bear",
-                                   {"rsi14": rsi, "dif": dif}, interval))
+        if None in (rsi, rsi_prev, dif, dif_prev):
+            return {}
 
-        # =============== 6. RSI 极值反转 + MACD 柱子衰减 ===============
-        if rsi < 30 and hist > hist_prev:
-            res.append(build_event(symbol, kline, "rsi_oversold_hist_decay_bull",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+        close = last_close(kline)
+        prev_c = prev_close(kline)
 
-        if rsi > 70 and hist < hist_prev:
-            res.append(build_event(symbol, kline, "rsi_overbought_hist_decay_bear",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+        return {
+            # RSI 顶背离
+            "rsi_bear_divergence": (close is not None and prev_c is not None and rsi is not None and rsi_prev is not None and close > prev_c and rsi < rsi_prev),
 
-        # =============== 7. 强动能突破（RSI > 70 + MACD 加速） ===============
-        if rsi > 70 and hist > hist_prev > 0:
-            res.append(build_event(symbol, kline, "rsi_strong_trend_bull",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+            # MACD 顶背离
+            "macd_bear_divergence": (close is not None and prev_c is not None and dif is not None and dif_prev is not None and close > prev_c and dif < dif_prev),
+        }
 
-        if rsi < 30 and hist < hist_prev < 0:
-            res.append(build_event(symbol, kline, "rsi_strong_trend_bear",
-                                   {"rsi14": rsi, "hist": hist}, interval))
+    # ------------------------------
+    #  Payload 可选增强（附加字段）
+    # ------------------------------
+    def base_payload(self, ind, prev_ind, kline):
+        r = ind.get("rsi", {})
+        m = ind.get("macd", {})
 
-        return res
+        return {
+            "rsi14": r.get("rsi14"),
+            "dif": m.get("dif"),
+            "dea": m.get("dea"),
+            "hist": m.get("hist"),
+        }

@@ -1,189 +1,178 @@
 from . import register_plugin
-from .base import build_event, last_close
+from .base import build_event, last_close, prev_close, CompositeComboBase
 
 
 @register_plugin
-class EMAMacdCombo:
+class EMAMacdCombo(CompositeComboBase):
+    """
+    EMA + MACD 组合策略（3.0 结构化重构版）
+
+    核心逻辑：
+    - EMA 金叉 / 死叉 决定趋势方向
+    - MACD 柱、零轴、DIF/DEA 交叉提供动能确认
+    - 顶背离 / 底背离用于识别趋势衰竭
+    - 成交量、ADX、ATR 提供趋势有效性过滤
+    """
     name = "ema_macd_extended_combo"
-    version = "2.0"
+    version = "3.0"
+
     required_indicators = ["ema", "macd", "vol"]
-    min_adx = 20
+    min_adx = 20  # 趋势过滤阈值
 
-    def generate(self, symbol, kline, ind, prev_ind, interval):
-        res = []
-
-        # === 取指标 ===
+    # ---------------------------
+    # 统一 Payload
+    # ---------------------------
+    def base_payload(self, ind, prev_ind, kline):
         e = ind.get("ema", {})
         m = ind.get("macd", {})
-        v = ind.get("vol", {})
+        return {
+            "ema5": e.get("ema5"),
+            "ema12": e.get("ema12"),
+            "ema26": e.get("ema26"),
+            "dif": m.get("dif"),
+            "dea": m.get("dea"),
+            "hist": m.get("hist"),
+            "close": last_close(kline),
+        }
 
-        pe = prev_ind.get("ema", {}) if prev_ind else {}
-        pm = prev_ind.get("macd", {}) if prev_ind else {}
+    # =====================================================
+    # 多头触发器（趋势增强 / 反转 / 动能增强）
+    # =====================================================
+    def build_bullish_triggers(self, ind, prev_ind, kline):
+        e, pe = ind.get("ema", {}), prev_ind.get("ema", {}) if prev_ind else {}
+        m, pm = ind.get("macd", {}), prev_ind.get("macd", {}) if prev_ind else {}
 
-        # EMAs
         ema5, ema12, ema26 = e.get("ema5"), e.get("ema12"), e.get("ema26")
-        prev_ema5, prev_ema12, prev_ema26 = pe.get("ema5"), pe.get("ema12"), pe.get("ema26")
+        p5, p12, p26 = pe.get("ema5"), pe.get("ema12"), pe.get("ema26")
 
-        # MACD
         dif, dea, hist = m.get("dif"), m.get("dea"), m.get("hist")
-        prev_dif, prev_dea, prev_hist = pm.get("dif"), pm.get("dea"), pm.get("hist")
+        pdif, pdea, phist = pm.get("dif"), pm.get("dea"), pm.get("hist")
 
-        # === 基础检查 ===
-        if (
-            ema12 is None or ema26 is None or
-            dif is None or dea is None or
-            prev_ema12 is None or prev_ema26 is None or
-            prev_dif is None or prev_dea is None
-        ):
-            return res
-
-        # === 横盘过滤：ATR、ADX ===
         close = last_close(kline)
-        atr = v.get("atr")
-        if close and atr and (atr / close) < 0.004:          # 波动率太低
-            return res
+        prev_close_value = prev_close(kline)
 
-        adx = v.get("adx")
-        if adx is not None and adx < 20:                     # 无趋势
-            return res
+        atr = ind.get("vol", {}).get("atr")
+        adx = ind.get("vol", {}).get("adx")
 
-        # ===============================
-        #  信号 1：EMA 金叉 + MACD 柱翻正（主多头）
-        # ===============================
-        if prev_ema12 <= prev_ema26 and ema12 > ema26:       # EMA 金叉
-            macd_confirm = False
-            if hist is not None and prev_hist is not None:
-                macd_confirm = (hist > 0 and prev_hist <= 0)
-            else:
-                macd_confirm = (dif > dea and prev_dif <= prev_dea)
+        # --- 趋势过滤：没有趋势时不做 ----
+        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < 0.004)
+        cond_trend = (not low_vol) and (adx is None or adx >= getattr(self, "min_adx", 20))
 
-            if macd_confirm:
-                res.append(build_event(
-                    symbol, kline, "ema_macd_combo_bull",
-                    {"ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                    interval
-                ))
+        return {
+            # ===========================
+            # 1. EMA 金叉（趋势方向确立）
+            # ===========================
+            "ema_golden_cross": cond_trend and p12 is not None and p26 is not None and p12 <= p26 < ema12,
 
-        # ===============================
-        #  信号 2：EMA 死叉 + MACD 柱翻负（主空头）
-        # ===============================
-        if prev_ema12 >= prev_ema26 and ema12 < ema26:
-            macd_confirm = False
-            if hist is not None and prev_hist is not None:
-                macd_confirm = (hist < 0 and prev_hist >= 0)
-            else:
-                macd_confirm = (dif < dea and prev_dif >= prev_dea)
+            # 2. MACD 柱翻正（动能增强）
+            "macd_hist_turn_positive": phist is not None and hist is not None and phist <= 0 < hist,
 
-            if macd_confirm:
-                res.append(build_event(
-                    symbol, kline, "ema_macd_combo_bear",
-                    {"ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                    interval
-                ))
+            # 3. DIF 金叉 DEA（MACD 金叉确认）
+            "macd_signal_cross_up": pdif is not None and pdea is not None and pdif <= pdea < dif,
 
+            # ===========================
+            # 4. DIF 上穿零轴（趋势加速）
+            # ===========================
+            "dif_cross_zero_up": pdif is not None and pdif <= 0 < dif,
 
-        # ======================================================
-        #  信号 3：EMA 金叉 + MACD 顶背离（趋势减弱 / 警告）
-        # ======================================================
-        # 条件：价格创新高 + DIF 未创新高
-        prev_dif_high = pm.get("dif_high")
-        if prev_dif_high and prev_ema12 <= prev_ema26 and ema12 > ema26:
-            if dif < prev_dif_high:
-                res.append(build_event(
-                    symbol, kline, "ema_macd_bearish_divergence",
-                    {"dif": dif, "prev_dif_high": prev_dif_high},
-                    interval
-                ))
+            # ===========================
+            # 5. EMA 三金叉（超级趋势确认）
+            # ===========================
+            "ema_triple_golden": (
+                    p5 is not None and p12 is not None and p26 is not None and
+                    p5 <= p12 <= p26 and
+                    ema5 is not None and ema12 is not None and ema26 is not None and
+                    ema5 > ema12 > ema26
+            ),
 
-        # ======================================================
-        #  信号 4：EMA 死叉 + MACD 底背离（空头衰竭）
-        # ======================================================
-        prev_dif_low = pm.get("dif_low")
-        if prev_dif_low and prev_ema12 >= prev_ema26 and ema12 < ema26:
-            if dif > prev_dif_low:
-                res.append(build_event(
-                    symbol, kline, "ema_macd_bullish_divergence",
-                    {"dif": dif, "prev_dif_low": prev_dif_low},
-                    interval
-                ))
+            # ===========================
+            # 6. MACD 连续缩绿（动能反转）
+            # ===========================
+            "macd_bull_momentum": (
+                    phist is not None and hist is not None and pm.get("hist_prev2") is not None and
+                    abs(hist) < abs(phist) < abs(pm["hist_prev2"])
+            ),
 
+            # ===========================
+            # 7. 底背离（空头衰竭 → 反转）
+            # DIF 未创新低但价格创新低
+            # ===========================
+            "bullish_divergence": (
+                    prev_close_value is not None and close is not None and
+                    dif is not None and pm.get("dif_low") is not None and
+                    prev_close_value > close and dif > pm["dif_low"]
+            ),
+        }
 
-        # ======================================================
-        #  信号 5：EMA 金叉 + DIF 上穿 0 轴（趋势增强）
-        # ======================================================
-        if prev_ema12 <= prev_ema26 and ema12 > ema26:
-            if prev_dif <= 0 < dif:
-                res.append(build_event(
-                    symbol, kline, "macd_zero_cross_bull",
-                    {"dif": dif},
-                    interval
-                ))
+    # =====================================================
+    # 空头触发器（趋势反转 / 动能衰弱）
+    # =====================================================
+    def build_bearish_triggers(self, ind, prev_ind, kline):
+        e, pe = ind.get("ema", {}), prev_ind.get("ema", {}) if prev_ind else {}
+        m, pm = ind.get("macd", {}), prev_ind.get("macd", {}) if prev_ind else {}
 
-        # ======================================================
-        #  信号 6：EMA 死叉 + DIF 下穿 0 轴（空头增强）
-        # ======================================================
-        if prev_ema12 >= prev_ema26 and ema12 < ema26:
-            if prev_dif >= 0 > dif:
-                res.append(build_event(
-                    symbol, kline, "macd_zero_cross_bear",
-                    {"dif": dif},
-                    interval
-                ))
+        ema5, ema12, ema26 = e.get("ema5"), e.get("ema12"), e.get("ema26")
+        p5, p12, p26 = pe.get("ema5"), pe.get("ema12"), pe.get("ema26")
 
+        dif, dea, hist = m.get("dif"), m.get("dea"), m.get("hist")
+        pdif, pdea, phist = pm.get("dif"), pm.get("dea"), pm.get("hist")
 
-        # ======================================================
-        #  信号 7：EMA 三金叉（ema5 > ema12 > ema26）+ DIF 金叉 DEA
-        # ======================================================
-        if ema5 and prev_ema5:
-            if (
-                prev_ema5 <= prev_ema12 <= prev_ema26 and
-                ema5 > ema12 > ema26 and
-                prev_dif <= prev_dea and dif > dea
-            ):
-                res.append(build_event(
-                    symbol, kline, "ema_triple_bull",
-                    {"ema5": ema5, "ema12": ema12, "ema26": ema26},
-                    interval
-                ))
+        close = last_close(kline)
+        prev_close_value = prev_close(kline)
 
-        # ======================================================
-        #  信号 8：EMA 三死叉（ema5 < ema12 < ema26）+ DIF 死叉 DEA
-        # ======================================================
-        if ema5 and prev_ema5:
-            if (
-                ema5 < ema12 < ema26 and
-                prev_dif >= prev_dea and dif < dea
-            ):
-                res.append(build_event(
-                    symbol, kline, "ema_triple_bear",
-                    {"ema5": ema5, "ema12": ema12, "ema26": ema26},
-                    interval
-                ))
+        atr = ind.get("vol", {}).get("atr")
+        adx = ind.get("vol", {}).get("adx")
 
+        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < 0.004)
+        cond_trend = (not low_vol) and (adx is None or adx >= getattr(self, "min_adx", 20))
 
-        # ======================================================
-        #  信号 9：EMA 金叉后，MACD 连续两根绿柱缩短（加速转强）
-        # ======================================================
-        hist2 = pm.get("hist_prev2")
-        if prev_hist is not None and hist is not None and hist2 is not None:
-            if prev_ema12 <= prev_ema26 and ema12 > ema26:
-                if abs(hist) < abs(prev_hist) < abs(hist2):
-                    res.append(build_event(
-                        symbol, kline, "macd_momentum_bull",
-                        {"hist": hist},
-                        interval
-                    ))
+        return {
+            # ===========================
+            # 1. EMA 死叉（趋势反转向下）
+            # ===========================
+            "ema_dead_cross": cond_trend and p12 is not None and p26 is not None and p12 >= p26 > ema12,
 
-        # ======================================================
-        #  信号 10：EMA 死叉后，MACD 连续两根红柱缩短（空头衰竭）
-        # ======================================================
-        if prev_hist is not None and hist is not None and hist2 is not None:
-            if prev_ema12 >= prev_ema26 and ema12 < ema26:
-                if abs(hist) < abs(prev_hist) < abs(hist2):
-                    res.append(build_event(
-                        symbol, kline, "macd_momentum_bear",
-                        {"hist": hist},
-                        interval
-                    ))
+            # 2. MACD 柱翻负
+            "macd_hist_turn_negative": phist is not None and hist is not None and phist >= 0 > hist,
 
-        return res
+            # 3. DIF 死叉 DEA
+            "macd_signal_cross_down": pdif is not None and pdea is not None and pdif >= pdea > dif,
+
+            # 4. DIF 下穿零轴（空头加速）
+            "dif_cross_zero_down": pdif is not None and pdif >= 0 > dif,
+
+            # 5. EMA 三死叉（超级趋势形成）
+            "ema_triple_dead": (
+                    p5 is not None and p12 is not None and p26 is not None and
+                    p5 >= p12 >= p26 and
+                    ema5 is not None and ema12 is not None and ema26 is not None and
+                    ema5 < ema12 < ema26
+            ),
+
+            # 6. MACD 连续缩红（空头动能衰竭）
+            "macd_bear_momentum": (
+                    phist is not None and hist is not None and pm.get("hist_prev2") is not None and
+                    abs(hist) < abs(phist) < abs(pm["hist_prev2"])
+            ),
+
+            # ===========================
+            # 7. 顶背离（多头衰竭信号）
+            # ===========================
+            "bearish_divergence": (
+                    prev_close_value is not None and close is not None and
+                    dif is not None and pm.get("dif_high") is not None and
+                    prev_close_value < close and dif < pm["dif_high"]
+            ),
+        }
+
+    # ----------------------------
+    # 中性模式（震荡识别）
+    # ----------------------------
+    def build_neutral_triggers(self, ind, prev_ind, kline):
+        e = ind.get("ema", {})
+        ema12, ema26 = e.get("ema12"), e.get("ema26")
+        if ema12 is None or ema26 is None or ema26 == 0:
+            return {}
+        return {
+            "ema_flat": abs(ema12 - ema26) / abs(ema26) < 0.002  # EMA 非常接近 → 震荡期
+        }

@@ -1,166 +1,175 @@
 from . import register_plugin
-from .base import build_event, last_close
+from .base import build_event, last_close, prev_close, CompositeComboBase
 
 
 @register_plugin
-class RSIMACDEMACombo:
+class RSIMACDEMACombo(CompositeComboBase):
+    """
+    基于 CompositeComboBase 的三指标组合策略（RSI + EMA + MACD）
+    包含：
+    - 三联共振（最强）
+    - RSI + EMA
+    - RSI + MACD
+    - EMA + MACD
+    - RSI/MACD 背离
+    """
+
     name = "triple_rsi_ema_macd"
-    version = "2.0"
+    version = "3.0"
     required_indicators = ["rsi", "ema", "macd"]
 
-    def generate(self, symbol, kline, ind, prev_ind, interval):
-        res = []
+    bullish_signal = "rsi_ema_macd_combo_bullish"
+    bearish_signal = "rsi_ema_macd_combo_bearish"
 
-        # === 取指标 ===
-        r = ind.get("rsi", {})
-        e = ind.get("ema", {})
-        m = ind.get("macd", {})
-
+    # ============================================================
+    #               取值函数：复用 CompositeComboBase 的 get_common_values
+    # ============================================================
+    def extract_all(self, ind, prev_ind):
+        """提取策略需要的所有指标字段"""
+        r = ind.get("rsi", {}) or {}
         pr = prev_ind.get("rsi", {}) if prev_ind else {}
+
+        e = ind.get("ema", {}) or {}
         pe = prev_ind.get("ema", {}) if prev_ind else {}
+
+        m = ind.get("macd", {}) or {}
         pm = prev_ind.get("macd", {}) if prev_ind else {}
 
-        # === 边界检查 ===
-        if (
-            r.get("rsi14") is None or pr.get("rsi14") is None or
-            e.get("ema12") is None or e.get("ema26") is None or
-            pe.get("ema12") is None or pe.get("ema26") is None or
-            m.get("dif") is None or m.get("dea") is None or
-            pm.get("dif") is None or pm.get("dea") is None
-        ):
-            return res
+        return {
+            "rsi": r.get("rsi14"),
+            "rsi_prev": pr.get("rsi14"),
 
-        rsi, rsi_prev = r["rsi14"], pr["rsi14"]
-        ema12, ema26 = e["ema12"], e["ema26"]
-        ema12_prev, ema26_prev = pe["ema12"], pe["ema26"]
-        dif, dea = m["dif"], m["dea"]
-        dif_prev, dea_prev = pm["dif"], pm["dea"]
+            "ema12": e.get("ema12"),
+            "ema26": e.get("ema26"),
+            "ema12_prev": pe.get("ema12"),
+            "ema26_prev": pe.get("ema26"),
 
+            "dif": m.get("dif"),
+            "dea": m.get("dea"),
+            "dif_prev": pm.get("dif"),
+            "dea_prev": pm.get("dea"),
+        }
+
+    # ============================================================
+    #                        Bullish triggers
+    # ============================================================
+    def build_bullish_triggers(self, ind, prev_ind, kline):
+        v = self.extract_all(ind, prev_ind)
+        out = {}
+
+        # -------- ① RSI 反弹 --------
+        out["rsi_rebound"] = (
+            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] <= 30 < v["rsi"]
+        )
+
+        # -------- ② EMA 金叉 --------
+        out["ema_golden_cross"] = (
+            v["ema12_prev"] is not None
+            and v["ema26_prev"] is not None
+            and v["ema12"] is not None
+            and v["ema26"] is not None
+            and v["ema12_prev"] <= v["ema26_prev"]
+            and v["ema12"] > v["ema26"]
+        )
+
+        # -------- ③ MACD 金叉 --------
+        out["macd_golden_cross"] = (
+            v["dif_prev"] is not None
+            and v["dea_prev"] is not None
+            and v["dif"] is not None
+            and v["dea"] is not None
+            and v["dif_prev"] <= v["dea_prev"]
+            and v["dif"] > v["dea"]
+        )
+
+        return out
+
+    # ============================================================
+    #                        Bearish triggers
+    # ============================================================
+    def build_bearish_triggers(self, ind, prev_ind, kline):
+        v = self.extract_all(ind, prev_ind)
+        out = {}
+
+        # -------- ① RSI 回落 --------
+        out["rsi_fall"] = (
+            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] >= 70 > v["rsi"]
+        )
+
+        # -------- ② EMA 死叉 --------
+        out["ema_death_cross"] = (
+            v["ema12_prev"] is not None
+            and v["ema26_prev"] is not None
+            and v["ema12"] is not None
+            and v["ema26"] is not None
+            and v["ema12_prev"] >= v["ema26_prev"]
+            and v["ema12"] < v["ema26"]
+        )
+
+        # -------- ③ MACD 死叉 --------
+        out["macd_death_cross"] = (
+            v["dif_prev"] is not None
+            and v["dea_prev"] is not None
+            and v["dif"] is not None
+            and v["dea"] is not None
+            and v["dif_prev"] >= v["dea_prev"]
+            and v["dif"] < v["dea"]
+        )
+
+        return out
+
+    # ============================================================
+    #                        Bullish patterns（结构强信号）
+    # ============================================================
+    def build_bullish_patterns(self, ind, prev_ind, kline):
+        v = self.extract_all(ind, prev_ind)
         close = last_close(kline)
+        prev_close = prev_close(kline)
 
-        # ============================================================
-        #                ① 强信号：三指标共振（最强）
-        # ============================================================
+        out = {}
 
-        # ---- 多头三联共振 ----
-        if (
-            rsi_prev <= 30 < rsi and       # RSI 反弹
-            ema12_prev <= ema26_prev and ema12 > ema26 and  # EMA 金叉
-            dif_prev <= dea_prev and dif > dea              # MACD 金叉
-        ):
-            res.append(build_event(
-                symbol, kline, "triple_bullish_rsi_ema_macd",
-                {"rsi": rsi, "ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                interval
-            ))
+        # -------- RSI 底背离 --------
+        out["rsi_bull_div"] = (
+            close is not None and prev_close is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
+            close < prev_close and v["rsi"] > v["rsi_prev"]
+        )
 
-        # ---- 空头三联共振 ----
-        if (
-            rsi_prev >= 70 > rsi and
-            ema12_prev >= ema26_prev and ema12 < ema26 and
-            dif_prev >= dea_prev and dif < dea
-        ):
-            res.append(build_event(
-                symbol, kline, "triple_bearish_rsi_ema_macd",
-                {"rsi": rsi, "ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                interval
-            ))
+        # -------- MACD 底背离 --------
+        out["macd_bull_div"] = (
+            close is not None and prev_close is not None and v["dif"] is not None and v["dif_prev"] is not None and
+            close < prev_close and v["dif"] > v["dif_prev"]
+        )
 
-        # ============================================================
-        #                ② RSI + EMA 组合信号
-        # ============================================================
+        return out
 
-        # RSI 反弹 + EMA 多头趋势
-        if rsi_prev <= 30 < rsi and ema12 > ema26:
-            res.append(build_event(
-                symbol, kline, "rsi_rebound_ema_uptrend",
-                {"rsi": rsi, "ema12": ema12, "ema26": ema26},
-                interval
-            ))
+    # ============================================================
+    #                        Bearish patterns
+    # ============================================================
+    def build_bearish_patterns(self, ind, prev_ind, kline):
+        v = self.extract_all(ind, prev_ind)
+        close = last_close(kline)
+        prev_close = prev_close(kline)
 
-        # RSI 超买回落 + EMA 空头趋势
-        if rsi_prev >= 70 > rsi and ema12 < ema26:
-            res.append(build_event(
-                symbol, kline, "rsi_drop_ema_downtrend",
-                {"rsi": rsi, "ema12": ema12, "ema26": ema26},
-                interval
-            ))
+        out = {}
 
-        # ============================================================
-        #                ③ RSI + MACD 组合信号
-        # ============================================================
+        # -------- RSI 顶背离 --------
+        out["rsi_bear_div"] = (
+            close is not None and prev_close is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
+            close > prev_close and v["rsi"] < v["rsi_prev"]
+        )
 
-        # RSI 反弹 + MACD 金叉，但 EMA 尚未金叉（反转确认提前量）
-        if rsi_prev <= 30 < rsi and dif_prev <= dea_prev and dif > dea:
-            res.append(build_event(
-                symbol, kline, "rsi_rebound_macd_cross",
-                {"rsi": rsi, "dif": dif, "dea": dea},
-                interval
-            ))
+        # -------- MACD 顶背离 --------
+        out["macd_bear_div"] = (
+            close is not None and prev_close is not None and v["dif"] is not None and v["dif_prev"] is not None and
+            close > prev_close and v["dif"] < v["dif_prev"]
+        )
 
-        # RSI 回落 + MACD 死叉
-        if rsi_prev >= 70 > rsi and dif_prev >= dea_prev and dif < dea:
-            res.append(build_event(
-                symbol, kline, "rsi_drop_macd_cross",
-                {"rsi": rsi, "dif": dif, "dea": dea},
-                interval
-            ))
+        return out
 
-        # ============================================================
-        #                ④ EMA + MACD 组合信号（趋势向上向下确认）
-        # ============================================================
-
-        # 双金叉：EMA 金叉 + MACD 金叉（不看 RSI）
-        if ema12_prev <= ema26_prev and ema12 > ema26 and dif_prev <= dea_prev and dif > dea:
-            res.append(build_event(
-                symbol, kline, "ema_macd_double_bullish",
-                {"ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                interval
-            ))
-
-        # 双死叉：EMA 死叉 + MACD 死叉
-        if ema12_prev >= ema26_prev and ema12 < ema26 and dif_prev >= dea_prev and dif < dea:
-            res.append(build_event(
-                symbol, kline, "ema_macd_double_bearish",
-                {"ema12": ema12, "ema26": ema26, "dif": dif, "dea": dea},
-                interval
-            ))
-
-        # ============================================================
-        #                ⑤ 背离类信号（结构性强信号）
-        # ============================================================
-
-        # 价格创新低但 RSI 未创新低 → RSI 底背离
-        if prev_ind and close < prev_ind.get("close", close) and rsi > rsi_prev:
-            res.append(build_event(
-                symbol, kline, "rsi_bull_divergence",
-                {"rsi": rsi, "close": close},
-                interval
-            ))
-
-        # 价格创新高但 RSI 未创新高 → RSI 顶背离
-        if prev_ind and close > prev_ind.get("close", close) and rsi < rsi_prev:
-            res.append(build_event(
-                symbol, kline, "rsi_bear_divergence",
-                {"rsi": rsi, "close": close},
-                interval
-            ))
-
-        # MACD 同理底背离
-        if prev_ind and close < prev_ind.get("close", close) and dif > dif_prev:
-            res.append(build_event(
-                symbol, kline, "macd_bull_divergence",
-                {"dif": dif, "close": close},
-                interval
-            ))
-
-        # MACD 顶背离
-        if prev_ind and close > prev_ind.get("close", close) and dif < dif_prev:
-            res.append(build_event(
-                symbol, kline, "macd_bear_divergence",
-                {"dif": dif, "close": close},
-                interval
-            ))
-
-        return res
+    # ============================================================
+    #                 optional: 给 payload 补充指标值
+    # ============================================================
+    def base_payload(self, ind, prev_ind, kline):
+        """把主指标值放入事件 payload"""
+        return self.extract_all(ind, prev_ind)
 
