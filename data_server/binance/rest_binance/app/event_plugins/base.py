@@ -1,5 +1,6 @@
 import uuid
 import time
+import os
 
 
 def last_close(kline):
@@ -103,6 +104,49 @@ class CompositeComboBase(EventPlugin):
     trigger_weight = 1
     pattern_weight = 2
 
+    _combo_params_cache = None
+
+    @classmethod
+    def _load_combo_params(cls):
+        if cls._combo_params_cache is not None:
+            return cls._combo_params_cache
+        def _try_load_yaml(path):
+            try:
+                import yaml
+                with open(path, "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f)
+            except Exception:
+                return None
+        base_dir = os.path.dirname(__file__)
+        cfg_path = os.path.join(base_dir, "config", "combo_params.yml")
+        data = _try_load_yaml(cfg_path) or {}
+        cls._combo_params_cache = data
+        return data
+
+    def _resolve_params(self, interval: str):
+        data = self._load_combo_params() or {}
+        g = (data.get("global") or {})
+        defaults = g.get("defaults") or {}
+        intervals = g.get("intervals") or {}
+        params = dict(defaults)
+        if interval and interval in intervals:
+            params.update(intervals[interval] or {})
+        # per-plugin overrides
+        plugin_key = getattr(self, "name", self.__class__.__name__)
+        p = (data.get("plugins") or {}).get(plugin_key) or {}
+        p_def = p.get("defaults") or {}
+        p_int = p.get("intervals") or {}
+        params.update(p_def)
+        if interval and interval in p_int:
+            params.update(p_int[interval] or {})
+        # fallbacks to class attributes
+        params.setdefault("atr_ratio_threshold", getattr(self, "atr_ratio_threshold", 0.004))
+        params.setdefault("adx_threshold", getattr(self, "adx_threshold", 15))
+        params.setdefault("min_strength", getattr(self, "min_strength", 2))
+        params.setdefault("trigger_weight", getattr(self, "trigger_weight", 1))
+        params.setdefault("pattern_weight", getattr(self, "pattern_weight", 2))
+        return params
+
     def get_common_values(self, ind, prev_ind, kline):
         """统一提取常用值，避免重复计算。返回 dict。"""
         out = {}
@@ -144,7 +188,7 @@ class CompositeComboBase(EventPlugin):
 
         return out
 
-    def base_filters(self, common):
+    def base_filters(self, common, interval=None):
         """
         Returns False if event generation should be skipped due to market conditions:
         - too low volatility (atr/price < threshold)
@@ -155,11 +199,12 @@ class CompositeComboBase(EventPlugin):
         adx = common.get("adx")
 
         # low-volatility short-circuit: no trend breakouts in very low vol
-        if close and atr is not None and (atr / close) < self.atr_ratio_threshold:
+        params = self._resolve_params(interval or "")
+        if close and atr is not None and (atr / close) < params.get("atr_ratio_threshold", self.atr_ratio_threshold):
             return {"ok": False, "reason": "low_volatility"}
 
         # adx filtering: we don't force skip, but return advisory
-        if adx is not None and adx < self.adx_threshold:
+        if adx is not None and adx < params.get("adx_threshold", self.adx_threshold):
             return {"ok": True, "trend": False}
         return {"ok": True, "trend": True}
 
@@ -184,18 +229,22 @@ class CompositeComboBase(EventPlugin):
         """子类可覆盖以加基本字段"""
         return {}
 
-    def compute_strength(self, triggers: dict, patterns: dict):
+    def compute_strength(self, triggers: dict, patterns: dict, interval: str = ""):
         """权重化 strength，可以 override 或 改为更复杂的权重模型"""
         tcount = len(triggers)
         pcount = len(patterns)
-        return tcount * self.trigger_weight + pcount * self.pattern_weight
+        params = self._resolve_params(interval or "")
+        tw = params.get("trigger_weight", self.trigger_weight)
+        pw = params.get("pattern_weight", self.pattern_weight)
+        return tcount * tw + pcount * pw
 
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []
         common = self.get_common_values(ind, prev_ind, kline)
 
         # base filters early
-        filt = self.base_filters(common)
+        self._current_interval = interval
+        filt = self.base_filters(common, interval)
         if not filt.get("ok", True):
             return res  # 跳出，不产生信号
 
@@ -210,25 +259,26 @@ class CompositeComboBase(EventPlugin):
 
         # optionally, if not trend (adx low), we may lower sensitivity: require at least one pattern
         trend_flag = filt.get("trend", True)
-        min_strength = self.min_strength
+        params = self._resolve_params(interval or "")
+        min_strength = params.get("min_strength", self.min_strength)
         if not trend_flag:
             # in non-trend, require structure/pattern (avoid false breakouts); escalate threshold
             min_strength = max(min_strength, 3)
 
         # bullish branch
         if direction in (None, "bullish") and bull_tr:
-            strength = self.compute_strength(bull_tr, bull_pt)
+            strength = self.compute_strength(bull_tr, bull_pt, interval)
             if strength >= min_strength:
-                payload = {"strength": strength, "triggers": bull_tr, "patterns": bull_pt}
+                payload = {"strength": strength, "triggers": bull_tr, "patterns": bull_pt, "plugin": getattr(self, "name", self.__class__.__name__), "side": "bullish"}
                 payload.update(self.base_payload(ind, prev_ind, kline) or {})
                 payload.update(common)  # include common useful fields
                 res.append(build_event(symbol, kline, getattr(self, "bullish_signal", "combo_bullish"), payload, interval))
 
         # bearish branch
         if direction in (None, "bearish") and bear_tr:
-            strength = self.compute_strength(bear_tr, bear_pt)
+            strength = self.compute_strength(bear_tr, bear_pt, interval)
             if strength >= min_strength:
-                payload = {"strength": strength, "triggers": bear_tr, "patterns": bear_pt}
+                payload = {"strength": strength, "triggers": bear_tr, "patterns": bear_pt, "plugin": getattr(self, "name", self.__class__.__name__), "side": "bearish"}
                 payload.update(self.base_payload(ind, prev_ind, kline) or {})
                 payload.update(common)
                 res.append(build_event(symbol, kline, getattr(self, "bearish_signal", "combo_bearish"), payload, interval))

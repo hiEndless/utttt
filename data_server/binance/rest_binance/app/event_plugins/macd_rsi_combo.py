@@ -15,6 +15,7 @@ class RSIMACDCombo(CompositeComboBase):
     #   Bullish Triggers（快信号）
     # ------------------------------
     def build_bullish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         r = ind.get("rsi", {})
         m = ind.get("macd", {})
 
@@ -32,28 +33,29 @@ class RSIMACDCombo(CompositeComboBase):
 
         return {
             # 1. 经典 RSI 反转 + MACD 金叉
-            "rsi_macd_reversal": (rsi_prev <= 30 < rsi and dif_prev <= dea_prev and dif > dea),
+            "rsi_macd_reversal": (rsi_prev <= params.get("rsi_oversold", 30) < rsi and dif_prev <= dea_prev and dif > dea),
 
             # 2. RSI 超卖 + MACD 零轴下金叉
-            "rsi_oversold_macd_zero": (rsi < 30 and dif_prev <= dea_prev and dif > dea and dif < 0 and dea < 0),
+            "rsi_oversold_macd_zero": (rsi < params.get("rsi_oversold", 30) and dif_prev <= dea_prev and dif > dea and dif < 0 and dea < 0),
 
             # 4. RSI 突破50 + DIF 突破 0 轴
-            "rsi50_macd_zero_break": (rsi_prev <= 50 < rsi and dif_prev <= 0 < dif),
+            "rsi50_macd_zero_break": (rsi_prev <= params.get("rsi_mid", 50) < rsi and dif_prev <= 0 < dif),
 
             # 5. 顺趋势回踩（RSI 40-50 + DIF>DEA）
-            "rsi_pullback_bull": (40 <= rsi <= 50 and dif > dea),
+            "rsi_pullback_bull": (params.get("rsi_pullback_bull_low", 40) <= rsi <= params.get("rsi_pullback_bull_high", 50) and dif > dea),
 
             # 6. RSI 极低反转 + MACD 柱子衰减
-            "rsi_oversold_hist_decay": (rsi < 30 and hist > hist_prev),
+            "rsi_oversold_hist_decay": (rsi < params.get("rsi_oversold", 30) and hist > hist_prev),
 
             # 7. 强动能（RSI>70 + hist 加速）
-            "rsi_strong_bull": (rsi > 70 and hist > hist_prev > 0),
+            "rsi_strong_bull": (rsi > params.get("rsi_overbought", 70) and hist > hist_prev > 0),
         }
 
     # ------------------------------
     #   Bearish Triggers
     # ------------------------------
     def build_bearish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         r = ind.get("rsi", {})
         m = ind.get("macd", {})
 
@@ -71,22 +73,22 @@ class RSIMACDCombo(CompositeComboBase):
 
         return {
             # 1. 经典 RSI 回落 + MACD 死叉
-            "rsi_macd_reversal_bear": (rsi_prev >= 70 > rsi and dif_prev >= dea_prev and dif < dea),
+            "rsi_macd_reversal_bear": (rsi_prev >= params.get("rsi_overbought", 70) > rsi and dif_prev >= dea_prev and dif < dea),
 
             # 2. RSI 超买 + MACD 零轴上死叉
-            "rsi_overbought_macd_zero": (rsi > 70 and dif_prev >= dea_prev and dif < dea and dif > 0 and dea > 0),
+            "rsi_overbought_macd_zero": (rsi > params.get("rsi_overbought", 70) and dif_prev >= dea_prev and dif < dea and dif > 0 and dea > 0),
 
             # 4. RSI 跌破 50 + DIF 跌破 0 轴
-            "rsi50_macd_zero_break_bear": (rsi_prev >= 50 > rsi and dif_prev >= 0 > dif),
+            "rsi50_macd_zero_break_bear": (rsi_prev >= params.get("rsi_mid", 50) > rsi and dif_prev >= 0 > dif),
 
             # 5. 顺趋势回踩（RSI 50–60 + DIF < DEA）
-            "rsi_pullback_bear": (50 <= rsi <= 60 and dif < dea),
+            "rsi_pullback_bear": (params.get("rsi_pullback_bear_low", 50) <= rsi <= params.get("rsi_pullback_bear_high", 60) and dif < dea),
 
             # 6. RSI 过热反转 + MACD 柱子衰减
-            "rsi_overbought_hist_decay": (rsi > 70 and hist < hist_prev),
+            "rsi_overbought_hist_decay": (rsi > params.get("rsi_overbought", 70) and hist < hist_prev),
 
             # 7. 强动能（RSI<30 + hist 加速）
-            "rsi_strong_bear": (rsi < 30 and hist < hist_prev < 0),
+            "rsi_strong_bear": (rsi < params.get("rsi_oversold", 30) and hist < hist_prev < 0),
         }
 
     # ------------------------------

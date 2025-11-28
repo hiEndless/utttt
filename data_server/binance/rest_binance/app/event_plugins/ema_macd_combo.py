@@ -39,6 +39,7 @@ class EMAMacdCombo(CompositeComboBase):
     # 多头触发器（趋势增强 / 反转 / 动能增强）
     # =====================================================
     def build_bullish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         e, pe = ind.get("ema", {}), prev_ind.get("ema", {}) if prev_ind else {}
         m, pm = ind.get("macd", {}), prev_ind.get("macd", {}) if prev_ind else {}
 
@@ -55,8 +56,8 @@ class EMAMacdCombo(CompositeComboBase):
         adx = ind.get("vol", {}).get("adx")
 
         # --- 趋势过滤：没有趋势时不做 ----
-        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < 0.004)
-        cond_trend = (not low_vol) and (adx is None or adx >= getattr(self, "min_adx", 20))
+        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < params.get("atr_ratio_threshold", 0.004))
+        cond_trend = (not low_vol) and (adx is None or adx >= params.get("adx_threshold", getattr(self, "min_adx", 20)))
 
         return {
             # ===========================
@@ -108,6 +109,7 @@ class EMAMacdCombo(CompositeComboBase):
     # 空头触发器（趋势反转 / 动能衰弱）
     # =====================================================
     def build_bearish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         e, pe = ind.get("ema", {}), prev_ind.get("ema", {}) if prev_ind else {}
         m, pm = ind.get("macd", {}), prev_ind.get("macd", {}) if prev_ind else {}
 
@@ -123,8 +125,8 @@ class EMAMacdCombo(CompositeComboBase):
         atr = ind.get("vol", {}).get("atr")
         adx = ind.get("vol", {}).get("adx")
 
-        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < 0.004)
-        cond_trend = (not low_vol) and (adx is None or adx >= getattr(self, "min_adx", 20))
+        low_vol = (close is not None and atr is not None and close != 0 and (atr / close) < params.get("atr_ratio_threshold", 0.004))
+        cond_trend = (not low_vol) and (adx is None or adx >= params.get("adx_threshold", getattr(self, "min_adx", 20)))
 
         return {
             # ===========================
@@ -169,10 +171,11 @@ class EMAMacdCombo(CompositeComboBase):
     # 中性模式（震荡识别）
     # ----------------------------
     def build_neutral_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         e = ind.get("ema", {})
         ema12, ema26 = e.get("ema12"), e.get("ema26")
         if ema12 is None or ema26 is None or ema26 == 0:
             return {}
         return {
-            "ema_flat": abs(ema12 - ema26) / abs(ema26) < 0.002  # EMA 非常接近 → 震荡期
+            "ema_flat": abs(ema12 - ema26) / abs(ema26) < params.get("ema_flat_ratio", 0.002)
         }

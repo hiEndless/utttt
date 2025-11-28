@@ -1,0 +1,87 @@
+global:
+  defaults:
+    atr_ratio_threshold: 0.004
+    adx_threshold: 15
+    min_strength: 2
+    trigger_weight: 1
+    pattern_weight: 2
+  intervals:
+    "1m":
+      atr_ratio_threshold: 0.006
+      adx_threshold: 20
+      min_strength: 3
+    "5m":
+      atr_ratio_threshold: 0.005
+      adx_threshold: 18
+      min_strength: 2
+    "15m":
+      atr_ratio_threshold: 0.004
+      adx_threshold: 15
+      min_strength: 2
+
+plugins:
+  rsi_kdj_combo:
+    intervals:
+      "1m":
+        min_strength: 3
+    defaults:
+      vol_ratio_threshold: 1.4
+      rsi_oversold: 30
+      rsi_overbought: 70
+      rsi_mid: 50
+      dir_rsi_low: 45
+      dir_rsi_high: 55
+      kdj_j_extreme_low: 10
+      kdj_kd_extreme_low: 20
+      kdj_j_extreme_high: 95
+      rsi_second_bottom_offset: 5
+      kdj_second_bottom_k_offset: 10
+  kdj_boll_combo:
+    defaults:
+      band_narrow_threshold: 0.03
+      near_tol: 0.01
+      double_tol: 0.02
+      vol_ratio_for_confirmation: 1.25
+      boll_mid_retest_tol: 0.03
+      kdj_j_rebound_low: 20
+      kdj_j_reversal_high: 80
+      kdj_k_mid_break_up: 50
+      kdj_k_mid_break_down: 50
+    intervals:
+      "1m":
+        min_strength: 3
+  boll_vol_combo:
+    intervals:
+      "1m":
+        min_strength: 3
+    defaults:
+      band_squeeze_width_updown: 0.02
+      neutral_band_squeeze: 0.015
+      neutral_near_tol: 0.01
+      vol_spike_ratio: 1.5
+      vol_collapse_ratio: 0.5
+  ema_macd_extended_combo:
+    intervals:
+      "1m":
+        min_strength: 3
+    defaults:
+      ema_flat_ratio: 0.002
+  triple_rsi_ema_macd:
+    intervals:
+      "1m":
+        min_strength: 3
+    defaults:
+      rsi_oversold: 30
+      rsi_overbought: 70
+  rsi_macd_combo:
+    intervals:
+      "1m":
+        min_strength: 3
+    defaults:
+      rsi_oversold: 30
+      rsi_overbought: 70
+      rsi_mid: 50
+      rsi_pullback_bull_low: 40
+      rsi_pullback_bull_high: 50
+      rsi_pullback_bear_low: 50
+      rsi_pullback_bear_high: 60

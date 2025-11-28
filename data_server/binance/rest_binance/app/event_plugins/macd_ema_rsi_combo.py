@@ -54,12 +54,13 @@ class RSIMACDEMACombo(CompositeComboBase):
     #                        Bullish triggers
     # ============================================================
     def build_bullish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         v = self.extract_all(ind, prev_ind)
         out = {}
 
         # -------- ① RSI 反弹 --------
         out["rsi_rebound"] = (
-            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] <= 30 < v["rsi"]
+            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] <= params.get("rsi_oversold", 30) < v["rsi"]
         )
 
         # -------- ② EMA 金叉 --------
@@ -88,12 +89,13 @@ class RSIMACDEMACombo(CompositeComboBase):
     #                        Bearish triggers
     # ============================================================
     def build_bearish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         v = self.extract_all(ind, prev_ind)
         out = {}
 
         # -------- ① RSI 回落 --------
         out["rsi_fall"] = (
-            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] >= 70 > v["rsi"]
+            v["rsi_prev"] is not None and v["rsi"] is not None and v["rsi_prev"] >= params.get("rsi_overbought", 70) > v["rsi"]
         )
 
         # -------- ② EMA 死叉 --------

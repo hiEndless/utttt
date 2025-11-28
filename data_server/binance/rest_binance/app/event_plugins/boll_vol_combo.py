@@ -35,6 +35,7 @@ class BollVolCombo(CompositeComboBase):
     # -----------------------------------------------------
 
     def build_bullish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         b = ind.get("boll", {})
         v = ind.get("vol", {})
         atr = v.get("atr")
@@ -66,14 +67,15 @@ class BollVolCombo(CompositeComboBase):
 
             # --- 带宽极窄 + ATR 方向突破 ---
             "band_squeeze_atr_up": (
-                band_width < 0.02 and (close - prev_c) > atr
+                band_width < params.get("band_squeeze_width_updown", 0.02) and (close - prev_c) > atr
             ),
 
             # --- 成交量异常放大（多头通常偏强）---
-            "vol_spike": vol_ratio > 1.5,
+            "vol_spike": vol_ratio > params.get("vol_spike_ratio", 1.5),
         }
 
     def build_bearish_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         b = ind.get("boll", {})
         v = ind.get("vol", {})
         atr = v.get("atr")
@@ -100,17 +102,18 @@ class BollVolCombo(CompositeComboBase):
 
             # --- 带宽极窄 + ATR 方向破下 ---
             "band_squeeze_atr_down": (
-                band_width < 0.02 and (prev_c - close) > atr
+                band_width < params.get("band_squeeze_width_updown", 0.02) and (prev_c - close) > atr
             ),
 
             # --- 成交量雪崩（下跌前兆）---
-            "vol_collapse": vol_ratio < 0.5,
+            "vol_collapse": vol_ratio < params.get("vol_collapse_ratio", 0.5),
         }
 
     # -----------------------------
     # 中性模式（不偏多不偏空）
     # -----------------------------
     def build_neutral_triggers(self, ind, prev_ind, kline):
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         b = ind.get("boll", {})
         close = last_close(kline)
         upper, lower, mid = b.get("upper_band"), b.get("lower_band"), b.get("middle_band")
@@ -118,9 +121,9 @@ class BollVolCombo(CompositeComboBase):
             return {}
         band_width = (upper - lower) / mid if mid else 0
         return {
-            "near_upper": abs(close - upper) / close < 0.01,
-            "near_lower": abs(close - lower) / close < 0.01,
-            "band_squeeze": band_width < 0.015,
+            "near_upper": abs(close - upper) / close < params.get("neutral_near_tol", 0.01),
+            "near_lower": abs(close - lower) / close < params.get("neutral_near_tol", 0.01),
+            "band_squeeze": band_width < params.get("neutral_band_squeeze", 0.015),
         }
 
     # -----------------------------
@@ -140,7 +143,7 @@ class BollVolCombo(CompositeComboBase):
         res = super().generate(symbol, kline, ind, prev_ind, interval)
         neutral = {k: v for k, v in (self.build_neutral_triggers(ind, prev_ind, kline) or {}).items() if v}
         if neutral and not res:
-            payload = {"strength": len(neutral), "triggers": neutral}
+            payload = {"strength": len(neutral), "triggers": neutral, "plugin": getattr(self, "name", self.__class__.__name__), "side": "neutral"}
             payload.update(self.base_payload(ind, prev_ind, kline) or {})
             res.append(build_event(symbol, kline, self.neutral_signal, payload, interval))
         return res

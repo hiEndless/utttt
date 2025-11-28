@@ -1,5 +1,7 @@
 from signals import EMA, MA, MACD, RSI, KDJ, BollingerBandSignal, VolatilitySignal, SupportResistance
 from event_plugins import get_plugins
+from event_plugins.meta_combo import load_weights, score_events, build_dashboard
+from event_plugins.base import build_event
 
 
 def calculate_indicators(klines_data):
@@ -42,6 +44,14 @@ class EventGenerator:
                 self.events.extend(p.generate(self.symbol, self.kline, self.ind, prev_ind, self.interval))
             except Exception:
                 pass
+        try:
+            weights = load_weights("data_server/binance/rest_binance/app/event_plugins")
+            scores = score_events(self.events, weights)
+            dash = build_dashboard(scores)
+            self.events.append(build_event(self.symbol, self.kline, "meta_combo_score", {"total": scores["total"], "per_plugin": scores["per_plugin"], "count": scores["count"]}, self.interval))
+            self.events.append(build_event(self.symbol, self.kline, "meta_combo_dashboard", dash, self.interval))
+        except Exception:
+            pass
         return self.events
 
     async def publish(self, writer):

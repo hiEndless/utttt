@@ -32,8 +32,8 @@ class RSIKDJVOLCombo(CompositeComboBase):
                 "k": common.get("k"), "d": common.get("d"), "j": common.get("j")}
 
     def choose_direction(self, ind, prev_ind, kline):
-        # 更稳健的方向判断：结合中轴（50）和 K/D 关系
         common = self.get_common_values(ind, prev_ind, kline)
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         rsi = common.get("rsi14")
         prev_rsi = common.get("prev_rsi14")
         k = common.get("k")
@@ -41,17 +41,15 @@ class RSIKDJVOLCombo(CompositeComboBase):
 
         up = False
         down = False
-        # RSI 动量方向
         if rsi is not None and prev_rsi is not None:
-            if rsi > prev_rsi and rsi >= 45:
+            if rsi > prev_rsi and rsi >= params.get("dir_rsi_low", 45):
                 up = True
-            if rsi < prev_rsi and rsi <= 55:
+            if rsi < prev_rsi and rsi <= params.get("dir_rsi_high", 55):
                 down = True
-        # KDJ 方向
         if k is not None and d is not None:
-            if k > d and k >= 45:
+            if k > d and k >= params.get("dir_rsi_low", 45):
                 up = True
-            if k < d and k <= 55:
+            if k < d and k <= params.get("dir_rsi_high", 55):
                 down = True
 
         if up and not down:
@@ -62,46 +60,50 @@ class RSIKDJVOLCombo(CompositeComboBase):
 
     def build_bullish_triggers(self, ind, prev_ind, kline):
         c = self.get_common_values(ind, prev_ind, kline)
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         rsi = c.get("rsi14"); prev_rsi = c.get("prev_rsi14")
         k = c.get("k"); d = c.get("d"); j = c.get("j")
         vol_chg = c.get("vol_chg")
 
         return {
             # atomic triggers (single-factor)
-            "rsi_rebound": (prev_rsi is not None and rsi is not None and prev_rsi < 30 <= rsi),
+            "rsi_rebound": (prev_rsi is not None and rsi is not None and prev_rsi < params.get("rsi_oversold", 30) <= rsi),
             "kdj_cross": (c.get("k_prev") is not None and c.get("d_prev") is not None and c.get("k_prev") <= c.get("d_prev") and k is not None and k > d),
-            "kdj_extreme": ((j is not None and j < 10) or (k is not None and d is not None and k < 20 and d < 20)),
-            "vol_confirm": (vol_chg is not None and vol_chg > self.vol_ratio_threshold),
-            "rsi_break_50": (prev_rsi is not None and rsi is not None and prev_rsi <= 50 < rsi),
+            "kdj_extreme": ((j is not None and j < params.get("kdj_j_extreme_low", 10)) or (k is not None and d is not None and k < params.get("kdj_kd_extreme_low", 20) and d < params.get("kdj_kd_extreme_low", 20))),
+            "vol_confirm": (vol_chg is not None and vol_chg > params.get("vol_ratio_threshold", self.vol_ratio_threshold)),
+            "rsi_break_50": (prev_rsi is not None and rsi is not None and prev_rsi <= params.get("rsi_mid", 50) < rsi),
         }
 
     def build_bearish_triggers(self, ind, prev_ind, kline):
         c = self.get_common_values(ind, prev_ind, kline)
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         rsi = c.get("rsi14"); prev_rsi = c.get("prev_rsi14")
         k = c.get("k"); d = c.get("d"); j = c.get("j")
         vol_chg = c.get("vol_chg")
 
         return {
-            "rsi_fall_from_70": (prev_rsi is not None and rsi is not None and prev_rsi > 70 >= rsi),
+            "rsi_fall_from_70": (prev_rsi is not None and rsi is not None and prev_rsi > params.get("rsi_overbought", 70) >= rsi),
             "kdj_dead": (c.get("k_prev") is not None and c.get("d_prev") is not None and c.get("k_prev") >= c.get("d_prev") and k is not None and k < d),
-            "kdj_overbought": (j is not None and j > 95),
-            "vol_confirm": (vol_chg is not None and vol_chg > self.vol_ratio_threshold),
-            "rsi_break_50_down": (prev_rsi is not None and rsi is not None and prev_rsi >= 50 > rsi),
+            "kdj_overbought": (j is not None and j > params.get("kdj_j_extreme_high", 95)),
+            "vol_confirm": (vol_chg is not None and vol_chg > params.get("vol_ratio_threshold", self.vol_ratio_threshold)),
+            "rsi_break_50_down": (prev_rsi is not None and rsi is not None and prev_rsi >= params.get("rsi_mid", 50) > rsi),
         }
 
     def build_bullish_patterns(self, ind, prev_ind, kline):
         c = self.get_common_values(ind, prev_ind, kline)
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         rsi = c.get("rsi14"); prev_rsi = c.get("prev_rsi14")
         k = c.get("k"); d = c.get("d")
         return {
             # structural patterns get higher weight
             "rsi_bull_div": (c.get("prev_close") is not None and c.get("close") is not None and c.get("close") < c.get("prev_close") and rsi is not None and prev_rsi is not None and rsi > prev_rsi),
-            "second_bottom": (prev_rsi is not None and rsi is not None and prev_rsi < rsi < 35 and k is not None and k < 30),
+            "second_bottom": (prev_rsi is not None and rsi is not None and prev_rsi < rsi < (params.get("rsi_oversold", 30) + params.get("rsi_second_bottom_offset", 5)) and k is not None and k < (params.get("kdj_kd_extreme_low", 20) + params.get("kdj_second_bottom_k_offset", 10))),
             "rsi_stack": (c.get("rsi6") is not None and rsi is not None and c.get("rsi6") > rsi),
         }
 
     def build_bearish_patterns(self, ind, prev_ind, kline):
         c = self.get_common_values(ind, prev_ind, kline)
+        params = self._resolve_params(getattr(self, "_current_interval", ""))
         rsi = c.get("rsi14"); prev_rsi = c.get("prev_rsi14")
         k = c.get("k"); d = c.get("d"); j_prev = c.get("j_prev"); j = c.get("j")
         return {
