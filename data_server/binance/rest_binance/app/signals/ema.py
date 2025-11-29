@@ -46,12 +46,12 @@ class EMA:
         self.ema_200 = self._calc_ema(closes, 200)
 
         return {
-            "ema5": round(self.ema_5, 2) if self.ema_5 else None,
-            "ema7": round(self.ema_7, 2) if self.ema_7 else None,
-            "ema12": round(self.ema_12, 2) if self.ema_12 else None,
-            "ema20": round(self.ema_20, 2) if self.ema_20 else None,
-            "ema26": round(self.ema_26, 2) if self.ema_26 else None,
-            "ema50": round(self.ema_50, 2) if self.ema_50 else None,
-            "ema100": round(self.ema_100, 2) if self.ema_100 else None,
-            "ema200": round(self.ema_200, 2) if self.ema_200 else None,
+            "ema5": self.ema_5 if self.ema_5 is not None else None,
+            "ema7": self.ema_7 if self.ema_7 is not None else None,
+            "ema12": self.ema_12 if self.ema_12 is not None else None,
+            "ema20": self.ema_20 if self.ema_20 is not None else None,
+            "ema26": self.ema_26 if self.ema_26 is not None else None,
+            "ema50": self.ema_50 if self.ema_50 is not None else None,
+            "ema100": self.ema_100 if self.ema_100 is not None else None,
+            "ema200": self.ema_200 if self.ema_200 is not None else None,
         }

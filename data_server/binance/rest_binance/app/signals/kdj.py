@@ -38,7 +38,7 @@ class KDJ:
         self.d = d_list[-1]
         self.j = j
         return {
-            "k": round(self.k, 4),
-            "d": round(self.d, 4),
-            "j": round(self.j, 4)
+            "k": self.k,
+            "d": self.d,
+            "j": self.j
         }

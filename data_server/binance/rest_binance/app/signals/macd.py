@@ -33,7 +33,7 @@ class MACD:
         self.dea = dea_list[-1]
         self.macd = macd_list[-1]
         return {
-            "dif": round(self.dif, 4),
-            "dea": round(self.dea, 4),
-            "macd": round(self.macd, 4)
+            "dif": self.dif,
+            "dea": self.dea,
+            "macd": self.macd
         }

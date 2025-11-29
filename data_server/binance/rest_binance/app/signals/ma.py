@@ -22,9 +22,9 @@ class MA:
         self.ma_50 = ma(50)
         self.ma_200 = ma(200)
         return {
-            "ma5": round(self.ma_5, 2),
-            "ma10": round(self.ma_10, 2),
-            "ma20": round(self.ma_20, 2),
-            "ma50": round(self.ma_50, 2),
-            "ma200": round(self.ma_200, 2)
+            "ma5": self.ma_5,
+            "ma10": self.ma_10,
+            "ma20": self.ma_20,
+            "ma50": self.ma_50,
+            "ma200": self.ma_200
         }

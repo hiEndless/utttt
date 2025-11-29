@@ -30,10 +30,10 @@ class BollingerBandSignal:
         last_close = self.close_prices[-1]
         self.percent_b = (last_close - self.lower_band) / (self.upper_band - self.lower_band) if (self.upper_band - self.lower_band) != 0 else 0
         return {
-            "upper_band": round(self.upper_band, 2),
-            "middle_band": round(self.middle_band, 2),
-            "lower_band": round(self.lower_band, 2),
-            "bandwidth": round(self.bandwidth, 6),
-            "percent_b": round(self.percent_b, 6)
+            "upper_band": self.upper_band,
+            "middle_band": self.middle_band,
+            "lower_band": self.lower_band,
+            "bandwidth": self.bandwidth,
+            "percent_b": self.percent_b
         }
 

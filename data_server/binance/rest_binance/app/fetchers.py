@@ -5,11 +5,13 @@ try:
     from .ratelimiter import TokenBucket
     from .utils import logger
     from .config import settings
+    from .indicators_producer import EventGenerator as IndicatorsProducer
 except ImportError:
     from http_client import http_client
     from ratelimiter import TokenBucket
     from utils import logger
     from config import settings
+    from indicators_producer import EventGenerator as IndicatorsProducer
 
 LIMITERS = {k: TokenBucket(rate=1 / v, capacity=1) for k, v in settings.rate_limits_seconds.items()}
 LIMITER_CACHE = {}
@@ -38,7 +40,11 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
     _limiter = get_limiter(("kline", symbol, interval), _sec)
     async with _limiter:
         data = await http_client.request("GET", url, params=params)
-        print(data[:5])
+        try:
+            prod = IndicatorsProducer(symbol, data, interval)
+            await prod.publish()
+        except Exception as e:
+            logger.error("indicators_producer_error %s %s %s", symbol, interval, e)
 
 
 async def fetch_topLongShortAccountRatio(symbol: str, period: str):

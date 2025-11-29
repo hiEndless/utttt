@@ -37,8 +37,8 @@ class RSI:
         self.rsi_14 = rsi(14)
         self.rsi_24 = rsi(24)
         return {
-            "rsi6": round(self.rsi_6, 4),
-            "rsi12": round(self.rsi_12, 4),
-            "rsi14": round(self.rsi_14, 4),
-            "rsi24": round(self.rsi_24, 4)
+            "rsi6": self.rsi_6,
+            "rsi12": self.rsi_12,
+            "rsi14": self.rsi_14,
+            "rsi24": self.rsi_24
         }

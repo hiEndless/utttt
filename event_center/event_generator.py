@@ -1,20 +1,21 @@
-from signals import EMA, MA, MACD, RSI, KDJ, BollingerBandSignal, VolatilitySignal, SupportResistance
+
 from event_plugins import get_plugins
 from event_plugins.meta_combo import load_weights, score_events, build_dashboard
 from event_plugins.base import build_event
 
 
 def calculate_indicators(klines_data):
-    return {
-        "boll": BollingerBandSignal(klines_data).calculate(),
-        "ema": EMA(klines_data).calculate(),
-        "ma": MA(klines_data).calculate(),
-        "rsi": RSI(klines_data).calculate(),
-        "macd": MACD(klines_data).calculate(),
-        "kdj": KDJ(klines_data).calculate(),
-        "sr": SupportResistance(klines_data).calculate(),
-        "vol": VolatilitySignal(klines_data).calculate(),
-    }
+    """从redis里直接取"""
+    # return {
+    #     "boll": BollingerBandSignal(klines_data).calculate(),
+    #     "ema": EMA(klines_data).calculate(),
+    #     "ma": MA(klines_data).calculate(),
+    #     "rsi": RSI(klines_data).calculate(),
+    #     "macd": MACD(klines_data).calculate(),
+    #     "kdj": KDJ(klines_data).calculate(),
+    #     "sr": SupportResistance(klines_data).calculate(),
+    #     "vol": VolatilitySignal(klines_data).calculate(),
+    # }
 
 
 # -----------------------------
@@ -45,7 +46,7 @@ class EventGenerator:
             except Exception:
                 pass
         try:
-            weights = load_weights("data_server/binance/rest_binance/app/event_plugins")
+            weights = load_weights("event_center/event_plugins")
             scores = score_events(self.events, weights)
             dash = build_dashboard(scores)
             self.events.append(build_event(self.symbol, self.kline, "meta_combo_score", {"total": scores["total"], "per_plugin": scores["per_plugin"], "count": scores["count"]}, self.interval))

@@ -41,11 +41,11 @@ class VolatilitySignal:
 
         # 返回结果（包含ATR、DMI+/-、ADX、波动率、RSI、MACD）
         return {
-            "volatility": round(self.volatility, 4),
-            "atr": round(self.atr, 4),
-            "dmi_plus": round(self.dmi_plus, 4),
-            "dmi_minus": round(self.dmi_minus, 4),
-            "adx": round(self.adx, 4),
+            "volatility": self.volatility,
+            "atr": self.atr,
+            "dmi_plus": self.dmi_plus,
+            "dmi_minus": self.dmi_minus,
+            "adx": self.adx,
         }
 
     def __calculate_volatility(self, close_prices, period=14):
