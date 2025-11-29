@@ -3,8 +3,8 @@ import json
 import time
 from redis import asyncio as aioredis
 
-from classifier_server.config import cfg
-from classifier_server.rules import load_rules, match_payload_condition
+from event_center.config import cfg
+from event_center.rules import load_rules, match_payload_condition
 
 
 RULES_PATH = "rules.yml"

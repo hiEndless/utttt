@@ -2,8 +2,8 @@ import asyncio
 import json
 from redis import asyncio as aioredis
 
-from classifier_server.config import cfg
-from classifier_server.rules import load_rules, match_instant_rule
+from event_center.config import cfg
+from event_center.rules import load_rules, match_instant_rule
 
 
 RULES_PATH = "rules.yml"

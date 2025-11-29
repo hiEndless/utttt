@@ -2,7 +2,7 @@ import asyncio
 import json
 from redis import asyncio as aioredis
 
-from classifier_server.config import cfg
+from event_center.config import cfg
 
 
 PRIORITY_WEIGHT = {
