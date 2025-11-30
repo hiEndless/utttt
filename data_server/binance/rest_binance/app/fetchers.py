@@ -6,12 +6,14 @@ try:
     from .utils import logger
     from .config import settings
     from .indicators_producer import EventGenerator as IndicatorsProducer
+    from .market_store import store_market_raw, store_market_raw_simple
 except ImportError:
     from http_client import http_client
     from ratelimiter import TokenBucket
     from utils import logger
     from config import settings
     from indicators_producer import EventGenerator as IndicatorsProducer
+    from market_store import store_market_raw, store_market_raw_simple
 
 LIMITERS = {k: TokenBucket(rate=1 / v, capacity=1) for k, v in settings.rate_limits_seconds.items()}
 LIMITER_CACHE = {}
@@ -60,8 +62,10 @@ async def fetch_topLongShortAccountRatio(symbol: str, period: str):
     _limiter = get_limiter(("topLongShortAccountRatio", symbol, _p), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
-        # todo 首次获取数据整体添加，后续获取做增量更新
-        print(res)
+        try:
+            await store_market_raw(symbol, period, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
 async def fetch_topLongShortPositionRatio(symbol: str, period: str):
@@ -77,8 +81,10 @@ async def fetch_topLongShortPositionRatio(symbol: str, period: str):
     _limiter = get_limiter(("topLongShortPositionRatio", symbol, _p), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
-        # todo 首次获取数据整体添加，后续获取做增量更新
-        print(res)
+        try:
+            await store_market_raw(symbol, period, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
 async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
@@ -94,8 +100,10 @@ async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
     _limiter = get_limiter(("globalLongShortAccountRatio", symbol, _p), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
-        # todo 首次获取数据整体添加，后续获取做增量更新
-        print(res)
+        try:
+            await store_market_raw(symbol, period, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
 async def fetch_takerlongshortRatio(symbol: str, period: str):
@@ -111,12 +119,14 @@ async def fetch_takerlongshortRatio(symbol: str, period: str):
     _limiter = get_limiter(("takerLongShortRatio", symbol, _p), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
-        # todo 首次获取数据整体添加，后续获取做增量更新
-        print(res)
+        try:
+            await store_market_raw(symbol, period, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
 async def fetch_ticker24hr(symbol: str):
-    """24hr价格变动情况"""
+    """24h价格变动情况"""
     url = BASE_URL + '/fapi/v1/ticker/24hr'
     params = {
         'symbol': symbol
@@ -137,7 +147,10 @@ async def fetch_ticker24hr(symbol: str):
             'highPrice': highPrice,
             'lowPrice': lowPrice
         }
-        print(data)
+        try:
+            await store_market_raw_simple(symbol, url, data)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s", symbol, e)
 
 
 async def fetch_fundingRate(symbol: str):
@@ -151,8 +164,10 @@ async def fetch_fundingRate(symbol: str):
     _limiter = get_limiter(("fundingRate", symbol, '4h'), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
-        # todo 首次获取数据整体添加，后续获取做增量更新
-        print(res)
+        try:
+            await store_market_raw_simple(symbol, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s", symbol, e)
 
 
 async def spider_poller(symbol: str, interval: str, limit: int = 200):

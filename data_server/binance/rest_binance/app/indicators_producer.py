@@ -1,5 +1,6 @@
 import json
 from signals import EMA, MA, MACD, RSI, KDJ, BollingerBandSignal, VolatilitySignal, SupportResistance
+
 try:
     from .redis_client import get_redis_client
 except ImportError:
@@ -29,6 +30,7 @@ class EventGenerator:
         self.events = []
         self.kline = kline
         self.interval = interval
+
     async def publish(self, db: int | None = None):
         client = get_redis_client(db)
         indicators_key = f"indicators:binance:{self.symbol}:{self.interval}"
