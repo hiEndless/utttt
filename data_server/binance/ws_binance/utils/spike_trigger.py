@@ -101,13 +101,15 @@ class SpikeDetector:
     ):
         """
         参数说明：
-        - window_seconds: 用于统计的时间窗口（秒），例如 1s/3s/5s
-        - ticks_per_second_estimate: 估算每秒 tick 数，用来设定滑动缓存长度
-        - pct_change_th: 简单百分比阈值（例如 0.005 表示 0.5%）
+        - window_seconds: 价格 & 深度滑动窗口的时间长度，例如 1s/3s/5s
+        - ticks_per_second_estimate: 用于估算 deque 缓存长度
+        - pct_change_th: % 变化触发阈值（例如 0.005 表示 0.5%）
         - zscore_th: z-score 阈值（仅在 numpy 可用时生效），用于捕捉非常规波动
-        - depth_ratio_th: 深度突降阈值（当前深度 / 过去平均深度 <= 阈值）
+        - depth_ratio_th: 深度崩塌阈值（当前深度 / 过去平均深度 <= 阈值）
+        - confirm_ticks: 需要连续多少 tick 才确认事件
         - debounce_ms: 去抖时间（同一方向重复触发需间隔）
         - cooldown_s: 触发后冷却时间，避免重复告警
+        - aggregate_window_ms: 在窗口内把多个相似事件合并
         """
         if redis is None:
             raise RuntimeError("redis.asyncio 未安装，请安装 redis>=4.2 或者改成 aioredis")

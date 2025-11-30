@@ -2,13 +2,16 @@ import asyncio
 from l0_processor import L0Processor
 from l1_aggregator import L1Aggregator
 from final_grader import FinalGrader
+from alerts_consumer import AlertsConsumer
 
 
 async def main():
     l0 = L0Processor()
     l1 = L1Aggregator()
     fg = FinalGrader()
+    ac = AlertsConsumer()
     tasks = [
+        asyncio.create_task(ac.run()),
         asyncio.create_task(l0.run()),
         asyncio.create_task(l1.run()),
         asyncio.create_task(fg.run()),
