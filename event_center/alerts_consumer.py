@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
+from event_center.raw_event import build_raw_event
 
 
 class AlertsConsumer:
@@ -32,17 +33,17 @@ class AlertsConsumer:
             pass
 
     async def _to_raw_event(self, symbol: str, alert_type: str, ts_ms: int, details: dict) -> Dict[str, str]:
-        event_id = f"{symbol}:{alert_type}:{ts_ms}"
-        payload = {"source": "spike_detector", "type": alert_type, **(details or {})}
-        raw = {
-            "event_id": event_id,
-            "timestamp": str(ts_ms),
-            "account_id": "binance_public",
-            "symbol": symbol,
-            "type": "market_alert",
-            "payload": json.dumps(payload, ensure_ascii=False),
-        }
-        return raw
+        return build_raw_event(
+            exchange="binance",
+            symbol=symbol,
+            account_id="binance_public",
+            source="alerts_consumer",
+            event_class="market",
+            event_type=alert_type,
+            event_level=2,
+            timestamp_ms=ts_ms,
+            payload=details,
+        )
 
     async def run(self):
         self._running = True

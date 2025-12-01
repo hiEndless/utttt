@@ -5,6 +5,7 @@ import time
 from typing import Dict, List, Tuple
 from redis import asyncio as aioredis
 from event_center.config import cfg
+from event_center.raw_event import build_raw_event
 
 
 class ForceStatsConsumer:
@@ -46,18 +47,19 @@ class ForceStatsConsumer:
         print(f"[ForceStatsConsumer] -> alert symbol={symbol} type={alert_type} ts={ts_ms}")
 
     async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict):
-        event_id = f"{symbol}:{alert_type}:{ts_ms}"
-        payload = {"source": "force_stats_consumer", "type": alert_type, **(details or {})}
-        raw = {
-            "event_id": event_id,
-            "timestamp": str(ts_ms),
-            "account_id": "binance_public",
-            "symbol": symbol,
-            "type": "market_alert",
-            "payload": json.dumps(payload, ensure_ascii=False),
-        }
+        raw = build_raw_event(
+            exchange="binance",
+            symbol=symbol,
+            account_id="binance_public",
+            source="force_stats_consumer",
+            event_class="market",
+            event_type=alert_type,
+            event_level=2,
+            timestamp_ms=ts_ms,
+            payload=details,
+        )
         await self.redis.xadd(cfg.raw_stream, raw)
-        print(f"[ForceStatsConsumer] -> raw event_id={event_id} symbol={symbol} type={alert_type}")
+        print(f"[ForceStatsConsumer] -> raw event_id={raw['event_id']} symbol={symbol} type={alert_type}")
 
     async def _handle_entry(self, stream_name: str, entry_id: str, fields_b: Dict[bytes, bytes]):
         f = {k.decode(): v.decode() for k, v in fields_b.items()}

@@ -1,12 +1,13 @@
 import asyncio
 import json
+import os
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
 from event_center.rules import load_rules, match_instant_rule
 
 
-RULES_PATH = "rules.yml"
+RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.yml")
 
 
 class L0Processor:
@@ -22,13 +23,21 @@ class L0Processor:
             if match_instant_rule(event, r):
                 priority = r["priority"]
                 matched_rules.append(r["id"])
+        # support RES v1.0
+        payload_s = event.get("payload")
+        try:
+            payload = json.loads(payload_s) if isinstance(payload_s, str) else (payload_s or {})
+        except Exception:
+            payload = {"raw": payload_s}
         l0 = {
             "event_id": event.get("event_id"),
             "timestamp": event.get("timestamp"),
             "account_id": event.get("account_id"),
             "symbol": event.get("symbol"),
-            "type": event.get("type"),
-            "payload": json.dumps(event.get("payload", {})),
+            "event_class": event.get("event_class") or event.get("class") or "",
+            "event_type": event.get("event_type") or event.get("type") or "",
+            "event_level": event.get("event_level") or "",
+            "payload": json.dumps(payload),
             "priority": priority,
             "matched_rules": json.dumps(matched_rules),
         }
