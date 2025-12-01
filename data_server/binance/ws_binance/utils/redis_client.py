@@ -98,6 +98,10 @@ def key_force_stats(symbol: str):
     return f"force_stats:binance:{symbol}"
 
 
+def key_force_stats_stream(symbol: str):
+    return f"force_stats_stream:binance:{symbol}"
+
+
 def key_ticks(symbol: str):
     return f"ticks:binance:{symbol}"
 

@@ -5,6 +5,7 @@ from data_server.binance.ws_binance.utils.redis_client import (
     get_async_redis,
     key_force_stream,
     key_force_stats,
+    key_force_stats_stream,
 )
 
 EXPIRE_SECONDS = 180  # 3分钟无新数据则过期
@@ -28,7 +29,6 @@ async def handle_force_order(data: dict):
             maxlen=100,
         )
 
-        # === 获取当前统计数据 ===
         stats_key = key_force_stats(symbol)
         exists = await redis_client.exists(stats_key)
 
@@ -36,7 +36,6 @@ async def handle_force_order(data: dict):
             current = await redis_client.get(stats_key)
             stats = json.loads(current)
         else:
-            # 初始化结构
             stats = {
                 "SELL": 0,
                 "BUY": 0,
@@ -53,8 +52,23 @@ async def handle_force_order(data: dict):
             stats["BUY"] += 1
             stats["BUY_QTY"] += qty
 
-        # === 写回 Redis，设置过期时间 ===
-        await redis_client.set(stats_key, json.dumps(stats), ex=EXPIRE_SECONDS)
+        stats["timestamp"] = ts
+
+        async with redis_client.pipeline(transaction=True) as pipe:
+            await pipe.xadd(
+                key_force_stats_stream(symbol),
+                {
+                    "symbol": symbol,
+                    "ts": ts,
+                    "SELL": stats["SELL"],
+                    "BUY": stats["BUY"],
+                    "SELL_QTY": stats["SELL_QTY"],
+                    "BUY_QTY": stats["BUY_QTY"],
+                },
+                maxlen=1000,
+            )
+            await pipe.set(stats_key, json.dumps(stats), ex=EXPIRE_SECONDS)
+            await pipe.execute()
 
         print(
             f"[强平更新] {symbol} {side} {qty}@{price} "
