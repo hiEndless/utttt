@@ -3,6 +3,7 @@ from l0_processor import L0Processor
 from l1_aggregator import L1Aggregator
 from final_grader import FinalGrader
 from alerts_consumer import AlertsConsumer
+from force_stats_consumer import ForceStatsConsumer
 
 
 async def main():
@@ -10,8 +11,10 @@ async def main():
     l1 = L1Aggregator()
     fg = FinalGrader()
     ac = AlertsConsumer()
+    fsc = ForceStatsConsumer()
     tasks = [
         asyncio.create_task(ac.run()),
+        asyncio.create_task(fsc.run()),
         asyncio.create_task(l0.run()),
         asyncio.create_task(l1.run()),
         asyncio.create_task(fg.run()),
