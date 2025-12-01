@@ -11,19 +11,33 @@ def build_url():
     return f"redis://{host}:{port}/{db}"
 
 
-def get_async_redis(redis_url=None, decode_responses=True):
+_ASYNC_CLIENTS = {}
+_SYNC_CLIENTS = {}
+
+
+def get_async_redis(redis_url=None, decode_responses=True, max_connections=50):
     import redis.asyncio as aioredis
     url = redis_url or build_url()
-    return aioredis.from_url(url, decode_responses=decode_responses)
+    client = _ASYNC_CLIENTS.get(url)
+    if client is None:
+        client = aioredis.from_url(url, decode_responses=decode_responses, max_connections=max_connections)
+        _ASYNC_CLIENTS[url] = client
+    return client
 
 
-def get_sync_redis(host=None, port=None, password=None, db=None, decode_responses=True):
+def get_sync_redis(host=None, port=None, password=None, db=None, decode_responses=True, max_connections=50):
     import redis
     h = host or os.environ.get("REDIS_HOST", "127.0.0.1")
     p = int(port or os.environ.get("REDIS_PORT", 6379))
     pw = password or os.environ.get("REDIS_PASSWORD", None)
     d = int(db or os.environ.get("REDIS_DB", 1))
-    return redis.Redis(host=h, port=p, password=pw, db=d, decode_responses=decode_responses)
+    key = f"{h}:{p}:{d}:{'1' if decode_responses else '0'}"
+    client = _SYNC_CLIENTS.get(key)
+    if client is None:
+        pool = redis.ConnectionPool(host=h, port=p, password=pw, db=d, max_connections=max_connections, decode_responses=decode_responses)
+        client = redis.Redis(connection_pool=pool)
+        _SYNC_CLIENTS[key] = client
+    return client
 
 
 async def safe_hset_async(client, key: str, mapping: dict):
