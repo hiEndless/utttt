@@ -1,0 +1,47 @@
+defaults:
+  window_sec: 3600
+  min_samples: 200
+
+levels:
+  force_spike_sell:
+    metrics:
+      - name: delta_sell_qty
+        method: pctl
+        thresholds: {p80: 2, p90: 3, p95: 4, p99: 5}
+      - name: delta_sell
+        method: pctl
+        thresholds: {p80: 2, p90: 3, p95: 4, p99: 5}
+    combine: max
+  force_spike_buy:
+    metrics:
+      - name: delta_buy_qty
+        method: pctl
+        thresholds: {p80: 2, p90: 3, p95: 4, p99: 5}
+      - name: delta_buy
+        method: pctl
+        thresholds: {p80: 2, p90: 3, p95: 4, p99: 5}
+    combine: max
+  force_intensity:
+    metrics:
+      - name: intensity
+        method: pctl
+        thresholds: {p80: 2, p90: 3, p95: 4, p99: 5}
+    combine: max
+  force_sell_dominance:
+    metrics:
+      - name: dominance_sell_ratio
+        method: absolute
+        thresholds: {base: 2.0, x1_5: 1.5, x2_5: 2.5}
+      - name: delta_sell_qty
+        method: pctl
+        thresholds: {p80: 3, p90: 4, p95: 5, p99: 5}
+    combine: max
+  force_buy_dominance:
+    metrics:
+      - name: dominance_buy_ratio
+        method: absolute
+        thresholds: {base: 2.0, x1_5: 1.5, x2_5: 2.5}
+      - name: delta_buy_qty
+        method: pctl
+        thresholds: {p80: 3, p90: 4, p95: 5, p99: 5}
+    combine: max

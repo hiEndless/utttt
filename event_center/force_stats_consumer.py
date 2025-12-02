@@ -6,6 +6,8 @@ from typing import Dict, List, Tuple
 from redis import asyncio as aioredis
 from event_center.config import cfg
 from event_center.raw_event import build_raw_event
+from event_center.rules import load_rules
+import yaml
 
 
 class ForceStatsConsumer:
@@ -15,6 +17,10 @@ class ForceStatsConsumer:
         self.stream_offsets: Dict[str, str] = {}
         self.last_stats: Dict[str, Dict[str, float]] = {}
         self._running = False
+        try:
+            self.levels_cfg = load_rules("event_center/event_levels.yml")
+        except Exception:
+            self.levels_cfg = {"defaults": {}, "levels": {}}
         self.qty_threshold = float(os.getenv("FORCE_SPIKE_QTY_THRESHOLD", "1000"))
         self.count_threshold = int(os.getenv("FORCE_SPIKE_COUNT_THRESHOLD", "3"))
         self.intensity_count_threshold = int(os.getenv("FORCE_INTENSITY_COUNT_THRESHOLD", "5"))
@@ -36,17 +42,7 @@ class ForceStatsConsumer:
         except Exception:
             pass
 
-    async def _emit_alert(self, symbol: str, ts_ms: int, alert_type: str, details: dict):
-        stream = f"alerts:binance:{symbol}"
-        payload = {
-            "ts": ts_ms,
-            "type": alert_type,
-            "details": json.dumps(details, ensure_ascii=False),
-        }
-        await self.redis.xadd(stream, payload)
-        print(f"[ForceStatsConsumer] -> alert symbol={symbol} type={alert_type} ts={ts_ms}")
-
-    async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict):
+    async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict, level: int):
         raw = build_raw_event(
             exchange="binance",
             symbol=symbol,
@@ -54,7 +50,7 @@ class ForceStatsConsumer:
             source="force_stats_consumer",
             event_class="market",
             event_type=alert_type,
-            event_level=2,
+            event_level=level,
             timestamp_ms=ts_ms,
             payload=details,
         )
@@ -127,7 +123,107 @@ class ForceStatsConsumer:
         if d_buy_qty >= self.dominance_ratio * max(d_sell_qty, 1e-9) and d_buy_qty >= self.qty_threshold / 2:
             targets.append("force_buy_dominance")
         for t in targets:
-            await self._emit_raw(symbol, ts, t, details)
+            level = self._map_level(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity)
+            await self._emit_raw(symbol, ts, t, details, level)
+
+    def _map_level(self, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int) -> int:
+        cfg = (self.levels_cfg.get("levels") or {}).get(t)
+        if not cfg:
+            # fallback to existing absolute mapping
+            if t in ("force_spike_sell", "force_spike_buy"):
+                base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
+                base_cnt = d_sell if t.endswith("sell") else d_buy
+                if base_qty >= self.qty_threshold * 5 or base_cnt >= self.count_threshold * 4:
+                    return 5
+                if base_qty >= self.qty_threshold * 2 or base_cnt >= self.count_threshold * 2:
+                    return 4
+                if base_qty >= self.qty_threshold or base_cnt >= self.count_threshold:
+                    return 3
+                return 2
+            if t == "force_intensity":
+                if intensity >= self.intensity_count_threshold * 4:
+                    return 5
+                if intensity >= self.intensity_count_threshold * 2:
+                    return 4
+                if intensity >= self.intensity_count_threshold:
+                    return 3
+                return 2
+            # dominance
+            if t.endswith("sell_dominance"):
+                ratio = d_sell_qty / max(d_buy_qty, 1e-9)
+                base_qty = d_sell_qty
+            else:
+                ratio = d_buy_qty / max(d_sell_qty, 1e-9)
+                base_qty = d_buy_qty
+            if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
+                return 5
+            if ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
+                return 4
+            if ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                return 3
+            return 2
+
+        # config-driven mapping (currently absolute thresholds only)
+        level = 2
+        for m in (cfg.get("metrics") or []):
+            name = m.get("name")
+            thr = m.get("thresholds", {})
+            this_level = 2
+            if name == "delta_sell_qty":
+                if d_sell_qty >= self.qty_threshold * 5:
+                    this_level = max(this_level, 5)
+                elif d_sell_qty >= self.qty_threshold * 2:
+                    this_level = max(this_level, 4)
+                elif d_sell_qty >= self.qty_threshold:
+                    this_level = max(this_level, 3)
+            elif name == "delta_buy_qty":
+                if d_buy_qty >= self.qty_threshold * 5:
+                    this_level = max(this_level, 5)
+                elif d_buy_qty >= self.qty_threshold * 2:
+                    this_level = max(this_level, 4)
+                elif d_buy_qty >= self.qty_threshold:
+                    this_level = max(this_level, 3)
+            elif name == "delta_sell":
+                if d_sell >= self.count_threshold * 4:
+                    this_level = max(this_level, 5)
+                elif d_sell >= self.count_threshold * 2:
+                    this_level = max(this_level, 4)
+                elif d_sell >= self.count_threshold:
+                    this_level = max(this_level, 3)
+            elif name == "delta_buy":
+                if d_buy >= self.count_threshold * 4:
+                    this_level = max(this_level, 5)
+                elif d_buy >= self.count_threshold * 2:
+                    this_level = max(this_level, 4)
+                elif d_buy >= self.count_threshold:
+                    this_level = max(this_level, 3)
+            elif name == "intensity":
+                if intensity >= self.intensity_count_threshold * 4:
+                    this_level = max(this_level, 5)
+                elif intensity >= self.intensity_count_threshold * 2:
+                    this_level = max(this_level, 4)
+                elif intensity >= self.intensity_count_threshold:
+                    this_level = max(this_level, 3)
+            elif name == "dominance_sell_ratio":
+                ratio = d_sell_qty / max(d_buy_qty, 1e-9)
+                base_qty = d_sell_qty
+                if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
+                    this_level = max(this_level, 5)
+                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
+                    this_level = max(this_level, 4)
+                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                    this_level = max(this_level, 3)
+            elif name == "dominance_buy_ratio":
+                ratio = d_buy_qty / max(d_sell_qty, 1e-9)
+                base_qty = d_buy_qty
+                if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
+                    this_level = max(this_level, 5)
+                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
+                    this_level = max(this_level, 4)
+                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                    this_level = max(this_level, 3)
+            level = max(level, this_level)
+        return level
 
     async def run(self):
         self._running = True
