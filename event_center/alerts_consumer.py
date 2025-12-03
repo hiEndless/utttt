@@ -9,6 +9,77 @@ from event_center.config import cfg
 from event_center.raw_event import build_raw_event
 
 
+def normalize_alert_type(atype: str) -> str:
+    m = {
+        "pct_change_up": "price.pct_up",
+        "pct_change_down": "price.pct_down",
+        "zscore_spike": "price.spike",
+        "bid_collapse": "depth.bid_collapse",
+        "ask_collapse": "depth.ask_collapse",
+        "liquidity_collapse": "depth.liquidity_collapse",
+        "one_side_up": "trend.one_side_up",
+        "one_side_down": "trend.one_side_down",
+    }
+    return m.get(atype, atype)
+
+
+def grade_alert(atype: str, details: dict) -> int:
+    try:
+        if atype in ("pct_change_up", "pct_change_down"):
+            pct = abs(float(details.get("pct", 0.0)))
+            if pct >= 0.05:
+                return 4
+            if pct >= 0.02:
+                return 3
+            if pct >= 0.01:
+                return 2
+            return 1
+        if atype == "zscore_spike":
+            z = abs(float(details.get("z", 0.0)))
+            if z >= 12:
+                return 4
+            if z >= 8:
+                return 3
+            if z >= 5:
+                return 2
+            return 1
+        if atype in ("bid_collapse", "ask_collapse"):
+            ratio = float(details.get("ratio", 1.0))
+            streak = int(details.get("streak", 1))
+            if ratio <= 0.10 and streak >= 3:
+                return 4
+            if ratio <= 0.20 and streak >= 2:
+                return 3
+            if ratio <= 0.30:
+                return 2
+            return 1
+        if atype == "liquidity_collapse":
+            ratios = details.get("ratio", []) or []
+            try:
+                min_ratio = min([float(r) for r in ratios]) if ratios else 1.0
+            except Exception:
+                min_ratio = 1.0
+            count = int(details.get("count", 1))
+            if count >= 2 and min_ratio <= 0.15:
+                return 4
+            if min_ratio <= 0.25:
+                return 3
+            return 2
+        if atype in ("one_side_up", "one_side_down"):
+            pct = abs(float(details.get("pct", 0.0)))
+            count = int(details.get("count", 1))
+            if count >= 10 and pct >= 0.05:
+                return 4
+            if count >= 5 and pct >= 0.03:
+                return 3
+            if count >= 3 and pct >= 0.01:
+                return 2
+            return 1
+    except Exception:
+        return 1
+    return 1
+
+
 class AlertsConsumer:
     def __init__(self, redis_url: str = cfg.redis_url, scan_interval_s: float = 5.0):
         self.redis = aioredis.from_url(redis_url)
@@ -44,6 +115,19 @@ class AlertsConsumer:
             timestamp_ms=ts_ms,
             payload=details,
         )
+
+    def _normalize_alert_type(self, atype: str) -> str:
+        return normalize_alert_type(atype)
+
+    def _grade(self, atype: str, details: dict) -> int:
+        return grade_alert(atype, details)
+
+    def _route_stream(self, level: int) -> str:
+        if level >= 4:
+            return cfg.final_stream
+        if level == 3:
+            return cfg.l1_stream
+        return cfg.l0_stream
 
     async def run(self):
         self._running = True
@@ -88,9 +172,23 @@ class AlertsConsumer:
                         # alerts:binance:{symbol}
                         parts = stream_name.split(":")
                         symbol = parts[-1] if len(parts) >= 3 else "unknown"
-                        raw = await self._to_raw_event(symbol, alert_type, ts_ms, details)
+                        norm_type = self._normalize_alert_type(alert_type)
+                        level = self._grade(alert_type, details)
+                        raw = build_raw_event(
+                            exchange="binance",
+                            symbol=symbol,
+                            account_id="binance_public",
+                            source="alerts_consumer",
+                            event_class="market",
+                            event_type=norm_type,
+                            event_level=level,
+                            timestamp_ms=ts_ms,
+                            payload=details,
+                        )
                         await self.redis.xadd(cfg.raw_stream, raw)
-                        print(f"[AlertsConsumer] -> raw event_id={raw['event_id']} symbol={symbol} type={alert_type}")
+                        routed_stream = self._route_stream(level)
+                        await self.redis.xadd(routed_stream, raw)
+                        print(f"[AlertsConsumer] -> event_id={raw['event_id']} symbol={symbol} type={norm_type} level={level} routed={routed_stream}")
                     except Exception as e:
                         print(f"[AlertsConsumer] error stream={stream_name} entry={entry_id} err={e}")
 
