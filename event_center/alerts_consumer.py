@@ -86,10 +86,13 @@ class AlertsConsumer:
         self.scan_interval_s = scan_interval_s
         self.stream_offsets: Dict[str, str] = {}
         self._running = False
-        self.dedup_window_ms = 2000
-        self.emit_min_interval_ms = 1000
+        self.dedup_window_ms = 2000  # 去重窗口：同指纹事件在该窗口内不重复
+        self.emit_min_interval_ms = 1000  # 最小生成间隔：同类型至少间隔指定毫秒
         self._last_emit_ts: Dict[Tuple[str, str], int] = {}
         self._last_payload_fp: Dict[Tuple[str, str], str] = {}
+        self.emit_budget_window_s = 60  # 配额窗口（秒）：统计每个 symbol 的事件数量
+        self.emit_budget_max = 1  # 配额上限：窗口内最多允许 level<5 的事件数量
+        self._symbol_budget: Dict[str, List[int]] = {}  # 每个 symbol 已发事件的时间戳列表
 
     async def _discover_streams(self):
         try:
@@ -127,6 +130,8 @@ class AlertsConsumer:
         return grade_alert(atype, details)
 
     def _fingerprint(self, details: dict) -> str:
+        # 生成稳定的 payload 指纹：对浮点数做四舍五入、对字典按键排序、列表递归归一化
+        # 用于在短时间内判定“相同事件”并进行去重
         try:
             def _round(v):
                 if isinstance(v, float):
@@ -144,6 +149,9 @@ class AlertsConsumer:
             return json.dumps(details, separators=(",", ":"), ensure_ascii=False)
 
     def _should_emit(self, symbol: str, norm_type: str, ts_ms: int, details: dict) -> bool:
+        # 限频 + 指纹去重：
+        # 若距离上次同类型事件不足最小间隔，则仅当指纹发生变化才允许；
+        # 若指纹未变且处于去重窗口内，则丢弃该事件。
         key = (symbol, norm_type)
         last_ts = self._last_emit_ts.get(key, 0)
         if ts_ms - last_ts < self.emit_min_interval_ms:
@@ -152,6 +160,43 @@ class AlertsConsumer:
             if last_fp == fp and ts_ms - last_ts < self.dedup_window_ms:
                 return False
         return True
+
+    def _passes_gating(self, norm_type: str, level: int, details: dict) -> bool:
+        # 强门限：严格筛选趋势/流动性类事件，压制震荡期噪声；
+        # 其它类型仅允许高等级（level>=4）通过。
+        if norm_type in ("trend.one_side_up", "trend.one_side_down"):
+            try:
+                count = int(details.get("count", 0))
+                pct = abs(float(details.get("pct", 0.0)))
+            except Exception:
+                count, pct = 0, 0.0
+            return count >= 8 and pct >= 0.03
+        if norm_type == "depth.liquidity_collapse":
+            ratios = details.get("ratio", []) or []
+            try:
+                min_ratio = min([float(r) for r in ratios]) if ratios else 1.0
+            except Exception:
+                min_ratio = 1.0
+            count = int(details.get("count", 0) or 0)
+            return count >= 2 and min_ratio <= 0.15
+        return level >= 4
+
+    def _budget_check(self, symbol: str, ts_ms: int, level: int) -> bool:
+        # 分钟配额：每个 symbol 在窗口内仅允许有限事件；
+        # 重大事件（level>=5）不受配额限制。
+        window_ms = self.emit_budget_window_s * 1000
+        lst = self._symbol_budget.get(symbol) or []
+        lst = [t for t in lst if ts_ms - t <= window_ms]
+        self._symbol_budget[symbol] = lst
+        if len(lst) >= self.emit_budget_max and level < 5:
+            return False
+        return True
+
+    def _budget_record(self, symbol: str, ts_ms: int) -> None:
+        # 记录一次事件时间戳，用于配额统计
+        lst = self._symbol_budget.get(symbol) or []
+        lst.append(ts_ms)
+        self._symbol_budget[symbol] = lst
 
     async def run(self):
         self._running = True
@@ -198,7 +243,12 @@ class AlertsConsumer:
                         symbol = parts[-1] if len(parts) >= 3 else "unknown"
                         norm_type = self._normalize_alert_type(alert_type)
                         level = self._grade(alert_type, details)
+                        # 依次应用：限频/去重 -> 强门限 -> 分钟配额
                         if not self._should_emit(symbol, norm_type, ts_ms, details):
+                            continue
+                        if not self._passes_gating(norm_type, level, details):
+                            continue
+                        if not self._budget_check(symbol, ts_ms, level):
                             continue
                         raw = build_raw_event(
                             exchange="binance",
@@ -214,6 +264,7 @@ class AlertsConsumer:
                         await self.redis.xadd(cfg.raw_stream, raw)
                         self._last_emit_ts[(symbol, norm_type)] = ts_ms
                         self._last_payload_fp[(symbol, norm_type)] = self._fingerprint(details)
+                        self._budget_record(symbol, ts_ms)
                         print(f"[AlertsConsumer] -> event_id={raw['event_id']} symbol={symbol} type={norm_type} level={level}")
                     except Exception as e:
                         print(f"[AlertsConsumer] error stream={stream_name} entry={entry_id} err={e}")

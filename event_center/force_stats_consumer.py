@@ -31,7 +31,10 @@ class ForceStatsConsumer:
         self.session_start: Dict[str, int] = {}
         self.offset_key_prefix = "consumer_offset:force_stats_consumer:"
         self.debounce_key_prefix = "consumer_debounce:force_stats_consumer:"
-        self.debounce_seconds = int(os.getenv("FORCE_EVENT_DEBOUNCE_S", "3"))
+        self.debounce_seconds = int(os.getenv("FORCE_EVENT_DEBOUNCE_S", "30"))  # 去抖：同类型事件最短间隔（秒）
+        self.emit_budget_window_s = int(os.getenv("FORCE_EVENT_BUDGET_WINDOW_S", "60"))  # 配额窗口（秒）
+        self.emit_budget_max = int(os.getenv("FORCE_EVENT_BUDGET_MAX", "1"))  # 窗口内允许的事件上限（level<5）
+        self._symbol_budget: Dict[str, List[int]] = {}  # 每 symbol 已发事件的时间戳列表
         self.default_qty_threshold = self.qty_threshold
         self.default_count_threshold = self.count_threshold
         self.default_intensity_threshold = self.intensity_count_threshold
@@ -68,6 +71,9 @@ class ForceStatsConsumer:
             pass
 
     async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict, level: int):
+        # 先进行配额检查；重大事件（level>=5）越过配额限制
+        if not self._budget_check(symbol, ts_ms, level):
+            return
         dk = f"{self.debounce_key_prefix}:{symbol}:{alert_type}"
         try:
             set_ok = await self.redis.set(dk, 1, ex=self.debounce_seconds, nx=True)
@@ -87,6 +93,7 @@ class ForceStatsConsumer:
             payload=details,
         )
         await self.redis.xadd(cfg.raw_stream, raw)
+        self._budget_record(symbol, ts_ms)  # 记录配额
         print(f"[ForceStatsConsumer] -> raw event_id={raw['event_id']} symbol={symbol} type={alert_type}")
 
     async def _handle_entry(self, stream_name: str, entry_id: str, fields_b: Dict[bytes, bytes]):
@@ -189,6 +196,10 @@ class ForceStatsConsumer:
         details["last_ts"] = ts
         details["elapsed_ms"] = ts - start_ts
         for t in targets:
+            # 强门限：仅在显著强度/主导性满足更高阈值时发出
+            if not self._strong_gate(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
+                                      intensity_thr, ts - start_ts):
+                continue
             level = self._map_level_dyn(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
                                         intensity_thr)
             await self._emit_raw(symbol, start_ts, t, details, level)
@@ -325,6 +336,45 @@ class ForceStatsConsumer:
         if ratio >= self.dominance_ratio and base_qty >= qty_thr * 0.5:
             return 3
         return 2
+
+    def _strong_gate(self, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int,
+                      qty_thr: float, count_thr: int, intensity_thr: int, elapsed_ms: int) -> bool:
+        # 强门限说明：
+        # - 先要求会话已运行至少 10s，避免瞬时尖峰
+        # - spike：数量或次数需达到动态阈值的 3 倍
+        # - intensity：强度需达到动态阈值的 3 倍
+        # - dominance：比值需达到基础支配比的 2 倍，且数量达到动态阈值的 1.5 倍
+        if elapsed_ms < 10000:
+            return False
+        if t in ("force_spike_sell", "force_spike_buy"):
+            base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
+            base_cnt = d_sell if t.endswith("sell") else d_buy
+            return base_qty >= qty_thr * 3 or base_cnt >= count_thr * 3
+        if t == "force_intensity":
+            return intensity >= intensity_thr * 3
+        if t.endswith("sell_dominance"):
+            ratio = d_sell_qty / max(d_buy_qty, 1e-9)
+            base_qty = d_sell_qty
+        else:
+            ratio = d_buy_qty / max(d_sell_qty, 1e-9)
+            base_qty = d_buy_qty
+        return ratio >= self.dominance_ratio * 2 and base_qty >= qty_thr * 1.5
+
+    def _budget_check(self, symbol: str, ts_ms: int, level: int) -> bool:
+        # 分钟配额：窗口内事件数受限；重大事件（level>=5）不受限
+        window_ms = self.emit_budget_window_s * 1000
+        lst = self._symbol_budget.get(symbol) or []
+        lst = [t for t in lst if ts_ms - t <= window_ms]
+        self._symbol_budget[symbol] = lst
+        if len(lst) >= self.emit_budget_max and level < 5:
+            return False
+        return True
+
+    def _budget_record(self, symbol: str, ts_ms: int) -> None:
+        # 记录一次事件时间戳，用于配额统计
+        lst = self._symbol_budget.get(symbol) or []
+        lst.append(ts_ms)
+        self._symbol_budget[symbol] = lst
 
     async def run(self):
         self._running = True
