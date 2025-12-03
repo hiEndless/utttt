@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class Config:
     redis_host: str = os.getenv("REDIS_HOST", "127.0.0.1")
     redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
-    redis_db: int = int(os.getenv("REDIS_DB", "2"))
+    redis_db: int = int(os.getenv("REDIS_DB", "1"))
     redis_password: str = os.getenv("REDIS_PASSWORD", "")
     raw_stream: str = os.getenv("RAW_STREAM", "raw_event_stream")
     l0_stream: str = os.getenv("L0_STREAM", "l0_events")
