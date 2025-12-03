@@ -214,7 +214,7 @@ class AlertsConsumer:
                         await self.redis.xadd(cfg.raw_stream, raw)
                         self._last_emit_ts[(symbol, norm_type)] = ts_ms
                         self._last_payload_fp[(symbol, norm_type)] = self._fingerprint(details)
-                        print(f"[AlertsConsumer] -> event_id={raw['event_id']} symbol={symbol} type={norm_type} level={level} routed={routed_stream}")
+                        print(f"[AlertsConsumer] -> event_id={raw['event_id']} symbol={symbol} type={norm_type} level={level}")
                     except Exception as e:
                         print(f"[AlertsConsumer] error stream={stream_name} entry={entry_id} err={e}")
 
