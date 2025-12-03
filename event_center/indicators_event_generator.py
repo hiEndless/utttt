@@ -1,7 +1,7 @@
 
-from event_plugins import get_plugins
-from event_plugins.meta_combo import load_weights, score_events, build_dashboard
-from event_plugins.base import build_event
+from indicators_event_plugins import get_plugins
+from indicators_event_plugins.meta_combo import load_weights, score_events, build_dashboard
+from indicators_event_plugins.base import build_event
 
 
 def calculate_indicators(klines_data):
