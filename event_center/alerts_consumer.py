@@ -86,6 +86,10 @@ class AlertsConsumer:
         self.scan_interval_s = scan_interval_s
         self.stream_offsets: Dict[str, str] = {}
         self._running = False
+        self.dedup_window_ms = 2000
+        self.emit_min_interval_ms = 1000
+        self._last_emit_ts: Dict[Tuple[str, str], int] = {}
+        self._last_payload_fp: Dict[Tuple[str, str], str] = {}
 
     async def _discover_streams(self):
         try:
@@ -122,12 +126,32 @@ class AlertsConsumer:
     def _grade(self, atype: str, details: dict) -> int:
         return grade_alert(atype, details)
 
-    def _route_stream(self, level: int) -> str:
-        if level >= 4:
-            return cfg.final_stream
-        if level == 3:
-            return cfg.l1_stream
-        return cfg.l0_stream
+    def _fingerprint(self, details: dict) -> str:
+        try:
+            def _round(v):
+                if isinstance(v, float):
+                    return round(v, 6)
+                return v
+            def _normalize(x):
+                if isinstance(x, dict):
+                    return {k: _normalize(x[k]) for k in sorted(x.keys())}
+                if isinstance(x, list):
+                    return [_normalize(i) for i in x]
+                return _round(x)
+            norm = _normalize(details)
+            return json.dumps(norm, separators=(",", ":"), ensure_ascii=False)
+        except Exception:
+            return json.dumps(details, separators=(",", ":"), ensure_ascii=False)
+
+    def _should_emit(self, symbol: str, norm_type: str, ts_ms: int, details: dict) -> bool:
+        key = (symbol, norm_type)
+        last_ts = self._last_emit_ts.get(key, 0)
+        if ts_ms - last_ts < self.emit_min_interval_ms:
+            fp = self._fingerprint(details)
+            last_fp = self._last_payload_fp.get(key)
+            if last_fp == fp and ts_ms - last_ts < self.dedup_window_ms:
+                return False
+        return True
 
     async def run(self):
         self._running = True
@@ -174,6 +198,8 @@ class AlertsConsumer:
                         symbol = parts[-1] if len(parts) >= 3 else "unknown"
                         norm_type = self._normalize_alert_type(alert_type)
                         level = self._grade(alert_type, details)
+                        if not self._should_emit(symbol, norm_type, ts_ms, details):
+                            continue
                         raw = build_raw_event(
                             exchange="binance",
                             symbol=symbol,
@@ -186,8 +212,8 @@ class AlertsConsumer:
                             payload=details,
                         )
                         await self.redis.xadd(cfg.raw_stream, raw)
-                        routed_stream = self._route_stream(level)
-                        await self.redis.xadd(routed_stream, raw)
+                        self._last_emit_ts[(symbol, norm_type)] = ts_ms
+                        self._last_payload_fp[(symbol, norm_type)] = self._fingerprint(details)
                         print(f"[AlertsConsumer] -> event_id={raw['event_id']} symbol={symbol} type={norm_type} level={level} routed={routed_stream}")
                     except Exception as e:
                         print(f"[AlertsConsumer] error stream={stream_name} entry={entry_id} err={e}")
