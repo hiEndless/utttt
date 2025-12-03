@@ -8,12 +8,12 @@ class Settings:
     redis_db: int = int(os.environ.get('REDIS_BD', 1))
     rate_limits_seconds: dict = {
         '1m': 60,
-        '5m': 300,
-        '30m': 1800,
-        '1h': 3600,
-        '2h': 7200,
-        '4h': 14400,
-        '1d': 86400,
+        '5m': 150,
+        '30m': 600,
+        '1h': 900,
+        '2h': 1800,
+        '4h': 3600,
+        '1d': 43200,
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"
