@@ -1,21 +1,27 @@
-
+import json
+import redis
+from event_center.config import cfg
 from indicators_event_plugins import get_plugins
 from indicators_event_plugins.meta_combo import load_weights, score_events, build_dashboard
 from indicators_event_plugins.base import build_event
 
 
-def calculate_indicators(klines_data):
-    """从redis里直接取"""
-    # return {
-    #     "boll": BollingerBandSignal(klines_data).calculate(),
-    #     "ema": EMA(klines_data).calculate(),
-    #     "ma": MA(klines_data).calculate(),
-    #     "rsi": RSI(klines_data).calculate(),
-    #     "macd": MACD(klines_data).calculate(),
-    #     "kdj": KDJ(klines_data).calculate(),
-    #     "sr": SupportResistance(klines_data).calculate(),
-    #     "vol": VolatilitySignal(klines_data).calculate(),
-    # }
+def calculate_indicators(symbol: str, interval: str, db: int | None = None):
+    client = redis.Redis(
+        host=cfg.redis_host,
+        port=cfg.redis_port,
+        db=(db if db is not None else cfg.redis_db),
+        password=(cfg.redis_password or None),
+        decode_responses=True,
+    )
+    key = f"indicators:binance:{symbol}:{interval}"
+    try:
+        val = client.get(key)
+        if not val:
+            return {}
+        return json.loads(val)
+    except Exception:
+        return {}
 
 
 # -----------------------------
@@ -24,7 +30,7 @@ def calculate_indicators(klines_data):
 class EventGenerator:
     def __init__(self, symbol: str, kline: list, interval: str):
         self.symbol = symbol
-        self.ind = calculate_indicators(kline)
+        self.ind = calculate_indicators(symbol, interval)
         self.events = []
         self.kline = kline
         self.interval = interval
@@ -33,11 +39,6 @@ class EventGenerator:
     def generate_events(self):
         self.events = []
         prev_ind = None
-        if len(self.kline) > 1:
-            try:
-                prev_ind = calculate_indicators(self.kline[:-1])
-            except Exception:
-                prev_ind = None
         for p in self.plugins:
             try:
                 if hasattr(p, "supports") and not p.supports(self.symbol, self.interval, self.kline, self.ind):
@@ -65,4 +66,6 @@ class EventGenerator:
 # 使用示例
 # -----------------------------
 if __name__ == "__main__":
-    pass
+    res = calculate_indicators('BTCUSDT', '1m')
+    print(res)
+
