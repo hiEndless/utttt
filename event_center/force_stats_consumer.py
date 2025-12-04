@@ -38,6 +38,15 @@ class ForceStatsConsumer:
         self.default_qty_threshold = self.qty_threshold
         self.default_count_threshold = self.count_threshold
         self.default_intensity_threshold = self.intensity_count_threshold
+        self.gate_window_ms = int(os.getenv("FORCE_GATE_WINDOW_MS", "180000"))  # 强门限评估窗口（毫秒），默认3分钟
+        self._agg: Dict[str, Deque[Tuple[int, int, int, float, float]]] = defaultdict(lambda: deque(maxlen=600))  # (ts, d_sell, d_buy, d_sell_qty, d_buy_qty)
+        self.total_count_threshold_sell = int(os.getenv("FORCE_TOTAL_SELL_COUNT_THRESHOLD", "10"))
+        self.total_count_threshold_buy = int(os.getenv("FORCE_TOTAL_BUY_COUNT_THRESHOLD", "10"))
+        self.rebound_streak = int(os.getenv("FORCE_REBOUND_STREAK", "3"))
+        self.rebound_window_ms = int(os.getenv("FORCE_REBOUND_WINDOW_MS", "20000"))
+        self._last_dominant_side: Dict[str, str] = {}
+        self._last_dominance_ts: Dict[str, int] = {}
+        self._rebound_streak: Dict[str, Dict[str, int]] = defaultdict(lambda: {"buy": 0, "sell": 0})
 
     async def _discover_streams(self):
         try:
@@ -141,6 +150,9 @@ class ForceStatsConsumer:
         d_buy_qty = max(0.0, cur["BUY_QTY"] - float(prev.get("BUY_QTY", 0.0)))
         intensity = d_sell + d_buy
 
+        # 追加到聚合窗口，用于按时间窗计算累计指标
+        self._agg[symbol].append((ts, d_sell, d_buy, d_sell_qty, d_buy_qty))
+
         details = {
             "delta_sell": d_sell,
             "delta_buy": d_buy,
@@ -180,6 +192,7 @@ class ForceStatsConsumer:
         intensity_thr = max(self.default_intensity_threshold, count_thr * 2)
 
         targets = []
+        # immediate triggers
         if d_sell_qty >= qty_thr or d_sell >= count_thr:
             targets.append("force_spike_sell")
         if d_buy_qty >= qty_thr or d_buy >= count_thr:
@@ -191,14 +204,56 @@ class ForceStatsConsumer:
             targets.append("force_sell_dominance")
         if d_buy_qty >= self.dominance_ratio * max(d_sell_qty, 1e-9) and d_buy_qty >= min_base:
             targets.append("force_buy_dominance")
+        # window/cumulative derived triggers (enable for +1 increments)
+        # compute window sums
+        dq = self._agg.get(symbol) or deque()
+        sell_cnt_sum = sum(sc for _, sc, __, ___, ____ in dq)
+        buy_cnt_sum = sum(bc for _, __, bc, ___, ____ in dq)
+        sell_qty_sum = sum(sq for _, __, ___, sq, ____ in dq)
+        buy_qty_sum = sum(bq for _, __, ___, ____, bq in dq)
+        if sell_qty_sum >= qty_thr * 3 or sell_cnt_sum >= count_thr * 6 or cur["SELL"] >= count_thr * 6:
+            targets.append("force_spike_sell")
+        if buy_qty_sum >= qty_thr * 3 or buy_cnt_sum >= count_thr * 6 or cur["BUY"] >= count_thr * 6:
+            targets.append("force_spike_buy")
+        if (sell_cnt_sum + buy_cnt_sum) >= intensity_thr * 6 or (cur["SELL"] + cur["BUY"]) >= intensity_thr * 6:
+            targets.append("force_intensity")
+        # dominance via counts as fallback
+        if buy_cnt_sum > 0 and sell_cnt_sum / max(buy_cnt_sum, 1) >= max(self.dominance_ratio, 3.0) and sell_cnt_sum >= count_thr * 6:
+            targets.append("force_sell_dominance")
+        if sell_cnt_sum > 0 and buy_cnt_sum / max(sell_cnt_sum, 1) >= max(self.dominance_ratio, 3.0) and buy_cnt_sum >= count_thr * 6:
+            targets.append("force_buy_dominance")
+        # totals-based immediate triggers and trend tracking
+        if cur["SELL"] >= self.total_count_threshold_sell:
+            targets.append("force_spike_sell")
+            self._last_dominant_side[symbol] = "sell"
+            self._last_dominance_ts[symbol] = ts
+        if cur["BUY"] >= self.total_count_threshold_buy:
+            targets.append("force_spike_buy")
+            self._last_dominant_side[symbol] = "buy"
+            self._last_dominance_ts[symbol] = ts
+        # rebound detection based on consecutive opposite increments
+        if d_buy > 0:
+            self._rebound_streak[symbol]["buy"] += 1
+        else:
+            self._rebound_streak[symbol]["buy"] = 0
+        if d_sell > 0:
+            self._rebound_streak[symbol]["sell"] += 1
+        else:
+            self._rebound_streak[symbol]["sell"] = 0
+        last_side = self._last_dominant_side.get(symbol)
+        last_ts = self._last_dominance_ts.get(symbol, 0)
+        if last_side == "sell" and ts - last_ts <= self.rebound_window_ms and self._rebound_streak[symbol]["buy"] >= self.rebound_streak:
+            targets.append("force_rebound_buy")
+        if last_side == "buy" and ts - last_ts <= self.rebound_window_ms and self._rebound_streak[symbol]["sell"] >= self.rebound_streak:
+            targets.append("force_rebound_sell")
         # enrich details with session info and emit with session start time
         details["start_ts"] = start_ts
         details["last_ts"] = ts
         details["elapsed_ms"] = ts - start_ts
         for t in targets:
             # 强门限：仅在显著强度/主导性满足更高阈值时发出
-            if not self._strong_gate(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
-                                      intensity_thr, ts - start_ts):
+            if not self._strong_gate(symbol, ts, t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
+                                      intensity_thr, ts - start_ts, cur["SELL"], cur["BUY"], cur["SELL_QTY"], cur["BUY_QTY"]):
                 continue
             level = self._map_level_dyn(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
                                         intensity_thr)
@@ -323,6 +378,8 @@ class ForceStatsConsumer:
             if intensity >= intensity_thr:
                 return 3
             return 2
+        if t == "force_rebound_buy" or t == "force_rebound_sell":
+            return 3
         if t.endswith("sell_dominance"):
             ratio = d_sell_qty / max(d_buy_qty, 1e-9)
             base_qty = d_sell_qty
@@ -337,8 +394,9 @@ class ForceStatsConsumer:
             return 3
         return 2
 
-    def _strong_gate(self, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int,
-                      qty_thr: float, count_thr: int, intensity_thr: int, elapsed_ms: int) -> bool:
+    def _strong_gate(self, symbol: str, now_ms: int, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int,
+                      qty_thr: float, count_thr: int, intensity_thr: int, elapsed_ms: int,
+                      tot_sell: int, tot_buy: int, tot_sell_qty: float, tot_buy_qty: float) -> bool:
         # 强门限说明：
         # - 先要求会话已运行至少 10s，避免瞬时尖峰
         # - spike：数量或次数需达到动态阈值的 3 倍
@@ -346,19 +404,66 @@ class ForceStatsConsumer:
         # - dominance：比值需达到基础支配比的 2 倍，且数量达到动态阈值的 1.5 倍
         if elapsed_ms < 10000:
             return False
+        # 计算时间窗累计值
+        window_ms = self.gate_window_ms
+        sell_cnt_sum = 0
+        buy_cnt_sum = 0
+        sell_qty_sum = 0.0
+        buy_qty_sum = 0.0
+        dq = self._agg.get(symbol) or deque()
+        while dq and now_ms - dq[0][0] > window_ms:
+            dq.popleft()
+        for ts, sc, bc, sq, bq in dq:
+            sell_cnt_sum += sc
+            buy_cnt_sum += bc
+            sell_qty_sum += sq
+            buy_qty_sum += bq
+        # counts/qty 的窗口强门限（更稳定地识别持续单边）
         if t in ("force_spike_sell", "force_spike_buy"):
             base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
             base_cnt = d_sell if t.endswith("sell") else d_buy
-            return base_qty >= qty_thr * 3 or base_cnt >= count_thr * 3
+            win_qty = sell_qty_sum if t.endswith("sell") else buy_qty_sum
+            win_cnt = sell_cnt_sum if t.endswith("sell") else buy_cnt_sum
+            # 同时引入“累计快照”直接判定：当3分钟累计总次数或总量达倍数阈值时也通过
+            cum_cnt = tot_sell if t.endswith("sell") else tot_buy
+            cum_qty = tot_sell_qty if t.endswith("sell") else tot_buy_qty
+            return (
+                (base_qty >= qty_thr * 3 or base_cnt >= count_thr * 3)
+                or (win_qty >= qty_thr * 3 or win_cnt >= count_thr * 6)
+                or (cum_cnt >= count_thr * 6 or cum_qty >= qty_thr * 3)
+                or (t.endswith("sell") and cum_cnt >= self.total_count_threshold_sell)
+                or (t.endswith("buy") and cum_cnt >= self.total_count_threshold_buy)
+            )
         if t == "force_intensity":
-            return intensity >= intensity_thr * 3
+            return (
+                intensity >= intensity_thr * 3
+                or (sell_cnt_sum + buy_cnt_sum) >= intensity_thr * 6
+                or (tot_sell + tot_buy) >= intensity_thr * 6
+            )
         if t.endswith("sell_dominance"):
             ratio = d_sell_qty / max(d_buy_qty, 1e-9)
             base_qty = d_sell_qty
+            win_ratio_qty = (sell_qty_sum / max(buy_qty_sum, 1e-9)) if (sell_qty_sum > 0 or buy_qty_sum > 0) else None
+            win_ratio_cnt = sell_cnt_sum / max(buy_cnt_sum, 1)
         else:
             ratio = d_buy_qty / max(d_sell_qty, 1e-9)
             base_qty = d_buy_qty
-        return ratio >= self.dominance_ratio * 2 and base_qty >= qty_thr * 1.5
+            win_ratio_qty = (buy_qty_sum / max(sell_qty_sum, 1e-9)) if (sell_qty_sum > 0 or buy_qty_sum > 0) else None
+            win_ratio_cnt = buy_cnt_sum / max(sell_cnt_sum, 1)
+        # qty 支配或 counts 支配满足其一即可（counts 作为缺失 qty 的后备）
+        qty_gate = ratio >= self.dominance_ratio * 2 and base_qty >= qty_thr * 1.5
+        win_qty_gate = (win_ratio_qty is not None) and (win_ratio_qty >= self.dominance_ratio * 2) and ((sell_qty_sum if t.endswith("sell") else buy_qty_sum) >= qty_thr * 2)
+        cnt_gate = win_ratio_cnt >= max(self.dominance_ratio, 3.0) and ((sell_cnt_sum if t.endswith("sell") else buy_cnt_sum) >= count_thr * 6)
+        # 累计快照的支配后备：直接使用累计总量或累计次数比
+        cum_ratio_qty = (tot_sell_qty / max(tot_buy_qty, 1e-9)) if t.endswith("sell") else (tot_buy_qty / max(tot_sell_qty, 1e-9))
+        cum_ratio_cnt = (tot_sell / max(tot_buy, 1)) if t.endswith("sell") else (tot_buy / max(tot_sell, 1))
+        cum_qty_gate = cum_ratio_qty >= self.dominance_ratio * 2 and (tot_sell_qty if t.endswith("sell") else tot_buy_qty) >= qty_thr * 2
+        cum_cnt_gate = cum_ratio_cnt >= max(self.dominance_ratio, 3.0) and (tot_sell if t.endswith("sell") else tot_buy) >= count_thr * 8
+        if t == "force_rebound_buy":
+            return True
+        if t == "force_rebound_sell":
+            return True
+        return qty_gate or win_qty_gate or cnt_gate or cum_qty_gate or cum_cnt_gate
 
     def _budget_check(self, symbol: str, ts_ms: int, level: int) -> bool:
         # 分钟配额：窗口内事件数受限；重大事件（level>=5）不受限
