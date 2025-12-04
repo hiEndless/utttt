@@ -5,6 +5,8 @@ from event_center.indicators_event_plugins import get_plugins
 from event_center.indicators_event_plugins.meta_combo import load_weights, score_events, build_dashboard
 import time
 from event_center.raw_event import build_raw_event
+import time
+import json
 
 
 def calculate_indicators(symbol: str, interval: str, db: int | None = None):
@@ -23,6 +25,24 @@ def calculate_indicators(symbol: str, interval: str, db: int | None = None):
         return json.loads(val)
     except Exception:
         return {}
+
+
+def read_klines(symbol: str, interval: str, db: int | None = None):
+    client = redis.Redis(
+        host=cfg.redis_host,
+        port=cfg.redis_port,
+        db=(db if db is not None else cfg.redis_db),
+        password=(cfg.redis_password or None),
+        decode_responses=True,
+    )
+    key = f"klines:binance:{symbol}:{interval}"
+    try:
+        val = client.get(key)
+        if not val:
+            return []
+        return json.loads(val)
+    except Exception:
+        return []
 
 
 # -----------------------------
@@ -99,7 +119,7 @@ class EventGenerator:
                     event_type=etype,
                     event_level=level,
                     timestamp_ms=ts_ms,
-                    payload=payload,
+                    payload={**payload, "interval": self.interval},
                 )
                 self.events.append(raw)
             except Exception:
@@ -118,6 +138,101 @@ class EventGenerator:
         if not self.events:
             self.generate_events()
         await writer.write_many(self.events)
+
+
+class RedisEventWriter:
+    def __init__(self, redis):
+        self.redis = redis
+        self.min_level_map = {"1m": 4, "5m": 4, "15m": 4, "30m": 3, "1h": 3, "2h": 3, "4h": 2, "1d": 2}
+        self.dedup_window_ms = {"1m": 60000, "5m": 120000, "15m": 180000, "30m": 300000, "1h": 600000, "2h": 900000, "4h": 1800000, "1d": 3600000}
+        self.emit_min_interval_ms = {"1m": 30000, "5m": 60000, "15m": 120000, "30m": 180000, "1h": 300000, "2h": 600000, "4h": 900000, "1d": 1800000}
+        self.budget_window_s = {"1m": 120, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "2h": 7200, "4h": 14400, "1d": 86400}
+        self.budget_max = {"1m": 1, "5m": 1, "15m": 2, "30m": 2, "1h": 2, "2h": 2, "4h": 2, "1d": 3}
+
+    def _fp(self, payload: dict) -> str:
+        try:
+            def _round(v):
+                if isinstance(v, float):
+                    return round(v, 6)
+                return v
+            def _norm(x):
+                if isinstance(x, dict):
+                    return {k: _norm(x[k]) for k in sorted(x.keys())}
+                if isinstance(x, list):
+                    return [_norm(i) for i in x]
+                return _round(x)
+            return json.dumps(_norm(payload or {}), separators=(",", ":"), ensure_ascii=False)
+        except Exception:
+            return json.dumps(payload or {}, separators=(",", ":"), ensure_ascii=False)
+
+    async def _should_emit(self, raw: dict) -> bool:
+        try:
+            symbol = raw.get("symbol")
+            etype = raw.get("event_type")
+            payload_s = raw.get("payload") or "{}"
+            payload = json.loads(payload_s) if isinstance(payload_s, str) else payload_s
+            interval = str(payload.get("interval") or "1m")
+            level = 0
+            try:
+                level = int(raw.get("event_level", "0"))
+            except Exception:
+                level = 0
+            now_ms = int(time.time() * 1000)
+
+            min_lv = self.min_level_map.get(interval, 2)
+            if level < min_lv:
+                return False
+
+            fp = self._fp(payload)
+            key_base = f"ind_ev_gate:{symbol}:{interval}:{etype}"
+            last_ts_s = await self.redis.get(key_base + ":last_ts")
+            last_fp = await self.redis.get(key_base + ":last_fp")
+            last_ts = int(last_ts_s) if last_ts_s else 0
+            if now_ms - last_ts < self.emit_min_interval_ms.get(interval, 60000):
+                if last_fp == fp and now_ms - last_ts < self.dedup_window_ms.get(interval, 60000):
+                    return False
+
+            # budget check
+            bw = self.budget_window_s.get(interval, 120)
+            bkey = key_base + ":budget"
+            try:
+                cur = await self.redis.get(bkey)
+                cur_n = int(cur) if cur else 0
+            except Exception:
+                cur_n = 0
+            if cur_n >= self.budget_max.get(interval, 1) and level < 5:
+                return False
+            # record state
+            try:
+                await self.redis.set(key_base + ":last_ts", str(now_ms))
+                await self.redis.set(key_base + ":last_fp", fp)
+                # bump budget with TTL window
+                pipe = self.redis.pipeline()
+                await pipe.incr(bkey)
+                await pipe.expire(bkey, bw)
+                await pipe.execute()
+            except Exception:
+                pass
+            return True
+        except Exception:
+            return True
+
+    async def write_many(self, events):
+        for raw in events:
+            try:
+                ok = await self._should_emit(raw)
+                if not ok:
+                    continue
+                await self.redis.xadd(cfg.raw_stream, raw)
+                lv = int(raw.get("event_level", "0")) if isinstance(raw.get("event_level"), (str, int)) else 0
+                if lv >= 5:
+                    await self.redis.xadd(cfg.final_stream, raw)
+                elif lv >= 4:
+                    await self.redis.xadd(cfg.l1_stream, raw)
+                else:
+                    await self.redis.xadd(cfg.l0_stream, raw)
+            except Exception:
+                pass
 
 
 # -----------------------------
