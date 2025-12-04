@@ -40,8 +40,8 @@ class ForceStatsConsumer:
         self.default_intensity_threshold = self.intensity_count_threshold
         self.gate_window_ms = int(os.getenv("FORCE_GATE_WINDOW_MS", "180000"))  # 强门限评估窗口（毫秒），默认3分钟
         self._agg: Dict[str, Deque[Tuple[int, int, int, float, float]]] = defaultdict(lambda: deque(maxlen=600))  # (ts, d_sell, d_buy, d_sell_qty, d_buy_qty)
-        self.total_count_threshold_sell = int(os.getenv("FORCE_TOTAL_SELL_COUNT_THRESHOLD", "10"))
-        self.total_count_threshold_buy = int(os.getenv("FORCE_TOTAL_BUY_COUNT_THRESHOLD", "10"))
+        self.total_count_threshold_sell = int(os.getenv("FORCE_TOTAL_SELL_COUNT_THRESHOLD", "20"))
+        self.total_count_threshold_buy = int(os.getenv("FORCE_TOTAL_BUY_COUNT_THRESHOLD", "20"))
         self.rebound_streak = int(os.getenv("FORCE_REBOUND_STREAK", "3"))
         self.rebound_window_ms = int(os.getenv("FORCE_REBOUND_WINDOW_MS", "20000"))
         self._last_dominant_side: Dict[str, str] = {}
