@@ -79,13 +79,13 @@ class EventGenerator:
             interval = self.interval
             if signal in ("combo_bullish", "combo_bearish"):
                 final_side = side or ("bullish" if "bull" in (signal or "") else "bearish")
-                return f"{plugin}.{final_side}.{interval}"
+                return f"combo.{plugin}.{final_side}.{interval}"
             if signal == "combo_neutral":
-                return f"{plugin}.neutral.{interval}"
+                return f"combo.{plugin}.neutral.{interval}"
             if signal:
-                return f"{plugin}.{signal}.{interval}"
+                return f"combo.{plugin}.{signal}.{interval}"
             et = ev.get("type") or ev.get("event_type") or "unknown"
-            return f"{plugin}.{et}.{interval}"
+            return f"combo.{plugin}.{et}.{interval}"
 
         def _grade(payload: dict) -> int:
             try:
