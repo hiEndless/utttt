@@ -485,7 +485,7 @@ class ForceStatsConsumer:
 
     async def run(self):
         self._running = True
-        print("[ForceStatsConsumer] started, piping force_stats_stream:* -> output")
+        print("[ForceStatsConsumer] started, piping force_stats_stream:* -> raw_event_stream")
         last_discover = 0.0
         while self._running:
             now = time.time()
