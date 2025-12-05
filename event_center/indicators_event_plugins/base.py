@@ -18,7 +18,7 @@ def last_ts(kline):
             return int(kline[-1][0])
         except Exception:
             return int(time.time())
-    
+
 
 def build_event(symbol, kline, signal, payload, interval):
     return {
@@ -90,6 +90,7 @@ class CompositeComboBase(EventPlugin):
     - 通用过滤：base_filters (ATR/ADX/min_strength)
     - 权重化 strength：triggers (weight 1), patterns (weight 2) by default
     - 可重写：build_bullish_triggers/build_bearish_triggers/build_bullish_patterns/build_bearish_patterns/choose_direction/base_payload
+    - Direction 优先策略实现：若 choose_direction() 返回 'bullish'/'bearish'，优先只发该方向事件
     """
 
     # default signal names
@@ -110,6 +111,7 @@ class CompositeComboBase(EventPlugin):
     def _load_combo_params(cls):
         if cls._combo_params_cache is not None:
             return cls._combo_params_cache
+
         def _try_load_yaml(path):
             try:
                 import yaml
@@ -117,6 +119,7 @@ class CompositeComboBase(EventPlugin):
                     return yaml.safe_load(f)
             except Exception:
                 return None
+
         base_dir = os.path.dirname(__file__)
         cfg_path = os.path.join(base_dir, "config", "combo_params.yml")
         data = _try_load_yaml(cfg_path) or {}
@@ -190,9 +193,9 @@ class CompositeComboBase(EventPlugin):
 
     def base_filters(self, common, interval=None):
         """
-        Returns False if event generation should be skipped due to market conditions:
-        - too low volatility (atr/price < threshold)
-        - non-trend (adx < threshold) -> we still allow pattern signals (configurable)
+        Returns dict like {"ok": bool, "reason": str?, "trend": bool?}
+        - If ok is False, the generator should skip producing signals.
+        - trend flag is advisory (used to adjust min_strength).
         """
         close = common.get("close")
         atr = common.get("atr")
@@ -238,6 +241,23 @@ class CompositeComboBase(EventPlugin):
         pw = params.get("pattern_weight", self.pattern_weight)
         return tcount * tw + pcount * pw
 
+    def _filter_items_keep_valid(self, d: dict) -> dict:
+        """
+        过滤 triggers/patterns 的返回 dict：
+        - 只过滤掉 None 和 False（布尔 False），保留 0、''、数字等可能有意义的返回值。
+        """
+        if not d:
+            return {}
+        out = {}
+        for k, v in d.items():
+            if v is None:
+                continue
+            # explicit False means "not triggered"
+            if isinstance(v, bool) and v is False:
+                continue
+            out[k] = v
+        return out
+
     def generate(self, symbol, kline, ind, prev_ind, interval):
         res = []
         common = self.get_common_values(ind, prev_ind, kline)
@@ -248,16 +268,22 @@ class CompositeComboBase(EventPlugin):
         if not filt.get("ok", True):
             return res  # 跳出，不产生信号
 
-        # get triggers/patterns (subclass)
-        bull_tr = {k: v for k, v in (self.build_bullish_triggers(ind, prev_ind, kline) or {}).items() if v}
-        bear_tr = {k: v for k, v in (self.build_bearish_triggers(ind, prev_ind, kline) or {}).items() if v}
-        bull_pt = {k: v for k, v in (self.build_bullish_patterns(ind, prev_ind, kline) or {}).items() if v}
-        bear_pt = {k: v for k, v in (self.build_bearish_patterns(ind, prev_ind, kline) or {}).items() if v}
+        # get triggers/patterns (subclass) and filter values robustly
+        raw_bull_tr = self.build_bullish_triggers(ind, prev_ind, kline) or {}
+        raw_bear_tr = self.build_bearish_triggers(ind, prev_ind, kline) or {}
+        raw_bull_pt = self.build_bullish_patterns(ind, prev_ind, kline) or {}
+        raw_bear_pt = self.build_bearish_patterns(ind, prev_ind, kline) or {}
+
+        bull_tr = self._filter_items_keep_valid(raw_bull_tr)
+        bear_tr = self._filter_items_keep_valid(raw_bear_tr)
+        bull_pt = self._filter_items_keep_valid(raw_bull_pt)
+        bear_pt = self._filter_items_keep_valid(raw_bear_pt)
 
         # direction preference enforced by subclass choose_direction
         direction = self.choose_direction(ind, prev_ind, kline)
+        # direction is either "bullish", "bearish", or None
 
-        # optionally, if not trend (adx low), we may lower sensitivity: require at least one pattern
+        # optionally, if not trend (adx low), we may raise threshold: require at least one pattern
         trend_flag = filt.get("trend", True)
         params = self._resolve_params(interval or "")
         min_strength = params.get("min_strength", self.min_strength)
@@ -265,23 +291,91 @@ class CompositeComboBase(EventPlugin):
             # in non-trend, require structure/pattern (avoid false breakouts); escalate threshold
             min_strength = max(min_strength, 3)
 
-        # bullish branch
-        if direction in (None, "bullish") and bull_tr:
-            strength = self.compute_strength(bull_tr, bull_pt, interval)
-            if strength >= min_strength:
-                payload = {"strength": strength, "triggers": bull_tr, "patterns": bull_pt, "plugin": getattr(self, "name", self.__class__.__name__), "side": "bullish"}
-                payload.update(self.base_payload(ind, prev_ind, kline) or {})
-                payload.update(common)  # include common useful fields
-                res.append(build_event(symbol, kline, getattr(self, "bullish_signal", "combo_bullish"), payload, interval))
+        # ---------------------------
+        # compute strengths for both sides (patterns-only allowed)
+        # ---------------------------
+        bullish_strength = self.compute_strength(bull_tr, bull_pt, interval)
+        bearish_strength = self.compute_strength(bear_tr, bear_pt, interval)
 
-        # bearish branch
-        if direction in (None, "bearish") and bear_tr:
-            strength = self.compute_strength(bear_tr, bear_pt, interval)
-            if strength >= min_strength:
-                payload = {"strength": strength, "triggers": bear_tr, "patterns": bear_pt, "plugin": getattr(self, "name", self.__class__.__name__), "side": "bearish"}
+        # ---------------------------
+        # Direction 优先逻辑（你要求）
+        # 1) 如果 choose_direction 返回 'bullish'/'bearish'，则优先只考虑该方向（忽略另一方）
+        # 2) 否则（choose_direction is None），若两边均满足阈值则产生 neutral
+        # ---------------------------
+        if direction == "bullish":
+            # only allow bullish side
+            if bullish_strength >= min_strength:
+                payload = {
+                    "strength": bullish_strength,
+                    "triggers": bull_tr,
+                    "patterns": bull_pt,
+                    "plugin": getattr(self, "name", self.__class__.__name__),
+                    "side": "bullish",
+                }
+                payload.update(self.base_payload(ind, prev_ind, kline) or {})
+                payload.update(common)
+                res.append(build_event(symbol, kline, getattr(self, "bullish_signal", "combo_bullish"), payload, interval))
+            return res
+
+        if direction == "bearish":
+            # only allow bearish side
+            if bearish_strength >= min_strength:
+                payload = {
+                    "strength": bearish_strength,
+                    "triggers": bear_tr,
+                    "patterns": bear_pt,
+                    "plugin": getattr(self, "name", self.__class__.__name__),
+                    "side": "bearish",
+                }
                 payload.update(self.base_payload(ind, prev_ind, kline) or {})
                 payload.update(common)
                 res.append(build_event(symbol, kline, getattr(self, "bearish_signal", "combo_bearish"), payload, interval))
+            return res
+
+        # ---------------------------
+        # choose_direction is None -> normal symmetric logic (neutral possible)
+        # ---------------------------
+        # neutral: both sides meet min_strength
+        if bullish_strength >= min_strength and bearish_strength >= min_strength:
+            neutral_payload = {
+                "strength_bullish": bullish_strength,
+                "strength_bearish": bearish_strength,
+                "triggers_bullish": bull_tr,
+                "patterns_bullish": bull_pt,
+                "triggers_bearish": bear_tr,
+                "patterns_bearish": bear_pt,
+                "plugin": getattr(self, "name", self.__class__.__name__),
+                "side": "neutral",
+            }
+            neutral_payload.update(self.base_payload(ind, prev_ind, kline) or {})
+            neutral_payload.update(common)
+            res.append(build_event(symbol, kline, "combo_neutral", neutral_payload, interval))
+            return res
+
+        # bullish branch (no direction preference)
+        if bullish_strength >= min_strength:
+            payload = {
+                "strength": bullish_strength,
+                "triggers": bull_tr,
+                "patterns": bull_pt,
+                "plugin": getattr(self, "name", self.__class__.__name__),
+                "side": "bullish",
+            }
+            payload.update(self.base_payload(ind, prev_ind, kline) or {})
+            payload.update(common)
+            res.append(build_event(symbol, kline, getattr(self, "bullish_signal", "combo_bullish"), payload, interval))
+
+        # bearish branch (no direction preference)
+        if bearish_strength >= min_strength:
+            payload = {
+                "strength": bearish_strength,
+                "triggers": bear_tr,
+                "patterns": bear_pt,
+                "plugin": getattr(self, "name", self.__class__.__name__),
+                "side": "bearish",
+            }
+            payload.update(self.base_payload(ind, prev_ind, kline) or {})
+            payload.update(common)
+            res.append(build_event(symbol, kline, getattr(self, "bearish_signal", "combo_bearish"), payload, interval))
 
         return res
-

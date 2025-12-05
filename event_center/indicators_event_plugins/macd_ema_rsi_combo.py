@@ -126,20 +126,20 @@ class RSIMACDEMACombo(CompositeComboBase):
     def build_bullish_patterns(self, ind, prev_ind, kline):
         v = self.extract_all(ind, prev_ind)
         close = last_close(kline)
-        prev_close = prev_close(kline)
+        prev_close_value = prev_close(kline)
 
         out = {}
 
         # -------- RSI 底背离 --------
         out["rsi_bull_div"] = (
-            close is not None and prev_close is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
-            close < prev_close and v["rsi"] > v["rsi_prev"]
+            close is not None and prev_close_value is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
+            close < prev_close_value and v["rsi"] > v["rsi_prev"]
         )
 
         # -------- MACD 底背离 --------
         out["macd_bull_div"] = (
-            close is not None and prev_close is not None and v["dif"] is not None and v["dif_prev"] is not None and
-            close < prev_close and v["dif"] > v["dif_prev"]
+            close is not None and prev_close_value is not None and v["dif"] is not None and v["dif_prev"] is not None and
+            close < prev_close_value and v["dif"] > v["dif_prev"]
         )
 
         return out
@@ -150,20 +150,20 @@ class RSIMACDEMACombo(CompositeComboBase):
     def build_bearish_patterns(self, ind, prev_ind, kline):
         v = self.extract_all(ind, prev_ind)
         close = last_close(kline)
-        prev_close = prev_close(kline)
+        prev_close_value = prev_close(kline)
 
         out = {}
 
         # -------- RSI 顶背离 --------
         out["rsi_bear_div"] = (
-            close is not None and prev_close is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
-            close > prev_close and v["rsi"] < v["rsi_prev"]
+            close is not None and prev_close_value is not None and v["rsi"] is not None and v["rsi_prev"] is not None and
+            close > prev_close_value and v["rsi"] < v["rsi_prev"]
         )
 
         # -------- MACD 顶背离 --------
         out["macd_bear_div"] = (
-            close is not None and prev_close is not None and v["dif"] is not None and v["dif_prev"] is not None and
-            close > prev_close and v["dif"] < v["dif_prev"]
+            close is not None and prev_close_value is not None and v["dif"] is not None and v["dif_prev"] is not None and
+            close > prev_close_value and v["dif"] < v["dif_prev"]
         )
 
         return out

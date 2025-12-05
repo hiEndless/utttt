@@ -76,6 +76,8 @@ class EventGenerator:
             side = payload.get("side") or ev.get("side")
             if signal in ("combo_bullish", "combo_bearish"):
                 return f"tech.combo.{side or ('bullish' if 'bull' in (signal or '') else 'bearish')}"
+            if signal == "combo_neutral":
+                return "tech.combo.neutral"
             if signal:
                 return f"tech.signal.{signal}"
             et = ev.get("type") or ev.get("event_type")
