@@ -100,12 +100,12 @@ class EventGenerator:
                 atr_ratio = None
 
             if strength >= 6 and (adx or 0) >= 25 and (vol_chg or 0) >= 1.8 and (atr_ratio or 0) >= 0.006:
-                return 5
-            if strength >= 5 and (adx or 0) >= 20 and (vol_chg or 0) >= 1.5 and (atr_ratio or 0) >= 0.004:
                 return 4
-            if strength >= 4 or (adx or 0) >= 18:
+            if strength >= 5 and (adx or 0) >= 20 and (vol_chg or 0) >= 1.5 and (atr_ratio or 0) >= 0.004:
                 return 3
-            return 2
+            if strength >= 4 or (adx or 0) >= 18:
+                return 2
+            return 1
         for ev in plugin_events:
             try:
                 payload = ev.get("payload") if isinstance(ev, dict) else {"raw": ev}
@@ -227,9 +227,9 @@ class RedisEventWriter:
                     continue
                 await self.redis.xadd(cfg.raw_stream, raw)
                 lv = int(raw.get("event_level", "0")) if isinstance(raw.get("event_level"), (str, int)) else 0
-                if lv >= 5:
+                if lv >= 4:
                     await self.redis.xadd(cfg.final_stream, raw)
-                elif lv >= 4:
+                elif lv >= 3:
                     await self.redis.xadd(cfg.l1_stream, raw)
                 else:
                     await self.redis.xadd(cfg.l0_stream, raw)

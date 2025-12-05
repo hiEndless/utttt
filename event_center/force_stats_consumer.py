@@ -80,6 +80,7 @@ class ForceStatsConsumer:
             pass
 
     async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict, level: int):
+        level = max(2, int(level))
         # 先进行配额检查；重大事件（level>=5）越过配额限制
         if not self._budget_check(symbol, ts_ms, level):
             return
@@ -257,6 +258,7 @@ class ForceStatsConsumer:
                 continue
             level = self._map_level_dyn(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
                                         intensity_thr)
+            level = max(2, int(level))
             await self._emit_raw(symbol, start_ts, t, details, level)
 
     def _map_level(self, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int) -> int:
@@ -267,20 +269,20 @@ class ForceStatsConsumer:
                 base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
                 base_cnt = d_sell if t.endswith("sell") else d_buy
                 if base_qty >= self.qty_threshold * 5 or base_cnt >= self.count_threshold * 4:
-                    return 5
-                if base_qty >= self.qty_threshold * 2 or base_cnt >= self.count_threshold * 2:
                     return 4
-                if base_qty >= self.qty_threshold or base_cnt >= self.count_threshold:
+                if base_qty >= self.qty_threshold * 2 or base_cnt >= self.count_threshold * 2:
                     return 3
-                return 2
+                if base_qty >= self.qty_threshold or base_cnt >= self.count_threshold:
+                    return 2
+                return 1
             if t == "force_intensity":
                 if intensity >= self.intensity_count_threshold * 4:
-                    return 5
-                if intensity >= self.intensity_count_threshold * 2:
                     return 4
-                if intensity >= self.intensity_count_threshold:
+                if intensity >= self.intensity_count_threshold * 2:
                     return 3
-                return 2
+                if intensity >= self.intensity_count_threshold:
+                    return 2
+                return 1
             # dominance
             if t.endswith("sell_dominance"):
                 ratio = d_sell_qty / max(d_buy_qty, 1e-9)
@@ -289,72 +291,72 @@ class ForceStatsConsumer:
                 ratio = d_buy_qty / max(d_sell_qty, 1e-9)
                 base_qty = d_buy_qty
             if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
-                return 5
-            if ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                 return 4
-            if ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+            if ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                 return 3
-            return 2
+            if ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                return 2
+            return 1
 
         # config-driven mapping (currently absolute thresholds only)
-        level = 2
+        level = 1
         for m in (cfg.get("metrics") or []):
             name = m.get("name")
             thr = m.get("thresholds", {})
-            this_level = 2
+            this_level = 1
             if name == "delta_sell_qty":
                 if d_sell_qty >= self.qty_threshold * 5:
-                    this_level = max(this_level, 5)
-                elif d_sell_qty >= self.qty_threshold * 2:
                     this_level = max(this_level, 4)
-                elif d_sell_qty >= self.qty_threshold:
+                elif d_sell_qty >= self.qty_threshold * 2:
                     this_level = max(this_level, 3)
+                elif d_sell_qty >= self.qty_threshold:
+                    this_level = max(this_level, 2)
             elif name == "delta_buy_qty":
                 if d_buy_qty >= self.qty_threshold * 5:
-                    this_level = max(this_level, 5)
-                elif d_buy_qty >= self.qty_threshold * 2:
                     this_level = max(this_level, 4)
-                elif d_buy_qty >= self.qty_threshold:
+                elif d_buy_qty >= self.qty_threshold * 2:
                     this_level = max(this_level, 3)
+                elif d_buy_qty >= self.qty_threshold:
+                    this_level = max(this_level, 2)
             elif name == "delta_sell":
                 if d_sell >= self.count_threshold * 4:
-                    this_level = max(this_level, 5)
-                elif d_sell >= self.count_threshold * 2:
                     this_level = max(this_level, 4)
-                elif d_sell >= self.count_threshold:
+                elif d_sell >= self.count_threshold * 2:
                     this_level = max(this_level, 3)
+                elif d_sell >= self.count_threshold:
+                    this_level = max(this_level, 2)
             elif name == "delta_buy":
                 if d_buy >= self.count_threshold * 4:
-                    this_level = max(this_level, 5)
-                elif d_buy >= self.count_threshold * 2:
                     this_level = max(this_level, 4)
-                elif d_buy >= self.count_threshold:
+                elif d_buy >= self.count_threshold * 2:
                     this_level = max(this_level, 3)
+                elif d_buy >= self.count_threshold:
+                    this_level = max(this_level, 2)
             elif name == "intensity":
                 if intensity >= self.intensity_count_threshold * 4:
-                    this_level = max(this_level, 5)
-                elif intensity >= self.intensity_count_threshold * 2:
                     this_level = max(this_level, 4)
-                elif intensity >= self.intensity_count_threshold:
+                elif intensity >= self.intensity_count_threshold * 2:
                     this_level = max(this_level, 3)
+                elif intensity >= self.intensity_count_threshold:
+                    this_level = max(this_level, 2)
             elif name == "dominance_sell_ratio":
                 ratio = d_sell_qty / max(d_buy_qty, 1e-9)
                 base_qty = d_sell_qty
                 if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
-                    this_level = max(this_level, 5)
-                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                     this_level = max(this_level, 4)
-                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                     this_level = max(this_level, 3)
+                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                    this_level = max(this_level, 2)
             elif name == "dominance_buy_ratio":
                 ratio = d_buy_qty / max(d_sell_qty, 1e-9)
                 base_qty = d_buy_qty
                 if ratio >= self.dominance_ratio * 2.5 and base_qty >= self.qty_threshold * 2:
-                    this_level = max(this_level, 5)
-                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                     this_level = max(this_level, 4)
-                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                elif ratio >= self.dominance_ratio * 1.5 and base_qty >= self.qty_threshold:
                     this_level = max(this_level, 3)
+                elif ratio >= self.dominance_ratio and base_qty >= self.qty_threshold / 2:
+                    this_level = max(this_level, 2)
             level = max(level, this_level)
         return level
 
@@ -364,22 +366,22 @@ class ForceStatsConsumer:
             base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
             base_cnt = d_sell if t.endswith("sell") else d_buy
             if base_qty >= qty_thr * 5 or base_cnt >= count_thr * 4:
-                return 5
-            if base_qty >= qty_thr * 2 or base_cnt >= count_thr * 2:
                 return 4
-            if base_qty >= qty_thr or base_cnt >= count_thr:
+            if base_qty >= qty_thr * 2 or base_cnt >= count_thr * 2:
                 return 3
+            if base_qty >= qty_thr or base_cnt >= count_thr:
+                return 2
             return 2
         if t == "force_intensity":
             if intensity >= intensity_thr * 4:
-                return 5
-            if intensity >= intensity_thr * 2:
                 return 4
-            if intensity >= intensity_thr:
+            if intensity >= intensity_thr * 2:
                 return 3
+            if intensity >= intensity_thr:
+                return 2
             return 2
         if t == "force_rebound_buy" or t == "force_rebound_sell":
-            return 3
+            return 2
         if t.endswith("sell_dominance"):
             ratio = d_sell_qty / max(d_buy_qty, 1e-9)
             base_qty = d_sell_qty
@@ -387,11 +389,11 @@ class ForceStatsConsumer:
             ratio = d_buy_qty / max(d_sell_qty, 1e-9)
             base_qty = d_buy_qty
         if ratio >= self.dominance_ratio * 2.5 and base_qty >= qty_thr * 2:
-            return 5
-        if ratio >= self.dominance_ratio * 1.5 and base_qty >= qty_thr:
             return 4
-        if ratio >= self.dominance_ratio and base_qty >= qty_thr * 0.5:
+        if ratio >= self.dominance_ratio * 1.5 and base_qty >= qty_thr:
             return 3
+        if ratio >= self.dominance_ratio and base_qty >= qty_thr * 0.5:
+            return 2
         return 2
 
     def _strong_gate(self, symbol: str, now_ms: int, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int,
@@ -471,7 +473,7 @@ class ForceStatsConsumer:
         lst = self._symbol_budget.get(symbol) or []
         lst = [t for t in lst if ts_ms - t <= window_ms]
         self._symbol_budget[symbol] = lst
-        if len(lst) >= self.emit_budget_max and level < 5:
+        if len(lst) >= self.emit_budget_max and level < 4:
             return False
         return True
 
