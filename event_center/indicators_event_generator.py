@@ -58,7 +58,7 @@ class EventGenerator:
         self.plugins = get_plugins()
 
     def generate_events(self):
-        print(f"[IndicatorsEventGenerator] started, piping indicators:{self.symbol}:{self.interval} -> {cfg.raw_stream}")
+        # print(f"[IndicatorsEventGenerator] started, piping indicators:{self.symbol}:{self.interval} -> {cfg.raw_stream}")
         self.events = []
         plugin_events = []
         for p in self.plugins:
