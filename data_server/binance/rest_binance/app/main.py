@@ -19,7 +19,7 @@ from http_client import http_client
 from utils import logger
 
 
-def make_spider(interval: str, limit: int = 200):
+def make_spider(interval: str, limit: int = 300):
     async def run(symbol: str):
         logger.info("task_trigger name=%s interval=%s time=%s", f"spider_{interval}", interval,
                     time.strftime("%Y-%m-%d %H:%M:%S"))
