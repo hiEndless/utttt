@@ -206,7 +206,7 @@ class RedisEventWriter:
                 cur_n = int(cur) if cur else 0
             except Exception:
                 cur_n = 0
-            if cur_n >= self.budget_max.get(interval, 1) and level < 5:
+            if cur_n >= self.budget_max.get(interval, 1) and level < 4:
                 return False
             # record state
             try:
@@ -247,4 +247,3 @@ class RedisEventWriter:
 if __name__ == "__main__":
     res = calculate_indicators('BTCUSDT', '1m')
     print(res)
-
