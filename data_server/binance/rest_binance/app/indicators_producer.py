@@ -37,6 +37,13 @@ class EventGenerator:
         klines_key = f"klines:binance:{self.symbol}:{self.interval}"
         await client.set(indicators_key, json.dumps(self.ind, ensure_ascii=False))
         await client.set(klines_key, json.dumps(self.kline, ensure_ascii=False))
+        try:
+            if isinstance(self.kline, list) and len(self.kline) >= 2:
+                prev_ind = calculate_indicators(self.kline[:-1])
+                prev_key = f"indicators:prev:binance:{self.symbol}:{self.interval}"
+                await client.set(prev_key, json.dumps(prev_ind, ensure_ascii=False))
+        except Exception:
+            pass
         return True
 
 
