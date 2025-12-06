@@ -16,6 +16,10 @@ class EMAMacdCombo(CompositeComboBase):
     name = "ema_macd_extended_combo"
     version = "3.0"
 
+    bullish_signal = "ema_macd_bullish"
+    bearish_signal = "ema_macd_bearish"
+    neutral_signal = "ema_macd_neutral"
+
     required_indicators = ["ema", "macd", "vol"]
     min_adx = 20  # 趋势过滤阈值
 
