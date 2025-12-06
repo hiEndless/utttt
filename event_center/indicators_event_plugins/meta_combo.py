@@ -86,7 +86,7 @@ def load_weights(base_dir):
                 },
                 "patterns": {},
             },
-            "triple_rsi_ema_macd": {
+            "rsi_ema_macd": {
                 "triggers": {
                     "rsi_rebound": 2,
                     "rsi_fall": 2,

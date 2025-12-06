@@ -66,7 +66,7 @@ plugins:
         min_strength: 3
     defaults:
       ema_flat_ratio: 0.002
-  triple_rsi_ema_macd:
+  rsi_ema_macd:
     intervals:
       "1m":
         min_strength: 3

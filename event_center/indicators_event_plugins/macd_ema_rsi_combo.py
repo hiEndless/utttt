@@ -14,7 +14,7 @@ class RSIMACDEMACombo(CompositeComboBase):
     - RSI/MACD 背离
     """
 
-    name = "triple_rsi_ema_macd"
+    name = "rsi_ema_macd"
     version = "3.0"
     required_indicators = ["rsi", "ema", "macd"]
 
