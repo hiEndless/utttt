@@ -1,6 +1,15 @@
 import uuid
 import time
 import os
+import json
+try:
+    from event_center.config import cfg
+except Exception:
+    cfg = None
+try:
+    import redis
+except Exception:
+    redis = None
 
 
 def last_close(kline):
@@ -40,6 +49,16 @@ def prev_close(kline):
 
 class EventPlugin:
     def generate(self, symbol, kline, ind, prev_ind, interval):
+        if prev_ind is None:
+            try:
+                if cfg and redis:
+                    client = redis.Redis(host=cfg.redis_host, port=cfg.redis_port, db=cfg.redis_db, password=(cfg.redis_password or None), decode_responses=True)
+                    key = f"indicators:prev:binance:{symbol}:{interval}"
+                    val = client.get(key)
+                    if val:
+                        prev_ind = json.loads(val)
+            except Exception:
+                prev_ind = prev_ind
         return []
 
     def supports(self, symbol, interval, kline, ind):
@@ -259,6 +278,16 @@ class CompositeComboBase(EventPlugin):
         return out
 
     def generate(self, symbol, kline, ind, prev_ind, interval):
+        if prev_ind is None:
+            try:
+                if cfg and redis:
+                    client = redis.Redis(host=cfg.redis_host, port=cfg.redis_port, db=cfg.redis_db, password=(cfg.redis_password or None), decode_responses=True)
+                    key = f"indicators:prev:binance:{symbol}:{interval}"
+                    val = client.get(key)
+                    if val:
+                        prev_ind = json.loads(val)
+            except Exception:
+                prev_ind = prev_ind
         res = []
         common = self.get_common_values(ind, prev_ind, kline)
 
