@@ -1,13 +1,21 @@
 from typing import Any
-
-from .news import NewsExpert
-from .technical import TechnicalExpert
-from .risk import RiskExpert
-from .portfolio import PortfolioExpert
-from .reflection import ReflectionExpert
-from .fusion import FusionExpert
-from .memory import MemoryExpert
 from agent_server.a2a.cards import get_agent_card
+try:
+    from .analysis.news import NewsExpert
+    from .analysis.technical import TechnicalExpert
+    from .analysis.risk import RiskExpert
+    from .analysis.portfolio import PortfolioExpert
+    from .orchestration.reflection import ReflectionExpert
+    from .orchestration.fusion import FusionExpert
+    from .orchestration.memory import MemoryExpert  
+except ImportError:
+    from agent_server.agents.experts.analysis.news import NewsExpert
+    from agent_server.agents.experts.analysis.technical import TechnicalExpert
+    from agent_server.agents.experts.analysis.risk import RiskExpert
+    from agent_server.agents.experts.analysis.portfolio import PortfolioExpert
+    from agent_server.agents.experts.orchestration.reflection import ReflectionExpert
+    from agent_server.agents.experts.orchestration.fusion import FusionExpert
+    from agent_server.agents.experts.orchestration.memory import MemoryExpert  
 
 
 def load_expert(name: str) -> Any:
