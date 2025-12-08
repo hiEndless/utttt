@@ -3,7 +3,7 @@ from agent_server.a2a.cards import get_agent_card
 try:
     from .analysis.news import NewsExpert
     from .analysis.technical import TechnicalExpert
-    from .analysis.risk import RiskExpert
+    from .analysis.force_stats import ForceStatsExpert
     from .analysis.portfolio import PortfolioExpert
     from .orchestration.reflection import ReflectionExpert
     from .orchestration.fusion import FusionExpert
@@ -11,7 +11,7 @@ try:
 except ImportError:
     from agent_server.agents.experts.analysis.news import NewsExpert
     from agent_server.agents.experts.analysis.technical import TechnicalExpert
-    from agent_server.agents.experts.analysis.risk import RiskExpert
+    from agent_server.agents.experts.analysis.force_stats import ForceStatsExpert
     from agent_server.agents.experts.analysis.portfolio import PortfolioExpert
     from agent_server.agents.experts.orchestration.reflection import ReflectionExpert
     from agent_server.agents.experts.orchestration.fusion import FusionExpert

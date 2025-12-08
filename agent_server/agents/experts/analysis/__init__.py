@@ -1,4 +1,4 @@
 from .news import NewsExpert
 from .technical import TechnicalExpert
-from .risk import RiskExpert
+from .force_stats import RiskExpert
 from .portfolio import PortfolioExpert

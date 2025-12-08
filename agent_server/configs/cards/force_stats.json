@@ -1,0 +1,23 @@
+{
+  "name": "ForceStats Agent",
+  "description": "负责提供全市场爆仓统计（Force Stats）、方向强弱、三分钟累计单边爆仓趋势等短周期风险信号的专业 Agent。",
+  "url": "http://localhost:10003/",
+  "version": "1.0.0",
+
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+
+  "skills": [
+    {
+      "id": "get_force_stats",
+      "name": "Get Force Stats",
+      "description": "获取指定交易对的爆仓统计数据，包括 BUY/SELL 次数、成交量、连续单边爆仓趋势、反转信号、时间戳、风险评分等。",
+      "tags": ["force", "liquidation", "market_risk", "microstructure"],
+      "examples": [
+        "帮我分析当前BTCUSDT的爆仓数据，判断未来行情的走势"
+      ]
+    }
+  ]
+}

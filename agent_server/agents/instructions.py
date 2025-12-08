@@ -11,7 +11,7 @@ def _load_prompt(agent_name: str) -> str:
         return agent_name
 
 
-def build_instruction(agent_name: str, task: str) -> str:
+def build_instruction(agent_name: str, task: str = None) -> str:
     agent_prompt = _load_prompt(agent_name)
     schema = (
         "Respond in JSON only. Return an object with keys: "
@@ -21,4 +21,6 @@ def build_instruction(agent_name: str, task: str) -> str:
         "sources: array of strings; tool_calls: array of strings; timestamp: ISO8601 string. "
         "No markdown, no code fences, no extra text."
     )
+    if not task:
+        return agent_prompt + " " + schema
     return agent_prompt + " " + task + " " + schema
