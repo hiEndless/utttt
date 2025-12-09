@@ -10,6 +10,7 @@ from redis import asyncio as aioredis
 import json
 import time
 
+
 class IndicatorsScheduler:
     def __init__(self, redis_url: str = cfg.redis_url, intervals=None):
         self.redis = aioredis.from_url(redis_url, decode_responses=True)
