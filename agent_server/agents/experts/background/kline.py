@@ -65,7 +65,7 @@ class KLineExpert:
             final_result = {"data": final_result, "ts": ts}
 
         interval = str(query.get("interval") or "unknown")
-        key = f"env_state:{exchange}:{symbol}:{interval}"
+        key = f"background:{exchange}:{symbol}:{interval}"
         value_to_store = _ensure_json_serializable(final_result)
         client = RedisClient()
         await client.set_json(key, value_to_store)
