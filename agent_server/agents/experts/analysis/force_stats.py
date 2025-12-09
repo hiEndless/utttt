@@ -1,9 +1,14 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.agents.instructions import build_instruction
-import os
-from agent_server.tools import get_force_stats
+from agent_server.configs.prompts.kline import prompt
+from agno.models.message import Message
+import json
+from agent_server.agents.experts.utils import (
+    _extract_json_from_text,
+    _ensure_json_serializable,
+    _json_dumps_safe,
+)
 
 
 class ForceStatsExpert:
@@ -15,12 +20,40 @@ class ForceStatsExpert:
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key") or os.getenv("SILICONFLOW_TOKEN")
+        api_key = cfg.get("llm_api_key")
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
 
-        agent = Agent(model=model,
-                      instructions=build_instruction(self.name),
-                      tools=[get_force_stats])
-        resp = await agent.arun(query)
-        return str(resp.content)
+        agent = Agent(
+            model=model,
+            instructions=prompt,
+        )
+
+        run_output = await agent.arun(
+            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+            stream=False,
+            debug_mode=True,
+        )
+        content = run_output.content
+        if isinstance(content, str):
+            try:
+                final_result = json.loads(content)
+            except json.JSONDecodeError:
+                extracted = _extract_json_from_text(content)
+                if extracted is not None:
+                    final_result = extracted
+                else:
+                    final_result = {"raw": content}
+        elif hasattr(content, "model_dump"):
+            final_result = content.model_dump(exclude_none=True)
+        else:
+            final_result = content
+
+        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
+            extracted_raw = _extract_json_from_text(final_result["raw"])
+            if extracted_raw is not None:
+                final_result = extracted_raw
+
+        output = _json_dumps_safe(final_result)
+        print(output)
+        return output
