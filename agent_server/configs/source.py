@@ -37,13 +37,13 @@ def query_db_env():
             "a2a_url": "http://localhost:10006/",
         },
         "memory": {
-            "model_id": "deepseek-ai/DeepSeek-V3",
+            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
             "llm_base_url": "https://api.siliconflow.cn/v1",
             "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             "a2a_url": "http://localhost:10007/",
         },
         "kline": {
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+            "model_id": "deepseek-ai/DeepSeek-V3",
             "llm_base_url": "https://api.siliconflow.cn/v1",
             "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             "a2a_url": "http://localhost:10006/",
