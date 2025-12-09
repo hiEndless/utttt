@@ -32,7 +32,7 @@ class ForceStatsConsumer:
         self.offset_key_prefix = "consumer_offset:force_stats_consumer:"
         self.debounce_key_prefix = "consumer_debounce:force_stats_consumer:"
         self.debounce_seconds = int(os.getenv("FORCE_EVENT_DEBOUNCE_S", "30"))  # 去抖：同类型事件最短间隔（秒）
-        self.emit_budget_window_s = int(os.getenv("FORCE_EVENT_BUDGET_WINDOW_S", "60"))  # 配额窗口（秒）
+        self.emit_budget_window_s = int(os.getenv("FORCE_EVENT_BUDGET_WINDOW_S", "30"))  # 配额窗口（秒）
         self.emit_budget_max = int(os.getenv("FORCE_EVENT_BUDGET_MAX", "1"))  # 窗口内允许的事件上限（level<5）
         self._symbol_budget: Dict[str, List[int]] = {}  # 每 symbol 已发事件的时间戳列表
         self.default_qty_threshold = self.qty_threshold
