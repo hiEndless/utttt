@@ -14,7 +14,7 @@ class IndicatorsScheduler:
     def __init__(self, redis_url: str = cfg.redis_url, intervals=None):
         self.redis = aioredis.from_url(redis_url, decode_responses=True)
         self.intervals = intervals or ["1m", "5m", "30m", "1h", "2h", "4h", "1d"]
-        self.periods = {"1m": 60, "5m": 150, "30m": 600, "1h": 900, "2h": 1800, "4h": 3600, "1d": 43200}
+        self.periods = {"1m": 10, "5m": 30, "30m": 300, "1h": 600, "2h": 1200, "4h": 3600, "1d": 3600}
         self.writer = RedisEventWriter(self.redis)
 
     async def _discover_symbols(self, interval: str):
