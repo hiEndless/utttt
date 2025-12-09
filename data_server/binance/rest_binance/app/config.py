@@ -9,6 +9,7 @@ class Settings:
     rate_limits_seconds: dict = {
         '1m': 20,
         '5m': 150,
+        '15m': 300,
         '30m': 600,
         '1h': 900,
         '2h': 1800,

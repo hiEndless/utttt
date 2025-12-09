@@ -44,6 +44,8 @@ async def fundingRate_task(symbol: str):
 
 FETCH_PLAN = [
     {"name": "spider_1m", "fn": make_spider("1m"), "interval": settings.rate_limits_seconds["1m"]},
+    {"name": "spider_5m", "fn": make_spider("5m"), "interval": settings.rate_limits_seconds["5m"]},
+    {"name": "spider_15m", "fn": make_spider("15m"), "interval": settings.rate_limits_seconds["15m"]},
     {"name": "spider_30m", "fn": make_spider("30m"), "interval": settings.rate_limits_seconds["30m"]},
     {"name": "spider_1h", "fn": make_spider("1h"), "interval": settings.rate_limits_seconds["1h"]},
     {"name": "spider_2h", "fn": make_spider("2h"), "interval": settings.rate_limits_seconds["2h"]},
