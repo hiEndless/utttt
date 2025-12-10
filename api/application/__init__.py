@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from dotenv import load_dotenv
 from tortoise.contrib.fastapi import register_tortoise
 from .apps.account.views import app as account_app
+from .apps.indicators.views import app as indicators_app
 
 from . import settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,5 +34,6 @@ def create_app() -> FastAPI:
 
     # 注册各个分组应用中的视图接口代码到App应用对象中
     app.include_router(account_app, prefix='/api', tags=['注册登录接口'])  # prefix url路径前缀，
+    app.include_router(indicators_app, prefix='/api', tags=['指标分析接口'])
 
     return app
