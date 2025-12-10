@@ -8,7 +8,7 @@ from manager import SymbolTaskManager
 from redis_watch import RedisSymbolWatcher
 from fetchers import (
     fetch_kline,
-    fetch_takerlongshortRatio,
+    fetch_takerLongShortRatio,
     fetch_topLongShortAccountRatio,
     fetch_topLongShortPositionRatio,
     fetch_globalLongShortAccountRatio,
@@ -24,7 +24,7 @@ def make_spider(interval: str, limit: int = 300):
         logger.info("task_trigger name=%s interval=%s time=%s", f"spider_{interval}", interval,
                     time.strftime("%Y-%m-%d %H:%M:%S"))
         await fetch_kline(symbol, interval, limit)
-        await fetch_takerlongshortRatio(symbol, interval)
+        await fetch_takerLongShortRatio(symbol, interval)
         await fetch_topLongShortAccountRatio(symbol, interval)
         await fetch_topLongShortPositionRatio(symbol, interval)
         await fetch_globalLongShortAccountRatio(symbol, interval)

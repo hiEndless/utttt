@@ -106,7 +106,7 @@ async def fetch_globalLongShortAccountRatio(symbol: str, period: str):
             logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
-async def fetch_takerlongshortRatio(symbol: str, period: str):
+async def fetch_takerLongShortRatio(symbol: str, period: str):
     """ 合约主动买卖量 """
     url = BASE_URL + '/futures/data/takerlongshortRatio'
     _p = '5m' if period == '1m' else period
@@ -174,7 +174,7 @@ async def spider_poller(symbol: str, interval: str, limit: int = 200):
     while True:
         try:
             await fetch_kline(symbol, interval, limit)
-            await fetch_takerlongshortRatio(symbol, interval)
+            await fetch_takerLongShortRatio(symbol, interval)
             await fetch_topLongShortAccountRatio(symbol, interval)
             await fetch_topLongShortPositionRatio(symbol, interval)
             await fetch_globalLongShortAccountRatio(symbol, interval)
