@@ -12,20 +12,21 @@ API_KLINE_READ = "/kline/indicators/read"
 logger = logging.getLogger("background")
 
 INDICATOR_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
-DEFAULT_RATE_LIMITS = {
-    "1m": 60,
-    "5m": 150,
-    "15m": 300,
-    "30m": 600,
-    "1h": 900,
-    "2h": 1800,
-    "4h": 3600,
-    "1d": 43200,
+SCHEDULE_SECONDS = {
+    "market_structure": 1800,
+    "1m": 180,
+    "5m": 900,
+    "15m": 3600,
+    "30m": 7200,
+    "1h": 10800,
+    "2h": 21600,
+    "4h": 43200,
+    "1d": 86400,
 }
 
 
 def _period_seconds(interval: str) -> int:
-    return int(settings.rate_limits_seconds.get(interval, DEFAULT_RATE_LIMITS.get(interval, 300)))
+    return int(SCHEDULE_SECONDS.get(interval, 300))
 
 
 def make_market_structure_task(exchange: str):
@@ -56,9 +57,7 @@ def make_kline_task(exchange: str, interval: str):
         logger.info("bg_task_trigger name=%s interval=%s time=%s symbol=%s", "kline", interval, time.strftime("%Y-%m-%d %H:%M:%S"), symbol)
         base = settings.api_base_url.rstrip("/")
         url = base + API_KLINE_READ
-        print(url)
         payload = {"exchange": exchange, "symbol": symbol, "interval": interval}
-        print(payload)
         try:
             res = await http_client.request("POST", url, json=payload)
             data = (res or {}).get("data") if isinstance(res, dict) else None
@@ -75,7 +74,7 @@ def make_kline_task(exchange: str, interval: str):
 
 def build_fetch_plan(exchange: str) -> List[Dict]:
     plan: List[Dict] = []
-    plan.append({"name": "market_structure", "fn": make_market_structure_task(exchange), "interval": _period_seconds("5m")})
+    plan.append({"name": "market_structure", "fn": make_market_structure_task(exchange), "interval": SCHEDULE_SECONDS["market_structure"]})
     for itv in INDICATOR_INTERVALS:
         plan.append({"name": f"kline_{itv}", "fn": make_kline_task(exchange, itv), "interval": _period_seconds(itv)})
     return plan
