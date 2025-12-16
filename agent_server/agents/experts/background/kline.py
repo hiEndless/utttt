@@ -6,7 +6,7 @@ from agent_server.configs.prompts.kline import prompt
 from agno.models.message import Message
 import json
 import asyncio
-from agent_server.redis_client import RedisClient
+from agent_server.utils.redis_client import RedisClient
 import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
