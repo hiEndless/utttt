@@ -162,6 +162,11 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
 if __name__ == "__main__":
     import json
     import asyncio
+    import os
+    import sys
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
 
@@ -172,18 +177,19 @@ if __name__ == "__main__":
         interval = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
         url = settings.api_base_url.rstrip("/") + API_KLINE_READ
         payload = {"exchange": "binance", "symbol": "BTCUSDT", "intervals": interval}
-        res = await http_client.request("POST", url, json=payload)
-        data = (res or {}).get("data") if isinstance(res, dict) else None
-        items: List[Dict] = []
-        if isinstance(data, dict):
-            for itv, bg in data.items():
-                if isinstance(bg, dict) and bg:
-                    merged = {"interval": itv}
-                    merged.update(bg)
-                    items.append(merged)
-        agg = market_state_aggregator("BTCUSDT", items)
-        print(agg)
-        # print(json.dumps({"backgrounds": items, "aggregate": agg}, ensure_ascii=False))
-
+        try:
+            res = await http_client.request("POST", url, json=payload)
+            data = (res or {}).get("data") if isinstance(res, dict) else None
+            items: List[Dict] = []
+            if isinstance(data, dict):
+                for itv, bg in data.items():
+                    if isinstance(bg, dict) and bg:
+                        merged = {"interval": itv}
+                        merged.update(bg)
+                        items.append(merged)
+            agg = market_state_aggregator("BTCUSDT", items)
+            print(agg)
+        finally:
+            await http_client.close()
 
     asyncio.run(run())
