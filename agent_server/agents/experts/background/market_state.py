@@ -2,7 +2,6 @@ from typing import Dict, List
 from collections import Counter
 import time
 
-
 INTERVAL_GROUPS = {
     "micro_term": {"1m"},
     "short_term": {"5m", "15m"},
@@ -11,6 +10,13 @@ INTERVAL_GROUPS = {
 }
 
 GROUP_ORDER = ["micro_term", "short_term", "mid_term", "long_term"]
+
+CONFIDENCE_WEIGHT = {
+    "micro_term": 0.3,
+    "short_term": 0.7,
+    "mid_term": 1.0,
+    "long_term": 1.2
+}
 
 
 def _majority_vote(values: List[str]) -> str:
@@ -34,13 +40,47 @@ def _detect_conflict(trends: List[str], momentums: List[str]) -> str | None:
     return None
 
 
-def aggregate_structural_group(backgrounds: List[Dict]) -> Dict:
+def detect_long_term_veto(
+        *,
+        directions: List[str],
+        structure: str,
+        momentum: str,
+        risk: str,
+        confidence: float,
+        mid_confidence: float | None
+) -> bool:
+    """
+    long_term 一票否决规则
+    """
+
+    # 规则 1：方向级对立（4h vs 1d）
+    if len(set(directions)) >= 2:
+        if "bullish" in directions and "bearish" in directions:
+            return True
+
+    # 规则 2：结构 + 动能 同时走坏
+    if structure in {"distribution", "breakdown"} and momentum in {"weakening", "exhausted"}:
+        return True
+
+    # 规则 3：高风险环境 + 中周期无共识
+    if risk == "high" and (mid_confidence is None or mid_confidence < 0.6):
+        return True
+
+    # 规则 4：强一致性空头（兜底规则）
+    if confidence >= 0.7 and structure != "consolidating" and "bearish" in directions:
+        return True
+
+    return False
+
+
+def aggregate_structural_group(backgrounds: List[Dict], group: str) -> Dict:
     trends = [b["trend"] for b in backgrounds]
     structures = [b["structure"]["state"] for b in backgrounds]
     momentums = [b["environment"]["momentum_state"] for b in backgrounds]
     risks = [b["environment"]["risk_state"] for b in backgrounds]
 
     agreement = _agreement(trends)
+    weight = CONFIDENCE_WEIGHT.get(group, 1.0)
 
     return {
         "direction": _majority_vote(trends),
@@ -48,17 +88,23 @@ def aggregate_structural_group(backgrounds: List[Dict]) -> Dict:
         "momentum": _majority_vote(momentums),
         "risk": _majority_vote(risks),
         "conflict": _detect_conflict(trends, momentums),
-        "confidence": round(agreement, 2)
+        "confidence": round(agreement * weight, 2),
+        "_raw_trends": trends  # 👈 新增，仅供 veto 使用
     }
 
 
 def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
-    bg = backgrounds[-1]  # 最近一个即可
+    bg = backgrounds[-1]
+    structure = bg["structure"]["state"]
+    proximity = bg["structure"].get("key_level_proximity")
+    state = structure
+    if proximity:
+        state = f"{structure}_near_{proximity}"
 
     return {
-        "state": f"{bg['trend']}_{bg['structure']['state']}",
+        "state": state,
         "role": "trigger_only",
-        "confidence": 0.4
+        "confidence": CONFIDENCE_WEIGHT["micro_term"]
     }
 
 
@@ -73,13 +119,15 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
         for group, intervals in INTERVAL_GROUPS.items():
             if interval in intervals:
                 grouped[group].append(bg)
-                break  # 防止重复归组
+                break
 
     market_state = {
         "symbol": symbol,
         "ts": latest_ts or int(time.time() * 1000),
         "market_state": {}
     }
+
+    mid_confidence: float | None = None
 
     for group in GROUP_ORDER:
         items = grouped.get(group)
@@ -88,16 +136,27 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
 
         if group == "micro_term":
             market_state["market_state"][group] = aggregate_micro_term(items)
-        else:
-            agg = aggregate_structural_group(items)
+            continue
 
-            if group == "long_term":
-                agg["veto"] = agg["direction"] == "bearish" and agg["confidence"] >= 0.7
+        agg = aggregate_structural_group(items, group)
 
-            market_state["market_state"][group] = agg
+        if group == "mid_term":
+            mid_confidence = agg["confidence"]
+
+        if group == "long_term":
+            agg["veto"] = detect_long_term_veto(
+                directions=agg.get("_raw_trends", []),
+                structure=agg["structure"],
+                momentum=agg["momentum"],
+                risk=agg["risk"],
+                confidence=agg["confidence"],
+                mid_confidence=mid_confidence
+            )
+            agg.pop("_raw_trends", None)  # 清理内部字段
+
+        market_state["market_state"][group] = agg
 
     return market_state
-
 
 
 if __name__ == "__main__":
@@ -107,6 +166,7 @@ if __name__ == "__main__":
     from agent_server.config import settings
 
     API_KLINE_READ = "/kline/background/read_multi"
+
 
     async def run():
         interval = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
@@ -122,8 +182,8 @@ if __name__ == "__main__":
                     merged.update(bg)
                     items.append(merged)
         agg = market_state_aggregator("BTCUSDT", items)
-        # print(json.dumps({"aggregate": agg}, ensure_ascii=False))
         print(agg)
+        # print(json.dumps({"backgrounds": items, "aggregate": agg}, ensure_ascii=False))
+
 
     asyncio.run(run())
-
