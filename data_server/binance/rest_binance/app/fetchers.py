@@ -40,13 +40,27 @@ async def fetch_kline(symbol: str, interval: str, limit: int = 200):
     }
     _sec = settings.rate_limits_seconds.get(interval, 60)
     _limiter = get_limiter(("kline", symbol, interval), _sec)
+    
+    # 对于长时间间隔的 K 线，使用更长的超时时间
+    timeout_map = {
+        '1d': 60,  # 1天 K 线可能需要更长时间
+        '4h': 45,
+        '2h': 40,
+        '1h': 35,
+    }
+    timeout = timeout_map.get(interval, None)
+    
     async with _limiter:
-        data = await http_client.request("GET", url, params=params)
         try:
-            prod = IndicatorsProducer(symbol, data, interval)
-            await prod.publish()
+            data = await http_client.request("GET", url, params=params, timeout=timeout, max_retries=3)
+            try:
+                prod = IndicatorsProducer(symbol, data, interval)
+                await prod.publish()
+            except Exception as e:
+                logger.error("indicators_producer_error %s %s %s", symbol, interval, e)
         except Exception as e:
-            logger.error("indicators_producer_error %s %s %s", symbol, interval, e)
+            logger.error("fetch_kline_failed %s %s %s", symbol, interval, str(e)[:200])
+            # 不抛出异常，让任务继续运行，下次再试
 
 
 async def fetch_topLongShortAccountRatio(symbol: str, period: str):

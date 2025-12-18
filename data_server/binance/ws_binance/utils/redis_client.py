@@ -15,17 +15,30 @@ _ASYNC_CLIENTS = {}
 _SYNC_CLIENTS = {}
 
 
-def get_async_redis(redis_url=None, decode_responses=True, max_connections=50):
+def get_async_redis(redis_url=None,
+                    decode_responses=True,
+                    max_connections=100):
     import redis.asyncio as aioredis
     url = redis_url or build_url()
     client = _ASYNC_CLIENTS.get(url)
     if client is None:
-        client = aioredis.from_url(url, decode_responses=decode_responses, max_connections=max_connections)
+        client = aioredis.from_url(url,
+                                   decode_responses=decode_responses,
+                                   max_connections=max_connections,
+                                   socket_keepalive=True,
+                                   socket_keepalive_options={},
+                                   retry_on_timeout=True,
+                                   health_check_interval=30)
         _ASYNC_CLIENTS[url] = client
     return client
 
 
-def get_sync_redis(host=None, port=None, password=None, db=None, decode_responses=True, max_connections=50):
+def get_sync_redis(host=None,
+                   port=None,
+                   password=None,
+                   db=None,
+                   decode_responses=True,
+                   max_connections=100):
     import redis
     h = host or os.environ.get("REDIS_HOST", "127.0.0.1")
     p = int(port or os.environ.get("REDIS_PORT", 6379))
@@ -34,7 +47,16 @@ def get_sync_redis(host=None, port=None, password=None, db=None, decode_response
     key = f"{h}:{p}:{d}:{'1' if decode_responses else '0'}"
     client = _SYNC_CLIENTS.get(key)
     if client is None:
-        pool = redis.ConnectionPool(host=h, port=p, password=pw, db=d, max_connections=max_connections, decode_responses=decode_responses)
+        pool = redis.ConnectionPool(host=h,
+                                    port=p,
+                                    password=pw,
+                                    db=d,
+                                    max_connections=max_connections,
+                                    decode_responses=decode_responses,
+                                    socket_keepalive=True,
+                                    socket_keepalive_options={},
+                                    retry_on_timeout=True,
+                                    health_check_interval=30)
         client = redis.Redis(connection_pool=pool)
         _SYNC_CLIENTS[key] = client
     return client
@@ -68,7 +90,11 @@ def safe_hset_sync(client, key: str, mapping: dict):
         print(f"Redis HSET error on key={key} type={ktype}: {e}")
 
 
-async def safe_xadd_async(client, key: str, fields: dict, maxlen=None, approximate=True):
+async def safe_xadd_async(client,
+                          key: str,
+                          fields: dict,
+                          maxlen=None,
+                          approximate=True):
     try:
         await client.xadd(key, fields, maxlen=maxlen, approximate=approximate)
     except Exception as e:
@@ -79,7 +105,11 @@ async def safe_xadd_async(client, key: str, fields: dict, maxlen=None, approxima
         print(f"Redis XADD error on key={key} type={ktype}: {e}")
 
 
-def safe_xadd_sync(client, key: str, fields: dict, maxlen=None, approximate=True):
+def safe_xadd_sync(client,
+                   key: str,
+                   fields: dict,
+                   maxlen=None,
+                   approximate=True):
     try:
         client.xadd(key, fields, maxlen=maxlen, approximate=approximate)
     except Exception as e:
@@ -112,4 +142,3 @@ def key_latest_price(symbol: str):
 
 def key_alerts(symbol: str):
     return f"alerts:binance:{symbol}"
-

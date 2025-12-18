@@ -107,24 +107,28 @@ def _cleanup_symbol_keys(symbol: str, max_retries: int = 3):
                     still.add(k)
             except Exception as e:
                 print(f"[CLEANUP] rescan pattern={pat} error: {e}")
-        print(f"[CLEANUP] attempt {attempt}: tried {len(remaining)} deletions; remaining {len(still)}")
+        print(
+            f"[CLEANUP] attempt {attempt}: tried {len(remaining)} deletions; remaining {len(still)}"
+        )
         remaining = still
 
     if remaining:
         # 最终仍有残留，打印示例键方便排查
         sample = sorted(list(remaining))[:10]
-        print(f"[CLEANUP] warning: {len(remaining)} keys still present for {symbol}: {sample}")
+        print(
+            f"[CLEANUP] warning: {len(remaining)} keys still present for {symbol}: {sample}"
+        )
 
 
 class BinanceMarketWS:
     BASE_URL = "wss://fstream.binance.com"
 
     def __init__(
-            self,
-            streams,
-            on_message,
-            ping_interval=180,
-            timeout=20,
+        self,
+        streams,
+        on_message,
+        ping_interval=180,
+        timeout=20,
     ):
         self.streams = set(streams)
         self.on_message = on_message
@@ -302,43 +306,49 @@ async def on_msg(msg):
             logging.warning(f"[WS] depth parse error: {e}")
             bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
 
-        update_depth(symbol, {
-            "bids": msg["b"],
-            "asks": msg["a"]
-        }, ts)
-        # Feed detector using latest price cache if available
-        try:
-            if detector is not None and symbol in _price_cache:
-                p = _price_cache[symbol]
-                # 传递毫秒整数，让写入统一
-                ts_ms = int(float(ts)) if isinstance(ts, (int, float)) else int(time.time()*1000)
-                asyncio.create_task(detector.add_tick_and_persist(symbol, p, bid_liq, ask_liq, ts_ms))
-        except Exception as e:
-            logging.warning(f"[WS] detector depth feed error: {e}")
+        update_depth(symbol, {"bids": msg["b"], "asks": msg["a"]}, ts)
+        # Note: Skip detector feed on depth updates to reduce Redis connections
+        # The detector will be fed on aggTrade events which are more frequent
+        # Uncomment below if you need depth-based detection (may cause "Too many connections")
+        # try:
+        #     if detector is not None and symbol in _price_cache:
+        #         p = _price_cache[symbol]
+        #         ts_ms = int(float(ts)) if isinstance(ts, (int, float)) else int(time.time()*1000)
+        #         asyncio.create_task(detector.add_tick_and_persist(symbol, p, bid_liq, ask_liq, ts_ms))
+        # except Exception as e:
+        #     logging.warning(f"[WS] detector depth feed error: {e}")
     elif "e" in msg and msg["e"] == "aggTrade":
         symbol = msg["s"]
         # Consolidate price/ts extraction, then write hash and feed detector
         key = f"price:binance:{symbol}"
         ts_raw = msg.get("T")
-        ts_ms = int(float(ts_raw)) if isinstance(ts_raw, (int, float)) else int(time.time()*1000)
+        ts_ms = int(float(ts_raw)) if isinstance(
+            ts_raw, (int, float)) else int(time.time() * 1000)
         try:
             price_val = float(msg["p"]) if msg.get("p") is not None else None
         except Exception:
             price_val = None
 
         if price_val is not None:
-            # Update price in Redis as hash via RedisClient
-            try:
-                redis_client.set_hash(key, {"ts": ts_ms, "price": price_val}, check_type=True)
-            except Exception as e:
-                logging.warning(f"redis write error on HSET key={key}: {e}")
+            # Cache price first
+            _price_cache[symbol] = price_val
+            bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
 
-            # Cache price and feed detector with latest depth liquidity
+            # Update price in Redis as hash via RedisClient (only if detector is not handling it)
+            # Note: SpikeDetector will also write to price:binance:{symbol}, so we skip duplicate write
+            # If you want to keep both, you can uncomment below, but it may cause "Too many connections"
+            # try:
+            #     redis_client.set_hash(key, {"ts": ts_ms, "price": price_val}, check_type=True)
+            # except Exception as e:
+            #     logging.warning(f"redis write error on HSET key={key}: {e}")
+
+            # Feed detector with latest depth liquidity (detector will handle Redis writes)
             try:
-                _price_cache[symbol] = price_val
-                bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
                 if detector is not None:
-                    asyncio.create_task(detector.add_tick_and_persist(symbol, price_val, bid_liq, ask_liq, ts_ms))
+                    # Use create_task but limit concurrency to avoid too many connections
+                    asyncio.create_task(
+                        detector.add_tick_and_persist(symbol, price_val,
+                                                      bid_liq, ask_liq, ts_ms))
             except Exception as e:
                 logging.warning(f"[WS] detector trade feed error: {e}")
     elif "e" in msg and msg["e"] == "forceOrder":
@@ -347,10 +357,7 @@ async def on_msg(msg):
 
 async def main():
     """主程序"""
-    ws = BinanceMarketWS(
-        streams=[],
-        on_message=on_msg
-    )
+    ws = BinanceMarketWS(streams=[], on_message=on_msg)
     global detector
 
     try:
