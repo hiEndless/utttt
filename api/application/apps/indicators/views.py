@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from .market_raw_analysis import read_market_raw, build_participant_structure
 from .kline_indicators import read_indicators, scan_symbols, read_multi_period
+from .background_kline import read_background, read_multi_period as read_bg_multi_period
 from ...common.status_codes import StatusCode
 from ...common.redis_client import redis_client
 
@@ -116,6 +117,66 @@ async def read_kline_multi(req: KlineIndicatorsMultiPeriodRequest):
     """
     try:
         data = await read_multi_period(req.exchange, req.symbol, req.intervals, redis_client)
+        return {
+            "code": StatusCode.SUCCESS,
+            "msg": StatusCode.get_message(StatusCode.SUCCESS),
+            "data": data,
+        }
+    except Exception as e:
+        return {
+            "code": StatusCode.SERVER_ERROR,
+            "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
+        }
+
+
+class BackgroundKlineRequest(BaseModel):
+    exchange: str
+    symbol: str
+    interval: str
+
+
+@app.post("/kline/background/read")
+async def read_background_kline(req: BackgroundKlineRequest):
+    """读取指定交易所/币种/周期的背景K线指标（仅返回背景数据）。
+    请求参数：
+      - exchange: 交易所名称
+      - symbol: 币种符号
+      - interval: 周期（如 1m/5m/1h）
+    返回：
+      - code/msg/data，data 为背景指标字典。
+    """
+    try:
+        data = await read_background(req.exchange, req.symbol, req.interval, redis_client)
+        return {
+            "code": StatusCode.SUCCESS,
+            "msg": StatusCode.get_message(StatusCode.SUCCESS),
+            "data": data,
+        }
+    except Exception as e:
+        return {
+            "code": StatusCode.SERVER_ERROR,
+            "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
+        }
+
+
+class BackgroundKlineMultiPeriodRequest(BaseModel):
+    exchange: str
+    symbol: str
+    intervals: list[str]
+
+
+@app.post("/kline/background/read_multi")
+async def read_background_multi(req: BackgroundKlineMultiPeriodRequest):
+    """批量读取多周期的背景K线指标。
+    请求参数：
+      - exchange: 交易所名称
+      - symbol: 币种符号
+      - intervals: 周期列表（如 ["1m","5m","1h"]）
+    返回：
+      - code/msg/data，data 为 {interval: 背景指标字典} 映射。
+    """
+    try:
+        data = await read_bg_multi_period(req.exchange, req.symbol, req.intervals, redis_client)
         return {
             "code": StatusCode.SUCCESS,
             "msg": StatusCode.get_message(StatusCode.SUCCESS),
