@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from .market_raw_analysis import read_market_raw, build_participant_structure
 from .kline_indicators import read_indicators, scan_symbols, read_multi_period
 from .background_kline import read_background, read_multi_period as read_bg_multi_period
+from .crowd_state_compactor import read_market_structure as read_crowd_state
+from .crowd_state_compactor import scan_symbols as scan_crowd_symbols
 from ...common.status_codes import StatusCode
 from ...common.redis_client import redis_client
 
@@ -63,6 +65,60 @@ async def read_kline_ind(req: KlineIndicatorsRequest):
             "code": StatusCode.SUCCESS,
             "msg": StatusCode.get_message(StatusCode.SUCCESS),
             "data": data,
+        }
+    except Exception as e:
+        return {
+            "code": StatusCode.SERVER_ERROR,
+            "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
+        }
+
+
+class CrowdStateRequest(BaseModel):
+    exchange: str
+    symbol: str
+
+
+@app.post("/crowd_state/read")
+async def read_crowd_state_view(req: CrowdStateRequest):
+    """读取指定交易所/币种的 crowd/market_structure 背景。
+    请求参数：
+      - exchange: 交易所名称
+      - symbol: 币种符号
+    返回：
+      - code/msg/data，data 为 market_structure 的字典。
+    """
+    try:
+        data = await read_crowd_state(req.exchange, req.symbol, redis_client)
+        return {
+            "code": StatusCode.SUCCESS,
+            "msg": StatusCode.get_message(StatusCode.SUCCESS),
+            "data": data,
+        }
+    except Exception as e:
+        return {
+            "code": StatusCode.SERVER_ERROR,
+            "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
+        }
+
+
+class CrowdStateScanRequest(BaseModel):
+    exchange: str
+
+
+@app.post("/crowd_state/symbols")
+async def scan_crowd_state_symbols(req: CrowdStateScanRequest):
+    """扫描指定交易所下存在 crowd/market_structure 背景的符号列表。
+    请求参数：
+      - exchange: 交易所名称
+    返回：
+      - code/msg/data，data.symbols 为可用的 symbol 列表。
+    """
+    try:
+        symbols = await scan_crowd_symbols(req.exchange, redis_client)
+        return {
+            "code": StatusCode.SUCCESS,
+            "msg": StatusCode.get_message(StatusCode.SUCCESS),
+            "data": {"symbols": symbols},
         }
     except Exception as e:
         return {
