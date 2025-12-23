@@ -41,6 +41,16 @@ class TeamOrchestrator:
         if not agents or not isinstance(agents[0], dict):
             raise RuntimeError("Agents must be provided with cards for A2A communication")
         
+        # 检查是否是多时间维度分析结果
+        try:
+            query_data = json.loads(query) if isinstance(query, str) else query
+            if isinstance(query_data, dict) and "analysis_by_timeframe" in query_data:
+                # 多时间维度分析：直接传递给 trading_decision
+                return await self._run_multi_timeframe(mode, agents, query_data)
+        except:
+            pass
+        
+        # 单事件分析（原有逻辑）
         # 分离决策 Agent 和其他 Agent
         decision_agents = [a for a in agents if (a.get("name") or getattr(a["agent"], "name", "")) == "trading_decision"]
         analysis_agents = [a for a in agents if (a.get("name") or getattr(a["agent"], "name", "")) != "trading_decision"]
@@ -275,4 +285,81 @@ class TeamOrchestrator:
             "fusion": fused,
             "weights": weights,
             "trading_decision": trading_decision
+        }
+    
+    async def _run_multi_timeframe(self, mode: str, agents: List, query_data: Dict) -> Dict:
+        """处理多时间维度分析结果"""
+        symbol = query_data.get("symbol", "BTCUSDT")
+        analysis_by_timeframe = query_data.get("analysis_by_timeframe", {})
+        base_event = query_data.get("base_event", {})
+        
+        # 整合各时间维度的结果
+        all_names = set()
+        all_outputs_by_timeframe = {}
+        
+        for timeframe, analysis_result in analysis_by_timeframe.items():
+            if "error" in analysis_result:
+                continue
+            
+            names = analysis_result.get("names", [])
+            outputs = analysis_result.get("outputs", [])
+            
+            all_names.update(names)
+            all_outputs_by_timeframe[timeframe] = {
+                "names": names,
+                "outputs": outputs,
+                "scores": analysis_result.get("scores", {}),
+                "weights": analysis_result.get("weights", {})
+            }
+        
+        names = list(all_names)
+        
+        # 调用交易决策 Agent（传递多时间维度数据）
+        decision_agents = [a for a in agents if (a.get("name") or getattr(a["agent"], "name", "")) == "trading_decision"]
+        
+        trading_decision = None
+        if decision_agents:
+            try:
+                decision_agent = decision_agents[0]["agent"]
+                
+                # 将多时间维度数据传递给决策 Agent
+                decision_input = json.dumps(query_data, ensure_ascii=False)
+                decision_output = await decision_agent.run(decision_input)
+                
+                # 解析决策结果
+                try:
+                    trading_decision = json.loads(decision_output) if isinstance(decision_output, str) else decision_output
+                except:
+                    trading_decision = {"action": "hold", "error": "failed_to_parse_decision"}
+                
+                # 执行交易（如果不是保持不动）
+                if trading_decision and trading_decision.get("action") != "hold":
+                    try:
+                        from agent_server.utils.trading_executor import get_executor
+                        executor = await get_executor()
+                        execution_result = await executor.execute_trade(trading_decision)
+                        trading_decision["execution_result"] = execution_result
+                    except Exception as e:
+                        print(f"⚠️  执行交易失败: {e}")
+                        trading_decision["execution_error"] = str(e)
+                
+            except Exception as e:
+                print(f"⚠️  多时间维度决策 Agent 执行失败: {e}")
+                import traceback
+                traceback.print_exc()
+                trading_decision = {"action": "hold", "error": str(e)}
+        
+        # 构建返回结果
+        return {
+            "names": names + (["trading_decision"] if decision_agents else []),
+            "outputs": [],  # 多时间维度模式下，outputs 在各时间维度中
+            "scores": {},
+            "reflection": {"mode": mode, "reflection_scores": {}, "notes": []},
+            "fusion": "",
+            "weights": {},
+            "trading_decision": trading_decision,
+            "multi_timeframe": True,
+            "analysis_by_timeframe": all_outputs_by_timeframe,
+            "symbol": symbol,
+            "base_event": base_event
         }

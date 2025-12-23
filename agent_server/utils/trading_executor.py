@@ -13,11 +13,11 @@ class TradingExecutor:
     """交易执行器"""
     
     def __init__(self):
-        # Redis 配置
-        self.redis_host = os.getenv("REDIS_HOST", getattr(settings, 'redis_host', '127.0.0.1'))
-        self.redis_port = int(os.getenv("REDIS_PORT", getattr(settings, 'redis_port', 6379)))
-        self.redis_password = os.getenv("REDIS_PASSWORD", getattr(settings, 'redis_password', None))
-        self.redis_db = int(os.getenv("REDIS_DB", getattr(settings, 'redis_db', 1)))
+        # 交易任务 Redis 配置（优先使用环境变量，否则使用配置中的交易 Redis 配置）
+        self.redis_host = os.getenv("TRADE_REDIS_HOST") or getattr(settings, 'trade_redis_host', '101.32.115.249')
+        self.redis_port = int(os.getenv("TRADE_REDIS_PORT") or getattr(settings, 'trade_redis_port', 6379))
+        self.redis_password = os.getenv("TRADE_REDIS_PASSWORD") or getattr(settings, 'trade_redis_password', 'liu146015')
+        self.redis_db = int(os.getenv("TRADE_REDIS_DB") or getattr(settings, 'trade_redis_db', 1))
         
         # 交易任务队列 key
         self.trade_task_key = os.getenv("TRADE_TASK_KEY", "TASK_ADD_TRADE")
@@ -120,7 +120,7 @@ class TradingExecutor:
             "lever_set": 1,
             "first_order_set": 1,
             "api_id": int(os.getenv("API_ID", "0")),
-            "user_id": int(os.getenv("USER_ID", "1")),
+            "user_id": int(os.getenv("TRADE_USER_ID") or getattr(settings, 'trade_user_id', 2)),
             "fast_mode": 1,
             "investment": float(decision.get("investment", self.default_investment)),
             "benchMark": float(decision.get("benchMark", self.default_benchmark)),

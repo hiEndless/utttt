@@ -18,13 +18,15 @@ if project_root not in sys.path:
 
 from agent_server.events import EventSignal
 from agent_server.runtime import handle_event
+from agent_server.utils.multi_timeframe_analyzer import MultiTimeframeAnalyzer
 import redis.asyncio as aioredis
 
 
 class AIAnalyzer:
 
-    def __init__(self):
+    def __init__(self, symbol_filter: Optional[str] = None):
         # Redis 配置（从环境变量读取）
+        self.symbol_filter = symbol_filter.upper() if symbol_filter else None  # 币种过滤器（转换为大写）
         self.redis_host = os.getenv("REDIS_HOST", "38.147.173.111")
         self.redis_port = int(os.getenv("REDIS_PORT", "6379"))
         self.redis_password = os.getenv("REDIS_PASSWORD", "112233Ww..")
@@ -40,6 +42,14 @@ class AIAnalyzer:
 
         self.redis: Optional[aioredis.Redis] = None
         self.stream_offsets: Dict[str, str] = {}
+        
+        # 多时间维度分析器
+        self.multi_timeframe_analyzer = MultiTimeframeAnalyzer(
+            redis_host=self.redis_host,
+            redis_port=self.redis_port,
+            redis_password=self.redis_password,
+            redis_db=self.redis_db
+        )
 
     async def connect_redis(self):
         """连接 Redis"""
@@ -78,12 +88,20 @@ class AIAnalyzer:
 
             # 读取消息
             if read_history and self.stream_offsets[stream_name] == "0-0":
+                # 先检查流是否有数据
+                stream_length = await self.redis.xlen(stream_name)
+                if stream_length == 0:
+                    return None
+                
                 # 读取历史消息（从最新开始倒序）
+                # 如果指定了币种过滤，读取更多消息以便过滤
+                read_count = count if not self.symbol_filter else min(100, stream_length)
+                
                 messages = await self.redis.xrevrange(
                     stream_name,
                     max="+",  # 从最新开始
                     min="-",  # 到最旧
-                    count=count
+                    count=read_count
                 )
                 
                 if not messages:
@@ -124,6 +142,81 @@ class AIAnalyzer:
                     event_data["payload"] = json.loads(event_data["payload"])
                 except:
                     pass
+
+            # 如果指定了币种过滤，检查是否匹配
+            if self.symbol_filter:
+                event_symbol = event_data.get("symbol", "").upper()
+                if event_symbol != self.symbol_filter:
+                    # 不匹配，跳过这条事件
+                    if read_history:
+                        # 历史模式下，从已读取的消息列表中查找匹配的币种
+                        # 如果第一次读取了多条消息，先在这些消息中查找
+                        if len(messages) > 1:
+                            for msg_entry_id, msg_fields in messages[1:]:
+                                msg_event_data = dict(msg_fields)
+                                # 解析 payload
+                                if "payload" in msg_event_data:
+                                    try:
+                                        msg_event_data["payload"] = json.loads(msg_event_data["payload"])
+                                    except:
+                                        pass
+                                # 检查币种
+                                msg_symbol = msg_event_data.get("symbol", "").upper()
+                                if msg_symbol == self.symbol_filter:
+                                    self.stream_offsets[stream_name] = msg_entry_id
+                                    return msg_event_data
+                        
+                        # 如果已读取的消息中没有匹配的，继续读取更多历史消息
+                        max_attempts = 100
+                        attempts = 0
+                        last_entry_id = entry_id
+                        checked_count = 0
+                        
+                        while attempts < max_attempts:
+                            attempts += 1
+                            # 读取更多历史消息（从当前条目的前一条开始）
+                            more_messages = await self.redis.xrevrange(
+                                stream_name,
+                                max=last_entry_id,  # 从当前条目的前一条开始（不包含当前）
+                                min="-",
+                                count=100  # 每次读取100条以提高效率
+                            )
+                            
+                            if not more_messages or len(more_messages) == 0:
+                                # 没有更多消息了
+                                if checked_count > 0:
+                                    print(f"⚠️  已检查 {checked_count} 条消息，未找到币种 {self.symbol_filter} 的事件")
+                                return None
+                            
+                            # 遍历读取到的消息，查找匹配的币种
+                            for msg_entry_id, msg_fields in more_messages:
+                                checked_count += 1
+                                msg_event_data = dict(msg_fields)
+                                
+                                # 解析 payload
+                                if "payload" in msg_event_data:
+                                    try:
+                                        msg_event_data["payload"] = json.loads(msg_event_data["payload"])
+                                    except:
+                                        pass
+                                
+                                # 检查币种
+                                msg_symbol = msg_event_data.get("symbol", "").upper()
+                                if msg_symbol == self.symbol_filter:
+                                    self.stream_offsets[stream_name] = msg_entry_id
+                                    if checked_count > 1:
+                                        print(f"✅ 在检查了 {checked_count} 条消息后，找到币种 {self.symbol_filter} 的事件")
+                                    return msg_event_data
+                            
+                            # 更新 last_entry_id 为最后一条消息的 entry_id（继续向前读取）
+                            last_entry_id = more_messages[-1][0]
+                        
+                        # 尝试次数过多，返回 None
+                        print(f"⚠️  已检查 {checked_count} 条消息，未找到币种 {self.symbol_filter} 的事件")
+                        return None
+                    else:
+                        # 实时模式下，返回 None，等待下一条
+                        return None
 
             return event_data
 
@@ -206,7 +299,12 @@ class AIAnalyzer:
         if "error" in result:
             output.append(f"❌ 错误: {result['error']}")
             return "\n".join(output)
+        
+        # 检查是否是多时间维度结果
+        if result.get("multi_timeframe") or "analysis_by_timeframe" in result:
+            return self._format_multi_timeframe_result(result)
 
+        # 单事件结果（原有逻辑）
         # Agent 列表
         names = result.get("names", [])
         output.append(f"参与分析的 Agent: {', '.join(names)}\n")
@@ -264,17 +362,87 @@ class AIAnalyzer:
         output.append(f"\n{'='*80}\n")
 
         return "\n".join(output)
+    
+    def _format_multi_timeframe_result(self, result: Dict) -> str:
+        """格式化多时间维度分析结果"""
+        output = []
+        output.append(f"\n{'='*80}")
+        output.append(f"多时间维度 AI 分析结果 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        output.append(f"{'='*80}\n")
+        
+        symbol = result.get("symbol", "UNKNOWN")
+        base_event = result.get("base_event", {})
+        analysis_by_timeframe = result.get("analysis_by_timeframe", {})
+        
+        output.append(f"交易对: {symbol}\n")
+        output.append(f"基础事件: {base_event.get('event_id', 'N/A')}\n")
+        output.append(f"找到的时间维度: {', '.join(result.get('found_timeframes', []))}\n")
+        output.append(f"\n{'='*80}\n")
+        
+        # 显示各时间维度的分析结果
+        for timeframe, analysis_result in analysis_by_timeframe.items():
+            if "error" in analysis_result:
+                output.append(f"\n{'─'*80}")
+                output.append(f"时间维度: {timeframe} - ❌ 分析失败")
+                output.append(f"错误: {analysis_result.get('error')}")
+                continue
+            
+            output.append(f"\n{'─'*80}")
+            output.append(f"时间维度: {timeframe}")
+            output.append(f"{'─'*80}")
+            
+            names = analysis_result.get("names", [])
+            outputs = analysis_result.get("outputs", [])
+            
+            for name, output_str in zip(names, outputs):
+                output.append(f"\nAgent: {name}")
+                try:
+                    output_obj = json.loads(output_str)
+                    output.append(json.dumps(output_obj, indent=2, ensure_ascii=False)[:500])
+                except:
+                    output.append(str(output_str)[:500])
+                output.append("")
+        
+        # 显示交易决策
+        trading_decision = result.get("trading_decision")
+        if trading_decision:
+            output.append(f"\n{'='*80}")
+            output.append("最终交易决策")
+            output.append(f"{'='*80}")
+            output.append(json.dumps(trading_decision, indent=2, ensure_ascii=False))
+        
+        output.append(f"\n{'='*80}\n")
+        
+        return "\n".join(output)
 
     async def run_once(self,
                        stream_name: str = "final_events",
-                       read_history: bool = False) -> Optional[Dict]:
-        """运行一次分析（读取一个事件并分析）"""
+                       read_history: bool = False,
+                       use_multi_timeframe: bool = True) -> Optional[Dict]:
+        """
+        运行一次分析（读取一个事件并分析）
+        
+        Args:
+            stream_name: 事件流名称
+            read_history: 是否读取历史数据
+            use_multi_timeframe: 是否使用多时间维度分析（默认True）
+        """
         # 读取事件
         event_data = await self.read_event_from_stream(stream_name, read_history=read_history)
 
         if not event_data:
             if read_history:
-                print(f"⚠️  流 {stream_name} 中没有历史数据")
+                # 检查流是否有数据
+                try:
+                    stream_length = await self.redis.xlen(stream_name)
+                    if stream_length == 0:
+                        print(f"⚠️  流 {stream_name} 中没有数据（流长度为 0）")
+                    elif self.symbol_filter:
+                        print(f"⚠️  流 {stream_name} 中有 {stream_length} 条消息，但没有找到币种 {self.symbol_filter} 的事件")
+                    else:
+                        print(f"⚠️  流 {stream_name} 中没有历史数据（流长度为 {stream_length}，但读取失败）")
+                except Exception as e:
+                    print(f"⚠️  流 {stream_name} 中没有历史数据（检查流长度时出错: {e}）")
             else:
                 print(f"⚠️  未读取到新事件（流: {stream_name}）")
                 print(f"   提示: 使用 --history 参数可以读取历史数据")
@@ -285,27 +453,54 @@ class AIAnalyzer:
         print(f"   事件类型: {event_data.get('event_type')}")
         print(f"   交易对: {event_data.get('symbol')}")
         print(f"   事件级别: {event_data.get('event_level')}")
+        if self.symbol_filter:
+            print(f"   🔍 币种过滤: {self.symbol_filter}")
 
-        # 转换为 EventSignal
-        event_signal = self.map_event_to_signal(event_data)
+        # 如果启用多时间维度分析
+        if use_multi_timeframe:
+            symbol = event_data.get('symbol', 'BTCUSDT')
+            
+            # 连接多时间维度分析器的 Redis
+            if not self.multi_timeframe_analyzer.redis:
+                await self.multi_timeframe_analyzer.connect_redis()
+            
+            # 进行多时间维度分析
+            result = await self.multi_timeframe_analyzer.analyze_multi_timeframe(
+                symbol=symbol,
+                base_event=event_data,
+                timeframes=["1m", "5m", "15m"]  # 默认3个时间维度
+            )
+            
+            # 添加原始事件信息
+            result["original_event"] = event_data
+            
+            return result
+        else:
+            # 单事件分析（原有逻辑）
+            # 转换为 EventSignal
+            event_signal = self.map_event_to_signal(event_data)
 
-        # 分析事件
-        result = await self.analyze_event(event_signal)
+            # 分析事件
+            result = await self.analyze_event(event_signal)
 
-        # 添加原始事件信息
-        result["original_event"] = event_data
+            # 添加原始事件信息
+            result["original_event"] = event_data
 
-        return result
+            return result
 
     async def run_continuous(self,
                              stream_name: str = "final_events",
                              interval: int = 10,
-                             read_history: bool = False):
+                             read_history: bool = False,
+                             use_multi_timeframe: bool = True):
         """持续运行分析"""
         print(f"\n{'='*80}")
         print(f"启动持续分析模式")
         print(f"监听流: {stream_name}")
         print(f"检查间隔: {interval} 秒")
+        print(f"多时间维度分析: {'启用' if use_multi_timeframe else '禁用'}")
+        if self.symbol_filter:
+            print(f"币种过滤: {self.symbol_filter} (只分析此币种)")
         print(f"按 Ctrl+C 停止")
         print(f"{'='*80}\n")
 
@@ -314,7 +509,11 @@ class AIAnalyzer:
             while True:
                 # 第一次运行且指定了 --history，则读取历史；否则只读新消息
                 use_history = read_history and first_run
-                result = await self.run_once(stream_name, read_history=use_history)
+                result = await self.run_once(
+                    stream_name, 
+                    read_history=use_history,
+                    use_multi_timeframe=use_multi_timeframe
+                )
                 first_run = False
 
                 if result:
@@ -360,6 +559,7 @@ class AIAnalyzer:
         """关闭连接"""
         if self.redis:
             await self.redis.aclose()
+        await self.multi_timeframe_analyzer.close()
 
 
 async def main():
@@ -384,10 +584,18 @@ async def main():
     parser.add_argument("--history",
                         action="store_true",
                         help="读取历史数据（从最新的一条开始），而不是只读新消息")
+    parser.add_argument("--single-timeframe",
+                        action="store_true",
+                        help="禁用多时间维度分析，使用单一事件分析（默认启用多时间维度）")
+    parser.add_argument("--symbol",
+                        type=str,
+                        default=None,
+                        help="只分析指定币种（如：BTCUSDT, ETHUSDT），不指定则分析所有币种")
 
     args = parser.parse_args()
 
-    analyzer = AIAnalyzer()
+    # 创建分析器（支持币种过滤）
+    analyzer = AIAnalyzer(symbol_filter=args.symbol)
 
     try:
         # 连接 Redis
@@ -395,8 +603,14 @@ async def main():
             return
 
         # 运行分析
+        use_multi_timeframe = not args.single_timeframe
+        
         if args.mode == "once":
-            result = await analyzer.run_once(args.stream, read_history=args.history)
+            result = await analyzer.run_once(
+                args.stream, 
+                read_history=args.history,
+                use_multi_timeframe=use_multi_timeframe
+            )
 
             if result:
                 formatted = analyzer.format_result(result)
@@ -408,7 +622,12 @@ async def main():
             # 持续模式：第一次读取历史，后续读取新消息
             if args.history:
                 print("⚠️  持续模式下，--history 参数只在第一次有效，后续会读取新消息")
-            await analyzer.run_continuous(args.stream, args.interval, read_history=args.history)
+            await analyzer.run_continuous(
+                args.stream, 
+                args.interval, 
+                read_history=args.history,
+                use_multi_timeframe=use_multi_timeframe
+            )
 
     finally:
         await analyzer.close()
