@@ -6,6 +6,8 @@ def crowd_state_compactor(crowd: Dict) -> Dict:
     Compress full crowd structure analysis into a low-noise crowd_state object.
     This output is intended ONLY for risk / confidence / veto adjustment.
     """
+    if not crowd:
+        return {}
 
     summary = crowd.get("market_participant_summary", {})
     sentiment_by_tf = crowd.get("sentiment_by_timeframes", {})
@@ -63,3 +65,30 @@ def crowd_state_compactor(crowd: Dict) -> Dict:
         "funding_pressure": funding_pressure,
         "consistency": tf_consistency
     }
+
+
+if __name__ == "__main__":
+    import asyncio
+    import json
+    import os
+    import sys
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+    from agent_server.utils.http_client import http_client
+    from agent_server.config import settings
+    API_CROWD_READ = "/crowd_state/read"
+
+    async def run():
+        base = settings.api_base_url.rstrip("/")
+        url = base + API_CROWD_READ
+        payload = {"exchange": "binance", "symbol": "100BTCUSDT"}
+        try:
+            res = await http_client.request("POST", url, json=payload)
+            data = (res or {}).get("data") if isinstance(res, dict) else None
+            compact = crowd_state_compactor(data or {})
+            print(json.dumps(compact, ensure_ascii=False))
+        finally:
+            await http_client.close()
+
+    asyncio.run(run())
