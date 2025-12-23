@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import time
 from redis import asyncio as aioredis
 
@@ -7,7 +8,7 @@ from event_center.config import cfg
 from event_center.rules import load_rules, match_payload_condition
 
 
-RULES_PATH = "rules.yml"
+RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.yml")
 
 
 class L1Aggregator:

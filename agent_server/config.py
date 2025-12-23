@@ -19,6 +19,9 @@ class Settings:
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"
+    # 交易相关配置
+    trade_task_key: str = os.environ.get('TRADE_TASK_KEY', 'TASK_ADD_TRADE')
+    agent_result_ttl: int = int(os.environ.get('AGENT_RESULT_TTL', '3600'))
 
 
 settings = Settings()
@@ -38,10 +41,10 @@ EVENT_TEAM_MAP: Dict[str, Dict[str, str]] = {
 }
 
 TEAM_TEMPLATES: Dict[str, List[str]] = {
-    "default": ["technical", "risk"],
-    "delphi": ["technical", "news", "risk"],
-    "debate": ["technical", "news", "risk", "portfolio"],
-    "n_variant": ["technical", "news", "risk"],
+    "default": ["technical", "risk", "trading_decision"],
+    "delphi": ["technical", "news", "risk", "trading_decision"],
+    "debate": ["technical", "news", "risk", "portfolio", "trading_decision"],
+    "n_variant": ["technical", "news", "risk", "trading_decision"],
 }
 
 SCORING_WEIGHTS: Dict[str, float] = {
@@ -49,6 +52,7 @@ SCORING_WEIGHTS: Dict[str, float] = {
     "news": 0.25,
     "risk": 0.25,
     "portfolio": 0.15,
+    "trading_decision": 0.0,  # 决策 Agent 不参与评分，只生成最终决策
 }
 
 # Control optional stages per mode

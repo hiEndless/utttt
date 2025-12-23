@@ -1,9 +1,9 @@
 import asyncio
-from l0_processor import L0Processor
-from l1_aggregator import L1Aggregator
-from final_grader import FinalGrader
-from alerts_consumer import AlertsConsumer
-from force_stats_consumer import ForceStatsConsumer
+from event_center.l0_processor import L0Processor
+from event_center.l1_aggregator import L1Aggregator
+from event_center.final_grader import FinalGrader
+from event_center.alerts_consumer import AlertsConsumer
+from event_center.force_stats_consumer import ForceStatsConsumer
 from event_center.indicators_event_generator import EventGenerator, RedisEventWriter
 from event_center.config import cfg
 from redis import asyncio as aioredis
@@ -67,9 +67,7 @@ class IndicatorsScheduler:
 
 
 async def main():
-    l0 = L0Processor()
-    l1 = L1Aggregator()
-    fg = FinalGrader()
+    # 只初始化实际使用的服务
     ac = AlertsConsumer()
     fsc = ForceStatsConsumer()
     isvc = IndicatorsScheduler()
@@ -77,6 +75,10 @@ async def main():
         asyncio.create_task(ac.run()),
         asyncio.create_task(fsc.run()),
         asyncio.create_task(isvc.run()),
+        # 以下服务当前未启用，需要时取消注释并取消上面的注释
+        # l0 = L0Processor()
+        # l1 = L1Aggregator()
+        # fg = FinalGrader()
         # asyncio.create_task(l0.run()),
         # asyncio.create_task(l1.run()),
         # asyncio.create_task(fg.run()),

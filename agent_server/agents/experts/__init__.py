@@ -5,6 +5,8 @@ try:
     from .analysis.technical import TechnicalExpert
     from .analysis.force_stats import ForceStatsExpert
     from .analysis.portfolio import PortfolioExpert
+    from .analysis.risk import RiskExpert
+    from .analysis.trading_decision import TradingDecisionExpert
     from .orchestration.reflection import ReflectionExpert
     from .orchestration.fusion import FusionExpert
     from .orchestration.memory import MemoryExpert  
@@ -13,6 +15,8 @@ except ImportError:
     from agent_server.agents.experts.analysis.technical import TechnicalExpert
     from agent_server.agents.experts.analysis.force_stats import ForceStatsExpert
     from agent_server.agents.experts.analysis.portfolio import PortfolioExpert
+    from agent_server.agents.experts.analysis.risk import RiskExpert
+    from agent_server.agents.experts.analysis.trading_decision import TradingDecisionExpert
     from agent_server.agents.experts.orchestration.reflection import ReflectionExpert
     from agent_server.agents.experts.orchestration.fusion import FusionExpert
     from agent_server.agents.experts.orchestration.memory import MemoryExpert  
@@ -27,6 +31,8 @@ def load_expert(name: str) -> Any:
         return RiskExpert()
     if name == "portfolio":
         return PortfolioExpert()
+    if name == "trading_decision":
+        return TradingDecisionExpert()
     if name == "reflection":
         return ReflectionExpert()
     if name == "fusion":

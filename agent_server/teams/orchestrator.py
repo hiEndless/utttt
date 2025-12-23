@@ -1,10 +1,12 @@
 from typing import List, Dict
+import json
 
 from agent_server.communication import A2ACommunicator
 from agent_server.communication.a2a import A2ASession
 from agent_server.config import SCORING_WEIGHTS, PIPELINE_OPTIONS
 from agent_server.teams.scoring import auto_score
 from agent_server.a2a.cards import get_agent_card
+from agent_server.agents.experts.utils.agent_result_store import get_store
 
 
 class Debate:
@@ -38,8 +40,14 @@ class TeamOrchestrator:
     async def run(self, mode: str, agents: List, query: str) -> Dict:
         if not agents or not isinstance(agents[0], dict):
             raise RuntimeError("Agents must be provided with cards for A2A communication")
-        names = [a.get("name") or getattr(a["agent"], "name", "agent") for a in agents]
-        prompts = await self.session.broadcast(agents, query)
+        
+        # 分离决策 Agent 和其他 Agent
+        decision_agents = [a for a in agents if (a.get("name") or getattr(a["agent"], "name", "")) == "trading_decision"]
+        analysis_agents = [a for a in agents if (a.get("name") or getattr(a["agent"], "name", "")) != "trading_decision"]
+        analysis_names = [a.get("name") or getattr(a["agent"], "name", "agent") for a in analysis_agents]
+        
+        # 先执行分析 Agent（不包括决策 Agent）
+        prompts = await self.session.broadcast(analysis_agents, query) if analysis_agents else []
         if mode == "debate":
             outputs = await Debate().run(prompts)
         elif mode == "delphi":
@@ -61,7 +69,7 @@ class TeamOrchestrator:
                 outputs_scored.append(json.dumps(obj, ensure_ascii=False))
             except Exception:
                 obj = {
-                    "agent": names[i] if i < len(names) else f"agent-{i}",
+                    "agent": analysis_names[i] if i < len(analysis_names) else f"agent-{i}",
                     "task": "analysis",
                     "content": {"summary": (t or "")[:160], "details": t or ""},
                     "confidence": 0.0,
@@ -73,13 +81,46 @@ class TeamOrchestrator:
                 }
                 outputs_scored.append(json.dumps(obj, ensure_ascii=False))
         outputs = outputs_scored
+        
+        # 保存分析 Agent 结果到 Redis
+        try:
+            # 尝试解析 query 为字典
+            if isinstance(query, str):
+                try:
+                    payload_obj = json.loads(query)
+                except (json.JSONDecodeError, ValueError):
+                    # 如果解析失败，尝试从原始事件中提取
+                    payload_obj = {"symbol": "unknown"}
+            else:
+                payload_obj = query if isinstance(query, dict) else {}
+            
+            event_id = payload_obj.get("event_id") or payload_obj.get("id") or payload_obj.get("symbol", "unknown")
+            
+            store = await get_store()
+            for i, (name, output_str) in enumerate(zip(analysis_names, outputs)):
+                try:
+                    # 解析输出为字典
+                    output_obj = json.loads(output_str) if isinstance(output_str, str) else output_str
+                    
+                    # 保存到 Redis
+                    await store.save_agent_result(
+                        event_id=str(event_id),
+                        agent_name=name,
+                        result=output_obj,
+                        original_output=output_str if isinstance(output_str, str) else None
+                    )
+                except Exception as e:
+                    print(f"⚠️  保存 {name} Agent 结果失败: {e}")
+        except Exception as e:
+            print(f"⚠️  保存 Agent 结果到 Redis 失败: {e}")
+        
         from a2a.client import ClientFactory, ClientConfig
         from a2a.types import Message, Part, TextPart, Role, TransportProtocol
         options = PIPELINE_OPTIONS.get(mode, {"reflection": True, "fusion": True})
         refl_card = get_agent_card("reflection")
         config = ClientConfig(streaming=False, supported_transports=[TransportProtocol.jsonrpc], use_client_preference=False)
         factory = ClientFactory(config)
-        refl_payload = json.dumps({"names": names, "outputs": outputs, "mode": mode}, ensure_ascii=False)
+        refl_payload = json.dumps({"names": analysis_names, "outputs": outputs, "mode": mode}, ensure_ascii=False)
         if options.get("reflection", False):
             try:
                 refl_client = factory.create(refl_card)
@@ -97,7 +138,7 @@ class TeamOrchestrator:
             except Exception:
                 rs = {}
                 for i, t in enumerate(outputs):
-                    n = names[i] if i < len(names) else f"agent-{i}"
+                    n = analysis_names[i] if i < len(analysis_names) else f"agent-{i}"
                     rs[n] = min(1.0, max(0.0, len(t) / 1000.0))
                 refl_obj = {"mode": mode, "reflection_scores": rs, "notes": []}
         else:
@@ -109,9 +150,9 @@ class TeamOrchestrator:
             fusion_card = get_agent_card("fusion")
             fus_client = factory.create(fusion_card)
             fus_payload = json.dumps({
-                "names": names,
+                "names": analysis_names,
                 "outputs": outputs,
-                "base_weights": {n: SCORING_WEIGHTS.get(n, 0.0) for n in names},
+                "base_weights": {n: SCORING_WEIGHTS.get(n, 0.0) for n in analysis_names},
                 "reflection_scores": refl_obj.get("reflection_scores", {}),
                 "auto_scores": scores,
             }, ensure_ascii=False)
@@ -131,21 +172,66 @@ class TeamOrchestrator:
             except Exception:
                 fused = None
             if fused is None:
-                norm = sum(SCORING_WEIGHTS.get(n, 0.0) for n in names) or 1.0
-                weights = {n: (SCORING_WEIGHTS.get(n, 0.0) / norm) for n in names}
+                norm = sum(SCORING_WEIGHTS.get(n, 0.0) for n in analysis_names) or 1.0
+                weights = {n: (SCORING_WEIGHTS.get(n, 0.0) / norm) for n in analysis_names}
                 parts = []
                 for i, t in enumerate(outputs):
-                    n = names[i] if i < len(names) else f"agent-{i}"
+                    n = analysis_names[i] if i < len(analysis_names) else f"agent-{i}"
                     parts.append(f"[{n}:{weights.get(n, 0.0):.2f}] {t}")
                 fused = "\n".join(parts)
         else:
             fused = "\n".join(outputs)
             weights = {}
         try:
-            payload_obj = json.loads(query)
+            payload_obj = json.loads(query) if isinstance(query, str) else query
         except Exception:
             payload_obj = {}
+        
         trade_id = payload_obj.get("trade_id") or payload_obj.get("id") or payload_obj.get("symbol")
+        event_id = payload_obj.get("event_id") or trade_id or "unknown"
+        
+        # 调用决策 Agent（如果团队中包含）
+        trading_decision = None
+        if decision_agents:
+            try:
+                decision_agent = decision_agents[0]["agent"]
+                
+                # 构建决策 Agent 的输入
+                decision_input = {
+                    "event_id": str(event_id),
+                    "symbol": payload_obj.get("symbol", "BTCUSDT"),
+                    "event_type": payload_obj.get("event_type"),
+                    "event_level": payload_obj.get("event_level", 2),
+                    "original_event": payload_obj,
+                }
+                
+                # 调用决策 Agent
+                decision_output = await decision_agent.run(json.dumps(decision_input, ensure_ascii=False))
+                
+                # 解析决策结果
+                try:
+                    trading_decision = json.loads(decision_output) if isinstance(decision_output, str) else decision_output
+                except:
+                    trading_decision = {"action": "hold", "error": "failed_to_parse_decision"}
+                
+                # 执行交易（如果不是保持不动）
+                if trading_decision and trading_decision.get("action") != "hold":
+                    try:
+                        from agent_server.utils.trading_executor import get_executor
+                        executor = await get_executor()
+                        execution_result = await executor.execute_trade(trading_decision)
+                        trading_decision["execution_result"] = execution_result
+                    except Exception as e:
+                        print(f"⚠️  执行交易失败: {e}")
+                        trading_decision["execution_error"] = str(e)
+                
+            except Exception as e:
+                print(f"⚠️  决策 Agent 执行失败: {e}")
+                import traceback
+                traceback.print_exc()
+                trading_decision = {"action": "hold", "error": str(e)}
+        
+        # 保存到记忆（如果有 trade_id）
         if trade_id:
             try:
                 from agent_server.memory.store import MemoryStore
@@ -157,6 +243,7 @@ class TeamOrchestrator:
                     "reflection": refl_obj,
                     "fusion": fused,
                     "weights": weights,
+                    "trading_decision": trading_decision,
                 })
             except Exception:
                 pass
@@ -170,9 +257,22 @@ class TeamOrchestrator:
                     "reflection": refl_obj,
                     "weights": weights,
                     "event": payload_obj,
+                    "trading_decision": trading_decision,
                 }, ensure_ascii=False)
                 async for _ in mem_client.send_message(Message(role=Role.user, parts=[Part(root=TextPart(text=mem_payload))])):
                     break
             except Exception:
                 pass
-        return {"names": names, "outputs": outputs, "scores": scores, "reflection": refl_obj, "fusion": fused, "weights": weights}
+        
+        # 合并所有 Agent 名称（包括决策 Agent）
+        all_names = analysis_names + (["trading_decision"] if decision_agents else [])
+        
+        return {
+            "names": all_names,
+            "outputs": outputs,
+            "scores": scores,
+            "reflection": refl_obj,
+            "fusion": fused,
+            "weights": weights,
+            "trading_decision": trading_decision
+        }

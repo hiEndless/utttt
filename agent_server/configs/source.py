@@ -54,6 +54,12 @@ def query_db_env():
             "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             "a2a_url": "http://localhost:10007/",
         },
+        "trading_decision": {
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
+            "a2a_url": "http://localhost:10008/",
+        },
     }
 
 
