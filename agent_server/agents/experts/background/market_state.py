@@ -99,7 +99,7 @@ def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
     proximity = bg["structure"].get("key_level_proximity")
     state = structure
     if proximity:
-        state = f"{structure}_near_{proximity}"
+        state = f"{structure}_{proximity}"
 
     return {
         "state": state,
@@ -159,6 +159,12 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
     return market_state
 
 
+async def save_market_state(exchange: str, symbol: str, market_state: Dict) -> None:
+    from agent_server.utils.redis_client import RedisClient
+    client = RedisClient()
+    key = f"background:{exchange}:{symbol}:market_state"
+    await client.set_json(key, market_state)
+
 if __name__ == "__main__":
     import json
     import asyncio
@@ -189,6 +195,7 @@ if __name__ == "__main__":
                         items.append(merged)
             agg = market_state_aggregator("BTCUSDT", items)
             print(agg)
+            await save_market_state("binance", "BTCUSDT", agg)
         finally:
             await http_client.close()
 
