@@ -1,5 +1,5 @@
 """
-基于market_raw_analysis的再次压缩，提供给agent判断
+准备基于market_raw_analysis的再次压缩，提供给agent判断
 """
 
 import json
