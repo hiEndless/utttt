@@ -82,7 +82,7 @@ if __name__ == "__main__":
     async def run():
         base = settings.api_base_url.rstrip("/")
         url = base + API_CROWD_READ
-        payload = {"exchange": "binance", "symbol": "100BTCUSDT"}
+        payload = {"exchange": "binance", "symbol": "BTCUSDT"}
         try:
             res = await http_client.request("POST", url, json=payload)
             data = (res or {}).get("data") if isinstance(res, dict) else None
