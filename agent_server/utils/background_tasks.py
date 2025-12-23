@@ -5,6 +5,7 @@ from agent_server.config import settings
 from agent_server.agents.experts.background.market_structure import MarketStructureExpert
 from agent_server.agents.experts.background.kline import KLineExpert
 from agent_server.agents.experts.background.market_state import market_state_aggregator, save_market_state, has_full_intervals
+from agent_server.agents.experts.background.crowd_state_compactor import crowd_state_compactor
 from agent_server.utils.http_client import http_client
 
 API_MR_ANALYZE = "/market_raw/analyze"
@@ -79,8 +80,13 @@ def make_kline_task(exchange: str, interval: str):
                             merged = {"interval": itv}
                             merged.update(bg)
                             items.append(merged)
+                crowd_url = base + "/crowd_state/read"
+                crowd_payload = {"exchange": exchange, "symbol": symbol}
+                crowd_res = await http_client.request("POST", crowd_url, json=crowd_payload)
+                crowd_raw = (crowd_res or {}).get("data") if isinstance(crowd_res, dict) else None
+                crowd_compact = crowd_state_compactor(crowd_raw or {})
                 if has_full_intervals(items):
-                    agg = market_state_aggregator(symbol, items)
+                    agg = market_state_aggregator(symbol, items, crowd_compact)
                     await save_market_state(exchange, symbol, agg)
             except Exception as e:
                 logger.error("market_state_aggregate_error %s %s", symbol, e)

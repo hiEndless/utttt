@@ -101,7 +101,7 @@ def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
     proximity = bg["structure"].get("key_level_proximity")
     state = structure
     if proximity:
-        state = f"{structure}_{proximity}"
+        state = f"{structure}_near_{proximity}"
 
     return {
         "state": state,
@@ -110,7 +110,7 @@ def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
     }
 
 
-def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
+def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_state: Dict | None = None) -> Dict:
     grouped: Dict[str, List[Dict]] = {k: [] for k in INTERVAL_GROUPS}
     latest_ts = 0
 
@@ -158,6 +158,19 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict]) -> Dict:
 
         market_state["market_state"][group] = agg
 
+    if crowd_state:
+        st = market_state["market_state"].get("short_term")
+        lt = market_state["market_state"].get("long_term")
+        if st and crowd_state.get("fragility") == "high":
+            st["risk"] = "high"
+        if st and crowd_state.get("crowding_level") == "high":
+            bias = crowd_state.get("bias")
+            if bias and bias == st.get("direction"):
+                c = st.get("confidence", 0.0)
+                st["confidence"] = max(0.6, round(c - 0.1, 2))
+        if lt and crowd_state.get("consistency") == "conflicted" and crowd_state.get("crowding_level") == "high":
+            lt["veto"] = True
+
     return market_state
 
 
@@ -185,6 +198,7 @@ if __name__ == "__main__":
         sys.path.insert(0, _root)
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
+    from agent_server.agents.experts.background.crowd_state_compactor import crowd_state_compactor
 
     API_KLINE_READ = "/kline/background/read_multi"
 
@@ -193,6 +207,10 @@ if __name__ == "__main__":
         interval = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
         url = settings.api_base_url.rstrip("/") + API_KLINE_READ
         payload = {"exchange": "binance", "symbol": "BTCUSDT", "intervals": interval}
+
+        crowd_url = settings.api_base_url.rstrip("/") + "/crowd_state/read"
+        crowd_payload = {"exchange": "binance", "symbol": "BTCUSDT"}
+
         try:
             res = await http_client.request("POST", url, json=payload)
             data = (res or {}).get("data") if isinstance(res, dict) else None
@@ -205,7 +223,13 @@ if __name__ == "__main__":
                         items.append(merged)
             if not has_full_intervals(items):
                 return
-            agg = market_state_aggregator("BTCUSDT", items)
+
+            crowd_res = await http_client.request("POST", crowd_url, json=crowd_payload)
+            crowd_raw = (crowd_res or {}).get("data") if isinstance(crowd_res, dict) else None
+            crowd_compact = crowd_state_compactor(crowd_raw or {})
+
+            agg = market_state_aggregator("BTCUSDT", items, crowd_compact)
+            print(json.dumps(agg, ensure_ascii=False))
             await save_market_state("binance", "BTCUSDT", agg)
         finally:
             await http_client.close()
