@@ -18,6 +18,8 @@ CONFIDENCE_WEIGHT = {
     "long_term": 1.2
 }
 
+REQUIRED_INTERVALS = {"1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"}
+
 
 def _majority_vote(values: List[str]) -> str:
     if not values:
@@ -165,6 +167,14 @@ async def save_market_state(exchange: str, symbol: str, market_state: Dict) -> N
     key = f"background:{exchange}:{symbol}:market_state"
     await client.set_json(key, market_state)
 
+def has_full_intervals(kline_backgrounds: List[Dict]) -> bool:
+    present = set()
+    for bg in kline_backgrounds:
+        itv = bg.get("interval")
+        if itv:
+            present.add(itv)
+    return REQUIRED_INTERVALS.issubset(present)
+
 if __name__ == "__main__":
     import json
     import asyncio
@@ -193,8 +203,9 @@ if __name__ == "__main__":
                         merged = {"interval": itv}
                         merged.update(bg)
                         items.append(merged)
+            if not has_full_intervals(items):
+                return
             agg = market_state_aggregator("BTCUSDT", items)
-            print(agg)
             await save_market_state("binance", "BTCUSDT", agg)
         finally:
             await http_client.close()

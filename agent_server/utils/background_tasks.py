@@ -4,6 +4,7 @@ from typing import Dict, List
 from agent_server.config import settings
 from agent_server.agents.experts.background.market_structure import MarketStructureExpert
 from agent_server.agents.experts.background.kline import KLineExpert
+from agent_server.agents.experts.background.market_state import market_state_aggregator, save_market_state, has_full_intervals
 from agent_server.utils.http_client import http_client
 
 API_MR_ANALYZE = "/market_raw/analyze"
@@ -66,6 +67,23 @@ def make_kline_task(exchange: str, interval: str):
                 return
             query = {"interval": interval, "symbol": symbol, **(data or {})}
             await expert.run(query, exchange, symbol)
+            ms_url = base + "/kline/background/read_multi"
+            ms_payload = {"exchange": exchange, "symbol": symbol, "intervals": INDICATOR_INTERVALS}
+            try:
+                ms_res = await http_client.request("POST", ms_url, json=ms_payload)
+                ms_data = (ms_res or {}).get("data") if isinstance(ms_res, dict) else None
+                items: List[Dict] = []
+                if isinstance(ms_data, dict):
+                    for itv, bg in ms_data.items():
+                        if isinstance(bg, Dict) and bg:
+                            merged = {"interval": itv}
+                            merged.update(bg)
+                            items.append(merged)
+                if has_full_intervals(items):
+                    agg = market_state_aggregator(symbol, items)
+                    await save_market_state(exchange, symbol, agg)
+            except Exception as e:
+                logger.error("market_state_aggregate_error %s %s", symbol, e)
         except Exception as e:
             logger.error("kline_read_api_error %s %s %s", symbol, interval, e)
 
