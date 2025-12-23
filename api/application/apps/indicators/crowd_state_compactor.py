@@ -1,3 +1,7 @@
+"""
+基于market_raw_analysis的再次压缩，提供给agent判断
+"""
+
 import json
 import os
 import sys
