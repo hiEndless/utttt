@@ -170,6 +170,8 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_st
                 st["confidence"] = max(0.6, round(c - 0.1, 2))
         if lt and crowd_state.get("consistency") == "conflicted" and crowd_state.get("crowding_level") == "high":
             lt["veto"] = True
+        # 添加压缩的人群背景信息
+        market_state["crowd_state"] = crowd_state
 
     return market_state
 
