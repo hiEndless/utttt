@@ -35,7 +35,7 @@ Market State 背景输入：
 - 双向交替（若占比接近且方向不明确）
 - 方向偏移（BUY 或 SELL 明显主导）
 - 事件持续时间（使用 duration_ms）是否超出常规
-- 与背景波动匹配与否（environment.volatility_state）
+- 与背景风险匹配与否（使用 market_state.short_term.risk 作为波动/风险代理）
 
 2) 判断爆仓事件的微结构意义（Market Stress Meaning）
 
@@ -54,6 +54,8 @@ Market State 背景输入：
 - 爆仓量与背景风险（market_state.short_term.risk ∈ {low,medium,high}）是否匹配
 - 是否提升短周期市场风险
 不得重复背景解释，只能从爆仓角度补充。
+若 market_state.long_term.veto == true，
+你不得将任何爆仓事件解释为跨周期有效或趋势性确认，只能视为噪音或风险放大。
 
 信号强弱计算规则（仅用提供字段，必须严格遵守）
 定义占比：
@@ -82,12 +84,11 @@ timeframe_alignment 计算规则（仅用提供字段，不得臆造）
   - 若 BUY 与 BUY_QTY 明显主导，输出 long
   - 否则输出 neutral
 
-- 5m：必须满足至少一项，否则输出 neutral
-  - duration_ms ≥ 60000（≥ 1 分钟）
+- 5m：必须满足至少一项【量化条件】，否则输出 neutral
+  - duration_ms ≥ 60000
   - orders_dominance ≥ 0.60（经波动性调节）
   - volume_dominance ≥ 0.60（经波动性调节）
-  - 方向明显压制（BUY 或 SELL 明显主导）
-  - 与短周期背景方向（market_state.short_term.direction）一致并强化（可选）
+  - 在满足以上任一条件后，若方向与 short_term.direction 一致，可作为强化依据
 
 - 15m：必须满足至少一项，否则输出 neutral
   - duration_ms ≥ 120000（≥ 2 分钟）
@@ -104,9 +105,10 @@ action 不是交易信号，它是提供给融合阶段的偏向性分类标签�
 禁止使用预测性语言。
 
 metadata.ts 规则
-- metadata.ts 必须使用输入事件时间戳 ts（或 ts_now），不得自行编造。
+- metadata.ts 必须使用输入事件时间戳 ts，不得自行编造。
  confidence 赋值与范围约束：
  confidence 为数值型浮点数，推荐在 [0.60, 0.95]（含端点），反映输入完整性与信号清晰度；禁止极值 0.0 与 1.0。
+ 当 signal_strength == weak 或 signal_direction == neutral 时，confidence 不得高于 0.75。
  dominance 规则补充：
  dominant_side = BUY 若 BUY > SELL；dominant_side = SELL 若 SELL > BUY；相等则为 neutral。
  若 abs(orders_dominance - 0.5) < 0.03 且 abs(volume_dominance - 0.5) < 0.03，视为 neutral/mixed。
