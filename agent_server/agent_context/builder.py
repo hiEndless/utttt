@@ -45,12 +45,5 @@ def build_agent_context(
 
     _drop_internal_fields(out)
 
-    # 往专家agent生成物中注入 contract 元信息（供 Fusion 用）
-    # out["_context_meta"] = {
-    #     "agent": agent,
-    #     "role": AGENT_REGISTRY[agent]["role"],
-    #     "scope": AGENT_REGISTRY[agent]["scope"],
-    #     "uses_crowd_state": AGENT_REGISTRY[agent]["uses_crowd_state"],
-    # }
-
     return out
+    
