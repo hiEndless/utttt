@@ -78,3 +78,7 @@ class ForceStatsExpert:
         output = _json_dumps_safe(final_result)
         print(output)
         return output
+
+
+if __name__ == "__main__":
+    expert = ForceStatsExpert()
