@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from .market_raw_analysis import read_market_raw, build_participant_structure
 from .kline_indicators import read_indicators, scan_symbols, read_multi_period
 from .background_kline import read_background, read_multi_period as read_bg_multi_period
+from .market_state_view import read_full_market_state
 from .crowd_state_compactor import read_market_structure as read_crowd_state
 from .crowd_state_compactor import scan_symbols as scan_crowd_symbols
 from ...common.status_codes import StatusCode
@@ -42,6 +43,32 @@ async def analyze_market_raw(req: MarketRawRequest):
             "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
         }
 
+class MarketStateReadFullRequest(BaseModel):
+    exchange: str
+    symbol: str
+
+
+@app.post("/market_state/read_full")
+async def market_state_read_full(req: MarketStateReadFullRequest):
+    """读取完整的 Market State（不做裁剪，便于在 Agent 侧自行裁剪）。
+    请求参数：
+      - exchange: 交易所名称
+      - symbol: 币种符号
+    返回：
+      - code/msg/data，data 为完整的 market_state（移除了内部 _raw_trends 字段）。
+    """
+    try:
+        data = await read_full_market_state(req.exchange, req.symbol, redis_client)
+        return {
+            "code": StatusCode.SUCCESS,
+            "msg": StatusCode.get_message(StatusCode.SUCCESS),
+            "data": data,
+        }
+    except Exception as e:
+        return {
+            "code": StatusCode.SERVER_ERROR,
+            "msg": f"{StatusCode.get_message(StatusCode.SERVER_ERROR)}: {e}",
+        }
 
 class KlineIndicatorsRequest(BaseModel):
     exchange: str
