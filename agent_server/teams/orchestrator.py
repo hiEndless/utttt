@@ -224,8 +224,11 @@ class TeamOrchestrator:
                 except:
                     trading_decision = {"action": "hold", "error": "failed_to_parse_decision"}
                 
-                # 执行交易（如果不是保持不动）
-                if trading_decision and trading_decision.get("action") != "hold":
+                # 检查是否是中间分析（单个时间维度分析），如果是，不执行交易推送
+                is_intermediate = payload_obj.get("_is_intermediate_analysis", False)
+                
+                # 执行交易（如果不是保持不动，且不是中间分析）
+                if trading_decision and trading_decision.get("action") != "hold" and not is_intermediate:
                     try:
                         from agent_server.utils.trading_executor import get_executor
                         executor = await get_executor()
@@ -234,6 +237,10 @@ class TeamOrchestrator:
                     except Exception as e:
                         print(f"⚠️  执行交易失败: {e}")
                         trading_decision["execution_error"] = str(e)
+                elif is_intermediate:
+                    # 中间分析，不执行交易，但保留决策结果
+                    trading_decision["_skipped_execution"] = True
+                    trading_decision["_reason"] = "中间分析，等待最终决策"
                 
             except Exception as e:
                 print(f"⚠️  决策 Agent 执行失败: {e}")

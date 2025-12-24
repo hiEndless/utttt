@@ -3,6 +3,7 @@
 综合分析所有 Agent 的结果，生成标准化的交易决策
 """
 import json
+import os
 from typing import Dict, Any, Optional
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
@@ -56,45 +57,48 @@ class TradingDecisionExpert:
                     query_data = {"raw": query}
             else:
                 query_data = query
-            
+
             # 检查是否是多时间维度分析结果
             if "analysis_by_timeframe" in query_data:
                 return await self._analyze_multi_timeframe(query_data)
-            
+
             # 单事件分析（原有逻辑）
-            event_id = query_data.get("event_id") or query_data.get("id") or "unknown"
+            event_id = query_data.get("event_id") or query_data.get(
+                "id") or "unknown"
             symbol = query_data.get("symbol", "BTCUSDT")
-            
+
             # 从 Redis 加载所有 Agent 结果
             store = await get_store()
             agent_results = await store.get_agent_results(str(event_id))
-            
+
             if not agent_results:
                 # 如果没有结果，返回保持不动
-                return json.dumps({
-                    "action": "hold",
-                    "symbol": symbol,
-                    "confidence": 0.0,
-                    "rationale": "未找到 Agent 分析结果",
-                    "error": "no_agent_results"
-                }, ensure_ascii=False)
-            
+                return json.dumps(
+                    {
+                        "action": "hold",
+                        "symbol": symbol,
+                        "confidence": 0.0,
+                        "rationale": "未找到 Agent 分析结果",
+                        "error": "no_agent_results"
+                    },
+                    ensure_ascii=False)
+
             # 调用 LLM 进行决策分析
             cfg = get_agent_config(self.name)
             model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
             base_url = cfg.get("llm_base_url")
             api_key = cfg.get("llm_api_key")
-            
+
             model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-            
+
             # 构建 prompt
             prompt = self._build_decision_prompt(query_data, agent_results)
-            
+
             agent = Agent(
                 model=model,
                 instructions=prompt,
             )
-            
+
             # 调用 LLM
             from agno.models.message import Message
             run_output = await agent.arun(
@@ -102,9 +106,9 @@ class TradingDecisionExpert:
                 stream=False,
                 debug_mode=True,
             )
-            
+
             content = run_output.content
-            
+
             # 解析输出
             if isinstance(content, str):
                 try:
@@ -114,73 +118,92 @@ class TradingDecisionExpert:
                     if extracted is not None:
                         decision = extracted
                     else:
-                        decision = self._fallback_decision(query_data, agent_results)
+                        decision = self._fallback_decision(
+                            query_data, agent_results)
             elif hasattr(content, "model_dump"):
                 decision = content.model_dump(exclude_none=True)
             else:
                 decision = self._fallback_decision(query_data, agent_results)
-            
+
             # 格式化决策
-            formatted_decision = self._format_decision(decision, query_data, agent_results)
-            
+            formatted_decision = self._format_decision(decision, query_data,
+                                                       agent_results)
+
             return _json_dumps_safe(formatted_decision)
-            
+
         except Exception as e:
             print(f"❌ 交易决策失败: {e}")
             import traceback
             traceback.print_exc()
             # 返回保持不动的决策
-            return json.dumps({
-                "action": "hold",
-                "symbol": query_data.get("symbol", "BTCUSDT") if 'query_data' in locals() else "BTCUSDT",
-                "confidence": 0.0,
-                "rationale": f"决策生成失败: {str(e)}",
-                "error": str(e)
-            }, ensure_ascii=False)
-    
-    
-    def _build_decision_prompt(self, query_data: Dict, agent_results: Dict) -> str:
+            return json.dumps(
+                {
+                    "action":
+                    "hold",
+                    "symbol":
+                    query_data.get("symbol", "BTCUSDT")
+                    if 'query_data' in locals() else "BTCUSDT",
+                    "confidence":
+                    0.0,
+                    "rationale":
+                    f"决策生成失败: {str(e)}",
+                    "error":
+                    str(e)
+                },
+                ensure_ascii=False)
+
+    def _build_decision_prompt(self, query_data: Dict,
+                               agent_results: Dict) -> str:
         """构建决策 prompt"""
         prompt_parts = []
-        
+
         # 事件信息
         prompt_parts.append("## 事件信息")
-        prompt_parts.append(json.dumps({
-            "event_id": query_data.get("event_id"),
-            "symbol": query_data.get("symbol"),
-            "event_type": query_data.get("event_type"),
-            "event_level": query_data.get("event_level"),
-        }, indent=2, ensure_ascii=False))
-        
+        prompt_parts.append(
+            json.dumps(
+                {
+                    "event_id": query_data.get("event_id"),
+                    "symbol": query_data.get("symbol"),
+                    "event_type": query_data.get("event_type"),
+                    "event_level": query_data.get("event_level"),
+                },
+                indent=2,
+                ensure_ascii=False))
+
         # Agent 结果
         prompt_parts.append("\n## Agent 分析结果")
         for agent_name, result_data in agent_results.items():
             prompt_parts.append(f"\n### {agent_name} Agent")
             result = result_data.get("result", {})
-            prompt_parts.append(json.dumps(result, indent=2, ensure_ascii=False))
-        
+            prompt_parts.append(
+                json.dumps(result, indent=2, ensure_ascii=False))
+
         # 原始事件数据（如果有）
         if "original_event" in query_data:
             prompt_parts.append("\n## 原始事件数据")
-            prompt_parts.append(json.dumps(query_data["original_event"], indent=2, ensure_ascii=False))
-        
+            prompt_parts.append(
+                json.dumps(query_data["original_event"],
+                           indent=2,
+                           ensure_ascii=False))
+
         prompt_parts.append("\n\n请根据以上信息，生成交易决策。")
-        
+
         return "\n".join(prompt_parts)
-    
-    def _fallback_decision(self, query_data: Dict, agent_results: Dict) -> Dict:
+
+    def _fallback_decision(self, query_data: Dict,
+                           agent_results: Dict) -> Dict:
         """备用决策逻辑（当 LLM 失败时）"""
         symbol = query_data.get("symbol", "BTCUSDT")
-        
+
         # 简单的规则引擎
         buy_signals = 0
         sell_signals = 0
         total_confidence = 0.0
         count = 0
-        
+
         for agent_name, result_data in agent_results.items():
             result = result_data.get("result", {})
-            
+
             # 尝试提取信号
             content = result.get("content", {})
             if isinstance(content, str):
@@ -188,11 +211,12 @@ class TradingDecisionExpert:
                     content = json.loads(content)
                 except:
                     pass
-            
+
             # 检查是否有 action 或 signal
-            action = result.get("action") or content.get("action") or result.get("action_suggestion")
+            action = result.get("action") or content.get(
+                "action") or result.get("action_suggestion")
             confidence = float(result.get("confidence", 0.0) or 0.0)
-            
+
             if action in ("buy", "open", "long"):
                 buy_signals += 1
                 total_confidence += confidence
@@ -201,9 +225,9 @@ class TradingDecisionExpert:
                 sell_signals += 1
                 total_confidence += confidence
                 count += 1
-        
+
         avg_confidence = total_confidence / count if count > 0 else 0.0
-        
+
         # 决策逻辑
         if buy_signals > sell_signals and avg_confidence >= 0.7:
             return {
@@ -211,7 +235,8 @@ class TradingDecisionExpert:
                 "positionSide": "LONG",
                 "side": "BUY",
                 "confidence": avg_confidence,
-                "rationale": f"基于 {buy_signals} 个买入信号，平均置信度 {avg_confidence:.2f}"
+                "rationale":
+                f"基于 {buy_signals} 个买入信号，平均置信度 {avg_confidence:.2f}"
             }
         elif sell_signals > buy_signals and avg_confidence >= 0.7:
             return {
@@ -219,7 +244,8 @@ class TradingDecisionExpert:
                 "positionSide": "LONG",
                 "side": "SELL",
                 "confidence": avg_confidence,
-                "rationale": f"基于 {sell_signals} 个卖出信号，平均置信度 {avg_confidence:.2f}"
+                "rationale":
+                f"基于 {sell_signals} 个卖出信号，平均置信度 {avg_confidence:.2f}"
             }
         else:
             return {
@@ -227,22 +253,23 @@ class TradingDecisionExpert:
                 "confidence": avg_confidence,
                 "rationale": "信号不明确或置信度不足，保持不动"
             }
-    
-    def _format_decision(self, decision: Dict, query_data: Dict, agent_results: Dict) -> Dict:
+
+    def _format_decision(self, decision: Dict, query_data: Dict,
+                         agent_results: Dict) -> Dict:
         """格式化决策为标准化格式"""
         symbol = query_data.get("symbol", "BTCUSDT")
         event_level = int(query_data.get("event_level", 2))
-        
+
         # 获取当前价格（从原始事件或 Agent 结果中）
         current_price = None
-        
+
         # 方法1: 直接从 query_data 获取（因为 payload 已经被展开）
         if "close" in query_data:
             try:
                 current_price = float(query_data["close"])
             except (ValueError, TypeError):
                 pass
-        
+
         # 方法2: 从 original_event 获取
         if not current_price and "original_event" in query_data:
             original_event = query_data["original_event"]
@@ -253,7 +280,7 @@ class TradingDecisionExpert:
                         current_price = float(original_event["close"])
                     except (ValueError, TypeError):
                         pass
-                
+
                 # 再尝试从 payload 中获取
                 if not current_price:
                     payload = original_event.get("payload", {})
@@ -268,7 +295,7 @@ class TradingDecisionExpert:
                                 current_price = float(payload["price"])
                             except (ValueError, TypeError):
                                 pass
-        
+
         # 方法3: 从 Agent 结果中获取
         if not current_price:
             for result_data in agent_results.values():
@@ -293,19 +320,68 @@ class TradingDecisionExpert:
                             break
                         except (ValueError, TypeError):
                             pass
-        
+
+        # 方法4: 从 Redis 获取最新价格（如果前面都没找到）
+        if not current_price:
+            try:
+                import redis
+                redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
+                redis_port = int(os.getenv("REDIS_PORT", 6379))
+                redis_password = os.getenv("REDIS_PASSWORD", None)
+                redis_db = int(os.getenv("REDIS_DB", 1))
+
+                r = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    password=redis_password,
+                    db=redis_db,
+                    decode_responses=True,
+                    socket_connect_timeout=2,  # 连接超时2秒
+                    socket_timeout=2,  # 操作超时2秒
+                    retry_on_timeout=True,
+                    health_check_interval=30)
+                price_key = f"price:binance:{symbol}"
+                price_data = r.hgetall(price_key)
+                if price_data and "price" in price_data:
+                    current_price = float(price_data["price"])
+                    print(f"✅ 从 Redis 获取当前价格: {current_price}")
+                r.close()  # 关闭连接
+            except Exception as e:
+                # 静默失败，避免干扰日志
+                pass
+
         if not current_price:
             current_price = 0.0
             print(f"⚠️  无法获取当前价格，使用默认值 0.0")
             print(f"   query_data keys: {list(query_data.keys())}")
             if "original_event" in query_data:
-                print(f"   original_event keys: {list(query_data['original_event'].keys()) if isinstance(query_data['original_event'], dict) else 'not dict'}")
-        
+                print(
+                    f"   original_event keys: {list(query_data['original_event'].keys()) if isinstance(query_data['original_event'], dict) else 'not dict'}"
+                )
+
         # 处理 LLM 返回的各种格式
         # 1. 如果有 "decision" 字段，转换为 "action"
         decision_text = decision.get("decision", "").lower()
         action = decision.get("action", "hold")
-        
+
+        # 处理部分获利了结（partial_take_profit）操作
+        # partial_take_profit 应该是平仓操作，不是开仓
+        if action == "partial_take_profit" or "partial" in action.lower(
+        ) or "take_profit" in action.lower():
+            # 部分获利了结 = 平仓部分仓位
+            # 需要根据当前持仓方向确定 side
+            position_side_from_decision = decision.get("positionSide", "LONG")
+            if position_side_from_decision == "LONG":
+                # 平多仓 = 卖出
+                side = "SELL"
+                position_side = "LONG"
+            else:
+                # 平空仓 = 买入
+                side = "BUY"
+                position_side = "SHORT"
+            # 将 action 转换为 close（因为部分获利了结本质上是平仓）
+            action = "close"  # 或者保持 "partial_take_profit"，但需要确保 side 正确
+
         if not action or action == "hold":
             # 从 decision 文本中提取 action
             if "short" in decision_text or "sell" in decision_text or "bearish" in decision_text:
@@ -338,7 +414,8 @@ class TradingDecisionExpert:
             else:
                 # 默认根据信号方向判断
                 original_event = query_data.get("original_event", {})
-                payload = original_event.get("payload", {}) if isinstance(original_event, dict) else {}
+                payload = original_event.get("payload", {}) if isinstance(
+                    original_event, dict) else {}
                 signal_side = payload.get("side", "").lower()
                 if signal_side == "bearish":
                     action = "open"
@@ -350,12 +427,12 @@ class TradingDecisionExpert:
                     side = "BUY"
                 else:
                     action = "hold"
-        
+
         # 处理 rationale（可能是字符串或字典）
         rationale = decision.get("rationale", "")
         if isinstance(rationale, dict):
             rationale = " | ".join([f"{k}: {v}" for k, v in rationale.items()])
-        
+
         # 构建标准决策格式
         formatted = {
             "action": action,
@@ -366,21 +443,21 @@ class TradingDecisionExpert:
             "event_id": query_data.get("event_id"),
             "event_level": event_level,
         }
-        
+
         # 如果是开仓或平仓，添加交易相关字段
         if action in ("open", "close"):
             # 从 decision 中提取 entry 信息
             entry = decision.get("entry", {})
-            
+
             # 提取止损止盈价格
             stop_loss = None
             take_profit = None
-            
+
             if isinstance(entry, dict):
                 # 从 entry.target 和 entry.stoploss 提取
                 target_text = str(entry.get("target", ""))
                 stoploss_text = str(entry.get("stoploss", ""))
-                
+
                 # 尝试从文本中提取数字
                 import re
                 if target_text:
@@ -391,7 +468,7 @@ class TradingDecisionExpert:
                     numbers = re.findall(r'\d+\.?\d*', stoploss_text)
                     if numbers:
                         stop_loss = float(numbers[0])
-            
+
             # 如果没有从 entry 提取到，尝试直接从 decision 获取
             if not stop_loss:
                 stop_loss = decision.get("stop_loss")
@@ -401,7 +478,7 @@ class TradingDecisionExpert:
                 take_profit = decision.get("take_profit")
                 if take_profit:
                     take_profit = float(take_profit)
-            
+
             # 计算止损止盈（如果没有提供）
             if not stop_loss and action == "open":
                 # 默认止损：当前价格的 -1% 到 -2%
@@ -409,32 +486,66 @@ class TradingDecisionExpert:
             if not take_profit and action == "open":
                 # 默认止盈：当前价格的 +1% 到 +3%
                 take_profit = current_price * 1.02
-            
+
+            # 处理部分获利了结的特殊情况
+            original_action = decision.get("action", "")
+            if original_action == "partial_take_profit" or "partial" in original_action.lower(
+            ):
+                # 部分获利了结：根据 positionSide 确定 side
+                pos_side = decision.get("positionSide", "LONG")
+                if pos_side == "LONG":
+                    # 平多仓 = 卖出
+                    final_side = "SELL"
+                    final_position_side = "LONG"
+                else:
+                    # 平空仓 = 买入
+                    final_side = "BUY"
+                    final_position_side = "SHORT"
+            else:
+                # 正常逻辑
+                final_position_side = decision.get("positionSide") or (
+                    position_side if 'position_side' in locals() else
+                    ("LONG" if action == "open" else "SHORT"))
+                final_side = decision.get("side") or (
+                    side if 'side' in locals() else
+                    ("BUY" if action == "open" else "SELL"))
+
             formatted.update({
-                "positionSide": decision.get("positionSide") or position_side if 'position_side' in locals() else ("LONG" if action == "open" else "SHORT"),
-                "side": decision.get("side") or side if 'side' in locals() else ("BUY" if action == "open" else "SELL"),
-                "leverage": float(decision.get("leverage", 5.0)),
-                "sums": str(decision.get("sums", "0.1")),
-                "openAvgPx": float(decision.get("openAvgPx") or entry.get("price", current_price) if isinstance(entry, dict) else current_price),
+                "positionSide":
+                final_position_side,
+                "side":
+                final_side,
+                "leverage":
+                float(decision.get("leverage", 5.0)),
+                "sums":
+                str(decision.get("sums", "0.1")),
+                "openAvgPx":
+                float(
+                    decision.get("openAvgPx")
+                    or entry.get("price", current_price) if isinstance(
+                        entry, dict) else current_price),
             })
-            
+
             # 添加止损止盈
             if stop_loss:
                 formatted["stop_loss"] = stop_loss
             if take_profit:
                 formatted["take_profit"] = take_profit
-        
+
         # 添加 Agent 结果摘要
         formatted["agent_summary"] = {
             name: {
-                "confidence": result_data.get("result", {}).get("confidence", 0.0),
-                "action_suggestion": result_data.get("result", {}).get("action") or result_data.get("result", {}).get("action_suggestion", "unknown")
+                "confidence":
+                result_data.get("result", {}).get("confidence", 0.0),
+                "action_suggestion":
+                result_data.get("result", {}).get("action") or result_data.get(
+                    "result", {}).get("action_suggestion", "unknown")
             }
             for name, result_data in agent_results.items()
         }
-        
+
         return formatted
-    
+
     async def _analyze_multi_timeframe(self, query_data: Dict) -> str:
         """
         分析多时间维度的结果
@@ -449,64 +560,67 @@ class TradingDecisionExpert:
             symbol = query_data.get("symbol", "BTCUSDT")
             analysis_by_timeframe = query_data.get("analysis_by_timeframe", {})
             base_event = query_data.get("base_event", {})
-            
+
             if not analysis_by_timeframe:
-                return json.dumps({
-                    "action": "hold",
-                    "symbol": symbol,
-                    "confidence": 0.0,
-                    "rationale": "未找到多时间维度分析结果",
-                    "error": "no_multi_timeframe_results"
-                }, ensure_ascii=False)
-            
+                return json.dumps(
+                    {
+                        "action": "hold",
+                        "symbol": symbol,
+                        "confidence": 0.0,
+                        "rationale": "未找到多时间维度分析结果",
+                        "error": "no_multi_timeframe_results"
+                    },
+                    ensure_ascii=False)
+
             # 整合各时间维度的 Agent 结果
             integrated_agent_results = {}
-            
+
             for timeframe, analysis_result in analysis_by_timeframe.items():
                 if "error" in analysis_result:
                     continue
-                
+
                 # 从每个时间维度的分析结果中提取 Agent 结果
                 names = analysis_result.get("names", [])
                 outputs = analysis_result.get("outputs", [])
-                
+
                 for name, output_str in zip(names, outputs):
                     if name not in integrated_agent_results:
                         integrated_agent_results[name] = {
                             "timeframes": [],
                             "results": []
                         }
-                    
+
                     try:
-                        output_obj = json.loads(output_str) if isinstance(output_str, str) else output_str
-                        integrated_agent_results[name]["timeframes"].append(timeframe)
+                        output_obj = json.loads(output_str) if isinstance(
+                            output_str, str) else output_str
+                        integrated_agent_results[name]["timeframes"].append(
+                            timeframe)
                         integrated_agent_results[name]["results"].append({
-                            "timeframe": timeframe,
-                            "result": output_obj
+                            "timeframe":
+                            timeframe,
+                            "result":
+                            output_obj
                         })
                     except:
                         pass
-            
+
             # 构建决策 prompt（包含多时间维度信息）
             prompt = self._build_multi_timeframe_prompt(
-                query_data, 
-                integrated_agent_results,
-                analysis_by_timeframe
-            )
-            
+                query_data, integrated_agent_results, analysis_by_timeframe)
+
             # 调用 LLM 进行决策分析
             cfg = get_agent_config(self.name)
             model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
             base_url = cfg.get("llm_base_url")
             api_key = cfg.get("llm_api_key")
-            
+
             model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-            
+
             agent = Agent(
                 model=model,
                 instructions=prompt,
             )
-            
+
             # 调用 LLM
             from agno.models.message import Message
             run_output = await agent.arun(
@@ -514,9 +628,9 @@ class TradingDecisionExpert:
                 stream=False,
                 debug_mode=True,
             )
-            
+
             content = run_output.content
-            
+
             # 解析输出
             if isinstance(content, str):
                 try:
@@ -527,79 +641,80 @@ class TradingDecisionExpert:
                         decision = extracted
                     else:
                         decision = self._fallback_multi_timeframe_decision(
-                            query_data, 
-                            integrated_agent_results
-                        )
+                            query_data, integrated_agent_results)
             elif hasattr(content, "model_dump"):
                 decision = content.model_dump(exclude_none=True)
             else:
                 decision = self._fallback_multi_timeframe_decision(
-                    query_data, 
-                    integrated_agent_results
-                )
-            
+                    query_data, integrated_agent_results)
+
             # 格式化决策
             formatted_decision = self._format_multi_timeframe_decision(
-                decision, 
-                query_data, 
-                integrated_agent_results
-            )
-            
+                decision, query_data, integrated_agent_results)
+
             return _json_dumps_safe(formatted_decision)
-            
+
         except Exception as e:
             print(f"❌ 多时间维度交易决策失败: {e}")
             import traceback
             traceback.print_exc()
-            return json.dumps({
-                "action": "hold",
-                "symbol": query_data.get("symbol", "BTCUSDT"),
-                "confidence": 0.0,
-                "rationale": f"多时间维度决策生成失败: {str(e)}",
-                "error": str(e)
-            }, ensure_ascii=False)
-    
-    def _build_multi_timeframe_prompt(
-        self, 
-        query_data: Dict, 
-        integrated_agent_results: Dict,
-        analysis_by_timeframe: Dict
-    ) -> str:
+            return json.dumps(
+                {
+                    "action": "hold",
+                    "symbol": query_data.get("symbol", "BTCUSDT"),
+                    "confidence": 0.0,
+                    "rationale": f"多时间维度决策生成失败: {str(e)}",
+                    "error": str(e)
+                },
+                ensure_ascii=False)
+
+    def _build_multi_timeframe_prompt(self, query_data: Dict,
+                                      integrated_agent_results: Dict,
+                                      analysis_by_timeframe: Dict) -> str:
         """构建多时间维度决策 prompt"""
         from agent_server.configs.prompts.trading_decision import prompt as base_prompt
-        
+
         prompt_parts = []
         prompt_parts.append(base_prompt)
         prompt_parts.append("\n\n## 多时间维度分析数据")
         prompt_parts.append("\n你收到的是多时间维度的分析结果，需要综合考虑不同时间周期的信号。")
         prompt_parts.append("\n### 时间维度信息")
-        prompt_parts.append(json.dumps({
-            "symbol": query_data.get("symbol"),
-            "found_timeframes": query_data.get("found_timeframes", []),
-            "base_event": {
-                "event_id": query_data.get("base_event", {}).get("event_id"),
-                "event_type": query_data.get("base_event", {}).get("event_type"),
-                "event_level": query_data.get("base_event", {}).get("event_level"),
-            }
-        }, indent=2, ensure_ascii=False))
-        
+        prompt_parts.append(
+            json.dumps(
+                {
+                    "symbol": query_data.get("symbol"),
+                    "found_timeframes": query_data.get("found_timeframes", []),
+                    "base_event": {
+                        "event_id":
+                        query_data.get("base_event", {}).get("event_id"),
+                        "event_type":
+                        query_data.get("base_event", {}).get("event_type"),
+                        "event_level":
+                        query_data.get("base_event", {}).get("event_level"),
+                    }
+                },
+                indent=2,
+                ensure_ascii=False))
+
         prompt_parts.append("\n### 各时间维度的 Agent 分析结果")
         for timeframe, analysis_result in analysis_by_timeframe.items():
             if "error" in analysis_result:
                 continue
-            
+
             prompt_parts.append(f"\n#### {timeframe} 时间维度")
             names = analysis_result.get("names", [])
             outputs = analysis_result.get("outputs", [])
-            
+
             for name, output_str in zip(names, outputs):
                 prompt_parts.append(f"\n**{name} Agent ({timeframe}):**")
                 try:
-                    output_obj = json.loads(output_str) if isinstance(output_str, str) else output_str
-                    prompt_parts.append(json.dumps(output_obj, indent=2, ensure_ascii=False))
+                    output_obj = json.loads(output_str) if isinstance(
+                        output_str, str) else output_str
+                    prompt_parts.append(
+                        json.dumps(output_obj, indent=2, ensure_ascii=False))
                 except:
                     prompt_parts.append(str(output_str)[:500])
-        
+
         prompt_parts.append("\n\n### 多时间维度决策规则")
         prompt_parts.append("""
 1. **时间维度权重**：
@@ -620,49 +735,59 @@ class TradingDecisionExpert:
    - 只有在多个时间维度（至少2个）都显示明确信号时，才考虑开仓
    - 如果信号不一致或时间维度不足，选择 hold
         """)
-        
+
         prompt_parts.append("\n\n请根据以上多时间维度的分析结果，生成综合交易决策。")
-        
+
         return "\n".join(prompt_parts)
-    
+
     def _fallback_multi_timeframe_decision(
-        self, 
-        query_data: Dict, 
-        integrated_agent_results: Dict
-    ) -> Dict:
+            self, query_data: Dict, integrated_agent_results: Dict) -> Dict:
         """多时间维度备用决策逻辑"""
         symbol = query_data.get("symbol", "BTCUSDT")
         analysis_by_timeframe = query_data.get("analysis_by_timeframe", {})
-        
+
         # 统计各时间维度的信号
         buy_signals = 0
         sell_signals = 0
         total_confidence = 0.0
         count = 0
-        timeframe_weights = {"1m": 0.2, "5m": 0.3, "15m": 0.5, "30m": 0.6, "1h": 0.7}
-        
+        # 优化后的时间维度权重：周期越长，权重越高（代表更稳定的趋势）
+        timeframe_weights = {
+            "1m": 0.1,  # 短期波动，权重低
+            "5m": 0.2,  # 短期趋势
+            "15m": 0.3,  # 中期趋势
+            "30m": 0.4,  # 中期趋势
+            "1h": 0.5,  # 长期趋势，权重高
+            "2h": 0.6,
+            "4h": 0.7,
+            "1d": 0.8  # 日线，权重最高
+        }
+
         for timeframe, analysis_result in analysis_by_timeframe.items():
             if "error" in analysis_result:
                 continue
-            
+
             weight = timeframe_weights.get(timeframe, 0.3)
             names = analysis_result.get("names", [])
             outputs = analysis_result.get("outputs", [])
-            
+
             for name, output_str in zip(names, outputs):
                 try:
-                    output_obj = json.loads(output_str) if isinstance(output_str, str) else output_str
+                    output_obj = json.loads(output_str) if isinstance(
+                        output_str, str) else output_str
                     content = output_obj.get("content", {})
                     if isinstance(content, str):
                         try:
                             content = json.loads(content)
                         except:
                             pass
-                    
+
                     # 检查信号方向
-                    signal_text = json.dumps(output_obj, ensure_ascii=False).lower()
-                    confidence = float(output_obj.get("confidence", 0.0) or 0.0) * weight
-                    
+                    signal_text = json.dumps(output_obj,
+                                             ensure_ascii=False).lower()
+                    confidence = float(
+                        output_obj.get("confidence", 0.0) or 0.0) * weight
+
                     if "bearish" in signal_text or "sell" in signal_text or "short" in signal_text:
                         sell_signals += weight
                         total_confidence += confidence
@@ -673,47 +798,54 @@ class TradingDecisionExpert:
                         count += 1
                 except:
                     pass
-        
+
         avg_confidence = total_confidence / count if count > 0 else 0.0
-        
+
         # 需要至少2个时间维度有信号，且置信度足够
         if count >= 2:
             if buy_signals > sell_signals * 1.5 and avg_confidence >= 0.7:
                 return {
-                    "action": "open",
-                    "positionSide": "LONG",
-                    "side": "BUY",
-                    "confidence": avg_confidence,
-                    "rationale": f"基于 {count} 个时间维度的买入信号，加权置信度 {avg_confidence:.2f}"
+                    "action":
+                    "open",
+                    "positionSide":
+                    "LONG",
+                    "side":
+                    "BUY",
+                    "confidence":
+                    avg_confidence,
+                    "rationale":
+                    f"基于 {count} 个时间维度的买入信号，加权置信度 {avg_confidence:.2f}"
                 }
             elif sell_signals > buy_signals * 1.5 and avg_confidence >= 0.7:
                 return {
-                    "action": "open",
-                    "positionSide": "SHORT",
-                    "side": "SELL",
-                    "confidence": avg_confidence,
-                    "rationale": f"基于 {count} 个时间维度的卖出信号，加权置信度 {avg_confidence:.2f}"
+                    "action":
+                    "open",
+                    "positionSide":
+                    "SHORT",
+                    "side":
+                    "SELL",
+                    "confidence":
+                    avg_confidence,
+                    "rationale":
+                    f"基于 {count} 个时间维度的卖出信号，加权置信度 {avg_confidence:.2f}"
                 }
-        
+
         return {
             "action": "hold",
             "confidence": avg_confidence,
             "rationale": f"信号不明确或时间维度不足（{count} 个），保持不动"
         }
-    
+
     def _format_multi_timeframe_decision(
-        self, 
-        decision: Dict, 
-        query_data: Dict, 
-        integrated_agent_results: Dict
-    ) -> Dict:
+            self, decision: Dict, query_data: Dict,
+            integrated_agent_results: Dict) -> Dict:
         """格式化多时间维度决策"""
         symbol = query_data.get("symbol", "BTCUSDT")
         base_event = query_data.get("base_event", {})
-        
+
         # 获取当前价格（从各时间维度的事件数据中）
         current_price = None
-        
+
         # 方法1: 从 base_event 的 payload 中获取
         if not current_price:
             base_payload = base_event.get("payload", {})
@@ -722,13 +854,14 @@ class TradingDecisionExpert:
                     current_price = float(base_payload["close"])
                 except:
                     pass
-        
+
         # 方法2: 从各时间维度的分析结果中获取（优先使用最新或最相关的时间维度）
         if not current_price:
             # 按时间维度优先级：1m > 5m > 15m（较短周期更接近当前价格）
             priority_timeframes = ["1m", "5m", "15m", "30m", "1h"]
             for timeframe in priority_timeframes:
-                analysis_result = query_data.get("analysis_by_timeframe", {}).get(timeframe)
+                analysis_result = query_data.get("analysis_by_timeframe",
+                                                 {}).get(timeframe)
                 if not analysis_result or "error" in analysis_result:
                     continue
                 event_data = analysis_result.get("event_data", {})
@@ -739,10 +872,11 @@ class TradingDecisionExpert:
                         break
                     except:
                         pass
-        
+
         # 方法3: 如果还是没找到，遍历所有时间维度
         if not current_price:
-            for timeframe, analysis_result in query_data.get("analysis_by_timeframe", {}).items():
+            for timeframe, analysis_result in query_data.get(
+                    "analysis_by_timeframe", {}).items():
                 if "error" in analysis_result:
                     continue
                 event_data = analysis_result.get("event_data", {})
@@ -753,7 +887,36 @@ class TradingDecisionExpert:
                         break
                     except:
                         pass
-        
+
+        # 方法4: 从 Redis 获取最新价格（如果前面都没找到）
+        if not current_price:
+            try:
+                import redis
+                redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
+                redis_port = int(os.getenv("REDIS_PORT", 6379))
+                redis_password = os.getenv("REDIS_PASSWORD", None)
+                redis_db = int(os.getenv("REDIS_DB", 1))
+
+                r = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    password=redis_password,
+                    db=redis_db,
+                    decode_responses=True,
+                    socket_connect_timeout=2,  # 连接超时2秒
+                    socket_timeout=2,  # 操作超时2秒
+                    retry_on_timeout=True,
+                    health_check_interval=30)
+                price_key = f"price:binance:{symbol}"
+                price_data = r.hgetall(price_key)
+                if price_data and "price" in price_data:
+                    current_price = float(price_data["price"])
+                    print(f"✅ 从 Redis 获取当前价格: {current_price}")
+                r.close()  # 关闭连接
+            except Exception as e:
+                # 静默失败，避免干扰日志
+                pass
+
         # 构建传递给 _format_decision 的 query_data，包含价格信息
         format_query_data = {
             "symbol": symbol,
@@ -761,7 +924,7 @@ class TradingDecisionExpert:
             "event_level": base_event.get("event_level", 2),
             "original_event": base_event
         }
-        
+
         # 如果找到了价格，添加到 query_data 中，这样 _format_decision 就能获取到
         if current_price:
             format_query_data["close"] = current_price
@@ -772,19 +935,19 @@ class TradingDecisionExpert:
                     base_payload["close"] = current_price
                     base_event["payload"] = base_payload
                     format_query_data["original_event"] = base_event
-        
+
         # 使用原有的格式化逻辑
-        formatted = self._format_decision(decision, format_query_data, integrated_agent_results)
-        
+        formatted = self._format_decision(decision, format_query_data,
+                                          integrated_agent_results)
+
         # 如果 _format_decision 中还是没有获取到价格，使用我们找到的价格
         if formatted.get("current_price", 0.0) == 0.0 and current_price:
             formatted["current_price"] = current_price
-        
+
         # 添加多时间维度信息
         formatted["multi_timeframe"] = {
             "timeframes": query_data.get("found_timeframes", []),
             "analysis_count": len(query_data.get("analysis_by_timeframe", {}))
         }
-        
-        return formatted
 
+        return formatted

@@ -9,7 +9,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # 添加项目根目录到路径
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -51,23 +51,82 @@ class AIAnalyzer:
             redis_db=self.redis_db
         )
 
-    async def connect_redis(self):
-        """连接 Redis"""
-        try:
-            self.redis = aioredis.Redis(host=self.redis_host,
-                                        port=self.redis_port,
-                                        password=self.redis_password,
-                                        db=self.redis_db,
-                                        decode_responses=True,
-                                        socket_connect_timeout=5)
-            await self.redis.ping()
-            print(
-                f"✅ Redis 连接成功: {self.redis_host}:{self.redis_port}/{self.redis_db}"
-            )
-            return True
-        except Exception as e:
-            print(f"❌ Redis 连接失败: {e}")
-            return False
+    async def connect_redis(self, max_retries: int = 3, retry_delay: float = 1.0):
+        """
+        连接 Redis（带重试机制）
+        
+        Args:
+            max_retries: 最大重试次数
+            retry_delay: 重试延迟（秒）
+        
+        Returns:
+            bool: 连接是否成功
+        """
+        # 如果已有连接，先检查是否健康
+        if self.redis:
+            try:
+                await self.redis.ping()
+                return True
+            except:
+                # 连接已断开，关闭旧连接
+                try:
+                    await self.redis.aclose()
+                except:
+                    pass
+                self.redis = None
+        
+        # 尝试连接（带重试）
+        last_error = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                # 创建新连接
+                self.redis = aioredis.Redis(
+                    host=self.redis_host,
+                    port=self.redis_port,
+                    password=self.redis_password,
+                    db=self.redis_db,
+                    decode_responses=True,
+                    socket_connect_timeout=3,  # 连接超时3秒
+                    socket_timeout=3,  # 操作超时3秒
+                    retry_on_timeout=True,
+                    health_check_interval=30,
+                    socket_keepalive=True,
+                    socket_keepalive_options={}
+                )
+                
+                # 探测连接（快速ping）
+                await asyncio.wait_for(self.redis.ping(), timeout=2.0)
+                
+                print(
+                    f"✅ Redis 连接成功: {self.redis_host}:{self.redis_port}/{self.redis_db}"
+                )
+                return True
+                
+            except asyncio.TimeoutError:
+                last_error = "连接超时"
+                if attempt < max_retries:
+                    print(f"⚠️  Redis 连接超时，{retry_delay}秒后重试 ({attempt}/{max_retries})...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(f"❌ Redis 连接失败: {last_error} (已重试 {max_retries} 次)")
+            except Exception as e:
+                last_error = str(e)
+                if attempt < max_retries:
+                    print(f"⚠️  Redis 连接失败: {e}，{retry_delay}秒后重试 ({attempt}/{max_retries})...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(f"❌ Redis 连接失败: {last_error} (已重试 {max_retries} 次)")
+            
+            # 清理失败的连接
+            if self.redis:
+                try:
+                    await self.redis.aclose()
+                except:
+                    pass
+                self.redis = None
+        
+        # 所有重试都失败，返回False但不抛出异常
+        return False
 
     async def read_event_from_stream(self,
                                      stream_name: str = "final_events",
@@ -415,6 +474,60 @@ class AIAnalyzer:
         
         return "\n".join(output)
 
+    async def run_direct_from_indicators(
+        self,
+        symbol: str,
+        timestamp_ms: Optional[int] = None,
+        timeframes: List[str] = None
+    ) -> Optional[Dict]:
+        """
+        直接从指标数据进行分析（不需要事件流）
+        
+        Args:
+            symbol: 交易对（如 BTCUSDT）
+            timestamp_ms: 时间戳（毫秒），None表示使用当前时间
+            timeframes: 时间维度列表，默认 ["1m", "5m", "15m", "1h"]
+        """
+        if timeframes is None:
+            timeframes = ["1m", "5m", "15m", "1h"]
+        
+        if timestamp_ms is None:
+            import time
+            timestamp_ms = int(time.time() * 1000)
+        
+        print(f"\n📊 直接基于指标数据进行分析:")
+        print(f"   交易对: {symbol}")
+        print(f"   时间戳: {timestamp_ms}")
+        print(f"   时间维度: {', '.join(timeframes)}")
+        
+        # 连接多时间维度分析器的 Redis
+        if not self.multi_timeframe_analyzer.redis:
+            await self.multi_timeframe_analyzer.connect_redis()
+        
+        # 创建基础事件（用于触发分析）
+        base_event = {
+            "event_id": f"{symbol}.direct.indicators.{timestamp_ms}",
+            "symbol": symbol,
+            "event_type": "direct_indicators",
+            "event_level": "2",
+            "timestamp": str(timestamp_ms),
+            "source": "direct_indicators"
+        }
+        
+        # 进行多时间维度分析（使用指标数据）
+        result = await self.multi_timeframe_analyzer.analyze_multi_timeframe(
+            symbol=symbol,
+            base_event=base_event,
+            timeframes=timeframes,
+            use_indicators_direct=True  # 强制使用指标数据
+        )
+        
+        # 添加基础事件信息
+        result["original_event"] = base_event
+        result["analysis_mode"] = "direct_indicators"
+        
+        return result
+    
     async def run_once(self,
                        stream_name: str = "final_events",
                        read_history: bool = False,
@@ -465,10 +578,13 @@ class AIAnalyzer:
                 await self.multi_timeframe_analyzer.connect_redis()
             
             # 进行多时间维度分析
+            # 根据参数选择使用指标数据还是事件流查找
+            use_indicators = not getattr(self, '_use_events', False)
             result = await self.multi_timeframe_analyzer.analyze_multi_timeframe(
                 symbol=symbol,
                 base_event=event_data,
-                timeframes=["1m", "5m", "15m"]  # 默认3个时间维度
+                timeframes=["1m", "5m", "15m", "1h"],  # 默认4个时间维度，包含1h
+                use_indicators_direct=use_indicators  # True=指标数据，False=事件流查找
             )
             
             # 添加原始事件信息
@@ -499,6 +615,9 @@ class AIAnalyzer:
         print(f"监听流: {stream_name}")
         print(f"检查间隔: {interval} 秒")
         print(f"多时间维度分析: {'启用' if use_multi_timeframe else '禁用'}")
+        if use_multi_timeframe:
+            use_indicators = not getattr(self, '_use_events', False)
+            print(f"数据来源: {'指标数据（快速验证）' if use_indicators else '事件流（突破/大变动）'}")
         if self.symbol_filter:
             print(f"币种过滤: {self.symbol_filter} (只分析此币种)")
         print(f"按 Ctrl+C 停止")
@@ -587,6 +706,16 @@ async def main():
     parser.add_argument("--single-timeframe",
                         action="store_true",
                         help="禁用多时间维度分析，使用单一事件分析（默认启用多时间维度）")
+    parser.add_argument("--use-events",
+                        action="store_true",
+                        help="使用事件流查找多时间维度（默认使用指标数据），适合分析突破/大变动事件")
+    parser.add_argument("--direct",
+                        action="store_true",
+                        help="直接从指标数据分析，不需要事件流（需要指定 --symbol）")
+    parser.add_argument("--timestamp",
+                        type=int,
+                        default=None,
+                        help="指定时间戳（毫秒），用于 --direct 模式，不指定则使用当前时间")
     parser.add_argument("--symbol",
                         type=str,
                         default=None,
@@ -594,8 +723,43 @@ async def main():
 
     args = parser.parse_args()
 
+    # 直接基于指标数据分析模式
+    if args.direct:
+        if not args.symbol:
+            print("❌ 错误: --direct 模式需要指定 --symbol 参数")
+            print("   示例: python run_ai_analysis.py --direct --symbol BTCUSDT")
+            return
+        
+        analyzer = AIAnalyzer(symbol_filter=args.symbol)
+        
+        try:
+            # 连接 Redis
+            if not await analyzer.connect_redis():
+                return
+            
+            # 直接基于指标数据分析
+            result = await analyzer.run_direct_from_indicators(
+                symbol=args.symbol,
+                timestamp_ms=args.timestamp,
+                timeframes=["1m", "5m", "15m", "1h"]
+            )
+            
+            if result:
+                formatted = analyzer.format_result(result)
+                print(formatted)
+                await analyzer.save_result(result)
+            else:
+                print("❌ 分析失败")
+        
+        finally:
+            await analyzer.close()
+        return
+
     # 创建分析器（支持币种过滤）
     analyzer = AIAnalyzer(symbol_filter=args.symbol)
+    
+    # 设置是否使用事件流查找
+    analyzer._use_events = args.use_events
 
     try:
         # 连接 Redis
