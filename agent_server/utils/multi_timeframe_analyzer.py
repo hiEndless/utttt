@@ -323,15 +323,29 @@ class MultiTimeframeAnalyzer:
         # 定义单个时间维度的分析任务（用于并发执行）
         async def analyze_single_timeframe_event(
                 timeframe: str, event_data: Optional[Dict]) -> tuple:
-            """分析单个时间维度的事件"""
+            """分析单个时间维度的事件（带超时控制）"""
             if event_data is None:
                 return (timeframe, {
                     "timeframe": timeframe,
                     "error": "事件数据不存在"
                 })
 
+            # 根据时间维度设置不同的超时时间
+            timeout_map = {
+                "1m": 15,
+                "5m": 20,
+                "15m": 25,
+                "30m": 30,
+                "1h": 40,  # 1h数据量大，给更多时间
+                "2h": 45,
+                "4h": 50,
+                "1d": 60
+            }
+            timeout = timeout_map.get(timeframe, 30)
+
             try:
-                print(f"📈 开始分析 {timeframe} 时间维度...")
+                print(f"📈 开始分析 {timeframe} 时间维度（超时: {timeout}秒）...")
+                start_time = time.time()
 
                 # 标记这是中间分析，不应该执行交易推送
                 event_data["_is_intermediate_analysis"] = True
@@ -340,18 +354,43 @@ class MultiTimeframeAnalyzer:
                 # 转换为 EventSignal
                 event_signal = self.map_event_to_signal(event_data)
 
-                # 调用 Agent 系统分析
-                result = await handle_event(event_signal)
+                # 调用 Agent 系统分析（带超时控制）
+                try:
+                    result = await asyncio.wait_for(
+                        handle_event(event_signal),
+                        timeout=timeout
+                    )
+                except asyncio.TimeoutError:
+                    elapsed = time.time() - start_time
+                    print(f"⏱️  {timeframe} 分析超时（{elapsed:.1f}秒 > {timeout}秒）")
+                    result = {
+                        "names": ["technical", "risk"],
+                        "outputs": [],
+                        "scores": {},
+                        "reflection": {"mode": "default", "reflection_scores": {}, "notes": []},
+                        "fusion": "",
+                        "weights": {},
+                        "trading_decision": {
+                            "action": "hold",
+                            "symbol": symbol,
+                            "confidence": 0.0,
+                            "rationale": f"{timeframe} 周期分析超时",
+                            "risk_level": "medium"
+                        },
+                        "error": "timeout"
+                    }
 
                 # 添加时间维度信息
                 result["timeframe"] = timeframe
                 result["event_data"] = event_data
 
-                print(f"✅ {timeframe} 分析完成")
+                elapsed = time.time() - start_time
+                print(f"✅ {timeframe} 分析完成（耗时: {elapsed:.1f}秒）")
                 return (timeframe, result)
 
             except Exception as e:
-                print(f"❌ {timeframe} 分析失败: {e}")
+                elapsed = time.time() - start_time if 'start_time' in locals() else 0
+                print(f"❌ {timeframe} 分析失败（耗时: {elapsed:.1f}秒）: {e}")
                 import traceback
                 traceback.print_exc()
                 return (timeframe, {
@@ -368,9 +407,15 @@ class MultiTimeframeAnalyzer:
                 task = analyze_single_timeframe_event(timeframe, event_data)
                 tasks.append(task)
 
-        # 等待所有分析任务完成
+        # 等待所有分析任务完成（带进度监控）
         if tasks:
+            print(f"⏳ 等待 {len(tasks)} 个分析任务完成...")
+            start_time = time.time()
+            
             results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            elapsed = time.time() - start_time
+            print(f"⏱️  所有分析任务完成（总耗时: {elapsed:.1f}秒）")
 
             # 整理分析结果
             analysis_results = {}
@@ -569,15 +614,30 @@ class MultiTimeframeAnalyzer:
         # 定义单个时间维度的分析任务（用于并发执行）
         async def analyze_single_timeframe(timeframe: str,
                                            indicators_data: Dict) -> tuple:
-            """分析单个时间维度"""
+            """分析单个时间维度（带超时控制）"""
             if indicators_data is None:
                 return (timeframe, {
                     "timeframe": timeframe,
                     "error": "指标数据不存在"
                 })
 
+            # 根据时间维度设置不同的超时时间
+            # 1h周期数据量大，LLM处理更慢，设置更长的超时
+            timeout_map = {
+                "1m": 15,   # 15秒
+                "5m": 20,   # 20秒
+                "15m": 25,  # 25秒
+                "30m": 30,  # 30秒
+                "1h": 40,   # 40秒（1h数据量大，给更多时间）
+                "2h": 45,
+                "4h": 50,
+                "1d": 60
+            }
+            timeout = timeout_map.get(timeframe, 30)  # 默认30秒
+
             try:
-                print(f"📈 开始分析 {timeframe} 时间维度（基于指标数据）...")
+                print(f"📈 开始分析 {timeframe} 时间维度（基于指标数据，超时: {timeout}秒）...")
+                start_time = time.time()
 
                 # 基于指标数据创建事件
                 event_data = await self.create_event_from_indicators(
@@ -593,19 +653,67 @@ class MultiTimeframeAnalyzer:
                 # 转换为 EventSignal
                 event_signal = self.map_event_to_signal(event_data)
 
-                # 调用 Agent 系统分析
-                result = await handle_event(event_signal)
+                # 调用 Agent 系统分析（带超时控制）
+                try:
+                    result = await asyncio.wait_for(
+                        handle_event(event_signal),
+                        timeout=timeout
+                    )
+                except asyncio.TimeoutError:
+                    elapsed = time.time() - start_time
+                    print(f"⏱️  {timeframe} 分析超时（{elapsed:.1f}秒 > {timeout}秒），使用简化分析")
+                    # 超时后使用简化分析（只返回基本指标数据）
+                    result = {
+                        "names": ["technical", "risk"],
+                        "outputs": [
+                            json.dumps({
+                                "agent": "technical",
+                                "task": "analysis",
+                                "content": {
+                                    "summary": f"{timeframe} 周期分析超时，使用简化分析",
+                                    "details": f"由于分析超时，仅提供基础指标数据。RSI: {indicators_data['indicators'].get('rsi', {}).get('rsi14', 'N/A')}, MACD: {indicators_data['indicators'].get('macd', {}).get('macd', 'N/A')}"
+                                },
+                                "confidence": 0.5,
+                                "rationale": "分析超时，使用简化结果",
+                                "metrics": {"timeout": True, "timeframe": timeframe}
+                            }, ensure_ascii=False),
+                            json.dumps({
+                                "agent": "risk",
+                                "task": "analysis",
+                                "content": {
+                                    "summary": f"{timeframe} 周期风险评估超时",
+                                    "details": "分析超时，无法提供详细风险评估"
+                                },
+                                "confidence": 0.5,
+                                "rationale": "分析超时",
+                                "metrics": {"timeout": True, "timeframe": timeframe}
+                            }, ensure_ascii=False)
+                        ],
+                        "scores": {"0": 0.5, "1": 0.5},
+                        "reflection": {"mode": "default", "reflection_scores": {}, "notes": []},
+                        "fusion": "",
+                        "weights": {"technical": 0.5, "risk": 0.5},
+                        "trading_decision": {
+                            "action": "hold",
+                            "symbol": symbol,
+                            "confidence": 0.0,
+                            "rationale": f"{timeframe} 周期分析超时，无法做出明确决策",
+                            "risk_level": "medium"
+                        }
+                    }
 
                 # 添加时间维度信息
                 result["timeframe"] = timeframe
                 result["event_data"] = event_data
                 result["indicators"] = indicators_data["indicators"]
 
-                print(f"✅ {timeframe} 分析完成")
+                elapsed = time.time() - start_time
+                print(f"✅ {timeframe} 分析完成（耗时: {elapsed:.1f}秒）")
                 return (timeframe, result)
 
             except Exception as e:
-                print(f"❌ {timeframe} 分析失败: {e}")
+                elapsed = time.time() - start_time if 'start_time' in locals() else 0
+                print(f"❌ {timeframe} 分析失败（耗时: {elapsed:.1f}秒）: {e}")
                 import traceback
                 traceback.print_exc()
                 return (timeframe, {"timeframe": timeframe, "error": str(e)})
@@ -618,9 +726,16 @@ class MultiTimeframeAnalyzer:
                 task = analyze_single_timeframe(timeframe, indicators_data)
                 tasks.append(task)
 
-        # 等待所有分析任务完成
+        # 等待所有分析任务完成（带进度监控）
         if tasks:
+            print(f"⏳ 等待 {len(tasks)} 个分析任务完成...")
+            start_time = time.time()
+            
+            # 使用 gather 并发执行，但添加异常处理
             results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            elapsed = time.time() - start_time
+            print(f"⏱️  所有分析任务完成（总耗时: {elapsed:.1f}秒）")
 
             # 整理分析结果
             analysis_results = {}
