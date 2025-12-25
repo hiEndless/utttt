@@ -58,6 +58,28 @@ aggregation_rules:
         operator: ">="
         value: 3
     result_priority: medium
+  - id: a_combo_bullish_burst
+    description: 10分钟内同向bullish组合信号达到3次
+    lookback_seconds: 600
+    group_by: symbol
+    condition:
+      event_filter:
+        type: combo.*.bullish
+      count:
+        operator: ">="
+        value: 3
+    result_priority: medium
+  - id: a_combo_bearish_burst
+    description: 10分钟内同向bearish组合信号达到3次
+    lookback_seconds: 600
+    group_by: symbol
+    condition:
+      event_filter:
+        type: combo.*.bearish
+      count:
+        operator: ">="
+        value: 3
+    result_priority: medium
 combine_strategy: max_priority
 suppression:
   - name: cooldown_same_rule

@@ -92,6 +92,8 @@ class EventGenerator:
                 strength = float(payload.get("strength", 0) or 0)
             except Exception:
                 strength = 0.0
+            if self.interval in ("1m",):
+                strength -= 0.5
             adx = payload.get("adx")
             vol_chg = payload.get("vol_chg")
             close = payload.get("close")
@@ -149,11 +151,12 @@ class EventGenerator:
 class RedisEventWriter:
     def __init__(self, redis):
         self.redis = redis
-        self.min_level_map = {"1m": 2, "5m": 2, "15m": 2, "30m": 2, "1h": 2, "2h": 2, "4h": 2, "1d": 2}  # 控制周期事件输出频率
-        self.dedup_window_ms = {"1m": 60000, "5m": 120000, "15m": 180000, "30m": 300000, "1h": 600000, "2h": 900000, "4h": 1800000, "1d": 3600000}
-        self.emit_min_interval_ms = {"1m": 30000, "5m": 60000, "15m": 120000, "30m": 180000, "1h": 300000, "2h": 600000, "4h": 900000, "1d": 1800000}
-        self.budget_window_s = {"1m": 120, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "2h": 7200, "4h": 14400, "1d": 86400}
-        self.budget_max = {"1m": 1, "5m": 1, "15m": 2, "30m": 2, "1h": 2, "2h": 2, "4h": 2, "1d": 3}
+        # 设置事件信号出现的最小级别和窗口周期频率
+        self.min_level_map = {"1m": 1, "5m": 2, "15m": 3, "30m": 2, "1h": 2, "2h": 2, "4h": 2, "1d": 2}
+        self.dedup_window_ms = {"1m": 30000, "5m": 120000, "15m": 180000, "30m": 300000, "1h": 600000, "2h": 900000, "4h": 1800000, "1d": 3600000}
+        self.emit_min_interval_ms = {"1m": 15000, "5m": 60000, "15m": 120000, "30m": 180000, "1h": 300000, "2h": 600000, "4h": 900000, "1d": 1800000}
+        self.budget_window_s = {"1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "2h": 7200, "4h": 14400, "1d": 86400}
+        self.budget_max = {"1m": 3, "5m": 1, "15m": 2, "30m": 2, "1h": 2, "2h": 2, "4h": 2, "1d": 3}
 
     def _fp(self, payload: dict) -> str:
         try:
@@ -230,13 +233,6 @@ class RedisEventWriter:
                 if not ok:
                     continue
                 await self.redis.xadd(cfg.raw_stream, raw)
-                lv = int(raw.get("event_level", "0")) if isinstance(raw.get("event_level"), (str, int)) else 0
-                if lv >= 4:
-                    await self.redis.xadd(cfg.final_stream, raw)
-                elif lv >= 3:
-                    await self.redis.xadd(cfg.l1_stream, raw)
-                else:
-                    await self.redis.xadd(cfg.l0_stream, raw)
             except Exception:
                 pass
 

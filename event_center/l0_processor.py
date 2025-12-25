@@ -17,6 +17,9 @@ class L0Processor:
 
     async def process_msg(self, entry_id, data: dict):
         event = data
+        etype = str(event.get("event_type") or event.get("type") or "")
+        if etype.startswith("meta_"):
+            return
         priority = self.rules.get("default_priority", "low")
         matched_rules = []
         for r in self.rules.get("instant_rules", []):
@@ -36,6 +39,7 @@ class L0Processor:
             "symbol": event.get("symbol"),
             "event_class": event.get("event_class") or event.get("class") or "",
             "event_type": event.get("event_type") or event.get("type") or "",
+            "type": event.get("event_type") or event.get("type") or "",
             "event_level": event.get("event_level") or "",
             "payload": json.dumps(payload),
             "priority": priority,

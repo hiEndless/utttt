@@ -77,9 +77,9 @@ async def main():
         asyncio.create_task(ac.run()),
         asyncio.create_task(fsc.run()),
         asyncio.create_task(isvc.run()),
-        # asyncio.create_task(l0.run()),
-        # asyncio.create_task(l1.run()),
-        # asyncio.create_task(fg.run()),
+        asyncio.create_task(l0.run()),
+        asyncio.create_task(l1.run()),
+        asyncio.create_task(fg.run()),
     ]
     await asyncio.gather(*tasks)
 

@@ -40,12 +40,23 @@ class FinalGrader:
                     ev = {k.decode(): v.decode() for k, v in fields.items()}
                     l0_priority = ev.get("priority", "low")
                     account = ev.get("account_id")
+                    symbol = ev.get("symbol")
+                    try:
+                        l0_ts_ms = int(ev.get("timestamp") or "0")
+                    except Exception:
+                        l0_ts_ms = 0
+                    l0_ts_s = int(l0_ts_ms / 1000) if l0_ts_ms else 0
                     l1_entries = await self.redis.xrevrange(cfg.l1_stream, max="+", min="-", count=50)
                     best = l0_priority
                     for sid, f in l1_entries:
                         f2 = {k.decode(): v.decode() for k, v in f.items()}
-                        if f2.get("account_id") == account:
-                            best = pick_higher(best, f2.get("result_priority", "low"))
+                        if f2.get("account_id") == account and f2.get("symbol") == symbol:
+                            try:
+                                l1_ts = int(f2.get("timestamp") or "0")
+                            except Exception:
+                                l1_ts = 0
+                            if l0_ts_s == 0 or l1_ts == 0 or abs(l1_ts - l0_ts_s) <= 900:
+                                best = pick_higher(best, f2.get("result_priority", "low"))
                     final = {
                         "event_id": ev.get("event_id"),
                         "account_id": account,

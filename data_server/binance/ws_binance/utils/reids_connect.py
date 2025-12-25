@@ -83,10 +83,10 @@ class RedisClient:
 if __name__ == "__main__":
     rc = RedisClient()
     # 使用集合类型：先删除旧键，避免类型不匹配
-    # deleted = rc.delete_by_prefix("ind_ev_gate:1000PEPEUSDT")
+    deleted = rc.delete_by_prefix("ind_ev_gate:BTCUSDT")
     # deleted = rc.delete_by_prefix("klines:binance:1000PEPEUSDT")
     # deleted = rc.delete_by_prefix("indicators:binance:1000PEPEUSDT")
-    deleted = rc.delete_by_prefix("market_raw:binance:1000PEPEUSDT")
+    # deleted = rc.delete_by_prefix("market_raw:binance:1000PEPEUSDT")
     print(f"deleted={deleted}")
 
     # rc.conn.delete("symbol:BTCUSDT")

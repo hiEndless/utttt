@@ -51,8 +51,16 @@ class L1Aggregator:
         event = data
         for rule in self.rules.get("aggregation_rules", []) or []:
             ef = rule.get("condition", {}).get("event_filter", {})
-            if ef.get("type") and ef["type"] != event.get("type"):
-                continue
+            if ef.get("type"):
+                et = event.get("type") or event.get("event_type")
+                rt = ef["type"]
+                if "*" in rt:
+                    pref = rt.split("*", 1)[0]
+                    if not str(et or "").startswith(pref):
+                        continue
+                else:
+                    if rt != et:
+                        continue
             if not match_payload_condition(event.get("payload", {}), ef.get("payload", {})):
                 continue
             hit, cnt, key, group_val = await self._insert_and_check(rule, event)
@@ -65,6 +73,7 @@ class L1Aggregator:
                     l1 = {
                         "rule_id": rule["id"],
                         "account_id": event.get("account_id"),
+                        "symbol": event.get("symbol"),
                         "group_val": group_val,
                         "timestamp": int(time.time()),
                         "count": cnt,
