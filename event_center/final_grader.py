@@ -77,6 +77,7 @@ class FinalGrader:
                         "symbol": ev.get("symbol"),
                         "timestamp": ev.get("timestamp"),
                         "stage": "final",
+                        "event_type": ev.get("event_type") or ev.get("type") or "",
                         "final_priority": best,
                         "l0_priority": l0_priority,
                         "source_rule_id": best_rule_id,
