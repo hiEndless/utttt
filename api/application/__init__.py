@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from dotenv import load_dotenv
 from tortoise.contrib.fastapi import register_tortoise
 from .apps.account.views import app as account_app
-from .apps.indicators.views import app as indicators_app
+from .apps.background.views import app as indicators_app
 
 from . import settings
 from fastapi.middleware.cors import CORSMiddleware
