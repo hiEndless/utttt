@@ -62,10 +62,30 @@ class RedisClient:
             print(f"Redis HGETALL error on key={key}: {e}")
             return None
 
+    def delete_by_prefix(self, prefix: str) -> int:
+        total = 0
+        pipe = self.conn.pipeline()
+        count = 0
+        for key in self.conn.scan_iter(match=f"{prefix}*"):
+            pipe.delete(key)
+            count += 1
+            if count >= 1000:
+                res = pipe.execute()
+                total += sum(res) if isinstance(res, list) else int(res or 0)
+                pipe = self.conn.pipeline()
+                count = 0
+        if count:
+            res = pipe.execute()
+            total += sum(res) if isinstance(res, list) else int(res or 0)
+        return total
+
 
 if __name__ == "__main__":
     rc = RedisClient()
     # 使用集合类型：先删除旧键，避免类型不匹配
-    # rc.conn.delete("symbol:binance")
-    rc.conn.sadd("symbol:binance", "BTCUSDT")
-    print(rc.conn.smembers("symbol:binance"))
+    deleted = rc.delete_by_prefix("ind_ev_gate:1000PEPEUSDT")
+    print(f"deleted={deleted}")
+
+    # rc.conn.delete("symbol:BTCUSDT")
+    # rc.conn.sadd("symbol:binance", "BTCUSDT")
+    # print(rc.conn.smembers("symbol:binance"))
