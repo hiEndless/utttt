@@ -74,6 +74,7 @@ class L1Aggregator:
                         "rule_id": rule["id"],
                         "account_id": event.get("account_id"),
                         "symbol": event.get("symbol"),
+                        "stage": "l1",
                         "group_val": group_val,
                         "timestamp": int(time.time()),
                         "count": cnt,

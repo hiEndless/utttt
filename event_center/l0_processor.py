@@ -37,6 +37,7 @@ class L0Processor:
             "timestamp": event.get("timestamp"),
             "account_id": event.get("account_id"),
             "symbol": event.get("symbol"),
+            "stage": "l0",
             "event_class": event.get("event_class") or event.get("class") or "",
             "event_type": event.get("event_type") or event.get("type") or "",
             "type": event.get("event_type") or event.get("type") or "",

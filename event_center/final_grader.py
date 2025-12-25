@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
@@ -31,6 +32,8 @@ class FinalGrader:
         except Exception:
             pass
         print(f"[Final] started in={cfg.l0_stream} ref_l1={cfg.l1_stream} out={cfg.final_stream} group={group}")
+        min_priority = os.getenv("FINAL_MIN_PRIORITY", "low")
+        only_upgraded = os.getenv("FINAL_ONLY_UPGRADED", "false").lower() == "true"
         while True:
             res = await self.redis.xreadgroup(group, consumer, streams={cfg.l0_stream: ">"}, count=20, block=5000)
             if not res:
@@ -48,6 +51,7 @@ class FinalGrader:
                     l0_ts_s = int(l0_ts_ms / 1000) if l0_ts_ms else 0
                     l1_entries = await self.redis.xrevrange(cfg.l1_stream, max="+", min="-", count=50)
                     best = l0_priority
+                    best_rule_id = ""
                     for sid, f in l1_entries:
                         f2 = {k.decode(): v.decode() for k, v in f.items()}
                         if f2.get("account_id") == account and f2.get("symbol") == symbol:
@@ -56,14 +60,26 @@ class FinalGrader:
                             except Exception:
                                 l1_ts = 0
                             if l0_ts_s == 0 or l1_ts == 0 or abs(l1_ts - l0_ts_s) <= 900:
-                                best = pick_higher(best, f2.get("result_priority", "low"))
+                                cand = f2.get("result_priority", "low")
+                                prev = best
+                                best = pick_higher(best, cand)
+                                if best != prev:
+                                    best_rule_id = f2.get("rule_id", "")
+                    if only_upgraded and PRIORITY_WEIGHT.get(best, 0) <= PRIORITY_WEIGHT.get(l0_priority, 0):
+                        await self.redis.xack(cfg.l0_stream, group, entry_id)
+                        continue
+                    if PRIORITY_WEIGHT.get(best, 0) < PRIORITY_WEIGHT.get(min_priority, 0):
+                        await self.redis.xack(cfg.l0_stream, group, entry_id)
+                        continue
                     final = {
                         "event_id": ev.get("event_id"),
                         "account_id": account,
                         "symbol": ev.get("symbol"),
                         "timestamp": ev.get("timestamp"),
+                        "stage": "final",
                         "final_priority": best,
                         "l0_priority": l0_priority,
+                        "source_rule_id": best_rule_id,
                     }
                     final = {k: ("" if v is None else v) for k, v in final.items()}
                     try:

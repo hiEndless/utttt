@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import signal
-import os
 import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.utils.watchers.symbols import RedisSymbolWatcher
