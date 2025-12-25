@@ -33,7 +33,7 @@ class HTTPClient:
         session = await self.get_session()
         while True:
             try:
-                _proxy = proxy if proxy is not None else (settings.http_proxy if settings.local_mode else None)
+                _proxy = proxy if proxy is not None else (settings.http_proxy if settings.proxy_mode else None)
                 if isinstance(_proxy, dict):
                     if url.startswith("https"):
                         _proxy = _proxy.get("https") or _proxy.get("http")
