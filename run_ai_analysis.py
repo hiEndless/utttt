@@ -423,7 +423,7 @@ class AIAnalyzer:
         return "\n".join(output)
     
     def _format_multi_timeframe_result(self, result: Dict) -> str:
-        """格式化多时间维度分析结果"""
+        """格式化多时间维度分析结果（中文输出）"""
         output = []
         output.append(f"\n{'='*80}")
         output.append(f"多时间维度 AI 分析结果 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -433,42 +433,132 @@ class AIAnalyzer:
         base_event = result.get("base_event", {})
         analysis_by_timeframe = result.get("analysis_by_timeframe", {})
         
-        output.append(f"交易对: {symbol}\n")
-        output.append(f"基础事件: {base_event.get('event_id', 'N/A')}\n")
-        output.append(f"找到的时间维度: {', '.join(result.get('found_timeframes', []))}\n")
+        output.append(f"📊 交易对: {symbol}\n")
+        output.append(f"📌 基础事件: {base_event.get('event_id', 'N/A')}\n")
+        output.append(f"⏱️  找到的时间维度: {', '.join(result.get('found_timeframes', []))}\n")
         output.append(f"\n{'='*80}\n")
         
         # 显示各时间维度的分析结果
         for timeframe, analysis_result in analysis_by_timeframe.items():
             if "error" in analysis_result:
                 output.append(f"\n{'─'*80}")
-                output.append(f"时间维度: {timeframe} - ❌ 分析失败")
-                output.append(f"错误: {analysis_result.get('error')}")
+                output.append(f"⏱️  时间维度: {timeframe} - ❌ 分析失败")
+                output.append(f"   错误: {analysis_result.get('error')}")
                 continue
             
             output.append(f"\n{'─'*80}")
-            output.append(f"时间维度: {timeframe}")
+            output.append(f"⏱️  时间维度: {timeframe}")
             output.append(f"{'─'*80}")
             
             names = analysis_result.get("names", [])
             outputs = analysis_result.get("outputs", [])
             
             for name, output_str in zip(names, outputs):
-                output.append(f"\nAgent: {name}")
+                agent_name_map = {
+                    "technical": "技术分析",
+                    "risk": "风险评估",
+                    "news": "新闻分析",
+                    "portfolio": "投资组合",
+                    "trading_decision": "交易决策"
+                }
+                agent_name_cn = agent_name_map.get(name, name)
+                output.append(f"\n🤖 {agent_name_cn} Agent ({timeframe}):")
                 try:
                     output_obj = json.loads(output_str)
-                    output.append(json.dumps(output_obj, indent=2, ensure_ascii=False)[:500])
+                    # 提取关键信息并中文显示
+                    if isinstance(output_obj, dict):
+                        content = output_obj.get("content", {})
+                        if isinstance(content, dict):
+                            summary = content.get("summary", "")
+                            details = content.get("details", "")
+                            confidence = output_obj.get("confidence", 0.0)
+                            
+                            output.append(f"   置信度: {confidence:.2%}")
+                            if summary:
+                                output.append(f"   摘要: {summary[:200]}")
+                            if details:
+                                output.append(f"   详情: {details[:300]}")
+                        else:
+                            output.append(f"   {json.dumps(output_obj, indent=2, ensure_ascii=False)[:500]}")
+                    else:
+                        output.append(f"   {json.dumps(output_obj, indent=2, ensure_ascii=False)[:500]}")
                 except:
-                    output.append(str(output_str)[:500])
+                    output.append(f"   {str(output_str)[:500]}")
                 output.append("")
+            
+            # 显示该时间维度的交易决策
+            timeframe_decision = analysis_result.get("trading_decision", {})
+            if timeframe_decision:
+                action = timeframe_decision.get("action", "hold")
+                confidence = timeframe_decision.get("confidence", 0.0)
+                rationale = timeframe_decision.get("rationale", "")
+                action_map = {
+                    "open": "开仓",
+                    "close": "平仓",
+                    "hold": "保持不动"
+                }
+                action_cn = action_map.get(action, action)
+                output.append(f"   💡 该时间维度决策: {action_cn} (置信度: {confidence:.2%})")
+                if rationale:
+                    output.append(f"      理由: {rationale[:150]}")
         
-        # 显示交易决策
+        # 显示最终交易决策
         trading_decision = result.get("trading_decision")
         if trading_decision:
             output.append(f"\n{'='*80}")
-            output.append("最终交易决策")
+            output.append("🎯 最终交易决策")
             output.append(f"{'='*80}")
-            output.append(json.dumps(trading_decision, indent=2, ensure_ascii=False))
+            
+            action = trading_decision.get("action", "hold")
+            confidence = trading_decision.get("confidence", 0.0)
+            rationale = trading_decision.get("rationale", "")
+            risk_level = trading_decision.get("risk_level", "medium")
+            
+            action_map = {
+                "open": "开仓",
+                "close": "平仓", 
+                "hold": "保持不动"
+            }
+            risk_map = {
+                "low": "低风险",
+                "medium": "中等风险",
+                "high": "高风险"
+            }
+            
+            output.append(f"操作: {action_map.get(action, action)}")
+            output.append(f"置信度: {confidence:.2%}")
+            output.append(f"风险等级: {risk_map.get(risk_level, risk_level)}")
+            
+            if action in ("open", "close"):
+                position_side = trading_decision.get("positionSide", "")
+                side = trading_decision.get("side", "")
+                leverage = trading_decision.get("leverage", 0)
+                sums = trading_decision.get("sums", "0")
+                open_avg_px = trading_decision.get("openAvgPx", 0)
+                stop_loss = trading_decision.get("stop_loss")
+                take_profit = trading_decision.get("take_profit")
+                
+                position_map = {
+                    "LONG": "做多",
+                    "SHORT": "做空"
+                }
+                side_map = {
+                    "BUY": "买入",
+                    "SELL": "卖出"
+                }
+                
+                output.append(f"方向: {position_map.get(position_side, position_side)} ({side_map.get(side, side)})")
+                output.append(f"杠杆: {leverage}x")
+                output.append(f"数量: {sums}")
+                output.append(f"开仓价格: {open_avg_px:,.2f}")
+                if stop_loss:
+                    output.append(f"止损价格: {stop_loss:,.2f}")
+                if take_profit:
+                    output.append(f"止盈价格: {take_profit:,.2f}")
+            
+            if rationale:
+                output.append(f"\n决策理由:")
+                output.append(f"  {rationale}")
         
         output.append(f"\n{'='*80}\n")
         

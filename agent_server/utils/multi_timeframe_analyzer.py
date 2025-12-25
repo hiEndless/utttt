@@ -384,8 +384,21 @@ class MultiTimeframeAnalyzer:
             analysis_results = {}
 
         print(f"\n✅ 所有时间维度分析完成（共 {len(analysis_results)} 个）")
+        
+        # 验证所有并发分析都已完成
+        expected_count = len([tf for tf, data in events_by_timeframe.items() if data is not None])
+        actual_count = len(analysis_results)
+        if actual_count < expected_count:
+            print(f"⚠️  警告: 期望 {expected_count} 个分析结果，但只得到 {actual_count} 个")
+            print(f"   缺失的时间维度: {set(events_by_timeframe.keys()) - set(analysis_results.keys())}")
+        
+        # 确保所有分析结果都包含必要的数据
+        for timeframe, result in analysis_results.items():
+            if "error" not in result and "names" not in result:
+                print(f"⚠️  警告: {timeframe} 的分析结果不完整")
 
-        # 整合所有时间维度的分析结果
+        # 步骤2: 整合所有时间维度的分析结果
+        print(f"\n📊 步骤2: 整合所有分析结果...")
         integrated_result = {
             "symbol":
             symbol,
@@ -405,7 +418,18 @@ class MultiTimeframeAnalyzer:
             "events"  # 标记数据来源
         }
 
-        # 调用 Agent 系统进行最终决策（传递多时间维度数据）
+        # 步骤3: 获取市场数据并进行综合分析
+        print(f"\n📈 步骤3: 获取市场数据并进行综合分析...")
+        market_data = await self._get_market_data(symbol)
+        integrated_result["market_data"] = market_data
+        print(f"✅ 市场数据获取完成:")
+        print(f"   - 当前价格: {market_data.get('price', 'N/A')}")
+        print(f"   - 多空比数据: {'已获取' if market_data.get('long_short_ratio') else '未获取'}")
+        print(f"   - 爆仓数据: {'已获取' if market_data.get('liquidation') else '未获取'}")
+        print(f"   - 支撑阻力位: {'已获取' if market_data.get('support_resistance') else '未获取'}")
+
+        # 步骤4: 调用 Agent 系统进行最终决策（基于所有分析结果和市场数据）
+        print(f"\n🎯 步骤4: 得出最终结论（基于 {actual_count} 个时间维度的完整结果 + 市场数据）...")
         # 注意：handle_event 已在文件顶部导入，这里直接使用
         final_result = await handle_event(integrated_result)
 
@@ -610,8 +634,21 @@ class MultiTimeframeAnalyzer:
             analysis_results = {}
 
         print(f"\n✅ 所有时间维度分析完成（共 {len(analysis_results)} 个）")
+        
+        # 验证所有并发分析都已完成
+        expected_count = len([tf for tf, data in indicators_by_timeframe.items() if data is not None])
+        actual_count = len(analysis_results)
+        if actual_count < expected_count:
+            print(f"⚠️  警告: 期望 {expected_count} 个分析结果，但只得到 {actual_count} 个")
+            print(f"   缺失的时间维度: {set(indicators_by_timeframe.keys()) - set(analysis_results.keys())}")
+        
+        # 确保所有分析结果都包含必要的数据
+        for timeframe, result in analysis_results.items():
+            if "error" not in result and "names" not in result:
+                print(f"⚠️  警告: {timeframe} 的分析结果不完整")
 
-        # 整合所有时间维度的分析结果
+        # 步骤2: 整合所有时间维度的分析结果
+        print(f"\n📊 步骤2: 整合所有分析结果...")
         integrated_result = {
             "symbol":
             symbol,
@@ -631,13 +668,116 @@ class MultiTimeframeAnalyzer:
             "indicators"  # 标记数据来源
         }
 
-        # 调用 Agent 系统进行最终决策
+        # 步骤3: 获取市场数据并进行综合分析
+        print(f"\n📈 步骤3: 获取市场数据并进行综合分析...")
+        market_data = await self._get_market_data(symbol)
+        integrated_result["market_data"] = market_data
+        print(f"✅ 市场数据获取完成:")
+        print(f"   - 当前价格: {market_data.get('price', 'N/A')}")
+        print(f"   - 多空比数据: {'已获取' if market_data.get('long_short_ratio') else '未获取'}")
+        print(f"   - 爆仓数据: {'已获取' if market_data.get('liquidation') else '未获取'}")
+        print(f"   - 支撑阻力位: {'已获取' if market_data.get('support_resistance') else '未获取'}")
+
+        # 步骤4: 调用 Agent 系统进行最终决策（基于所有分析结果和市场数据）
+        print(f"\n🎯 步骤4: 得出最终结论（基于 {actual_count} 个时间维度的完整结果 + 市场数据）...")
         final_result = await handle_event(integrated_result)
 
         # 合并结果
         final_result.update(integrated_result)
 
         return final_result
+
+    async def _get_market_data(self, symbol: str) -> Dict[str, Any]:
+        """
+        获取市场行情数据（多空比、爆仓、支撑位等）
+        
+        Args:
+            symbol: 交易对（如 BTCUSDT）
+        
+        Returns:
+            包含市场行情数据的字典
+        """
+        market_data = {
+            "price": None,
+            "long_short_ratio": {},
+            "liquidation": {},
+            "support_resistance": {},
+            "funding_rate": None,
+            "ticker_24h": {}
+        }
+        
+        if not self.redis:
+            await self.connect_redis()
+        
+        try:
+            # 1. 获取当前价格
+            try:
+                price_key = f"price:binance:{symbol}"
+                price_data = await self.redis.hgetall(price_key)
+                if price_data and "price" in price_data:
+                    market_data["price"] = float(price_data["price"])
+                    market_data["bid_liquidity"] = float(price_data.get("bid", 0))
+                    market_data["ask_liquidity"] = float(price_data.get("ask", 0))
+            except Exception as e:
+                print(f"⚠️  获取价格失败: {e}")
+            
+            # 2. 获取多空比数据（从 market_raw）
+            try:
+                from api.application.apps.indicators.market_raw_analysis import (
+                    read_market_raw,
+                    build_participant_structure
+                )
+                raw_data = await read_market_raw("binance", symbol)
+                participant_structure = build_participant_structure(raw_data, symbol)
+                
+                market_data["long_short_ratio"] = participant_structure.get("participant_structure", {})
+                market_data["funding_rate"] = participant_structure.get("funding_rate", {})
+                market_data["ticker_24h"] = participant_structure.get("ticker", {})
+                market_data["market_summary"] = participant_structure.get("summary", {})
+            except Exception as e:
+                print(f"⚠️  获取多空比数据失败: {e}")
+            
+            # 3. 获取爆仓数据
+            try:
+                # 从 force_stats 获取爆仓统计
+                force_stats_key = f"force_stats:{symbol}"
+                force_stats = await self.redis.get(force_stats_key)
+                if force_stats:
+                    stats = json.loads(force_stats)
+                    market_data["liquidation"] = {
+                        "buy_count": stats.get("BUY", 0),
+                        "sell_count": stats.get("SELL", 0),
+                        "buy_qty": stats.get("BUY_QTY", 0.0),
+                        "sell_qty": stats.get("SELL_QTY", 0.0),
+                        "timestamp": stats.get("timestamp", 0)
+                    }
+            except Exception as e:
+                print(f"⚠️  获取爆仓数据失败: {e}")
+            
+            # 4. 从指标数据中提取支撑位和阻力位
+            try:
+                # 尝试从1m指标中获取支撑阻力位
+                indicators_key = f"indicators:binance:{symbol}:1m"
+                indicators_raw = await self.redis.get(indicators_key)
+                if indicators_raw:
+                    indicators = json.loads(indicators_raw)
+                    sr = indicators.get("sr", {})
+                    if sr:
+                        market_data["support_resistance"] = {
+                            "R1": sr.get("R1"),
+                            "R2": sr.get("R2"),
+                            "R3": sr.get("R3"),
+                            "S1": sr.get("S1"),
+                            "S2": sr.get("S2"),
+                            "S3": sr.get("S3")
+                        }
+            except Exception as e:
+                print(f"⚠️  获取支撑阻力位失败: {e}")
+            
+        except Exception as e:
+            print(f"⚠️  获取市场数据失败: {e}")
+        
+        return market_data
 
     async def close(self):
         """关闭连接"""
