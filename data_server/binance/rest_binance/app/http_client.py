@@ -21,19 +21,25 @@ class HTTPClient:
             if self._session and not self._session.closed:
                 return self._session
             timeout = aiohttp.ClientTimeout(total=settings.http_timeout_s)
-            self._session = aiohttp.ClientSession(timeout=timeout)
+            self._session = aiohttp.ClientSession(timeout=timeout, trust_env=False)
             return self._session
 
     async def close(self):
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def request(self, method: str, url: str, params: dict = None, headers: dict = None, json: dict = None, max_retries: int = 3, ssl=False):
+    async def request(self, method: str, url: str, params: dict = None, headers: dict = None, json: dict = None, max_retries: int = 3, ssl=False, proxy: str = None):
         attempt = 0
         session = await self.get_session()
         while True:
             try:
-                async with session.request(method, url, params=params, headers=headers, json=json, ssl=ssl) as resp:
+                _proxy = proxy if proxy is not None else (settings.http_proxy if settings.local_mode else None)
+                if isinstance(_proxy, dict):
+                    if url.startswith("https"):
+                        _proxy = _proxy.get("https") or _proxy.get("http")
+                    else:
+                        _proxy = _proxy.get("http") or _proxy.get("https")
+                async with session.request(method, url, params=params, headers=headers, json=json, ssl=ssl, proxy=_proxy) as resp:
                     status = resp.status
                     if 200 <= status < 300:
                         return await resp.json()

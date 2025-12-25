@@ -18,6 +18,8 @@ class Settings:
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"
+    http_proxy: dict = {"http": "http://127.0.0.1:1088"}
+    local_mode: bool = True  # 本地调试开启本机VPN代理
 
 
 settings = Settings()

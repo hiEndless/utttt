@@ -216,5 +216,10 @@ async def _main():
 
 
 if __name__ == "__main__":
+    async def _run_once():
+        try:
+            await fetch_fundingRate("BTCUSDT")
+        finally:
+            await http_client.close()
     # asyncio.run(_main())
-    asyncio.run(fetch_fundingRate("BTCUSDT"))
+    asyncio.run(_run_once())
