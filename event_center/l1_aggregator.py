@@ -82,7 +82,7 @@ class L1Aggregator:
                     }
                     l1 = {k: ("" if v is None else v) for k, v in l1.items()}
                     await self.redis.xadd(cfg.l1_stream, l1)
-                    print(f"[L1] hit rule={rule['id']} group={group_val} count={cnt} priority={l1['result_priority']}")
+                    print(f"[L1] 命中 规则={rule['id']} 分组={group_val} 计数={cnt} 优先级={l1['result_priority']}")
 
     async def run(self):
         group = "l1_group"
@@ -91,7 +91,7 @@ class L1Aggregator:
             await self.redis.xgroup_create(cfg.l0_stream, group, id="0", mkstream=True)
         except Exception:
             pass
-        print(f"[L1] started in={cfg.l0_stream} out={cfg.l1_stream} group={group}")
+        print(f"[L1] 启动 输入流={cfg.l0_stream} 输出流={cfg.l1_stream} 消费组={group}")
         while True:
             res = await self.redis.xreadgroup(group, consumer, streams={cfg.l0_stream: ">"}, count=20, block=5000)
             if not res:
@@ -105,12 +105,12 @@ class L1Aggregator:
                         except Exception:
                             ev["payload"] = {}
                     try:
-                        print(f"[L1] in entry_id={entry_id.decode()} type={ev.get('type')} account={ev.get('account_id')}")
+                        print(f"[L1] 读入 entry_id={entry_id.decode()} 类型={ev.get('type')} 账户={ev.get('account_id')}")
                         await self.process_l0_event(entry_id.decode(), ev)
                         await self.redis.xack(cfg.l0_stream, group, entry_id)
-                        print(f"[L1] ack entry_id={entry_id.decode()}")
+                        print(f"[L1] 确认 entry_id={entry_id.decode()}")
                     except Exception as e:
-                        print(f"[L1] error entry_id={entry_id.decode()} err={e}")
+                        print(f"[L1] 错误 entry_id={entry_id.decode()} 错误={e}")
 
 
 if __name__ == "__main__":

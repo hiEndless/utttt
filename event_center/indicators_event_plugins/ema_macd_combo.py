@@ -21,7 +21,7 @@ class EMAMacdCombo(CompositeComboBase):
     neutral_signal = "ema_macd_neutral"
 
     required_indicators = ["ema", "macd", "vol"]
-    min_adx = 20  # 趋势过滤阈值
+    supported_intervals = []
 
     # ---------------------------
     # 统一 Payload

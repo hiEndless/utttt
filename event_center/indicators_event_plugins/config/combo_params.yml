@@ -1,29 +1,29 @@
 global:
   defaults:
-    atr_ratio_threshold: 0.004
-    adx_threshold: 15
+    atr_ratio_threshold: 0.003
+    adx_threshold: 12
     min_strength: 2
     trigger_weight: 1
     pattern_weight: 2
   intervals:
     "1m":
-      atr_ratio_threshold: 0.006
-      adx_threshold: 20
-      min_strength: 3
+      atr_ratio_threshold: 0.003
+      adx_threshold: 12
+      min_strength: 2
     "5m":
-      atr_ratio_threshold: 0.005
-      adx_threshold: 18
+      atr_ratio_threshold: 0.0035
+      adx_threshold: 14
       min_strength: 2
     "15m":
-      atr_ratio_threshold: 0.004
-      adx_threshold: 15
+      atr_ratio_threshold: 0.0035
+      adx_threshold: 14
       min_strength: 2
 
 plugins:
   rsi_kdj_combo:
     intervals:
       "1m":
-        min_strength: 3
+        min_strength: 2
     defaults:
       vol_ratio_threshold: 1.4
       rsi_oversold: 30
@@ -38,10 +38,10 @@ plugins:
       kdj_second_bottom_k_offset: 10
   kdj_boll_combo:
     defaults:
-      band_narrow_threshold: 0.03
-      near_tol: 0.01
-      double_tol: 0.02
-      vol_ratio_for_confirmation: 1.25
+      band_narrow_threshold: 0.04
+      near_tol: 0.015
+      double_tol: 0.03
+      vol_ratio_for_confirmation: 1.1
       boll_mid_retest_tol: 0.03
       kdj_j_rebound_low: 20
       kdj_j_reversal_high: 80
@@ -49,34 +49,34 @@ plugins:
       kdj_k_mid_break_down: 50
     intervals:
       "1m":
-        min_strength: 3
+        min_strength: 2
   boll_vol_combo:
     intervals:
       "1m":
         min_strength: 3
     defaults:
-      band_squeeze_width_updown: 0.02
+      band_squeeze_width_updown: 0.03
       neutral_band_squeeze: 0.015
       neutral_near_tol: 0.01
-      vol_spike_ratio: 1.5
-      vol_collapse_ratio: 0.5
+      vol_spike_ratio: 1.4
+      vol_collapse_ratio: 0.6
   ema_macd_extended_combo:
     intervals:
       "1m":
-        min_strength: 3
+        min_strength: 2
     defaults:
-      ema_flat_ratio: 0.002
+      ema_flat_ratio: 0.003
   rsi_ema_macd:
     intervals:
       "1m":
-        min_strength: 3
+        min_strength: 2
     defaults:
       rsi_oversold: 30
       rsi_overbought: 70
   rsi_macd_combo:
     intervals:
       "1m":
-        min_strength: 3
+        min_strength: 2
     defaults:
       rsi_oversold: 30
       rsi_overbought: 70

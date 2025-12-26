@@ -7,6 +7,7 @@ class RSIMACDCombo(CompositeComboBase):
     name = "rsi_macd_combo"
     version = "3.0"
     required_indicators = ["rsi", "macd"]
+    supported_intervals = []
 
     bullish_signal = "rsi_macd_bullish"
     bearish_signal = "rsi_macd_bearish"

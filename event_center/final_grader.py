@@ -31,7 +31,7 @@ class FinalGrader:
             await self.redis.xgroup_create(cfg.l0_stream, group, id="0", mkstream=True)
         except Exception:
             pass
-        print(f"[Final] started in={cfg.l0_stream} ref_l1={cfg.l1_stream} out={cfg.final_stream} group={group}")
+        print(f"[Final] 启动 输入流={cfg.l0_stream} 参考L1={cfg.l1_stream} 输出流={cfg.final_stream} 消费组={group}")
         min_priority = os.getenv("FINAL_MIN_PRIORITY", "low")
         only_upgraded = os.getenv("FINAL_ONLY_UPGRADED", "false").lower() == "true"
         while True:
@@ -85,11 +85,11 @@ class FinalGrader:
                     final = {k: ("" if v is None else v) for k, v in final.items()}
                     try:
                         await self.redis.xadd(cfg.final_stream, final)
-                        print(f"[Final] out event_id={final.get('event_id')} account={account} final={best} l0={l0_priority}")
+                        print(f"[Final] 输出 event_id={final.get('event_id')} 账户={account} 最终={best} L0={l0_priority}")
                         await self.redis.xack(cfg.l0_stream, group, entry_id)
-                        print(f"[Final] ack entry_id={entry_id.decode()}")
+                        print(f"[Final] 确认 entry_id={entry_id.decode()}")
                     except Exception as e:
-                        print(f"[Final] error entry_id={entry_id.decode()} err={e}")
+                        print(f"[Final] 错误 entry_id={entry_id.decode()} 错误={e}")
 
 
 if __name__ == "__main__":

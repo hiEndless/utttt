@@ -48,7 +48,7 @@ class L0Processor:
         }
         l0 = {k: ("" if v is None else v) for k, v in l0.items()}
         await self.redis.xadd(cfg.l0_stream, l0)
-        print(f"[L0] out event_id={l0.get('event_id')} priority={priority} matched={matched_rules}")
+        print(f"[L0] 输出 event_id={l0.get('event_id')} 优先级={priority} 命中规则={matched_rules}")
 
     async def run(self):
         group = "l0_group"
@@ -57,7 +57,7 @@ class L0Processor:
             await self.redis.xgroup_create(cfg.raw_stream, group, id="0", mkstream=True)
         except Exception:
             pass
-        print(f"[L0] started raw={cfg.raw_stream} out={cfg.l0_stream} group={group}")
+        print(f"[L0] 启动 原始流={cfg.raw_stream} 输出流={cfg.l0_stream} 消费组={group}")
         while True:
             res = await self.redis.xreadgroup(group, consumer, streams={cfg.raw_stream: ">"}, count=10, block=5000)
             if not res:
@@ -78,12 +78,12 @@ class L0Processor:
                             except Exception:
                                 pass
                     try:
-                        print(f"[L0] in entry_id={entry_id.decode()} keys={list(raw.keys())}")
+                        print(f"[L0] 读入 entry_id={entry_id.decode()} 字段={list(raw.keys())}")
                         await self.process_msg(entry_id.decode(), raw)
                         await self.redis.xack(cfg.raw_stream, group, entry_id)
-                        print(f"[L0] ack entry_id={entry_id.decode()}")
+                        print(f"[L0] 确认 entry_id={entry_id.decode()}")
                     except Exception as e:
-                        print(f"[L0] error entry_id={entry_id.decode()} err={e}")
+                        print(f"[L0] 错误 entry_id={entry_id.decode()} 错误={e}")
 
 
 if __name__ == "__main__":
