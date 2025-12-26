@@ -1,6 +1,10 @@
+import pandas as pd
+import ta
+
+
 class EMA:
     def __init__(self, kline_data):
-        self.kline_data = kline_data  # 二维K线数组
+        self.kline_data = kline_data
         self.ema_5 = None
         self.ema_7 = None
         self.ema_12 = None
@@ -10,48 +14,16 @@ class EMA:
         self.ema_100 = None
         self.ema_200 = None
 
-    def _calc_ema(self, prices, n):
-        """
-        计算 EMA(n)
-        prices: 收盘价列表
-        n: 周期
-        """
-        if len(prices) < n:
-            return None  # 数据不足
-
-        k = 2 / (n + 1)
-
-        # 第一个 EMA 为 SMA（前 n 根取平均）
-        ema_prev = sum(prices[:n]) / n
-
-        # 从第 n 根之后开始逐步迭代
-        for price in prices[n:]:
-            ema_prev = (price - ema_prev) * k + ema_prev
-
-        return ema_prev
-
     def calculate(self):
-        """
-        计算多个常用 EMA
-        """
         closes = [float(item[4]) for item in self.kline_data]
-
-        self.ema_5 = self._calc_ema(closes, 5)
-        self.ema_7 = self._calc_ema(closes, 7)
-        self.ema_12 = self._calc_ema(closes, 12)
-        self.ema_20 = self._calc_ema(closes, 20)
-        self.ema_26 = self._calc_ema(closes, 26)
-        self.ema_50 = self._calc_ema(closes, 50)
-        self.ema_100 = self._calc_ema(closes, 100)
-        self.ema_200 = self._calc_ema(closes, 200)
-
-        return {
-            "ema5": self.ema_5 if self.ema_5 is not None else None,
-            "ema7": self.ema_7 if self.ema_7 is not None else None,
-            "ema12": self.ema_12 if self.ema_12 is not None else None,
-            "ema20": self.ema_20 if self.ema_20 is not None else None,
-            "ema26": self.ema_26 if self.ema_26 is not None else None,
-            "ema50": self.ema_50 if self.ema_50 is not None else None,
-            "ema100": self.ema_100 if self.ema_100 is not None else None,
-            "ema200": self.ema_200 if self.ema_200 is not None else None,
-        }
+        s = pd.Series(closes)
+        self.ema_5 = float(ta.trend.ema_indicator(s, window=5).iloc[-1]) if len(closes) >= 5 else None
+        self.ema_7 = float(ta.trend.ema_indicator(s, window=7).iloc[-1]) if len(closes) >= 7 else None
+        self.ema_12 = float(ta.trend.ema_indicator(s, window=12).iloc[-1]) if len(closes) >= 12 else None
+        self.ema_20 = float(ta.trend.ema_indicator(s, window=20).iloc[-1]) if len(closes) >= 20 else None
+        self.ema_26 = float(ta.trend.ema_indicator(s, window=26).iloc[-1]) if len(closes) >= 26 else None
+        self.ema_50 = float(ta.trend.ema_indicator(s, window=50).iloc[-1]) if len(closes) >= 50 else None
+        self.ema_100 = float(ta.trend.ema_indicator(s, window=100).iloc[-1]) if len(closes) >= 100 else None
+        self.ema_200 = float(ta.trend.ema_indicator(s, window=200).iloc[-1]) if len(closes) >= 200 else None
+        return {"ema5": self.ema_5, "ema7": self.ema_7, "ema12": self.ema_12, "ema20": self.ema_20,
+                "ema26": self.ema_26, "ema50": self.ema_50, "ema100": self.ema_100, "ema200": self.ema_200}

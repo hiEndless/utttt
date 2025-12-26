@@ -1,5 +1,7 @@
 
 import math
+import pandas as pd
+import ta
 
 
 class VolatilitySignal:
@@ -12,34 +14,21 @@ class VolatilitySignal:
         self.adx = 0                 # ADX
 
     def calculate(self, period=14):
-        """
-        计算波动率、ATR、DMI+、DMI-、ADX，并整合传入的RSI和MACD数据
-        :param rsi_data: RSI指标数据，如 {'rsi_6': 80.29, 'rsi_12': 60.19, ...}
-        :param macd_data: MACD指标数据，如 {'dif': -308.38, 'dea': -423.33, 'macd': 229.90}
-        :param period: 计算周期，默认为14
-        :return: 包含所有指标的字典
-        """
         if len(self.kline_data) < period + 1:
             raise ValueError("K线数据不足以计算指标")
-
-        # 提取价格序列
         high_prices = [float(item[2]) for item in self.kline_data]
         low_prices = [float(item[3]) for item in self.kline_data]
         close_prices = [float(item[4]) for item in self.kline_data]
-
-        # 1. 计算波动率（年化收益率标准差）
         self._calculate_volatility(close_prices, period)
-
-        # 2. 计算ATR（使用Wilder平滑）
-        self._calculate_atr(high_prices, low_prices, close_prices, period)
-
-        # 3. 计算DMI+/-，并获取DI历史序列
-        di_plus_list, di_minus_list = self._calculate_dmi(high_prices, low_prices, close_prices, period)
-
-        # 4. 计算ADX（基于DI历史序列）
-        self._calculate_adx(di_plus_list, di_minus_list, period)
-
-        # 返回结果（包含ATR、DMI+/-、ADX、波动率、RSI、MACD）
+        h = pd.Series(high_prices)
+        l = pd.Series(low_prices)
+        c = pd.Series(close_prices)
+        atr_series = ta.volatility.average_true_range(h, l, c, window=period)
+        adi = ta.trend.ADXIndicator(high=h, low=l, close=c, window=period)
+        self.atr = float(atr_series.iloc[-1])
+        self.dmi_plus = float(adi.adx_pos().iloc[-1])
+        self.dmi_minus = float(adi.adx_neg().iloc[-1])
+        self.adx = float(adi.adx().iloc[-1])
         return {
             "volatility": self.volatility,
             "atr": self.atr,
