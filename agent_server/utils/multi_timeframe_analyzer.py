@@ -356,10 +356,8 @@ class MultiTimeframeAnalyzer:
 
                 # 调用 Agent 系统分析（带超时控制）
                 try:
-                    result = await asyncio.wait_for(
-                        handle_event(event_signal),
-                        timeout=timeout
-                    )
+                    result = await asyncio.wait_for(handle_event(event_signal),
+                                                    timeout=timeout)
                 except asyncio.TimeoutError:
                     elapsed = time.time() - start_time
                     print(f"⏱️  {timeframe} 分析超时（{elapsed:.1f}秒 > {timeout}秒）")
@@ -367,7 +365,11 @@ class MultiTimeframeAnalyzer:
                         "names": ["technical", "risk"],
                         "outputs": [],
                         "scores": {},
-                        "reflection": {"mode": "default", "reflection_scores": {}, "notes": []},
+                        "reflection": {
+                            "mode": "default",
+                            "reflection_scores": {},
+                            "notes": []
+                        },
                         "fusion": "",
                         "weights": {},
                         "trading_decision": {
@@ -389,7 +391,8 @@ class MultiTimeframeAnalyzer:
                 return (timeframe, result)
 
             except Exception as e:
-                elapsed = time.time() - start_time if 'start_time' in locals() else 0
+                elapsed = time.time() - start_time if 'start_time' in locals(
+                ) else 0
                 print(f"❌ {timeframe} 分析失败（耗时: {elapsed:.1f}秒）: {e}")
                 import traceback
                 traceback.print_exc()
@@ -411,9 +414,9 @@ class MultiTimeframeAnalyzer:
         if tasks:
             print(f"⏳ 等待 {len(tasks)} 个分析任务完成...")
             start_time = time.time()
-            
+
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             elapsed = time.time() - start_time
             print(f"⏱️  所有分析任务完成（总耗时: {elapsed:.1f}秒）")
 
@@ -429,14 +432,18 @@ class MultiTimeframeAnalyzer:
             analysis_results = {}
 
         print(f"\n✅ 所有时间维度分析完成（共 {len(analysis_results)} 个）")
-        
+
         # 验证所有并发分析都已完成
-        expected_count = len([tf for tf, data in events_by_timeframe.items() if data is not None])
+        expected_count = len([
+            tf for tf, data in events_by_timeframe.items() if data is not None
+        ])
         actual_count = len(analysis_results)
         if actual_count < expected_count:
             print(f"⚠️  警告: 期望 {expected_count} 个分析结果，但只得到 {actual_count} 个")
-            print(f"   缺失的时间维度: {set(events_by_timeframe.keys()) - set(analysis_results.keys())}")
-        
+            print(
+                f"   缺失的时间维度: {set(events_by_timeframe.keys()) - set(analysis_results.keys())}"
+            )
+
         # 确保所有分析结果都包含必要的数据
         for timeframe, result in analysis_results.items():
             if "error" not in result and "names" not in result:
@@ -469,9 +476,14 @@ class MultiTimeframeAnalyzer:
         integrated_result["market_data"] = market_data
         print(f"✅ 市场数据获取完成:")
         print(f"   - 当前价格: {market_data.get('price', 'N/A')}")
-        print(f"   - 多空比数据: {'已获取' if market_data.get('long_short_ratio') else '未获取'}")
-        print(f"   - 爆仓数据: {'已获取' if market_data.get('liquidation') else '未获取'}")
-        print(f"   - 支撑阻力位: {'已获取' if market_data.get('support_resistance') else '未获取'}")
+        print(
+            f"   - 多空比数据: {'已获取' if market_data.get('long_short_ratio') else '未获取'}"
+        )
+        print(
+            f"   - 爆仓数据: {'已获取' if market_data.get('liquidation') else '未获取'}")
+        print(
+            f"   - 支撑阻力位: {'已获取' if market_data.get('support_resistance') else '未获取'}"
+        )
 
         # 步骤4: 调用 Agent 系统进行最终决策（基于所有分析结果和市场数据）
         print(f"\n🎯 步骤4: 得出最终结论（基于 {actual_count} 个时间维度的完整结果 + 市场数据）...")
@@ -611,159 +623,30 @@ class MultiTimeframeAnalyzer:
                           if v is not None)
         print(f"📊 找到 {found_count}/{len(timeframes)} 个时间维度的指标数据")
 
-        # 定义单个时间维度的分析任务（用于并发执行）
-        async def analyze_single_timeframe(timeframe: str,
-                                           indicators_data: Dict) -> tuple:
-            """分析单个时间维度（带超时控制）"""
-            if indicators_data is None:
-                return (timeframe, {
-                    "timeframe": timeframe,
-                    "error": "指标数据不存在"
-                })
+        # 步骤1: 格式化各时间维度的指标数据（跳过AI分析，直接格式化）
+        print(f"\n📊 步骤1: 格式化各时间维度指标数据...")
+        formatted_indicators_by_timeframe = {}
 
-            # 根据时间维度设置不同的超时时间
-            # 1h周期数据量大，LLM处理更慢，设置更长的超时
-            timeout_map = {
-                "1m": 15,   # 15秒
-                "5m": 20,   # 20秒
-                "15m": 25,  # 25秒
-                "30m": 30,  # 30秒
-                "1h": 40,   # 40秒（1h数据量大，给更多时间）
-                "2h": 45,
-                "4h": 50,
-                "1d": 60
-            }
-            timeout = timeout_map.get(timeframe, 30)  # 默认30秒
-
-            try:
-                print(f"📈 开始分析 {timeframe} 时间维度（基于指标数据，超时: {timeout}秒）...")
-                start_time = time.time()
-
-                # 基于指标数据创建事件
-                event_data = await self.create_event_from_indicators(
-                    symbol=symbol,
-                    timeframe=timeframe,
-                    indicators=indicators_data["indicators"],
-                    timestamp_ms=timestamp_ms)
-
-                # 标记这是中间分析，不应该执行交易推送
-                event_data["_is_intermediate_analysis"] = True
-                event_data["_timeframe"] = timeframe
-
-                # 转换为 EventSignal
-                event_signal = self.map_event_to_signal(event_data)
-
-                # 调用 Agent 系统分析（带超时控制）
-                try:
-                    result = await asyncio.wait_for(
-                        handle_event(event_signal),
-                        timeout=timeout
-                    )
-                except asyncio.TimeoutError:
-                    elapsed = time.time() - start_time
-                    print(f"⏱️  {timeframe} 分析超时（{elapsed:.1f}秒 > {timeout}秒），使用简化分析")
-                    # 超时后使用简化分析（只返回基本指标数据）
-                    result = {
-                        "names": ["technical", "risk"],
-                        "outputs": [
-                            json.dumps({
-                                "agent": "technical",
-                                "task": "analysis",
-                                "content": {
-                                    "summary": f"{timeframe} 周期分析超时，使用简化分析",
-                                    "details": f"由于分析超时，仅提供基础指标数据。RSI: {indicators_data['indicators'].get('rsi', {}).get('rsi14', 'N/A')}, MACD: {indicators_data['indicators'].get('macd', {}).get('macd', 'N/A')}"
-                                },
-                                "confidence": 0.5,
-                                "rationale": "分析超时，使用简化结果",
-                                "metrics": {"timeout": True, "timeframe": timeframe}
-                            }, ensure_ascii=False),
-                            json.dumps({
-                                "agent": "risk",
-                                "task": "analysis",
-                                "content": {
-                                    "summary": f"{timeframe} 周期风险评估超时",
-                                    "details": "分析超时，无法提供详细风险评估"
-                                },
-                                "confidence": 0.5,
-                                "rationale": "分析超时",
-                                "metrics": {"timeout": True, "timeframe": timeframe}
-                            }, ensure_ascii=False)
-                        ],
-                        "scores": {"0": 0.5, "1": 0.5},
-                        "reflection": {"mode": "default", "reflection_scores": {}, "notes": []},
-                        "fusion": "",
-                        "weights": {"technical": 0.5, "risk": 0.5},
-                        "trading_decision": {
-                            "action": "hold",
-                            "symbol": symbol,
-                            "confidence": 0.0,
-                            "rationale": f"{timeframe} 周期分析超时，无法做出明确决策",
-                            "risk_level": "medium"
-                        }
-                    }
-
-                # 添加时间维度信息
-                result["timeframe"] = timeframe
-                result["event_data"] = event_data
-                result["indicators"] = indicators_data["indicators"]
-
-                elapsed = time.time() - start_time
-                print(f"✅ {timeframe} 分析完成（耗时: {elapsed:.1f}秒）")
-                return (timeframe, result)
-
-            except Exception as e:
-                elapsed = time.time() - start_time if 'start_time' in locals() else 0
-                print(f"❌ {timeframe} 分析失败（耗时: {elapsed:.1f}秒）: {e}")
-                import traceback
-                traceback.print_exc()
-                return (timeframe, {"timeframe": timeframe, "error": str(e)})
-
-        # 并发执行所有时间维度的分析
-        print(f"\n🚀 并发分析 {found_count} 个时间维度...")
-        tasks = []
         for timeframe, indicators_data in indicators_by_timeframe.items():
-            if indicators_data is not None:
-                task = analyze_single_timeframe(timeframe, indicators_data)
-                tasks.append(task)
+            if indicators_data is None:
+                print(f"⚠️  {timeframe} 指标数据不存在，跳过")
+                continue
 
-        # 等待所有分析任务完成（带进度监控）
-        if tasks:
-            print(f"⏳ 等待 {len(tasks)} 个分析任务完成...")
-            start_time = time.time()
-            
-            # 使用 gather 并发执行，但添加异常处理
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            elapsed = time.time() - start_time
-            print(f"⏱️  所有分析任务完成（总耗时: {elapsed:.1f}秒）")
+            # 格式化指标数据，提取关键指标值
+            formatted = self._format_indicators_for_ai(
+                timeframe=timeframe,
+                indicators=indicators_data["indicators"],
+                symbol=symbol,
+                timestamp_ms=timestamp_ms)
+            formatted_indicators_by_timeframe[timeframe] = formatted
+            print(f"✅ {timeframe} 指标数据格式化完成")
 
-            # 整理分析结果
-            analysis_results = {}
-            for result in results:
-                if isinstance(result, Exception):
-                    print(f"⚠️  分析任务异常: {result}")
-                    continue
-                timeframe, analysis_result = result
-                analysis_results[timeframe] = analysis_result
-        else:
-            analysis_results = {}
+        print(
+            f"\n✅ 所有时间维度指标数据格式化完成（共 {len(formatted_indicators_by_timeframe)} 个）"
+        )
 
-        print(f"\n✅ 所有时间维度分析完成（共 {len(analysis_results)} 个）")
-        
-        # 验证所有并发分析都已完成
-        expected_count = len([tf for tf, data in indicators_by_timeframe.items() if data is not None])
-        actual_count = len(analysis_results)
-        if actual_count < expected_count:
-            print(f"⚠️  警告: 期望 {expected_count} 个分析结果，但只得到 {actual_count} 个")
-            print(f"   缺失的时间维度: {set(indicators_by_timeframe.keys()) - set(analysis_results.keys())}")
-        
-        # 确保所有分析结果都包含必要的数据
-        for timeframe, result in analysis_results.items():
-            if "error" not in result and "names" not in result:
-                print(f"⚠️  警告: {timeframe} 的分析结果不完整")
-
-        # 步骤2: 整合所有时间维度的分析结果
-        print(f"\n📊 步骤2: 整合所有分析结果...")
+        # 步骤2: 整合所有时间维度的指标数据
+        print(f"\n📊 步骤2: 整合所有时间维度指标数据...")
         integrated_result = {
             "symbol":
             symbol,
@@ -771,8 +654,8 @@ class MultiTimeframeAnalyzer:
             base_event,
             "timeframes":
             timeframes,
-            "analysis_by_timeframe":
-            analysis_results,
+            "indicators_by_timeframe":
+            formatted_indicators_by_timeframe,  # 使用格式化后的指标数据
             "found_timeframes": [
                 tf for tf, data in indicators_by_timeframe.items()
                 if data is not None
@@ -780,25 +663,52 @@ class MultiTimeframeAnalyzer:
             "timestamp":
             timestamp_ms,
             "data_source":
-            "indicators"  # 标记数据来源
+            "indicators_direct"  # 标记为直接指标分析
         }
 
-        # 步骤3: 获取市场数据并进行综合分析
-        print(f"\n📈 步骤3: 获取市场数据并进行综合分析...")
-        market_data = await self._get_market_data(symbol)
-        integrated_result["market_data"] = market_data
-        print(f"✅ 市场数据获取完成:")
-        print(f"   - 当前价格: {market_data.get('price', 'N/A')}")
-        print(f"   - 多空比数据: {'已获取' if market_data.get('long_short_ratio') else '未获取'}")
-        print(f"   - 爆仓数据: {'已获取' if market_data.get('liquidation') else '未获取'}")
-        print(f"   - 支撑阻力位: {'已获取' if market_data.get('support_resistance') else '未获取'}")
+        # 步骤3: 获取并清洗市场数据
+        print(f"\n📈 步骤3: 获取并清洗市场数据...")
+        raw_market_data = await self._get_market_data(symbol)
+        # 清洗市场数据，提取关键影响因子
+        cleaned_market_data = self._clean_market_data(raw_market_data, symbol)
+        integrated_result["market_data"] = cleaned_market_data
+        print(f"✅ 市场数据清洗完成:")
+        print(f"   - 当前价格: {cleaned_market_data.get('current_price', 'N/A')}")
+        print(
+            f"   - 多空比: {cleaned_market_data.get('long_short_ratio_summary', 'N/A')}"
+        )
+        print(
+            f"   - 爆仓情况: {cleaned_market_data.get('liquidation_summary', 'N/A')}"
+        )
+        print(
+            f"   - 支撑阻力位: {cleaned_market_data.get('support_resistance_summary', 'N/A')}"
+        )
 
-        # 步骤4: 调用 Agent 系统进行最终决策（基于所有分析结果和市场数据）
-        print(f"\n🎯 步骤4: 得出最终结论（基于 {actual_count} 个时间维度的完整结果 + 市场数据）...")
+        # 步骤4: 调用 Agent 系统进行最终决策（基于格式化指标数据 + 清洗后的市场数据）
+        print(
+            f"\n🎯 步骤4: 得出最终结论（基于 {len(formatted_indicators_by_timeframe)} 个时间维度的指标数据 + 市场数据）..."
+        )
         final_result = await handle_event(integrated_result)
 
         # 合并结果
         final_result.update(integrated_result)
+
+        # 确保trade_json已生成（在trading_decision中已处理）
+        # 这里只是确保结果中包含trade_json
+        if "trading_decision" in final_result and "trade_json" not in final_result.get(
+                "trading_decision", {}):
+            # 如果trading_decision中没有trade_json，尝试生成
+            trading_decision = final_result.get("trading_decision", {})
+            if trading_decision:
+                try:
+                    from agent_server.agents.experts.analysis.trading_decision import TradingDecisionExpert
+                    expert = TradingDecisionExpert()
+                    trade_json = await expert._generate_trade_json(
+                        trading_decision, integrated_result)
+                    trading_decision["trade_json"] = trade_json
+                    final_result["trading_decision"] = trading_decision
+                except Exception as e:
+                    print(f"⚠️  补充生成trade_json失败: {e}")
 
         return final_result
 
@@ -820,10 +730,10 @@ class MultiTimeframeAnalyzer:
             "funding_rate": None,
             "ticker_24h": {}
         }
-        
+
         if not self.redis:
             await self.connect_redis()
-        
+
         try:
             # 1. 获取当前价格
             try:
@@ -831,32 +741,50 @@ class MultiTimeframeAnalyzer:
                 price_data = await self.redis.hgetall(price_key)
                 if price_data and "price" in price_data:
                     market_data["price"] = float(price_data["price"])
-                    market_data["bid_liquidity"] = float(price_data.get("bid", 0))
-                    market_data["ask_liquidity"] = float(price_data.get("ask", 0))
+                    market_data["bid_liquidity"] = float(
+                        price_data.get("bid", 0))
+                    market_data["ask_liquidity"] = float(
+                        price_data.get("ask", 0))
             except Exception as e:
                 print(f"⚠️  获取价格失败: {e}")
-            
+
             # 2. 获取多空比数据（从 market_raw）
             try:
                 from api.application.apps.indicators.market_raw_analysis import (
-                    read_market_raw,
-                    build_participant_structure
-                )
+                    read_market_raw, build_participant_structure)
                 raw_data = await read_market_raw("binance", symbol)
-                participant_structure = build_participant_structure(raw_data, symbol)
-                
-                market_data["long_short_ratio"] = participant_structure.get("participant_structure", {})
-                market_data["funding_rate"] = participant_structure.get("funding_rate", {})
-                market_data["ticker_24h"] = participant_structure.get("ticker", {})
-                market_data["market_summary"] = participant_structure.get("summary", {})
+                participant_structure = build_participant_structure(
+                    raw_data, symbol)
+
+                market_data["long_short_ratio"] = participant_structure.get(
+                    "participant_structure", {})
+                market_data["funding_rate"] = participant_structure.get(
+                    "funding_rate", {})
+                market_data["ticker_24h"] = participant_structure.get(
+                    "ticker", {})
+                market_data["market_summary"] = participant_structure.get(
+                    "summary", {})
             except Exception as e:
                 print(f"⚠️  获取多空比数据失败: {e}")
-            
+
             # 3. 获取爆仓数据
             try:
-                # 从 force_stats 获取爆仓统计
-                force_stats_key = f"force_stats:{symbol}"
-                force_stats = await self.redis.get(force_stats_key)
+                # 尝试多个可能的键名
+                possible_keys = [
+                    f"force_stats:{symbol}", f"force_stats:binance:{symbol}",
+                    f"liquidation:{symbol}", f"liquidation:binance:{symbol}"
+                ]
+
+                force_stats = None
+                for key in possible_keys:
+                    try:
+                        force_stats = await self.redis.get(key)
+                        if force_stats:
+                            print(f"✅ 从 {key} 获取爆仓数据")
+                            break
+                    except:
+                        continue
+
                 if force_stats:
                     stats = json.loads(force_stats)
                     market_data["liquidation"] = {
@@ -866,9 +794,13 @@ class MultiTimeframeAnalyzer:
                         "sell_qty": stats.get("SELL_QTY", 0.0),
                         "timestamp": stats.get("timestamp", 0)
                     }
+                else:
+                    print(f"⚠️  未找到爆仓数据，尝试的键: {possible_keys}")
             except Exception as e:
                 print(f"⚠️  获取爆仓数据失败: {e}")
-            
+                import traceback
+                traceback.print_exc()
+
             # 4. 从指标数据中提取支撑位和阻力位
             try:
                 # 尝试从1m指标中获取支撑阻力位
@@ -888,11 +820,486 @@ class MultiTimeframeAnalyzer:
                         }
             except Exception as e:
                 print(f"⚠️  获取支撑阻力位失败: {e}")
-            
+
         except Exception as e:
             print(f"⚠️  获取市场数据失败: {e}")
-        
+
         return market_data
+
+    def _format_indicators_for_ai(self, timeframe: str, indicators: Dict,
+                                  symbol: str,
+                                  timestamp_ms: int) -> Dict[str, Any]:
+        """
+        格式化指标数据，提取关键指标值，便于AI理解
+        
+        Args:
+            timeframe: 时间维度
+            indicators: 原始指标数据
+            symbol: 交易对
+            timestamp_ms: 时间戳
+        
+        Returns:
+            格式化后的指标数据字典
+        """
+        formatted = {
+            "timeframe": timeframe,
+            "symbol": symbol,
+            "timestamp": timestamp_ms,
+            "price_info": {},
+            "trend_indicators": {},
+            "momentum_indicators": {},
+            "volatility_indicators": {},
+            "volume_indicators": {},
+            "support_resistance": {},
+            "signal_summary": {}
+        }
+
+        # 1. 价格信息
+        if "close" in indicators:
+            formatted["price_info"]["close"] = float(indicators["close"])
+        if "open" in indicators:
+            formatted["price_info"]["open"] = float(indicators["open"])
+        if "high" in indicators:
+            formatted["price_info"]["high"] = float(indicators["high"])
+        if "low" in indicators:
+            formatted["price_info"]["low"] = float(indicators["low"])
+
+        # 计算价格变化
+        if "close" in indicators and "open" in indicators:
+            price_change = float(indicators["close"]) - float(
+                indicators["open"])
+            price_change_pct = (price_change / float(indicators["open"])) * 100
+            formatted["price_info"]["change"] = price_change
+            formatted["price_info"]["change_pct"] = round(price_change_pct, 2)
+
+        # 2. 趋势指标 (MA, EMA, MACD)
+        if "ema" in indicators:
+            ema = indicators["ema"]
+            if isinstance(ema, dict):
+                formatted["trend_indicators"]["ema_20"] = ema.get("ema20")
+                formatted["trend_indicators"]["ema_50"] = ema.get("ema50")
+                formatted["trend_indicators"]["ema_200"] = ema.get("ema200")
+
+        if "ma" in indicators:
+            ma = indicators["ma"]
+            if isinstance(ma, dict):
+                formatted["trend_indicators"]["ma_20"] = ma.get("ma20")
+                formatted["trend_indicators"]["ma_50"] = ma.get("ma50")
+                formatted["trend_indicators"]["ma_200"] = ma.get("ma200")
+
+        if "macd" in indicators:
+            macd = indicators["macd"]
+            if isinstance(macd, dict):
+                formatted["trend_indicators"]["macd"] = macd.get("macd")
+                formatted["trend_indicators"]["macd_signal"] = macd.get(
+                    "signal")
+                formatted["trend_indicators"]["macd_hist"] = macd.get("hist")
+                # MACD信号判断
+                if macd.get("macd") and macd.get("signal"):
+                    if macd.get("macd") > macd.get("signal"):
+                        formatted["trend_indicators"][
+                            "macd_signal_direction"] = "bullish"
+                    else:
+                        formatted["trend_indicators"][
+                            "macd_signal_direction"] = "bearish"
+
+        # 3. 动量指标 (RSI, KDJ, ADX)
+        if "rsi14" in indicators:
+            rsi = float(indicators["rsi14"])
+            formatted["momentum_indicators"]["rsi14"] = round(rsi, 2)
+            # RSI信号判断
+            if rsi > 70:
+                formatted["momentum_indicators"]["rsi_signal"] = "overbought"
+            elif rsi < 30:
+                formatted["momentum_indicators"]["rsi_signal"] = "oversold"
+            else:
+                formatted["momentum_indicators"]["rsi_signal"] = "neutral"
+
+        if "kdj" in indicators:
+            kdj = indicators["kdj"]
+            if isinstance(kdj, dict):
+                formatted["momentum_indicators"]["k"] = kdj.get("k")
+                formatted["momentum_indicators"]["d"] = kdj.get("d")
+                formatted["momentum_indicators"]["j"] = kdj.get("j")
+                # KDJ信号判断
+                k_val = kdj.get("k", 50)
+                d_val = kdj.get("d", 50)
+                if k_val > d_val and k_val > 50:
+                    formatted["momentum_indicators"]["kdj_signal"] = "bullish"
+                elif k_val < d_val and k_val < 50:
+                    formatted["momentum_indicators"]["kdj_signal"] = "bearish"
+                else:
+                    formatted["momentum_indicators"]["kdj_signal"] = "neutral"
+
+        if "adx" in indicators:
+            adx = indicators["adx"]
+            if isinstance(adx, dict):
+                formatted["momentum_indicators"]["adx"] = adx.get("adx")
+                # ADX信号判断（>25表示强趋势）
+                adx_val = adx.get("adx", 0)
+                if adx_val > 25:
+                    formatted["momentum_indicators"][
+                        "adx_signal"] = "strong_trend"
+                elif adx_val > 20:
+                    formatted["momentum_indicators"][
+                        "adx_signal"] = "moderate_trend"
+                else:
+                    formatted["momentum_indicators"][
+                        "adx_signal"] = "weak_trend"
+
+        # 4. 波动率指标 (Bollinger Bands, ATR)
+        if "boll" in indicators:
+            boll = indicators["boll"]
+            if isinstance(boll, dict):
+                formatted["volatility_indicators"]["bb_upper"] = boll.get(
+                    "upper")
+                formatted["volatility_indicators"]["bb_middle"] = boll.get(
+                    "middle")
+                formatted["volatility_indicators"]["bb_lower"] = boll.get(
+                    "lower")
+                formatted["volatility_indicators"]["bb_width"] = boll.get(
+                    "width")
+                # 布林带信号判断
+                if "close" in indicators and boll.get("upper") and boll.get(
+                        "lower"):
+                    close_price = float(indicators["close"])
+                    if close_price > boll.get("upper"):
+                        formatted["volatility_indicators"][
+                            "bb_signal"] = "above_upper"
+                    elif close_price < boll.get("lower"):
+                        formatted["volatility_indicators"][
+                            "bb_signal"] = "below_lower"
+                    else:
+                        formatted["volatility_indicators"][
+                            "bb_signal"] = "within_bands"
+
+        if "atr" in indicators:
+            atr = indicators["atr"]
+            if isinstance(atr, dict):
+                formatted["volatility_indicators"]["atr"] = atr.get("atr")
+                formatted["volatility_indicators"]["atr_pct"] = atr.get(
+                    "atr_pct")
+
+        # 5. 成交量指标
+        if "volume" in indicators:
+            formatted["volume_indicators"]["volume"] = indicators["volume"]
+        if "volume_ma" in indicators:
+            formatted["volume_indicators"]["volume_ma"] = indicators[
+                "volume_ma"]
+
+        # 6. 支撑阻力位
+        if "sr" in indicators:
+            sr = indicators["sr"]
+            if isinstance(sr, dict):
+                formatted["support_resistance"]["R1"] = sr.get("R1")
+                formatted["support_resistance"]["R2"] = sr.get("R2")
+                formatted["support_resistance"]["R3"] = sr.get("R3")
+                formatted["support_resistance"]["S1"] = sr.get("S1")
+                formatted["support_resistance"]["S2"] = sr.get("S2")
+                formatted["support_resistance"]["S3"] = sr.get("S3")
+
+        # 7. 综合信号摘要
+        signals = []
+
+        # 趋势信号
+        if formatted["trend_indicators"].get("macd_signal_direction"):
+            signals.append(
+                f"MACD: {formatted['trend_indicators']['macd_signal_direction']}"
+            )
+
+        # 动量信号
+        if formatted["momentum_indicators"].get("rsi_signal"):
+            signals.append(
+                f"RSI: {formatted['momentum_indicators']['rsi_signal']}")
+        if formatted["momentum_indicators"].get("kdj_signal"):
+            signals.append(
+                f"KDJ: {formatted['momentum_indicators']['kdj_signal']}")
+        if formatted["momentum_indicators"].get("adx_signal"):
+            signals.append(
+                f"ADX: {formatted['momentum_indicators']['adx_signal']}")
+
+        # 波动率信号
+        if formatted["volatility_indicators"].get("bb_signal"):
+            signals.append(
+                f"BB: {formatted['volatility_indicators']['bb_signal']}")
+
+        formatted["signal_summary"]["signals"] = signals
+        formatted["signal_summary"]["signal_count"] = len(signals)
+
+        # 判断整体趋势
+        bullish_count = sum(1 for s in signals
+                            if "bullish" in s.lower() or "above" in s.lower())
+        bearish_count = sum(1 for s in signals
+                            if "bearish" in s.lower() or "below" in s.lower())
+
+        if bullish_count > bearish_count:
+            formatted["signal_summary"]["overall_trend"] = "bullish"
+        elif bearish_count > bullish_count:
+            formatted["signal_summary"]["overall_trend"] = "bearish"
+        else:
+            formatted["signal_summary"]["overall_trend"] = "neutral"
+
+        return formatted
+
+    def _clean_market_data(self, raw_market_data: Dict[str, Any],
+                           symbol: str) -> Dict[str, Any]:
+        """
+        清洗市场数据，提取最能影响分析的指标值
+        
+        Args:
+            raw_market_data: 原始市场数据
+            symbol: 交易对
+        
+        Returns:
+            清洗后的市场数据字典
+        """
+        cleaned = {
+            "current_price": raw_market_data.get("price"),
+            "price_change_24h": None,
+            "long_short_ratio_summary": {},
+            "liquidation_summary": {},
+            "support_resistance_summary": {},
+            "funding_rate_info": {},
+            "market_sentiment": {}
+        }
+
+        # 1. 价格信息
+        if raw_market_data.get("ticker_24h"):
+            ticker = raw_market_data["ticker_24h"]
+            if isinstance(ticker, dict):
+                cleaned["price_change_24h"] = {
+                    "change": ticker.get("priceChange"),
+                    "change_pct": ticker.get("priceChangePercent"),
+                    "high_24h": ticker.get("highPrice"),
+                    "low_24h": ticker.get("lowPrice"),
+                    "volume_24h": ticker.get("volume")
+                }
+
+        # 2. 多空比数据清洗
+        # participant_structure 的结构是: {dtype: {period: {current: {...}, stats: {...}, ...}}}
+        participant_structure = raw_market_data.get("long_short_ratio", {})
+        if participant_structure and isinstance(participant_structure, dict):
+            # 尝试从 globalLongShortAccountRatio 的 5m 周期获取数据（如果没有5m，尝试其他周期）
+            account_ratio_data = participant_structure.get(
+                "globalLongShortAccountRatio", {})
+
+            # 优先使用5m，如果没有则使用第一个可用的周期
+            period_data = None
+            for period in ["5m", "15m", "1h", "30m", "1m"]:
+                if period in account_ratio_data:
+                    period_data = account_ratio_data[period]
+                    break
+
+            if period_data:
+                current = period_data.get("current", {})
+                long_accounts_pct = current.get("long_pct")
+                short_accounts_pct = current.get("short_pct")
+                ls_ratio = current.get("ls_ratio")
+
+                # 计算比率（需要处理None值）
+                ratio = ls_ratio
+                if ratio is None and long_accounts_pct is not None and short_accounts_pct is not None:
+                    if short_accounts_pct > 0:
+                        ratio = long_accounts_pct / short_accounts_pct
+
+                cleaned["long_short_ratio_summary"] = {
+                    "long_accounts_pct":
+                    long_accounts_pct *
+                    100 if long_accounts_pct is not None else None,  # 转换为百分比
+                    "short_accounts_pct":
+                    short_accounts_pct *
+                    100 if short_accounts_pct is not None else None,  # 转换为百分比
+                    "ratio":
+                    ratio,
+                    "sentiment":
+                    "neutral"
+                }
+
+                # 判断多空倾向（需要处理None值）
+                long_pct = long_accounts_pct * 100 if long_accounts_pct is not None else 50
+                if long_pct > 55:
+                    cleaned["long_short_ratio_summary"][
+                        "sentiment"] = "bullish"
+                elif long_pct < 45:
+                    cleaned["long_short_ratio_summary"][
+                        "sentiment"] = "bearish"
+                else:
+                    cleaned["long_short_ratio_summary"][
+                        "sentiment"] = "neutral"
+            else:
+                # 如果没有找到数据，尝试从旧的格式获取（兼容性）
+                if "longAccount" in participant_structure:
+                    lsr = participant_structure
+                    long_accounts_pct = lsr.get("longAccount",
+                                                {}).get("percentage")
+                    short_accounts_pct = lsr.get("shortAccount",
+                                                 {}).get("percentage")
+                    long_position_pct = lsr.get("longPosition",
+                                                {}).get("percentage")
+                    short_position_pct = lsr.get("shortPosition",
+                                                 {}).get("percentage")
+
+                    ratio = None
+                    if long_accounts_pct is not None and short_accounts_pct is not None:
+                        if short_accounts_pct > 0:
+                            ratio = long_accounts_pct / short_accounts_pct
+
+                    cleaned["long_short_ratio_summary"] = {
+                        "long_accounts_pct": long_accounts_pct,
+                        "short_accounts_pct": short_accounts_pct,
+                        "long_position_pct": long_position_pct,
+                        "short_position_pct": short_position_pct,
+                        "ratio": ratio,
+                        "sentiment": "neutral"
+                    }
+
+                    long_pct = long_accounts_pct if long_accounts_pct is not None else 50
+                    if long_pct > 55:
+                        cleaned["long_short_ratio_summary"][
+                            "sentiment"] = "bullish"
+                    elif long_pct < 45:
+                        cleaned["long_short_ratio_summary"][
+                            "sentiment"] = "bearish"
+                    else:
+                        cleaned["long_short_ratio_summary"][
+                            "sentiment"] = "neutral"
+
+        # 3. 爆仓数据清洗
+        if raw_market_data.get("liquidation"):
+            liq = raw_market_data["liquidation"]
+            if isinstance(liq, dict):
+                # 安全获取数值，处理None值
+                buy_count = liq.get("buy_count") or 0
+                sell_count = liq.get("sell_count") or 0
+                buy_qty = liq.get("buy_qty") or 0.0
+                sell_qty = liq.get("sell_qty") or 0.0
+
+                # 确保数值类型正确
+                try:
+                    buy_count = int(buy_count) if buy_count is not None else 0
+                    sell_count = int(
+                        sell_count) if sell_count is not None else 0
+                    buy_qty = float(buy_qty) if buy_qty is not None else 0.0
+                    sell_qty = float(sell_qty) if sell_qty is not None else 0.0
+                except (ValueError, TypeError):
+                    buy_count = 0
+                    sell_count = 0
+                    buy_qty = 0.0
+                    sell_qty = 0.0
+
+                cleaned["liquidation_summary"] = {
+                    "buy_liquidations": buy_count,
+                    "sell_liquidations": sell_count,
+                    "buy_liquidation_qty": buy_qty,
+                    "sell_liquidation_qty": sell_qty,
+                    "total_liquidations": buy_count + sell_count,
+                    "net_liquidation_qty": buy_qty - sell_qty
+                }
+
+                # 判断爆仓倾向（需要处理除零情况）
+                if sell_count > 0 and buy_count > sell_count * 1.5:
+                    cleaned["liquidation_summary"][
+                        "sentiment"] = "bearish"  # 多头爆仓多，看跌
+                elif buy_count > 0 and sell_count > buy_count * 1.5:
+                    cleaned["liquidation_summary"][
+                        "sentiment"] = "bullish"  # 空头爆仓多，看涨
+                else:
+                    cleaned["liquidation_summary"]["sentiment"] = "neutral"
+
+        # 4. 支撑阻力位清洗
+        if raw_market_data.get("support_resistance"):
+            sr = raw_market_data["support_resistance"]
+            if isinstance(sr, dict):
+                current_price = cleaned["current_price"]
+                if current_price is not None:
+                    try:
+                        current_price = float(current_price)
+                    except (ValueError, TypeError):
+                        current_price = None
+
+                    if current_price is not None:
+                        cleaned["support_resistance_summary"] = {
+                            "resistance_levels": {
+                                "R1": sr.get("R1"),
+                                "R2": sr.get("R2"),
+                                "R3": sr.get("R3")
+                            },
+                            "support_levels": {
+                                "S1": sr.get("S1"),
+                                "S2": sr.get("S2"),
+                                "S3": sr.get("S3")
+                            },
+                            "nearest_resistance": None,
+                            "nearest_support": None
+                        }
+
+                        # 找到最近的支撑和阻力位（需要处理None值）
+                        resistances = []
+                        for r in [sr.get("R1"), sr.get("R2"), sr.get("R3")]:
+                            if r is not None:
+                                try:
+                                    resistances.append(float(r))
+                                except (ValueError, TypeError):
+                                    pass
+
+                        supports = []
+                        for s in [sr.get("S1"), sr.get("S2"), sr.get("S3")]:
+                            if s is not None:
+                                try:
+                                    supports.append(float(s))
+                                except (ValueError, TypeError):
+                                    pass
+
+                        above_price = [
+                            r for r in resistances if r > current_price
+                        ]
+                        below_price = [
+                            s for s in supports if s < current_price
+                        ]
+
+                        if above_price:
+                            cleaned["support_resistance_summary"][
+                                "nearest_resistance"] = min(above_price)
+                        if below_price:
+                            cleaned["support_resistance_summary"][
+                                "nearest_support"] = max(below_price)
+
+        # 5. 资金费率信息
+        if raw_market_data.get("funding_rate"):
+            fr = raw_market_data["funding_rate"]
+            if isinstance(fr, dict):
+                cleaned["funding_rate_info"] = {
+                    "funding_rate": fr.get("fundingRate"),
+                    "next_funding_time": fr.get("nextFundingTime"),
+                    "mark_price": fr.get("markPrice")
+                }
+
+        # 6. 市场情绪综合判断
+        sentiment_signals = []
+
+        if cleaned["long_short_ratio_summary"].get("sentiment"):
+            sentiment_signals.append(
+                f"多空比: {cleaned['long_short_ratio_summary']['sentiment']}")
+
+        if cleaned["liquidation_summary"].get("sentiment"):
+            sentiment_signals.append(
+                f"爆仓: {cleaned['liquidation_summary']['sentiment']}")
+
+        bullish_count = sum(1 for s in sentiment_signals
+                            if "bullish" in s.lower())
+        bearish_count = sum(1 for s in sentiment_signals
+                            if "bearish" in s.lower())
+
+        if bullish_count > bearish_count:
+            cleaned["market_sentiment"]["overall"] = "bullish"
+        elif bearish_count > bullish_count:
+            cleaned["market_sentiment"]["overall"] = "bearish"
+        else:
+            cleaned["market_sentiment"]["overall"] = "neutral"
+
+        cleaned["market_sentiment"]["signals"] = sentiment_signals
+
+        return cleaned
 
     async def close(self):
         """关闭连接"""

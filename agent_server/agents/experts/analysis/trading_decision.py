@@ -5,7 +5,8 @@
 import json
 import os
 import asyncio
-from typing import Dict, Any, Optional
+import time
+from typing import Dict, Any, Optional, List
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
@@ -20,7 +21,7 @@ from agent_server.agents.experts.utils import (
 
 class TradingDecisionExpert:
     name = "trading_decision"
-    
+
     async def _get_market_data(self, symbol: str) -> Dict[str, Any]:
         """
         获取市场行情数据（多空比、爆仓、支撑位等）
@@ -39,52 +40,55 @@ class TradingDecisionExpert:
             "funding_rate": None,
             "ticker_24h": {}
         }
-        
+
         try:
             import redis.asyncio as aioredis
-            
+
             redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
             redis_port = int(os.getenv("REDIS_PORT", 6379))
             redis_password = os.getenv("REDIS_PASSWORD", None)
             redis_db = int(os.getenv("REDIS_DB", 8))
-            
-            redis_client = aioredis.Redis(
-                host=redis_host,
-                port=redis_port,
-                password=redis_password,
-                db=redis_db,
-                decode_responses=True,
-                socket_connect_timeout=2,
-                socket_timeout=2
-            )
-            
+
+            redis_client = aioredis.Redis(host=redis_host,
+                                          port=redis_port,
+                                          password=redis_password,
+                                          db=redis_db,
+                                          decode_responses=True,
+                                          socket_connect_timeout=2,
+                                          socket_timeout=2)
+
             # 1. 获取当前价格
             try:
                 price_key = f"price:binance:{symbol}"
                 price_data = await redis_client.hgetall(price_key)
                 if price_data and "price" in price_data:
                     market_data["price"] = float(price_data["price"])
-                    market_data["bid_liquidity"] = float(price_data.get("bid", 0))
-                    market_data["ask_liquidity"] = float(price_data.get("ask", 0))
+                    market_data["bid_liquidity"] = float(
+                        price_data.get("bid", 0))
+                    market_data["ask_liquidity"] = float(
+                        price_data.get("ask", 0))
             except Exception as e:
                 print(f"⚠️  获取价格失败: {e}")
-            
+
             # 2. 获取多空比数据（从 market_raw）
             try:
                 from api.application.apps.indicators.market_raw_analysis import (
-                    read_market_raw,
-                    build_participant_structure
-                )
+                    read_market_raw, build_participant_structure)
                 raw_data = await read_market_raw("binance", symbol)
-                participant_structure = build_participant_structure(raw_data, symbol)
-                
-                market_data["long_short_ratio"] = participant_structure.get("participant_structure", {})
-                market_data["funding_rate"] = participant_structure.get("funding_rate", {})
-                market_data["ticker_24h"] = participant_structure.get("ticker", {})
-                market_data["market_summary"] = participant_structure.get("summary", {})
+                participant_structure = build_participant_structure(
+                    raw_data, symbol)
+
+                market_data["long_short_ratio"] = participant_structure.get(
+                    "participant_structure", {})
+                market_data["funding_rate"] = participant_structure.get(
+                    "funding_rate", {})
+                market_data["ticker_24h"] = participant_structure.get(
+                    "ticker", {})
+                market_data["market_summary"] = participant_structure.get(
+                    "summary", {})
             except Exception as e:
                 print(f"⚠️  获取多空比数据失败: {e}")
-            
+
             # 3. 获取爆仓数据
             try:
                 # 从 force_stats 获取爆仓统计
@@ -101,7 +105,7 @@ class TradingDecisionExpert:
                     }
             except Exception as e:
                 print(f"⚠️  获取爆仓数据失败: {e}")
-            
+
             # 4. 从指标数据中提取支撑位和阻力位
             try:
                 # 尝试从1m指标中获取支撑阻力位
@@ -121,12 +125,12 @@ class TradingDecisionExpert:
                         }
             except Exception as e:
                 print(f"⚠️  获取支撑阻力位失败: {e}")
-            
+
             await redis_client.aclose()
-            
+
         except Exception as e:
             print(f"⚠️  获取市场数据失败: {e}")
-        
+
         return market_data
 
     async def run(self, query: str) -> str:
@@ -201,7 +205,8 @@ class TradingDecisionExpert:
             model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
 
             # 构建 prompt（包含市场行情数据）
-            prompt = await self._build_decision_prompt(query_data, agent_results)
+            prompt = await self._build_decision_prompt(query_data,
+                                                       agent_results)
 
             agent = Agent(
                 model=model,
@@ -262,13 +267,13 @@ class TradingDecisionExpert:
                 ensure_ascii=False)
 
     async def _build_decision_prompt(self, query_data: Dict,
-                               agent_results: Dict) -> str:
+                                     agent_results: Dict) -> str:
         """构建决策 prompt（包含市场行情数据）"""
         symbol = query_data.get("symbol", "BTCUSDT")
-        
+
         # 获取市场行情数据
         market_data = await self._get_market_data(symbol)
-        
+
         prompt_parts = []
 
         # 事件信息
@@ -287,7 +292,8 @@ class TradingDecisionExpert:
         # 市场行情数据
         prompt_parts.append("\n## 市场行情数据")
         prompt_parts.append("以下是从实时市场获取的行情数据，请结合这些数据做出更专业的交易决策：")
-        prompt_parts.append(json.dumps(market_data, indent=2, ensure_ascii=False))
+        prompt_parts.append(
+            json.dumps(market_data, indent=2, ensure_ascii=False))
 
         # Agent 结果
         prompt_parts.append("\n## Agent 分析结果")
@@ -487,8 +493,9 @@ class TradingDecisionExpert:
         elif isinstance(decision_value, str):
             decision_text = decision_value.lower()
         else:
-            decision_text = str(decision_value).lower() if decision_value else ""
-        
+            decision_text = str(
+                decision_value).lower() if decision_value else ""
+
         action = decision.get("action", "hold")
 
         # 处理部分获利了结（partial_take_profit）操作
@@ -675,65 +682,82 @@ class TradingDecisionExpert:
 
     async def _analyze_multi_timeframe(self, query_data: Dict) -> str:
         """
-        分析多时间维度的结果
+        分析多时间维度的结果（支持格式化指标数据和Agent分析结果两种模式）
         
         Args:
-            query_data: 包含多时间维度分析结果的数据
+            query_data: 包含多时间维度数据
+                - indicators_by_timeframe: 格式化后的指标数据（新格式）
+                - analysis_by_timeframe: Agent分析结果（旧格式，兼容）
         
         Returns:
             JSON 字符串，包含交易决策
         """
         try:
             symbol = query_data.get("symbol", "BTCUSDT")
+            indicators_by_timeframe = query_data.get("indicators_by_timeframe",
+                                                     {})
             analysis_by_timeframe = query_data.get("analysis_by_timeframe", {})
             base_event = query_data.get("base_event", {})
 
-            if not analysis_by_timeframe:
+            # 判断使用哪种数据格式
+            use_formatted_indicators = bool(indicators_by_timeframe)
+            integrated_agent_results = {}  # 初始化，避免未定义错误
+
+            if not indicators_by_timeframe and not analysis_by_timeframe:
                 return json.dumps(
                     {
                         "action": "hold",
                         "symbol": symbol,
                         "confidence": 0.0,
-                        "rationale": "未找到多时间维度分析结果",
-                        "error": "no_multi_timeframe_results"
+                        "rationale": "未找到多时间维度数据",
+                        "error": "no_multi_timeframe_data"
                     },
                     ensure_ascii=False)
 
-            # 整合各时间维度的 Agent 结果
-            integrated_agent_results = {}
+            # 获取前10分钟的分析结果作为参考（在构建prompt之前）
+            historical_analysis = await self._get_historical_analysis(
+                symbol, minutes=10)
 
-            for timeframe, analysis_result in analysis_by_timeframe.items():
-                if "error" in analysis_result:
-                    continue
+            # 如果有历史分析，添加到query_data中
+            if historical_analysis:
+                query_data["historical_analysis"] = historical_analysis
+                print(f"✅ 获取到 {len(historical_analysis)} 条历史分析结果（前10分钟）")
 
-                # 从每个时间维度的分析结果中提取 Agent 结果
-                names = analysis_result.get("names", [])
-                outputs = analysis_result.get("outputs", [])
-
-                for name, output_str in zip(names, outputs):
-                    if name not in integrated_agent_results:
-                        integrated_agent_results[name] = {
-                            "timeframes": [],
-                            "results": []
-                        }
-
-                    try:
-                        output_obj = json.loads(output_str) if isinstance(
-                            output_str, str) else output_str
-                        integrated_agent_results[name]["timeframes"].append(
-                            timeframe)
-                        integrated_agent_results[name]["results"].append({
-                            "timeframe":
-                            timeframe,
-                            "result":
-                            output_obj
-                        })
-                    except:
-                        pass
-
-            # 构建决策 prompt（包含多时间维度信息和市场行情数据）
-            prompt = await self._build_multi_timeframe_prompt(
-                query_data, integrated_agent_results, analysis_by_timeframe)
+            # 构建决策 prompt（包含历史分析）
+            if use_formatted_indicators:
+                # 新格式：使用格式化后的指标数据
+                prompt = await self._build_multi_timeframe_prompt_from_indicators(
+                    query_data, indicators_by_timeframe)
+            else:
+                # 旧格式：使用Agent分析结果（兼容）
+                for timeframe, analysis_result in analysis_by_timeframe.items(
+                ):
+                    if "error" in analysis_result:
+                        continue
+                    names = analysis_result.get("names", [])
+                    outputs = analysis_result.get("outputs", [])
+                    for name, output_str in zip(names, outputs):
+                        if name not in integrated_agent_results:
+                            integrated_agent_results[name] = {
+                                "timeframes": [],
+                                "results": []
+                            }
+                        try:
+                            output_obj = json.loads(output_str) if isinstance(
+                                output_str, str) else output_str
+                            integrated_agent_results[name][
+                                "timeframes"].append(timeframe)
+                            integrated_agent_results[name]["results"].append({
+                                "timeframe":
+                                timeframe,
+                                "result":
+                                output_obj
+                            })
+                        except:
+                            pass
+                prompt = await self._build_multi_timeframe_prompt(
+                    query_data, integrated_agent_results,
+                    analysis_by_timeframe)
 
             # 调用 LLM 进行决策分析
             cfg = get_agent_config(self.name)
@@ -775,9 +799,26 @@ class TradingDecisionExpert:
                 decision = self._fallback_multi_timeframe_decision(
                     query_data, integrated_agent_results)
 
-            # 格式化决策
+            # 格式化决策（包含预测的开仓、止盈止损位置）
+            # 注意：历史分析已在prompt构建前获取并添加到query_data中
             formatted_decision = self._format_multi_timeframe_decision(
                 decision, query_data, integrated_agent_results)
+
+            # 生成trade_json（无论是否hold都生成，包含预测位置）
+            trade_json = await self._generate_trade_json(
+                formatted_decision, query_data)
+            formatted_decision["trade_json"] = trade_json
+
+            # 如果不是hold，推送到Redis
+            if formatted_decision.get("action") != "hold":
+                execution_result = await self._execute_trade_push(
+                    formatted_decision, trade_json)
+                formatted_decision["execution_result"] = execution_result
+            else:
+                print(f"ℹ️  决策为hold，不推送交易")
+
+            # 打印trade_json日志
+            self._print_trade_json_log(formatted_decision, trade_json)
 
             return _json_dumps_safe(formatted_decision)
 
@@ -795,14 +836,14 @@ class TradingDecisionExpert:
                 },
                 ensure_ascii=False)
 
-    async def _build_multi_timeframe_prompt(self, query_data: Dict,
-                                      integrated_agent_results: Dict,
-                                      analysis_by_timeframe: Dict) -> str:
+    async def _build_multi_timeframe_prompt(
+            self, query_data: Dict, integrated_agent_results: Dict,
+            analysis_by_timeframe: Dict) -> str:
         """构建多时间维度决策 prompt（包含市场行情数据）"""
         from agent_server.configs.prompts.trading_decision import prompt as base_prompt
 
         symbol = query_data.get("symbol", "BTCUSDT")
-        
+
         # 获取市场行情数据（如果 query_data 中已有，直接使用；否则获取）
         if "market_data" in query_data:
             market_data = query_data["market_data"]
@@ -837,7 +878,17 @@ class TradingDecisionExpert:
         # 添加市场行情数据
         prompt_parts.append("\n### 市场行情数据")
         prompt_parts.append("以下是从实时市场获取的行情数据，请结合这些数据做出更专业的交易决策：")
-        prompt_parts.append(json.dumps(market_data, indent=2, ensure_ascii=False))
+        prompt_parts.append(
+            json.dumps(market_data, indent=2, ensure_ascii=False))
+
+        # 历史分析结果（前10分钟）
+        historical_analysis = query_data.get("historical_analysis", [])
+        if historical_analysis:
+            prompt_parts.append("\n### 历史分析结果参考（前10分钟）")
+            prompt_parts.append("以下是从Redis memory中获取的前10分钟分析结果，请作为参考：")
+            prompt_parts.append(
+                json.dumps(historical_analysis, indent=2, ensure_ascii=False))
+            prompt_parts.append("\n**注意**：请结合历史分析结果，判断当前市场趋势是否延续或反转。")
 
         prompt_parts.append("\n### 各时间维度的详细指标分析")
         for timeframe, analysis_result in analysis_by_timeframe.items():
@@ -845,13 +896,14 @@ class TradingDecisionExpert:
                 continue
 
             prompt_parts.append(f"\n#### {timeframe} 时间维度")
-            
+
             # 提取该时间维度的详细指标数据
             indicators = analysis_result.get("indicators", {})
             if indicators:
                 prompt_parts.append(f"\n**{timeframe} 技术指标详情:**")
-                prompt_parts.append(json.dumps(indicators, indent=2, ensure_ascii=False))
-            
+                prompt_parts.append(
+                    json.dumps(indicators, indent=2, ensure_ascii=False))
+
             names = analysis_result.get("names", [])
             outputs = analysis_result.get("outputs", [])
 
@@ -898,6 +950,191 @@ class TradingDecisionExpert:
 
         prompt_parts.append("\n\n请根据以上多时间维度的分析结果和市场行情数据，生成专业的综合交易决策。")
         prompt_parts.append("特别注意：你的决策应该基于技术指标和市场行情数据的综合分析，而不是简单的信号融合。")
+
+        return "\n".join(prompt_parts)
+
+    async def _build_multi_timeframe_prompt_from_indicators(
+            self, query_data: Dict, indicators_by_timeframe: Dict) -> str:
+        """
+        基于格式化后的指标数据构建多时间维度决策 prompt（新格式）
+        
+        Args:
+            query_data: 包含市场数据等的查询数据
+            indicators_by_timeframe: 格式化后的各时间维度指标数据
+        
+        Returns:
+            完整的 prompt 字符串
+        """
+        from agent_server.configs.prompts.trading_decision import prompt as base_prompt
+
+        symbol = query_data.get("symbol", "BTCUSDT")
+        market_data = query_data.get("market_data", {})
+
+        prompt_parts = []
+        prompt_parts.append(base_prompt)
+        prompt_parts.append("\n\n## 多时间维度技术指标分析（直接分析模式）")
+        prompt_parts.append("\n你收到的是经过格式化的多时间维度技术指标数据，需要专业性地分析是否符合开仓条件。")
+
+        # 时间维度信息
+        prompt_parts.append("\n### 时间维度信息")
+        prompt_parts.append(
+            json.dumps(
+                {
+                    "symbol": symbol,
+                    "found_timeframes": list(indicators_by_timeframe.keys()),
+                    "timestamp": query_data.get("timestamp")
+                },
+                indent=2,
+                ensure_ascii=False))
+
+        # 各时间维度的格式化指标数据
+        prompt_parts.append("\n### 各时间维度的技术指标数据")
+        prompt_parts.append("以下数据已经过格式化处理，提取了关键指标值和信号，请直接使用：")
+
+        for timeframe, formatted_indicators in indicators_by_timeframe.items():
+            prompt_parts.append(f"\n#### {timeframe} 时间维度")
+            prompt_parts.append(
+                json.dumps(formatted_indicators, indent=2, ensure_ascii=False))
+
+        # 市场行情数据
+        prompt_parts.append("\n### 市场行情数据（已清洗）")
+        prompt_parts.append("以下市场数据已经过清洗，提取了最能影响分析的关键指标：")
+        prompt_parts.append(
+            json.dumps(market_data, indent=2, ensure_ascii=False))
+
+        # 历史分析结果（前10分钟）
+        historical_analysis = query_data.get("historical_analysis", [])
+        if historical_analysis:
+            prompt_parts.append("\n### 历史分析结果参考（前10分钟）")
+            prompt_parts.append("以下是从Redis memory中获取的前10分钟分析结果，请作为参考：")
+            prompt_parts.append(
+                json.dumps(historical_analysis, indent=2, ensure_ascii=False))
+            prompt_parts.append("\n**注意**：请结合历史分析结果，判断当前市场趋势是否延续或反转。")
+
+        # 专业开仓条件分析规则
+        prompt_parts.append("\n\n### 专业开仓条件分析规则")
+        prompt_parts.append("""
+作为专业的交易决策专家，你需要严格按照以下条件判断是否开仓：
+
+#### 1. 多时间维度信号一致性（必要条件）
+- **强烈看涨信号（LONG开仓）**：
+  - 至少3个时间维度（包括1h）显示看涨信号
+  - 1h周期必须显示看涨趋势（MACD金叉、RSI<70、价格在EMA20上方等）
+  - 15m和5m周期信号一致看涨
+  - 信号摘要中overall_trend为"bullish"
+  
+- **强烈看跌信号（SHORT开仓）**：
+  - 至少3个时间维度（包括1h）显示看跌信号
+  - 1h周期必须显示看跌趋势（MACD死叉、RSI>30、价格在EMA20下方等）
+  - 15m和5m周期信号一致看跌
+  - 信号摘要中overall_trend为"bearish"
+
+- **信号不一致或不足**：
+  - 如果只有1-2个时间维度有信号 → hold
+  - 如果1h周期信号不明确 → hold
+  - 如果短周期和长周期信号冲突 → hold
+
+#### 2. 技术指标强度评估（必要条件）
+- **趋势指标（MACD、EMA）**：
+  - MACD金叉 + EMA多头排列（EMA20>EMA50>EMA200）→ 强烈看涨
+  - MACD死叉 + EMA空头排列（EMA20<EMA50<EMA200）→ 强烈看跌
+  - MACD和EMA信号不一致 → 降低置信度或hold
+  
+- **动量指标（RSI、KDJ、ADX）**：
+  - RSI在30-70之间 + KDJ金叉 + ADX>25 → 强烈看涨
+  - RSI在30-70之间 + KDJ死叉 + ADX>25 → 强烈看跌
+  - RSI超买（>70）或超卖（<30）→ 谨慎，可能需要等待回调
+  - ADX<20（弱趋势）→ 降低置信度或hold
+  
+- **波动率指标（Bollinger Bands）**：
+  - 价格突破上轨 + 其他指标看涨 → 可能继续上涨，但需谨慎
+  - 价格跌破下轨 + 其他指标看跌 → 可能继续下跌，但需谨慎
+  - 价格在布林带中轨附近 → 等待明确方向
+
+#### 3. 市场行情数据验证（重要参考）
+- **多空比数据**：
+  - 多空比>1.1 + 技术指标看涨 → 信号更强烈
+  - 多空比<0.9 + 技术指标看跌 → 信号更强烈
+  - 多空比极端（>1.2或<0.8）→ 可能存在反转风险，需谨慎
+  
+- **爆仓数据**：
+  - 大量空单爆仓（sell_liquidations多） + 技术指标看涨 → 可能推动价格上涨
+  - 大量多单爆仓（buy_liquidations多） + 技术指标看跌 → 可能推动价格下跌
+  - 爆仓数据异常（total_liquidations很大）→ 市场波动大，降低杠杆或hold
+  
+- **支撑阻力位**：
+  - 当前价格接近阻力位（R1/R2/R3）→ 做多需谨慎，可能回调
+  - 当前价格接近支撑位（S1/S2/S3）→ 做空需谨慎，可能反弹
+  - 价格在支撑位附近 + 技术指标看涨 → 可能是好的做多点
+  - 价格在阻力位附近 + 技术指标看跌 → 可能是好的做空点
+
+#### 4. 综合开仓条件（必须同时满足）
+**LONG开仓条件（全部满足）**：
+1. ✅ 至少3个时间维度（包括1h）显示看涨信号
+2. ✅ 1h周期MACD金叉或EMA多头排列
+3. ✅ RSI在30-70之间（未严重超买）
+4. ✅ ADX>20（有明确趋势）
+5. ✅ 市场行情数据不强烈看跌（多空比不极端、爆仓数据不异常）
+6. ✅ 当前价格不在强阻力位附近
+7. ✅ 综合置信度 >= 0.75
+
+**SHORT开仓条件（全部满足）**：
+1. ✅ 至少3个时间维度（包括1h）显示看跌信号
+2. ✅ 1h周期MACD死叉或EMA空头排列
+3. ✅ RSI在30-70之间（未严重超卖）
+4. ✅ ADX>20（有明确趋势）
+5. ✅ 市场行情数据不强烈看涨（多空比不极端、爆仓数据不异常）
+6. ✅ 当前价格不在强支撑位附近
+7. ✅ 综合置信度 >= 0.75
+
+**HOLD条件（满足任一）**：
+- ❌ 时间维度信号不一致或不足
+- ❌ 1h周期信号不明确
+- ❌ RSI严重超买（>75）或超卖（<25）
+- ❌ ADX<20（弱趋势，震荡市场）
+- ❌ 市场行情数据强烈冲突（如技术指标看涨但多空比极端看跌）
+- ❌ 价格在关键支撑/阻力位附近且信号不明确
+- ❌ 综合置信度 < 0.75
+
+#### 5. 风险控制参数设置
+- **止损设置**：
+  - LONG: 设置在最近支撑位下方或当前价格的-1.5%到-2.5%
+  - SHORT: 设置在最近阻力位上方或当前价格的+1.5%到+2.5%
+  
+- **止盈设置**：
+  - LONG: 设置在最近阻力位附近或当前价格的+2%到+4%
+  - SHORT: 设置在最近支撑位附近或当前价格的-2%到-4%
+  
+- **杠杆设置**：
+  - 信号强烈 + 风险低 → 5-10倍杠杆
+  - 信号中等 + 风险中 → 3-5倍杠杆
+  - 信号弱或风险高 → 1-3倍杠杆或hold
+
+#### 6. 决策输出要求
+- **rationale（决策理由）**：必须详细说明：
+  1. 各时间维度的信号情况（哪些看涨/看跌）
+  2. 关键技术指标的值和信号（MACD、RSI、ADX等）
+  3. 市场行情数据的支持情况（多空比、爆仓、支撑阻力位）
+  4. 为什么符合/不符合开仓条件
+  5. 风险控制措施（止损止盈设置理由）
+  
+- **confidence（置信度）**：
+  - 0.9-1.0: 信号非常强烈，所有条件完美符合
+  - 0.75-0.9: 信号强烈，主要条件符合
+  - 0.6-0.75: 信号中等，部分条件符合（建议hold）
+  - <0.6: 信号弱，条件不符合（必须hold）
+
+#### 7. 注意事项
+- **保守原则**：当不确定时，必须选择hold
+- **趋势优先**：长周期（1h）信号权重最高，短周期（1m、5m）仅作参考
+- **数据验证**：技术指标和市场行情数据必须相互验证，不能冲突
+- **风险第一**：如果任何风险指标异常，优先选择hold
+        """)
+
+        prompt_parts.append("\n\n请根据以上格式化后的技术指标数据和市场行情数据，专业性地分析是否符合开仓条件。")
+        prompt_parts.append(
+            "**重要**：你的分析必须基于数据，详细说明每个判断依据，不能简单地说'信号看涨'或'信号看跌'。")
+        prompt_parts.append("**输出要求**：rationale字段必须使用中文，详细说明分析过程和判断依据。")
 
         return "\n".join(prompt_parts)
 
@@ -1111,4 +1348,345 @@ class TradingDecisionExpert:
             "analysis_count": len(query_data.get("analysis_by_timeframe", {}))
         }
 
+        # 添加预测的开仓位置、止盈止损位置（固定格式）
+        # 优先从formatted中获取，其次从market_data中获取
+        current_price = formatted.get("current_price")
+        if not current_price or current_price == 0.0:
+            current_price = query_data.get("market_data",
+                                           {}).get("current_price")
+
+        # 无论action是什么，都计算预测位置（用于参考）
+        if current_price and current_price > 0:
+            formatted[
+                "predicted_positions"] = self._calculate_predicted_positions(
+                    formatted, current_price, query_data)
+        else:
+            # 如果还是没有价格，尝试从indicators_by_timeframe中获取
+            indicators_by_timeframe = query_data.get("indicators_by_timeframe",
+                                                     {})
+            for timeframe in ["1m", "5m", "15m", "1h"]:
+                if timeframe in indicators_by_timeframe:
+                    price_info = indicators_by_timeframe[timeframe].get(
+                        "price_info", {})
+                    if price_info.get("close"):
+                        current_price = price_info["close"]
+                        break
+
+            if current_price and current_price > 0:
+                formatted[
+                    "predicted_positions"] = self._calculate_predicted_positions(
+                        formatted, current_price, query_data)
+            else:
+                # 最后尝试：使用market_data中的current_price
+                market_price = query_data.get("market_data",
+                                              {}).get("current_price")
+                if market_price and market_price > 0:
+                    formatted[
+                        "predicted_positions"] = self._calculate_predicted_positions(
+                            formatted, market_price, query_data)
+                else:
+                    formatted["predicted_positions"] = {
+                        "entry_price": None,
+                        "entry_reason": "无法获取当前价格",
+                        "stop_loss_price": None,
+                        "stop_loss_reason": "",
+                        "take_profit_price": None,
+                        "take_profit_reason": ""
+                    }
+
         return formatted
+
+    async def _get_historical_analysis(self,
+                                       symbol: str,
+                                       minutes: int = 10
+                                       ) -> List[Dict[str, Any]]:
+        """
+        获取前N分钟的分析结果作为参考
+        
+        Args:
+            symbol: 交易对
+            minutes: 时间范围（分钟）
+        
+        Returns:
+            历史分析结果列表
+        """
+        try:
+            from agent_server.memory.store import MemoryStore
+            import redis.asyncio as aioredis
+
+            # 连接Redis
+            redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
+            redis_port = int(os.getenv("REDIS_PORT", 6379))
+            redis_password = os.getenv("REDIS_PASSWORD", None)
+            redis_db = int(os.getenv("REDIS_DB", 1))
+
+            redis_client = aioredis.Redis(host=redis_host,
+                                          port=redis_port,
+                                          password=redis_password,
+                                          db=redis_db,
+                                          decode_responses=True,
+                                          socket_connect_timeout=2,
+                                          socket_timeout=2)
+
+            # 从memory stream读取历史数据
+            memory_key = f"memory:{symbol}:events"
+            current_time_ms = int(time.time() * 1000)
+            min_time_ms = current_time_ms - (minutes * 60 * 1000)
+
+            # 读取stream中的历史数据
+            historical_results = []
+            try:
+                # 使用XRANGE读取指定时间范围内的数据
+                entries = await redis_client.xrange(memory_key,
+                                                    min=f"{min_time_ms}-0",
+                                                    max=f"{current_time_ms}-0")
+
+                for entry_id, fields in entries:
+                    if "data" in fields:
+                        try:
+                            data = json.loads(fields["data"])
+                            # 只提取trading_decision相关数据
+                            if "trading_decision" in data:
+                                historical_results.append({
+                                    "timestamp":
+                                    fields.get("ts", entry_id),
+                                    "trading_decision":
+                                    data.get("trading_decision", {}),
+                                    "symbol":
+                                    data.get("payload",
+                                             {}).get("symbol", symbol)
+                                })
+                        except:
+                            pass
+            except Exception as e:
+                # 如果stream不存在或读取失败，尝试其他方式
+                print(f"⚠️  读取历史分析失败: {e}")
+
+            await redis_client.aclose()
+            return historical_results
+
+        except Exception as e:
+            print(f"⚠️  获取历史分析失败: {e}")
+            return []
+
+    def _calculate_predicted_positions(self, decision: Dict,
+                                       current_price: float,
+                                       query_data: Dict) -> Dict[str, Any]:
+        """
+        计算预测的开仓位置、止盈止损位置
+        
+        Args:
+            decision: 交易决策
+            current_price: 当前价格
+            query_data: 查询数据（包含市场数据等）
+        
+        Returns:
+            包含预测位置的字典
+        """
+        action = decision.get("action", "hold")
+        position_side = decision.get("positionSide", "LONG")
+
+        # 从市场数据获取支撑阻力位
+        market_data = query_data.get("market_data", {})
+        support_resistance = market_data.get("support_resistance_summary", {})
+        nearest_support = support_resistance.get("nearest_support")
+        nearest_resistance = support_resistance.get("nearest_resistance")
+
+        predicted = {
+            "entry_price": current_price,  # 默认使用当前价格作为开仓价
+            "stop_loss_price": None,
+            "take_profit_price": None,
+            "entry_reason": "当前市场价格",
+            "stop_loss_reason": "",
+            "take_profit_reason": ""
+        }
+
+        # 无论action是什么，都计算预测位置（用于参考和下次分析）
+        # 根据positionSide或默认LONG来计算
+        if not position_side or position_side == "LONG":
+            # 做多：开仓价、止损价、止盈价
+            predicted["entry_price"] = current_price
+
+            # 止损：使用支撑位或当前价格的-2%
+            if nearest_support and nearest_support < current_price:
+                predicted[
+                    "stop_loss_price"] = nearest_support * 0.995  # 支撑位下方0.5%
+                predicted["stop_loss_reason"] = f"支撑位下方（S1: {nearest_support}）"
+            else:
+                predicted["stop_loss_price"] = current_price * 0.98  # 当前价格-2%
+                predicted["stop_loss_reason"] = "当前价格-2%"
+
+            # 止盈：使用阻力位或当前价格的+3%
+            if nearest_resistance and nearest_resistance > current_price:
+                predicted[
+                    "take_profit_price"] = nearest_resistance * 0.995  # 阻力位附近
+                predicted[
+                    "take_profit_reason"] = f"阻力位附近（R1: {nearest_resistance}）"
+            else:
+                predicted[
+                    "take_profit_price"] = current_price * 1.03  # 当前价格+3%
+                predicted["take_profit_reason"] = "当前价格+3%"
+
+        elif position_side == "SHORT":
+            # 做空：开仓价、止损价、止盈价
+            predicted["entry_price"] = current_price
+
+            # 止损：使用阻力位或当前价格的+2%
+            if nearest_resistance and nearest_resistance > current_price:
+                predicted[
+                    "stop_loss_price"] = nearest_resistance * 1.005  # 阻力位上方0.5%
+                predicted[
+                    "stop_loss_reason"] = f"阻力位上方（R1: {nearest_resistance}）"
+            else:
+                predicted["stop_loss_price"] = current_price * 1.02  # 当前价格+2%
+                predicted["stop_loss_reason"] = "当前价格+2%"
+
+            # 止盈：使用支撑位或当前价格的-3%
+            if nearest_support and nearest_support < current_price:
+                predicted[
+                    "take_profit_price"] = nearest_support * 1.005  # 支撑位附近
+                predicted[
+                    "take_profit_reason"] = f"支撑位附近（S1: {nearest_support}）"
+            else:
+                predicted[
+                    "take_profit_price"] = current_price * 0.97  # 当前价格-3%
+                predicted["take_profit_reason"] = "当前价格-3%"
+
+        # 如果decision中已有stop_loss和take_profit，优先使用
+        if decision.get("stop_loss"):
+            predicted["stop_loss_price"] = decision.get("stop_loss")
+            predicted["stop_loss_reason"] = "决策中指定"
+        if decision.get("take_profit"):
+            predicted["take_profit_price"] = decision.get("take_profit")
+            predicted["take_profit_reason"] = "决策中指定"
+
+        return predicted
+
+    async def _generate_trade_json(self, decision: Dict,
+                                   query_data: Dict) -> Dict[str, Any]:
+        """
+        生成trade_json（无论是否hold都生成，包含预测位置）
+        
+        Args:
+            decision: 交易决策
+            query_data: 查询数据
+        
+        Returns:
+            trade_json字典
+        """
+        try:
+            from agent_server.utils.trading_executor import get_executor
+
+            executor = await get_executor()
+
+            # 构建完整的决策数据（包含预测位置）
+            full_decision = decision.copy()
+            predicted_positions = decision.get("predicted_positions", {})
+
+            # 如果决策中没有stop_loss/take_profit，使用预测位置
+            if not full_decision.get("stop_loss") and predicted_positions.get(
+                    "stop_loss_price"):
+                full_decision["stop_loss"] = predicted_positions[
+                    "stop_loss_price"]
+            if not full_decision.get(
+                    "take_profit") and predicted_positions.get(
+                        "take_profit_price"):
+                full_decision["take_profit"] = predicted_positions[
+                    "take_profit_price"]
+            if not full_decision.get("openAvgPx") and predicted_positions.get(
+                    "entry_price"):
+                full_decision["openAvgPx"] = predicted_positions["entry_price"]
+
+            # 使用executor的_build_trade_json方法生成
+            trade_json = executor._build_trade_json(full_decision)
+
+            # 添加预测位置信息
+            trade_json["predicted_positions"] = predicted_positions
+
+            return trade_json
+
+        except Exception as e:
+            print(f"⚠️  生成trade_json失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
+    async def _execute_trade_push(self, decision: Dict,
+                                  trade_json: Dict) -> Dict[str, Any]:
+        """
+        执行交易推送（如果不是hold）
+        
+        Args:
+            decision: 交易决策
+            trade_json: trade_json数据
+        
+        Returns:
+            执行结果
+        """
+        try:
+            from agent_server.utils.trading_executor import get_executor
+
+            executor = await get_executor()
+            execution_result = await executor.execute_trade(decision)
+
+            return execution_result
+
+        except Exception as e:
+            print(f"⚠️  执行交易推送失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"success": False, "error": str(e)}
+
+    def _print_trade_json_log(self, decision: Dict, trade_json: Dict) -> None:
+        """
+        打印trade_json日志
+        
+        Args:
+            decision: 交易决策
+            trade_json: trade_json数据
+        """
+        print("\n" + "=" * 80)
+        print("📊 最终交易决策结果")
+        print("=" * 80)
+
+        action = decision.get("action", "hold")
+        symbol = decision.get("symbol", "UNKNOWN")
+        confidence = decision.get("confidence", 0.0)
+        rationale = decision.get("rationale", "")
+
+        print(f"\n🎯 决策动作: {action.upper()}")
+        print(f"📈 交易对: {symbol}")
+        print(f"💯 置信度: {confidence:.2%}")
+        print(f"📝 决策理由: {rationale}")
+
+        if action != "hold":
+            position_side = decision.get("positionSide", "LONG")
+            side = decision.get("side", "BUY")
+            leverage = decision.get("leverage", 5.0)
+            sums = decision.get("sums", "0.1")
+            open_price = decision.get("openAvgPx", 0.0)
+
+            print(f"\n📊 交易参数:")
+            print(f"   方向: {position_side} ({side})")
+            print(f"   杠杆: {leverage}x")
+            print(f"   数量: {sums}")
+            print(f"   开仓价: {open_price}")
+
+            predicted = decision.get("predicted_positions", {})
+            if predicted:
+                print(f"\n📍 预测位置:")
+                print(
+                    f"   开仓价: {predicted.get('entry_price', 'N/A')} ({predicted.get('entry_reason', '')})"
+                )
+                if predicted.get("stop_loss_price"):
+                    print(
+                        f"   止损价: {predicted.get('stop_loss_price', 'N/A')} ({predicted.get('stop_loss_reason', '')})"
+                    )
+                if predicted.get("take_profit_price"):
+                    print(
+                        f"   止盈价: {predicted.get('take_profit_price', 'N/A')} ({predicted.get('take_profit_reason', '')})"
+                    )
+
+        print(f"\n📦 Trade JSON:")
+        print(json.dumps(trade_json, indent=2, ensure_ascii=False))
+        print("=" * 80 + "\n")

@@ -125,8 +125,8 @@ class TradingExecutor:
             "investment": float(decision.get("investment", self.default_investment)),
             "benchMark": float(decision.get("benchMark", self.default_benchmark)),
             "trade_trigger_mode": 0,
-            "sl_trigger_px": float(decision.get("stop_loss_px", 100.0)) if "stop_loss" in decision else 100.0,
-            "tp_trigger_px": float(decision.get("take_profit_px", 0.0)) if "take_profit" in decision else 0.0,
+            "sl_trigger_px": float(decision.get("stop_loss") or decision.get("stop_loss_px") or 100.0) if (decision.get("stop_loss") or decision.get("stop_loss_px")) else 100.0,
+            "tp_trigger_px": float(decision.get("take_profit") or decision.get("take_profit_px") or 0.0) if (decision.get("take_profit") or decision.get("take_profit_px")) else 0.0,
             
             # API 配置
             "acc": self.api_config,
