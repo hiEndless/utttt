@@ -1,5 +1,5 @@
 import json
-from signals import EMA, MA, MACD, RSI, KDJ, BollingerBandSignal, VolatilitySignal, SupportResistance
+from signals.aggregate import compute_all_indicators
 
 try:
     from .redis_client import get_redis_client
@@ -8,16 +8,7 @@ except ImportError:
 
 
 def calculate_indicators(klines_data):
-    return {
-        "boll": BollingerBandSignal(klines_data).calculate(),
-        "ema": EMA(klines_data).calculate(),
-        "ma": MA(klines_data).calculate(),
-        "rsi": RSI(klines_data).calculate(),
-        "macd": MACD(klines_data).calculate(),
-        "kdj": KDJ(klines_data).calculate(),
-        "sr": SupportResistance(klines_data).calculate(),
-        "vol": VolatilitySignal(klines_data).calculate(),
-    }
+    return compute_all_indicators(klines_data)
 
 
 # -----------------------------
