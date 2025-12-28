@@ -1063,16 +1063,13 @@ class MultiTimeframeAnalyzer:
             "market_sentiment": {}
         }
 
-        # 1. 价格信息
+        # 1. 价格信息（精简版，只保留关键数据）
         if raw_market_data.get("ticker_24h"):
             ticker = raw_market_data["ticker_24h"]
             if isinstance(ticker, dict):
+                # 只保留价格变化百分比，其他数据对决策影响较小
                 cleaned["price_change_24h"] = {
-                    "change": ticker.get("priceChange"),
-                    "change_pct": ticker.get("priceChangePercent"),
-                    "high_24h": ticker.get("highPrice"),
-                    "low_24h": ticker.get("lowPrice"),
-                    "volume_24h": ticker.get("volume")
+                    "change_pct": ticker.get("priceChangePercent")  # 只保留涨跌幅百分比
                 }
 
         # 2. 多空比数据清洗
@@ -1218,16 +1215,15 @@ class MultiTimeframeAnalyzer:
                         current_price = None
 
                     if current_price is not None:
+                        # 精简版：只保留最近的支撑阻力位和R1/S1
                         cleaned["support_resistance_summary"] = {
                             "resistance_levels": {
                                 "R1": sr.get("R1"),
-                                "R2": sr.get("R2"),
-                                "R3": sr.get("R3")
+                                "R2": sr.get("R2")  # 只保留R1和R2
                             },
                             "support_levels": {
                                 "S1": sr.get("S1"),
-                                "S2": sr.get("S2"),
-                                "S3": sr.get("S3")
+                                "S2": sr.get("S2")  # 只保留S1和S2
                             },
                             "nearest_resistance": None,
                             "nearest_support": None
@@ -1264,14 +1260,12 @@ class MultiTimeframeAnalyzer:
                             cleaned["support_resistance_summary"][
                                 "nearest_support"] = max(below_price)
 
-        # 5. 资金费率信息
+        # 5. 资金费率信息（精简版，只保留费率值）
         if raw_market_data.get("funding_rate"):
             fr = raw_market_data["funding_rate"]
             if isinstance(fr, dict):
                 cleaned["funding_rate_info"] = {
-                    "funding_rate": fr.get("fundingRate"),
-                    "next_funding_time": fr.get("nextFundingTime"),
-                    "mark_price": fr.get("markPrice")
+                    "funding_rate": fr.get("fundingRate")  # 只保留资金费率值
                 }
 
         # 6. 市场情绪综合判断

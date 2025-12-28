@@ -289,11 +289,12 @@ class TradingDecisionExpert:
                 indent=2,
                 ensure_ascii=False))
 
-        # 市场行情数据
-        prompt_parts.append("\n## 市场行情数据")
-        prompt_parts.append("以下是从实时市场获取的行情数据，请结合这些数据做出更专业的交易决策：")
+        # 市场行情数据（精简版）
+        prompt_parts.append("\n## 市场行情数据（关键指标）")
+        prompt_parts.append("以下市场数据已经过优化，只包含影响交易决策的关键指标：")
+        key_market_data = self._extract_key_market_data(market_data)
         prompt_parts.append(
-            json.dumps(market_data, indent=2, ensure_ascii=False))
+            json.dumps(key_market_data, indent=2, ensure_ascii=False))
 
         # Agent 结果
         prompt_parts.append("\n## Agent 分析结果")
@@ -378,6 +379,180 @@ class TradingDecisionExpert:
                 "confidence": avg_confidence,
                 "rationale": "信号不明确或置信度不足，保持不动"
             }
+
+    def _extract_key_market_data(self, market_data: Dict) -> Dict:
+        """
+        提取关键市场数据（精简版），只保留最重要的市场信息
+        
+        Args:
+            market_data: 完整的市场数据（可能是原始数据或清洗后的数据）
+        
+        Returns:
+            精简后的关键市场数据
+        """
+        key_data = {}
+        
+        # 当前价格（兼容多种格式）
+        if "current_price" in market_data:
+            key_data["current_price"] = market_data["current_price"]
+        elif "price" in market_data:
+            key_data["current_price"] = market_data["price"]
+        
+        # 多空比（关键）- 兼容多种格式
+        long_short = market_data.get("long_short_ratio_summary", {})
+        if not long_short:
+            # 尝试从原始格式获取
+            long_short_raw = market_data.get("long_short_ratio", {})
+            if long_short_raw and isinstance(long_short_raw, dict):
+                # 尝试从 participant_structure 中提取
+                account_ratio = long_short_raw.get("globalLongShortAccountRatio", {})
+                for period in ["5m", "15m", "1h", "30m", "1m"]:
+                    if period in account_ratio:
+                        current = account_ratio[period].get("current", {})
+                        long_pct = current.get("long_pct")
+                        short_pct = current.get("short_pct")
+                        if long_pct is not None and short_pct is not None:
+                            long_short = {
+                                "long_accounts_pct": long_pct * 100,
+                                "short_accounts_pct": short_pct * 100,
+                                "ratio": current.get("ls_ratio"),
+                                "sentiment": "neutral"
+                            }
+                            if long_pct * 100 > 55:
+                                long_short["sentiment"] = "bullish"
+                            elif long_pct * 100 < 45:
+                                long_short["sentiment"] = "bearish"
+                            break
+        
+        if long_short:
+            key_data["long_short_ratio"] = {
+                "long_pct": long_short.get("long_accounts_pct"),
+                "short_pct": long_short.get("short_accounts_pct"),
+                "ratio": long_short.get("ratio"),
+                "sentiment": long_short.get("sentiment")
+            }
+        
+        # 支撑阻力位（关键）- 兼容多种格式
+        support_resistance = market_data.get("support_resistance_summary", {})
+        if not support_resistance:
+            # 尝试从原始格式获取
+            support_resistance = market_data.get("support_resistance", {})
+            if support_resistance:
+                # 转换为标准格式
+                current_price = key_data.get("current_price")
+                if current_price:
+                    try:
+                        current_price = float(current_price)
+                        resistances = [support_resistance.get("R1"), support_resistance.get("R2"), support_resistance.get("R3")]
+                        supports = [support_resistance.get("S1"), support_resistance.get("S2"), support_resistance.get("S3")]
+                        resistances = [float(r) for r in resistances if r is not None and float(r) > current_price]
+                        supports = [float(s) for s in supports if s is not None and float(s) < current_price]
+                        key_data["support_resistance"] = {
+                            "nearest_resistance": min(resistances) if resistances else None,
+                            "nearest_support": max(supports) if supports else None,
+                            "R1": support_resistance.get("R1"),
+                            "S1": support_resistance.get("S1")
+                        }
+                    except:
+                        key_data["support_resistance"] = {
+                            "R1": support_resistance.get("R1"),
+                            "S1": support_resistance.get("S1")
+                        }
+        else:
+            key_data["support_resistance"] = {
+                "nearest_resistance": support_resistance.get("nearest_resistance"),
+                "nearest_support": support_resistance.get("nearest_support"),
+                "R1": support_resistance.get("resistance_levels", {}).get("R1"),
+                "S1": support_resistance.get("support_levels", {}).get("S1")
+            }
+        
+        # 资金费率（重要）- 兼容多种格式
+        funding = market_data.get("funding_rate_info", {})
+        if not funding or funding.get("funding_rate") is None:
+            # 尝试从原始格式获取
+            funding = market_data.get("funding_rate", {})
+            if isinstance(funding, dict):
+                funding_rate = funding.get("fundingRate") or funding.get("funding_rate")
+                if funding_rate is not None:
+                    key_data["funding_rate"] = float(funding_rate) if isinstance(funding_rate, (int, float, str)) else None
+            elif isinstance(funding, (int, float)):
+                key_data["funding_rate"] = float(funding)
+        else:
+            key_data["funding_rate"] = funding.get("funding_rate")
+        
+        # 市场情绪（汇总）
+        sentiment = market_data.get("market_sentiment", {})
+        if sentiment:
+            if isinstance(sentiment, dict):
+                key_data["market_sentiment"] = sentiment.get("overall")
+            else:
+                key_data["market_sentiment"] = sentiment
+        
+        # 24小时价格变化（可选，精简版）
+        price_change_24h = market_data.get("price_change_24h")
+        if price_change_24h and isinstance(price_change_24h, dict):
+            key_data["price_change_24h_pct"] = price_change_24h.get("change_pct")
+        
+        return key_data
+
+    def _extract_key_indicators(self, formatted_indicators: Dict, timeframe: str) -> Dict:
+        """
+        提取关键指标数据（精简版），只保留最重要的指标用于决策
+        
+        Args:
+            formatted_indicators: 完整的格式化指标数据
+            timeframe: 时间维度
+        
+        Returns:
+            精简后的关键指标数据
+        """
+        key_data = {
+            "timeframe": timeframe,
+            "signal_summary": formatted_indicators.get("signal_summary", {}),
+        }
+        
+        # 1. 价格信息（只保留收盘价和涨跌幅）
+        price_info = formatted_indicators.get("price_info", {})
+        if price_info:
+            key_data["price"] = {
+                "close": price_info.get("close"),
+                "change_pct": price_info.get("change_pct")
+            }
+        
+        # 2. 趋势指标（只保留关键值）
+        trend = formatted_indicators.get("trend_indicators", {})
+        if trend:
+            key_data["trend"] = {
+                "ema_20": trend.get("ema_20"),
+                "ema_50": trend.get("ema_50"),
+                "ema_200": trend.get("ema_200"),
+                "macd": trend.get("macd"),
+                "macd_signal_direction": trend.get("macd_signal_direction")
+            }
+        
+        # 3. 动量指标（只保留关键值）
+        momentum = formatted_indicators.get("momentum_indicators", {})
+        if momentum:
+            key_data["momentum"] = {
+                "rsi14": momentum.get("rsi14"),
+                "rsi_signal": momentum.get("rsi_signal"),
+                "kdj_signal": momentum.get("kdj_signal"),
+                "k": momentum.get("k"),
+                "d": momentum.get("d"),
+                "j": momentum.get("j")
+            }
+        
+        # 4. 支撑阻力位（只保留最近的）
+        support_resistance = formatted_indicators.get("support_resistance", {})
+        if support_resistance:
+            key_data["levels"] = {
+                "R1": support_resistance.get("R1"),
+                "R2": support_resistance.get("R2"),
+                "S1": support_resistance.get("S1"),
+                "S2": support_resistance.get("S2")
+            }
+        
+        return key_data
 
     def _format_decision(self, decision: Dict, query_data: Dict,
                          agent_results: Dict) -> Dict:
@@ -607,11 +782,19 @@ class TradingDecisionExpert:
             if not stop_loss:
                 stop_loss = decision.get("stop_loss")
                 if stop_loss:
-                    stop_loss = float(stop_loss)
+                    # 处理可能是列表的情况
+                    if isinstance(stop_loss, list):
+                        stop_loss = float(stop_loss[0]) if stop_loss else None
+                    else:
+                        stop_loss = float(stop_loss)
             if not take_profit:
                 take_profit = decision.get("take_profit")
                 if take_profit:
-                    take_profit = float(take_profit)
+                    # 处理可能是列表的情况
+                    if isinstance(take_profit, list):
+                        take_profit = float(take_profit[0]) if take_profit else None
+                    else:
+                        take_profit = float(take_profit)
 
             # 计算止损止盈（如果没有提供）
             if not stop_loss and action == "open":
@@ -987,20 +1170,23 @@ class TradingDecisionExpert:
                 indent=2,
                 ensure_ascii=False))
 
-        # 各时间维度的格式化指标数据
-        prompt_parts.append("\n### 各时间维度的技术指标数据")
-        prompt_parts.append("以下数据已经过格式化处理，提取了关键指标值和信号，请直接使用：")
+        # 各时间维度的格式化指标数据（精简版，只提取关键指标）
+        prompt_parts.append("\n### 各时间维度的技术指标数据（精简版）")
+        prompt_parts.append("以下数据已经过优化处理，只包含关键指标值和信号，便于快速分析：")
 
         for timeframe, formatted_indicators in indicators_by_timeframe.items():
+            # 提取关键指标数据（精简版）
+            key_indicators = self._extract_key_indicators(formatted_indicators, timeframe)
             prompt_parts.append(f"\n#### {timeframe} 时间维度")
             prompt_parts.append(
-                json.dumps(formatted_indicators, indent=2, ensure_ascii=False))
+                json.dumps(key_indicators, indent=2, ensure_ascii=False))
 
-        # 市场行情数据
-        prompt_parts.append("\n### 市场行情数据（已清洗）")
-        prompt_parts.append("以下市场数据已经过清洗，提取了最能影响分析的关键指标：")
+        # 市场行情数据（精简版，只保留关键信息）
+        prompt_parts.append("\n### 市场行情数据（关键指标）")
+        prompt_parts.append("以下市场数据已经过优化，只包含影响交易决策的关键指标：")
+        key_market_data = self._extract_key_market_data(market_data)
         prompt_parts.append(
-            json.dumps(market_data, indent=2, ensure_ascii=False))
+            json.dumps(key_market_data, indent=2, ensure_ascii=False))
 
         # 历史分析结果（前10分钟）
         historical_analysis = query_data.get("historical_analysis", [])

@@ -22,7 +22,7 @@ class Settings:
     # 交易相关配置
     trade_task_key: str = os.environ.get('TRADE_TASK_KEY', 'TASK_ADD_TRADE')
     agent_result_ttl: int = int(os.environ.get('AGENT_RESULT_TTL', '3600'))
-    
+
     # 交易任务 Redis 配置（用于 TASK_ADD_TRADE）
     trade_redis_host: str = os.environ.get('TRADE_REDIS_HOST', '101.32.115.249')
     trade_redis_port: int = int(os.environ.get('TRADE_REDIS_PORT', 6379))

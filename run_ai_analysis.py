@@ -42,7 +42,7 @@ class AIAnalyzer:
 
         self.redis: Optional[aioredis.Redis] = None
         self.stream_offsets: Dict[str, str] = {}
-        
+
         # 多时间维度分析器
         self.multi_timeframe_analyzer = MultiTimeframeAnalyzer(
             redis_host=self.redis_host,
@@ -358,7 +358,7 @@ class AIAnalyzer:
         if "error" in result:
             output.append(f"❌ 错误: {result['error']}")
             return "\n".join(output)
-        
+
         # 检查是否是多时间维度结果
         if result.get("multi_timeframe") or "analysis_by_timeframe" in result:
             return self._format_multi_timeframe_result(result)
@@ -421,7 +421,7 @@ class AIAnalyzer:
         output.append(f"\n{'='*80}\n")
 
         return "\n".join(output)
-    
+
     def _format_multi_timeframe_result(self, result: Dict) -> str:
         """格式化多时间维度分析结果（中文输出）"""
         output = []
