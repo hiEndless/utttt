@@ -20,7 +20,7 @@ def _discount(scores_by_cls):
     if mode == "log":
         import math
         k = float(cfg.get("k", 1.0))
-        # scores_by_cls: list of numeric scores
+        # scores_by_cls：分数列表（数值）
         total = 0.0
         for i, s in enumerate(sorted(scores_by_cls, key=lambda x: abs(x), reverse=True), start=1):
             total += s * (1.0 + math.log(max(1, i)) * k) / (1.0 + math.log(max(1, len(scores_by_cls))) * k)
@@ -52,7 +52,7 @@ def aggregate_scores(scores):
     tf_sums = {}
     tf_dirs = {}
     for tf, items in tf_groups.items():
-        # per tf: reduce by class — keep max abs score per class
+        # 每个周期：按类别归并，仅保留该类别绝对值最大的分数
         cls_best = {}
         for it in items:
             cls = it.get("cls") or "unknown"
@@ -60,12 +60,12 @@ def aggregate_scores(scores):
             prev = cls_best.get(cls)
             if prev is None or abs(sc) > abs(prev):
                 cls_best[cls] = sc
-        # discount across classes
+        # 同一周期跨类别折扣聚合
         tf_sum = _discount(list(cls_best.values()))
         tf_sums[tf] = tf_sum
         tf_dirs[tf] = "bullish" if tf_sum > 0 else ("bearish" if tf_sum < 0 else "neutral")
 
-    # bucket aggregation
+    # 分桶聚合（short/mid/long）
     bucket_scores = {}
     bucket_dirs = {}
     bucket_eps = float(policy.get("bucket_neutral_epsilon", 0.0))
@@ -74,21 +74,21 @@ def aggregate_scores(scores):
         bucket_scores[bname] = val
         bucket_dirs[bname] = "neutral" if abs(val) < bucket_eps else ("bullish" if val > 0 else "bearish")
 
-    # structural judgement
+    # 结构判断
     dirs = [bucket_dirs.get("short"), bucket_dirs.get("mid"), bucket_dirs.get("long")]
-    # determine divergence
+    # 判定是否分歧（多桶方向不一致）
     non_neutral = [d for d in dirs if d != "neutral"]
     divergence = len(set(non_neutral)) > 1
     raw_total = sum(bucket_scores.values())
     direction = "bullish" if raw_total > 0 else ("bearish" if raw_total < 0 else "neutral")
 
     final_forbidden = False
-    # optional cls cross-tf decay
+    # 可选：同类跨周期衰减
     enable_decay = bool(policy.get("enable_cls_decay", True))
     decay_base = float(policy.get("cls_decay_base", 0.6))
     decayed_total = raw_total
     if enable_decay:
-        # group by cls over original scores
+        # 以原始分数按类别分组
         cls_groups = {}
         for s in scores:
             cls = s.get("cls") or "unknown"
@@ -104,7 +104,7 @@ def aggregate_scores(scores):
 
     total = decayed_total
     if divergence:
-        # Apply degradation primarily to conflicting buckets
+        # 分歧时只对冲突桶施加降级
         total = 0.0
         for bname, val in bucket_scores.items():
             dir_b = bucket_dirs.get(bname)
@@ -112,13 +112,13 @@ def aggregate_scores(scores):
                 total += val * div_degrade
             else:
                 total += val
-    # strong opposite: long opposes combined short+mid strongly
+    # 强反向：long与short+mid方向相反且long强度超过阈值
     long_val = bucket_scores.get("long", 0.0)
     short_mid = bucket_scores.get("short", 0.0) + bucket_scores.get("mid", 0.0)
     if long_val != 0.0 and short_mid != 0.0 and (long_val * short_mid) < 0 and abs(long_val) >= strong_thr:
         final_forbidden = True
 
-    # final direction should reflect final total, with dynamic neutral epsilon band
+    # 最终方向依据最终总分，并采用动态中性区间
     eps_fixed = float(policy.get("neutral_epsilon", 0.0))
     eps_min = float(policy.get("abs_min_neutral_epsilon", 0.0))
     rel_ratio = float(policy.get("relative_neutral_ratio", 0.0))
@@ -128,7 +128,7 @@ def aggregate_scores(scores):
     else:
         eps = eps_fixed
     direction = "neutral" if abs(total) < eps else ("bullish" if total > 0 else "bearish")
-    # decide market_state by bucket composition
+    # 根据分桶组合判定market_state
     if final_forbidden:
         market_state = "conflict"
     else:
