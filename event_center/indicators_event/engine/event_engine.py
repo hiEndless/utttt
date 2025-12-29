@@ -24,6 +24,7 @@ def run_event_engine(symbol: str):
     cfg_dir = os.path.join(base_dir, "config")
     tf_weights = _load_yaml(os.path.join(cfg_dir, "tf_weights.yaml")) or {}
     strength_weights = _load_yaml(os.path.join(cfg_dir, "strength_weights.yaml")) or {}
+    strength_bands = _load_yaml(os.path.join(cfg_dir, "strength_bands.yaml")) or {}
 
     factors = []
     for plugin in plugins:
@@ -41,11 +42,17 @@ def run_event_engine(symbol: str):
     if agg.get("divergence") and level != "raw":
         # optional downgrade by one tier on divergence
         level = "l0" if level == "l1" else ("l1" if level == "final" else level)
+    abs_total = abs(total)
+    wb = float(strength_bands.get("weak_max", 2.0))
+    mb = float(strength_bands.get("medium_max", 4.0))
+    strength_band = "weak" if abs_total < wb else ("medium" if abs_total < mb else "strong")
 
     return {
         "symbol": symbol,
         "direction": direction,
+        "market_state": agg.get("market_state"),
         "signal_strength": total,
+        "signal_strength_band": strength_band,
         "level": level,
         "scores": scores,
         "factors": factors,

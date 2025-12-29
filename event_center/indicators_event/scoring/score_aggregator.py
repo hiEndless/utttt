@@ -68,10 +68,11 @@ def aggregate_scores(scores):
     # bucket aggregation
     bucket_scores = {}
     bucket_dirs = {}
+    bucket_eps = float(policy.get("bucket_neutral_epsilon", 0.0))
     for bname, tfs in buckets_cfg.items():
         val = sum(tf_sums.get(tf, 0.0) for tf in tfs)
         bucket_scores[bname] = val
-        bucket_dirs[bname] = "bullish" if val > 0 else ("bearish" if val < 0 else "neutral")
+        bucket_dirs[bname] = "neutral" if abs(val) < bucket_eps else ("bullish" if val > 0 else "bearish")
 
     # structural judgement
     dirs = [bucket_dirs.get("short"), bucket_dirs.get("mid"), bucket_dirs.get("long")]
@@ -117,12 +118,22 @@ def aggregate_scores(scores):
     if long_val != 0.0 and short_mid != 0.0 and (long_val * short_mid) < 0 and abs(long_val) >= strong_thr:
         final_forbidden = True
 
-    # final direction should reflect final total
-    direction = "bullish" if total > 0 else ("bearish" if total < 0 else "neutral")
+    # final direction should reflect final total, with dynamic neutral epsilon band
+    eps_fixed = float(policy.get("neutral_epsilon", 0.0))
+    eps_min = float(policy.get("abs_min_neutral_epsilon", 0.0))
+    rel_ratio = float(policy.get("relative_neutral_ratio", 0.0))
+    if eps_min > 0.0 and rel_ratio > 0.0:
+        eps_dyn = max(eps_min, abs(raw_total) * rel_ratio)
+        eps = eps_dyn
+    else:
+        eps = eps_fixed
+    direction = "neutral" if abs(total) < eps else ("bullish" if total > 0 else "bearish")
+    market_state = "conflict" if final_forbidden else ("range" if direction == "neutral" else "trend")
     return {
         "total": total,
         "direction": direction,
         "raw_total": raw_total,
+        "market_state": market_state,
         "tf_sums": tf_sums,
         "tf_dirs": tf_dirs,
         "bucket_scores": bucket_scores,
