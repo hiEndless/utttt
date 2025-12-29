@@ -43,3 +43,8 @@ def run_event_engine(symbol: str):
         "scores": scores,
         "factors": factors,
     }
+
+
+if __name__ == "__main__":
+    res = run_event_engine("BTCUSDT")
+    print(res)

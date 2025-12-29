@@ -3,6 +3,7 @@ import pkgutil
 from event_center.indicators_event.plugins.base import Plugin
 import event_center.indicators_event.plugins as plugins_pkg
 
+
 def load_plugins():
     plugins = []
 
@@ -20,3 +21,8 @@ def load_plugins():
                 plugins.append(attr())
 
     return plugins
+
+
+if __name__ == "__main__":
+    plugins = load_plugins()
+    print(plugins)
