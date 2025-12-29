@@ -36,12 +36,11 @@ def run_event_engine(symbol: str, exchange: str):
     agg = aggregate_scores(scores)
     total = agg["total"]
     direction = agg["direction"]
-    level = classify_event(total)
-    if agg.get("final_forbidden") and level == "final":
-        level = "l1"
-    if agg.get("divergence") and level != "raw":
-        # optional downgrade by one tier on divergence
-        level = "l0" if level == "l1" else ("l1" if level == "final" else level)
+    level = classify_event(total)  # 1(raw) → 4(final)
+    if agg.get("final_forbidden") and level == 4:
+        level = 3
+    if agg.get("divergence") and level != 1:
+        level = max(1, level - 1)
     abs_total = abs(total)
     wb = float(strength_bands.get("weak_max", 2.0))
     mb = float(strength_bands.get("medium_max", 4.0))
