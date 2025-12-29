@@ -13,7 +13,7 @@ def _read_json(client, key: str):
         return {}
 
 
-def load_all_indicators(symbol: str, exchange: str | None = None) -> dict:
+def load_all_indicators(symbol: str, exchange: str) -> dict:
     """
     从 Redis 读取全周期、全指标（当前与上一时刻），结构：
     {
@@ -33,7 +33,7 @@ def load_all_indicators(symbol: str, exchange: str | None = None) -> dict:
         decode_responses=True,
     )
     out = {}
-    ex = (exchange or "binance")
+    ex = exchange
     for iv in INTERVALS:
         cur_key = f"indicators:{ex}:{symbol}:{iv}"
         prev_key = f"indicators:prev:{ex}:{symbol}:{iv}"
@@ -49,5 +49,5 @@ def load_all_indicators(symbol: str, exchange: str | None = None) -> dict:
 
 
 if __name__ == "__main__":
-    indicators = load_all_indicators("BTCUSDT")
+    indicators = load_all_indicators("BTCUSDT", "binance")
     print(json.dumps(indicators, ensure_ascii=False))

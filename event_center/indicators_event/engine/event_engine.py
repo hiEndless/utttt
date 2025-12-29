@@ -16,8 +16,8 @@ def _load_yaml(path):
         return {}
 
 
-def run_event_engine(symbol: str):
-    all_indicators = load_all_indicators(symbol)
+def run_event_engine(symbol: str, exchange: str):
+    all_indicators = load_all_indicators(symbol, exchange)
     plugins = load_plugins()
 
     base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -69,5 +69,5 @@ def run_event_engine(symbol: str):
 
 
 if __name__ == "__main__":
-    res = run_event_engine("BTCUSDT")
+    res = run_event_engine("BTCUSDT", "binance")
     print(res)
