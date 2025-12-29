@@ -128,7 +128,34 @@ def aggregate_scores(scores):
     else:
         eps = eps_fixed
     direction = "neutral" if abs(total) < eps else ("bullish" if total > 0 else "bearish")
-    market_state = "conflict" if final_forbidden else ("range" if direction == "neutral" else "trend")
+    # decide market_state by bucket composition
+    if final_forbidden:
+        market_state = "conflict"
+    else:
+        short_dir = bucket_dirs.get("short")
+        mid_dir = bucket_dirs.get("mid")
+        long_dir = bucket_dirs.get("long")
+        non_neutral = {k: v for k, v in [("short", short_dir), ("mid", mid_dir), ("long", long_dir)] if v and v != "neutral"}
+        if not non_neutral:
+            market_state = "range"
+        else:
+            dirs_set = set(non_neutral.values())
+            # opposing buckets -> conflict
+            if len(dirs_set) > 1:
+                market_state = "conflict"
+            else:
+                keys = set(non_neutral.keys())
+                # single-bucket bias
+                if len(keys) == 1:
+                    only = next(iter(keys))
+                    market_state = "structure_trend" if only == "long" else "momentum"
+                else:
+                    # trend when short+mid or mid+long aligned
+                    if ({"short", "mid"} <= keys) or ({"mid", "long"} <= keys):
+                        market_state = "trend"
+                    else:
+                        # fallback: multiple buckets same direction but not adjacent → treat as momentum
+                        market_state = "momentum"
     return {
         "total": total,
         "direction": direction,
