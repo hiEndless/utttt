@@ -49,8 +49,9 @@ if __name__ == "__main__":
     import json
     from event_center.indicators_event.engine.indicator_loader import load_all_indicators
     from event_center.indicators_event.plugins.ema_macd_combo import EMAMACDCombo
+    from event_center.indicators_event.plugins.single_signal import SingleSignal
 
     indicators = load_all_indicators("BTCUSDT")
-    plugin = EMAMACDCombo()
+    plugin = SingleSignal()
     view = build_indicator_view(indicators, plugin)
     print(json.dumps(view, ensure_ascii=False, indent=2))
