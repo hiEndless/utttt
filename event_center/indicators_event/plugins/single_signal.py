@@ -5,7 +5,7 @@ import time
 class SingleSignal(Plugin):
     name = "single_signal"
 
-    tf_scope = ["1m", "5m", "15m", "30m", "1h", "2h"]
+    tf_scope = ["1m","5m","15m","1h"]
     indicators = ["rsi", "macd", "boll", "williams_r", "mfi", "ma"]
     requires_prev = True
 
