@@ -1,5 +1,6 @@
 import os, yaml
 
+
 def _load_yaml(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -7,9 +8,11 @@ def _load_yaml(path):
     except Exception:
         return {}
 
+
 def _get_config_dir():
     base_dir = os.path.dirname(os.path.dirname(__file__))
     return os.path.join(base_dir, "config")
+
 
 def _discount(scores_by_cls):
     cfg = _load_yaml(os.path.join(_get_config_dir(), "combo_discount.yaml")) or {}
@@ -29,6 +32,7 @@ def _discount(scores_by_cls):
             w = weights[i] if i < len(weights) else weights[-1] * 0.5
             total += s * w
         return total
+
 
 def aggregate_scores(scores):
     cfg_dir = _get_config_dir()
@@ -99,21 +103,34 @@ def aggregate_scores(scores):
 
     total = decayed_total
     if divergence:
-        total *= div_degrade
+        # Apply degradation primarily to conflicting buckets
+        total = 0.0
+        for bname, val in bucket_scores.items():
+            dir_b = bucket_dirs.get(bname)
+            if dir_b != "neutral" and dir_b != direction:
+                total += val * div_degrade
+            else:
+                total += val
     # strong opposite: long opposes combined short+mid strongly
     long_val = bucket_scores.get("long", 0.0)
     short_mid = bucket_scores.get("short", 0.0) + bucket_scores.get("mid", 0.0)
     if long_val != 0.0 and short_mid != 0.0 and (long_val * short_mid) < 0 and abs(long_val) >= strong_thr:
         final_forbidden = True
 
+    # final direction should reflect final total
+    direction = "bullish" if total > 0 else ("bearish" if total < 0 else "neutral")
     return {
         "total": total,
         "direction": direction,
+        "raw_total": raw_total,
         "tf_sums": tf_sums,
         "tf_dirs": tf_dirs,
         "bucket_scores": bucket_scores,
         "bucket_dirs": bucket_dirs,
         "divergence": divergence,
         "final_forbidden": final_forbidden,
-        "timeframe_alignment": [tf for tf, d in tf_dirs.items() if d != "neutral"],
+        "timeframe_alignment": {
+            "bullish": [tf for tf, d in tf_dirs.items() if d == "bullish"],
+            "bearish": [tf for tf, d in tf_dirs.items() if d == "bearish"],
+        },
     }

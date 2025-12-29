@@ -53,6 +53,7 @@ def run_event_engine(symbol: str):
             "tf_sums": agg.get("tf_sums"),
             "bucket_scores": agg.get("bucket_scores"),
             "bucket_dirs": agg.get("bucket_dirs"),
+            "raw_total": agg.get("raw_total"),
             "divergence": agg.get("divergence"),
             "final_forbidden": agg.get("final_forbidden"),
             "timeframe_alignment": agg.get("timeframe_alignment"),
