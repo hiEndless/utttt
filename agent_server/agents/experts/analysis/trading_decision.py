@@ -391,13 +391,13 @@ class TradingDecisionExpert:
             精简后的关键市场数据
         """
         key_data = {}
-        
+
         # 当前价格（兼容多种格式）
         if "current_price" in market_data:
             key_data["current_price"] = market_data["current_price"]
         elif "price" in market_data:
             key_data["current_price"] = market_data["price"]
-        
+
         # 多空比（关键）- 兼容多种格式
         long_short = market_data.get("long_short_ratio_summary", {})
         if not long_short:
@@ -405,7 +405,8 @@ class TradingDecisionExpert:
             long_short_raw = market_data.get("long_short_ratio", {})
             if long_short_raw and isinstance(long_short_raw, dict):
                 # 尝试从 participant_structure 中提取
-                account_ratio = long_short_raw.get("globalLongShortAccountRatio", {})
+                account_ratio = long_short_raw.get(
+                    "globalLongShortAccountRatio", {})
                 for period in ["5m", "15m", "1h", "30m", "1m"]:
                     if period in account_ratio:
                         current = account_ratio[period].get("current", {})
@@ -423,7 +424,7 @@ class TradingDecisionExpert:
                             elif long_pct * 100 < 45:
                                 long_short["sentiment"] = "bearish"
                             break
-        
+
         if long_short:
             key_data["long_short_ratio"] = {
                 "long_pct": long_short.get("long_accounts_pct"),
@@ -431,7 +432,7 @@ class TradingDecisionExpert:
                 "ratio": long_short.get("ratio"),
                 "sentiment": long_short.get("sentiment")
             }
-        
+
         # 支撑阻力位（关键）- 兼容多种格式
         support_resistance = market_data.get("support_resistance_summary", {})
         if not support_resistance:
@@ -443,15 +444,33 @@ class TradingDecisionExpert:
                 if current_price:
                     try:
                         current_price = float(current_price)
-                        resistances = [support_resistance.get("R1"), support_resistance.get("R2"), support_resistance.get("R3")]
-                        supports = [support_resistance.get("S1"), support_resistance.get("S2"), support_resistance.get("S3")]
-                        resistances = [float(r) for r in resistances if r is not None and float(r) > current_price]
-                        supports = [float(s) for s in supports if s is not None and float(s) < current_price]
+                        resistances = [
+                            support_resistance.get("R1"),
+                            support_resistance.get("R2"),
+                            support_resistance.get("R3")
+                        ]
+                        supports = [
+                            support_resistance.get("S1"),
+                            support_resistance.get("S2"),
+                            support_resistance.get("S3")
+                        ]
+                        resistances = [
+                            float(r) for r in resistances
+                            if r is not None and float(r) > current_price
+                        ]
+                        supports = [
+                            float(s) for s in supports
+                            if s is not None and float(s) < current_price
+                        ]
                         key_data["support_resistance"] = {
-                            "nearest_resistance": min(resistances) if resistances else None,
-                            "nearest_support": max(supports) if supports else None,
-                            "R1": support_resistance.get("R1"),
-                            "S1": support_resistance.get("S1")
+                            "nearest_resistance":
+                            min(resistances) if resistances else None,
+                            "nearest_support":
+                            max(supports) if supports else None,
+                            "R1":
+                            support_resistance.get("R1"),
+                            "S1":
+                            support_resistance.get("S1")
                         }
                     except:
                         key_data["support_resistance"] = {
@@ -460,26 +479,32 @@ class TradingDecisionExpert:
                         }
         else:
             key_data["support_resistance"] = {
-                "nearest_resistance": support_resistance.get("nearest_resistance"),
+                "nearest_resistance":
+                support_resistance.get("nearest_resistance"),
                 "nearest_support": support_resistance.get("nearest_support"),
-                "R1": support_resistance.get("resistance_levels", {}).get("R1"),
+                "R1": support_resistance.get("resistance_levels",
+                                             {}).get("R1"),
                 "S1": support_resistance.get("support_levels", {}).get("S1")
             }
-        
+
         # 资金费率（重要）- 兼容多种格式
         funding = market_data.get("funding_rate_info", {})
         if not funding or funding.get("funding_rate") is None:
             # 尝试从原始格式获取
             funding = market_data.get("funding_rate", {})
             if isinstance(funding, dict):
-                funding_rate = funding.get("fundingRate") or funding.get("funding_rate")
+                funding_rate = funding.get("fundingRate") or funding.get(
+                    "funding_rate")
                 if funding_rate is not None:
-                    key_data["funding_rate"] = float(funding_rate) if isinstance(funding_rate, (int, float, str)) else None
+                    key_data["funding_rate"] = float(
+                        funding_rate) if isinstance(funding_rate,
+                                                    (int, float,
+                                                     str)) else None
             elif isinstance(funding, (int, float)):
                 key_data["funding_rate"] = float(funding)
         else:
             key_data["funding_rate"] = funding.get("funding_rate")
-        
+
         # 市场情绪（汇总）
         sentiment = market_data.get("market_sentiment", {})
         if sentiment:
@@ -487,39 +512,142 @@ class TradingDecisionExpert:
                 key_data["market_sentiment"] = sentiment.get("overall")
             else:
                 key_data["market_sentiment"] = sentiment
-        
+
         # 24小时价格变化（可选，精简版）
         price_change_24h = market_data.get("price_change_24h")
         if price_change_24h and isinstance(price_change_24h, dict):
-            key_data["price_change_24h_pct"] = price_change_24h.get("change_pct")
-        
+            key_data["price_change_24h_pct"] = price_change_24h.get(
+                "change_pct")
+
         return key_data
 
-    def _extract_key_indicators(self, formatted_indicators: Dict, timeframe: str) -> Dict:
+    def _extract_key_indicators(self, formatted_indicators: Dict,
+                                timeframe: str) -> Dict:
         """
-        提取关键指标数据（精简版），只保留最重要的指标用于决策
+        提取关键指标数据（精简版），保留重要数组但进行智能优化
+        对价格数组进行采样或截取，保留趋势信息但避免过长
         
         Args:
             formatted_indicators: 完整的格式化指标数据
             timeframe: 时间维度
         
         Returns:
-            精简后的关键指标数据
+            精简后的关键指标数据（包含优化的数组）
         """
+
+        def _optimize_array(arr, max_length=50, sample_method="recent"):
+            """
+            优化数组：保留趋势信息但控制长度
+            
+            Args:
+                arr: 原始数组
+                max_length: 最大长度
+                sample_method: 采样方法
+                    - "recent": 只保留最近N个
+                    - "sample": 均匀采样
+                    - "head_tail": 保留头部和尾部
+            
+            Returns:
+                优化后的数组
+            """
+            if not isinstance(arr, list) or len(arr) == 0:
+                return arr
+
+            if len(arr) <= max_length:
+                return arr
+
+            if sample_method == "recent":
+                # 只保留最近的数据点（最重要，反映最新趋势）
+                return arr[-max_length:]
+            elif sample_method == "sample":
+                # 均匀采样，保留整体趋势
+                step = len(arr) // max_length
+                return [arr[i] for i in range(0, len(arr), step)][:max_length]
+            elif sample_method == "head_tail":
+                # 保留头部和尾部，中间采样
+                head_count = max_length // 3
+                tail_count = max_length // 3
+                middle_count = max_length - head_count - tail_count
+
+                head = arr[:head_count]
+                tail = arr[-tail_count:]
+
+                if middle_count > 0 and len(arr) > head_count + tail_count:
+                    middle_step = (len(arr) - head_count -
+                                   tail_count) // middle_count
+                    middle = [
+                        arr[head_count + i * middle_step]
+                        for i in range(middle_count)
+                    ]
+                else:
+                    middle = []
+
+                return head + middle + tail
+            else:
+                return arr[-max_length:]
+
+        def _clean_value(value, is_price_array=False):
+            """
+            递归清理值，优化数组但保留趋势信息
+            
+            Args:
+                value: 要清理的值
+                is_price_array: 是否是价格数组（需要保留更多信息）
+            """
+            if isinstance(value, list):
+                # 价格相关数组：保留更多数据点，使用recent方法（最近的数据最重要）
+                if is_price_array:
+                    return _optimize_array(value,
+                                           max_length=60,
+                                           sample_method="recent")
+                # 其他数组：适度采样
+                else:
+                    return _optimize_array(value,
+                                           max_length=30,
+                                           sample_method="sample")
+            elif isinstance(value, dict):
+                # 递归处理字典
+                cleaned = {}
+                for k, v in value.items():
+                    # 判断是否是价格相关数组
+                    is_price = any(
+                        price_key in k.lower() for price_key in
+                        ['price', 'close', 'open', 'high', 'low', 'candle'])
+                    cleaned[k] = _clean_value(v, is_price_array=is_price)
+                return cleaned
+            else:
+                return value
+
         key_data = {
             "timeframe": timeframe,
-            "signal_summary": formatted_indicators.get("signal_summary", {}),
         }
-        
-        # 1. 价格信息（只保留收盘价和涨跌幅）
+
+        # 1. 信号摘要（保留，但优化其中的数组）
+        signal_summary = formatted_indicators.get("signal_summary", {})
+        if signal_summary:
+            key_data["signal_summary"] = _clean_value(signal_summary,
+                                                      is_price_array=False)
+
+        # 2. 价格信息（保留价格数组，但优化长度）
         price_info = formatted_indicators.get("price_info", {})
         if price_info:
             key_data["price"] = {
                 "close": price_info.get("close"),
                 "change_pct": price_info.get("change_pct")
             }
-        
-        # 2. 趋势指标（只保留关键值）
+            # 如果有价格数组，保留但优化
+            if "closes" in price_info:
+                key_data["price"]["closes"] = _optimize_array(
+                    price_info.get("closes", []),
+                    max_length=60,
+                    sample_method="recent")
+            if "prices" in price_info:
+                key_data["price"]["prices"] = _optimize_array(
+                    price_info.get("prices", []),
+                    max_length=60,
+                    sample_method="recent")
+
+        # 3. 趋势指标（保留关键值和数组，但优化数组长度）
         trend = formatted_indicators.get("trend_indicators", {})
         if trend:
             key_data["trend"] = {
@@ -529,8 +657,19 @@ class TradingDecisionExpert:
                 "macd": trend.get("macd"),
                 "macd_signal_direction": trend.get("macd_signal_direction")
             }
-        
-        # 3. 动量指标（只保留关键值）
+            # 保留EMA数组但优化（用于观察趋势）
+            if "ema_20_array" in trend:
+                key_data["trend"]["ema_20_array"] = _optimize_array(
+                    trend.get("ema_20_array", []),
+                    max_length=40,
+                    sample_method="recent")
+            if "macd_array" in trend:
+                key_data["trend"]["macd_array"] = _optimize_array(
+                    trend.get("macd_array", []),
+                    max_length=40,
+                    sample_method="recent")
+
+        # 4. 动量指标（保留关键值和数组，但优化数组长度）
         momentum = formatted_indicators.get("momentum_indicators", {})
         if momentum:
             key_data["momentum"] = {
@@ -539,10 +678,17 @@ class TradingDecisionExpert:
                 "kdj_signal": momentum.get("kdj_signal"),
                 "k": momentum.get("k"),
                 "d": momentum.get("d"),
-                "j": momentum.get("j")
+                "j": momentum.get("j"),
+                "adx": momentum.get("adx")
             }
-        
-        # 4. 支撑阻力位（只保留最近的）
+            # 保留RSI数组但优化（用于观察超买超卖趋势）
+            if "rsi_array" in momentum:
+                key_data["momentum"]["rsi_array"] = _optimize_array(
+                    momentum.get("rsi_array", []),
+                    max_length=40,
+                    sample_method="recent")
+
+        # 5. 支撑阻力位（只保留最近的）
         support_resistance = formatted_indicators.get("support_resistance", {})
         if support_resistance:
             key_data["levels"] = {
@@ -551,8 +697,27 @@ class TradingDecisionExpert:
                 "S1": support_resistance.get("S1"),
                 "S2": support_resistance.get("S2")
             }
-        
-        return key_data
+
+        # 6. 波动率指标（只保留关键值）
+        volatility = formatted_indicators.get("volatility_indicators", {})
+        if volatility:
+            key_data["volatility"] = {
+                "bb_upper": volatility.get("bb_upper"),
+                "bb_middle": volatility.get("bb_middle"),
+                "bb_lower": volatility.get("bb_lower"),
+                "bb_position": volatility.get("bb_position")
+            }
+
+        # 7. 如果有原始K线数据，保留但优化（用于观察价格趋势）
+        if "candles" in formatted_indicators:
+            candles = formatted_indicators.get("candles", [])
+            if isinstance(candles, list) and len(candles) > 0:
+                # 只保留最近60根K线（足够观察趋势）
+                key_data["recent_candles"] = _optimize_array(
+                    candles, max_length=60, sample_method="recent")
+
+        # 最终优化：确保所有数组都在合理长度内
+        return _clean_value(key_data, is_price_array=False)
 
     def _format_decision(self, decision: Dict, query_data: Dict,
                          agent_results: Dict) -> Dict:
@@ -792,7 +957,8 @@ class TradingDecisionExpert:
                 if take_profit:
                     # 处理可能是列表的情况
                     if isinstance(take_profit, list):
-                        take_profit = float(take_profit[0]) if take_profit else None
+                        take_profit = float(
+                            take_profit[0]) if take_profit else None
                     else:
                         take_profit = float(take_profit)
 
@@ -1176,7 +1342,8 @@ class TradingDecisionExpert:
 
         for timeframe, formatted_indicators in indicators_by_timeframe.items():
             # 提取关键指标数据（精简版）
-            key_indicators = self._extract_key_indicators(formatted_indicators, timeframe)
+            key_indicators = self._extract_key_indicators(
+                formatted_indicators, timeframe)
             prompt_parts.append(f"\n#### {timeframe} 时间维度")
             prompt_parts.append(
                 json.dumps(key_indicators, indent=2, ensure_ascii=False))
@@ -1321,6 +1488,13 @@ class TradingDecisionExpert:
         prompt_parts.append(
             "**重要**：你的分析必须基于数据，详细说明每个判断依据，不能简单地说'信号看涨'或'信号看跌'。")
         prompt_parts.append("**输出要求**：rationale字段必须使用中文，详细说明分析过程和判断依据。")
+        prompt_parts.append("\n**⚠️ 重要提示**：")
+        prompt_parts.append("1. **直接输出JSON**：直接输出交易决策的JSON格式，不要尝试调用函数或工具。")
+        prompt_parts.append(
+            "2. **数据已优化**：价格数组已经过智能采样（保留最近60个数据点），既保留了价格趋势信息，又避免了数据过长。")
+        prompt_parts.append(
+            "3. **分析趋势**：你可以通过价格数组（closes/prices）观察价格变化趋势，通过指标数组（如rsi_array、ema_array）观察指标变化趋势。"
+        )
 
         return "\n".join(prompt_parts)
 

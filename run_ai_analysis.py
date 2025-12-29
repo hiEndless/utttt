@@ -827,19 +827,66 @@ async def main():
             if not await analyzer.connect_redis():
                 return
             
-            # 直接基于指标数据分析
-            result = await analyzer.run_direct_from_indicators(
-                symbol=args.symbol,
-                timestamp_ms=args.timestamp,
-                timeframes=["1m", "5m", "15m", "1h"]
-            )
+            # 判断是否持续监听模式
+            # 在 --direct 模式下：
+            # 1. 如果指定了 --mode continuous，则持续监听
+            # 2. 如果指定了 --interval（在命令行参数中），也认为用户想要持续监听
+            # 3. 如果 --mode 是 once 且没有指定 --interval，则不持续监听
+            import sys
+            has_interval_in_args = any("--interval" in arg for arg in sys.argv)
             
-            if result:
-                formatted = analyzer.format_result(result)
-                print(formatted)
-                await analyzer.save_result(result)
+            # 如果明确指定了 continuous 模式，或者指定了 --interval，则持续监听
+            is_continuous = args.mode == "continuous" or has_interval_in_args
+            
+            if is_continuous:
+                # 持续监听模式
+                print(f"\n{'='*80}")
+                print(f"启动持续分析模式（直接基于指标数据）")
+                print(f"交易对: {args.symbol}")
+                print(f"检查间隔: {args.interval} 秒")
+                print(f"按 Ctrl+C 停止")
+                print(f"{'='*80}\n")
+                
+                try:
+                    while True:
+                        # 直接基于指标数据分析
+                        # 持续模式下，每次都使用当前时间（不使用固定的timestamp）
+                        result = await analyzer.run_direct_from_indicators(
+                            symbol=args.symbol,
+                            timestamp_ms=None,  # 持续模式下使用当前时间
+                            timeframes=["1m", "5m", "15m", "1h"]
+                        )
+                        
+                        if result:
+                            formatted = analyzer.format_result(result)
+                            print(formatted)
+                            await analyzer.save_result(result)
+                        else:
+                            print(f"❌ 分析失败，等待 {args.interval} 秒后重试...")
+                        
+                        # 等待指定间隔
+                        await asyncio.sleep(args.interval)
+                
+                except KeyboardInterrupt:
+                    print(f"\n\n停止分析")
+                except Exception as e:
+                    print(f"\n❌ 运行错误: {e}")
+                    import traceback
+                    traceback.print_exc()
             else:
-                print("❌ 分析失败")
+                # 单次分析模式
+                result = await analyzer.run_direct_from_indicators(
+                    symbol=args.symbol,
+                    timestamp_ms=args.timestamp,
+                    timeframes=["1m", "5m", "15m", "1h"]
+                )
+                
+                if result:
+                    formatted = analyzer.format_result(result)
+                    print(formatted)
+                    await analyzer.save_result(result)
+                else:
+                    print("❌ 分析失败")
         
         finally:
             await analyzer.close()
