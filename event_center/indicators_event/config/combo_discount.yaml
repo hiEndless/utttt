@@ -1,0 +1,8 @@
+mode: fixed
+fixed_weights:
+  - 1.0
+  - 0.7
+  - 0.4
+  - 0.2
+divergence_degrade: 0.8
+strong_opposite_threshold: 3.0

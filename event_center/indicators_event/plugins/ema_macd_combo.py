@@ -17,14 +17,15 @@ class EMAMACDCombo(Plugin):
             macd = (indicator_view.get(tf, {}) or {}).get("macd", {}) or {}
 
             if ema.get("value") is not None and ema.get("prev") is not None \
-                    and macd.get("hist") is not None and macd.get("prev_hist") is not None \
-                    and ema["value"] > ema["prev"] and macd["hist"] > macd["prev_hist"]:
+               and macd.get("hist") is not None and macd.get("prev_hist") is not None \
+               and ema["value"] > ema["prev"] and macd["hist"] > macd["prev_hist"]:
                 res.append({
                     "plugin": self.name,
                     "symbol": symbol,
                     "tf": tf,
                     "direction": "bullish",
                     "strength": 1,
+                    "src": "ema_macd",
                     "ts": int(time.time()),
                 })
 

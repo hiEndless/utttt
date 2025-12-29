@@ -1,0 +1,21 @@
+by_indicator:
+  trend:
+    - "ma"
+    - "ema"
+    - "macd"
+    - "ema_macd"
+  momentum:
+    - "rsi"
+    - "kdj"
+    - "williams_r"
+    - "mfi"
+  volatility:
+    - "boll"
+    - "atr"
+  structure:
+    - "sr"
+    - "pattern"
+    - "fractal"
+by_plugin:
+  trend:
+    - "ema_macd_combo"

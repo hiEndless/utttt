@@ -32,16 +32,31 @@ def run_event_engine(symbol: str):
 
     scores = [factor_to_score(f, tf_weights, strength_weights) for f in factors]
 
-    total, direction = aggregate_scores(scores)
+    agg = aggregate_scores(scores)
+    total = agg["total"]
+    direction = agg["direction"]
     level = classify_event(total)
+    if agg.get("final_forbidden") and level == "final":
+        level = "l1"
+    if agg.get("divergence") and level != "raw":
+        # optional downgrade by one tier on divergence
+        level = "l0" if level == "l1" else ("l1" if level == "final" else level)
 
     return {
         "symbol": symbol,
         "direction": direction,
-        "total_score": total,
+        "signal_strength": total,
         "level": level,
         "scores": scores,
         "factors": factors,
+        "meta": {
+            "tf_sums": agg.get("tf_sums"),
+            "bucket_scores": agg.get("bucket_scores"),
+            "bucket_dirs": agg.get("bucket_dirs"),
+            "divergence": agg.get("divergence"),
+            "final_forbidden": agg.get("final_forbidden"),
+            "timeframe_alignment": agg.get("timeframe_alignment"),
+        }
     }
 
 
