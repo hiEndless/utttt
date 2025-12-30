@@ -14,6 +14,81 @@ class L0Processor:
     def __init__(self, redis_url: str = cfg.redis_url):
         self.redis = aioredis.from_url(redis_url)
         self.rules = load_rules(RULES_PATH)
+        self.window_seconds = 300
+        self.window_count = 5
+        self.min_score = 2.0
+        self.high_score = 3.0
+        self.consistency_ratio = 0.6
+
+    async def _update_and_fetch_window(self, symbol: str, plugin: str, ts_ms: int, direction: str, strength: float):
+        key = f"l0:win:{symbol}:{plugin}"
+        member = json.dumps({"ts": ts_ms, "dir": direction, "score": strength}, ensure_ascii=False)
+        try:
+            await self.redis.zadd(key, {member: ts_ms})
+        except Exception:
+            pass
+        win_sec = int(self.window_seconds)
+        cutoff = ts_ms - win_sec * 1000
+        try:
+            await self.redis.zremrangebyscore(key, 0, cutoff)
+        except Exception:
+            pass
+        # fetch recent N
+        win_cnt = int(self.window_count)
+        try:
+            entries = await self.redis.zrevrange(key, 0, win_cnt - 1, withscores=False)
+        except Exception:
+            entries = []
+        # filter by time window
+        out = []
+        for e in entries:
+            try:
+                obj = json.loads(e)
+                if obj.get("ts", 0) >= cutoff:
+                    out.append(obj)
+            except Exception:
+                continue
+        # sort ascending by ts
+        out.sort(key=lambda x: x.get("ts", 0))
+        return out
+
+    def _confirm_signal(self, window_items: list):
+        if not window_items:
+            return {"l0_direction": "neutral", "l0_score": 0.0, "consistency_ratio": 0.0, "avg_abs_score": 0.0, "flip_count": 0}
+        dirs = [i.get("dir") for i in window_items if i.get("dir") in ("bullish", "bearish")]
+        scores = [abs(float(i.get("score") or 0.0)) for i in window_items]
+        avg_abs = sum(scores) / max(1, len(scores))
+        bull = sum(1 for d in dirs if d == "bullish")
+        bear = sum(1 for d in dirs if d == "bearish")
+        total = bull + bear
+        majority = "bullish" if bull >= bear else "bearish"
+        ratio = (bull if majority == "bullish" else bear) / max(1, total)
+        # count flips
+        flips = 0
+        prev = None
+        for d in dirs:
+            if prev is not None and d != prev:
+                flips += 1
+            prev = d
+        min_score = float(self.min_score)
+        min_ratio = float(self.consistency_ratio)
+        # base direction
+        l0_dir = majority if ratio >= min_ratio else "neutral"
+        # base score
+        l0_score = avg_abs
+        if flips >= 2:
+            l0_score *= 0.6
+        # threshold gating
+        if l0_dir == "neutral" or avg_abs < min_score:
+            l0_dir = "neutral"
+        return {
+            "l0_direction": l0_dir,
+            "l0_score": l0_score,
+            "consistency_ratio": ratio,
+            "avg_abs_score": avg_abs,
+            "flip_count": flips,
+            "window_count": len(window_items),
+        }
 
     async def process_msg(self, entry_id, data: dict):
         event = data
@@ -22,16 +97,38 @@ class L0Processor:
             return
         priority = self.rules.get("default_priority", "low")
         matched_rules = []
-        for r in self.rules.get("instant_rules", []):
-            if match_instant_rule(event, r):
-                priority = r["priority"]
-                matched_rules.append(r["id"])
+        # 解析载荷（支持字符串）
         # support RES v1.0
         payload_s = event.get("payload")
         try:
             payload = json.loads(payload_s) if isinstance(payload_s, str) else (payload_s or {})
         except Exception:
             payload = {"raw": payload_s}
+        # 取引擎摘要作为RAW输入
+        summary = payload.get("summary") if isinstance(payload, dict) else {}
+        raw_dir = str(summary.get("direction") or "").lower()
+        raw_strength = float(summary.get("signal_strength") or 0.0)
+        symbol = event.get("symbol") or ""
+        plugin = etype or ""
+        try:
+            ts_ms = int(event.get("timestamp") or "0")
+        except Exception:
+            ts_ms = 0
+        # 更新窗口并确认信号
+        window_items = await self._update_and_fetch_window(symbol, plugin, ts_ms, raw_dir, raw_strength)
+        confirm = self._confirm_signal(window_items)
+        # 映射priority
+        high_thr = float(self.high_score)
+        if confirm["l0_direction"] == "neutral":
+            priority = "low"
+        else:
+            if confirm["l0_score"] >= high_thr:
+                priority = "high"
+            elif confirm["l0_score"] >= float(self.min_score):
+                priority = "medium"
+            else:
+                priority = "low"
+
         l0 = {
             "event_id": event.get("event_id"),
             "timestamp": event.get("timestamp"),
@@ -42,13 +139,16 @@ class L0Processor:
             "event_type": event.get("event_type") or event.get("type") or "",
             "type": event.get("event_type") or event.get("type") or "",
             "event_level": event.get("event_level") or "",
-            "payload": json.dumps(payload),
+            "payload": json.dumps({
+                "raw": summary,
+                "l0": confirm,
+            }, ensure_ascii=False),
             "priority": priority,
             "matched_rules": json.dumps(matched_rules),
         }
         l0 = {k: ("" if v is None else v) for k, v in l0.items()}
         await self.redis.xadd(cfg.l0_stream, l0)
-        print(f"[L0] 输出 event_id={l0.get('event_id')} 优先级={priority} 命中规则={matched_rules}")
+        print(f"[L0] 输出 event_id={l0.get('event_id')} 优先级={priority} 信号={confirm}")
 
     async def run(self):
         group = "l0_group"
