@@ -70,55 +70,80 @@ class L1Aggregator:
         ts_ms = int(item.get("ts") or int(time.time() * 1000))
         member = str(ts_ms)
         hkey = f"{key}:{member}"
+        
+        # Optimize 1: Atomic update
         try:
-            await self.redis.zadd(key, {member: ts_ms})
-            await self.redis.hset(hkey, mapping={
-                "ts": str(ts_ms),
-                "plugin": str(item.get("plugin") or ""),
-                "cls": str(item.get("cls") or ""),
-                "dir": str(item.get("dir") or ""),
-                "score": str(item.get("score") or 0.0),
-                "bucket": bucket,
-            })
+            async with self.redis.pipeline(transaction=True) as pipe:
+                pipe.zadd(key, {member: ts_ms})
+                pipe.hset(hkey, mapping={
+                    "ts": str(ts_ms),
+                    "plugin": str(item.get("plugin") or ""),
+                    "cls": str(item.get("cls") or ""),
+                    "dir": str(item.get("dir") or ""),
+                    "score": str(item.get("score") or 0.0),
+                    "bucket": bucket,
+                    "priority": str(item.get("priority") or "low"),
+                })
+                pipe.expire(hkey, self.window_seconds * 10)
+                await pipe.execute()
         except Exception:
             pass
+            
         cutoff = ts_ms - self.window_seconds * 1000
+        
+        # Optimize 2: Batch cleanup
         try:
             olds = await self.redis.zrangebyscore(key, min=0, max=cutoff)
             if olds:
-                for m in olds:
-                    try:
-                        await self.redis.delete(f"{key}:{m}")
-                    except Exception:
-                        pass
-            await self.redis.zremrangebyscore(key, 0, cutoff)
+                async with self.redis.pipeline(transaction=False) as pipe:
+                    for m in olds:
+                        try:
+                            m_str = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                            pipe.delete(f"{key}:{m_str}")
+                        except Exception:
+                            pass
+                    pipe.zremrangebyscore(key, 0, cutoff)
+                    await pipe.execute()
+            else:
+                await self.redis.zremrangebyscore(key, 0, cutoff)
         except Exception:
             pass
+            
+        # Optimize 3: Batch fetch
         try:
             entries = await self.redis.zrevrange(key, 0, self.window_count - 1)
         except Exception:
             entries = []
+            
+        if not entries:
+            return []
+            
         out = []
-        for m in entries or []:
-            try:
-                try:
-                    m = m.decode() if isinstance(m, (bytes, bytearray)) else m
-                except Exception:
-                    pass
-                obj_raw = await self.redis.hgetall(f"{key}:{m}")
-                obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
-                ts_v = int(obj.get("ts") or "0")
-                cls_v = str(obj.get("cls") or "")
-                dir_v = str(obj.get("dir") or "")
-                try:
-                    sc_v = float(obj.get("score") or "0")
-                except Exception:
-                    sc_v = 0.0
-                bkt = str(obj.get("bucket") or bucket)
-                if ts_v >= cutoff:
-                    out.append({"ts": ts_v, "plugin": obj.get("plugin"), "cls": cls_v, "dir": dir_v, "score": sc_v, "bucket": bkt})
-            except Exception:
-                continue
+        try:
+            async with self.redis.pipeline(transaction=False) as pipe:
+                for m in entries:
+                    m_str = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                    pipe.hgetall(f"{key}:{m_str}")
+                results = await pipe.execute()
+                
+                for obj_raw in results:
+                    if not obj_raw:
+                        continue
+                    obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                    ts_v = int(obj.get("ts") or "0")
+                    cls_v = str(obj.get("cls") or "")
+                    dir_v = str(obj.get("dir") or "")
+                    try:
+                        sc_v = float(obj.get("score") or "0")
+                    except Exception:
+                        sc_v = 0.0
+                    bkt = str(obj.get("bucket") or bucket)
+                    prio = str(obj.get("priority") or "low")
+                    if ts_v >= cutoff:
+                        out.append({"ts": ts_v, "plugin": obj.get("plugin"), "cls": cls_v, "dir": dir_v, "score": sc_v, "bucket": bkt, "priority": prio})
+        except Exception:
+            pass
+            
         out.sort(key=lambda x: int(x.get("ts") or 0))
         return out
 
@@ -128,24 +153,31 @@ class L1Aggregator:
             try:
                 key = f"l1:win:{symbol}:{b}"
                 members = await self.redis.zrevrange(key, 0, self.window_count - 1)
-                for m in members or []:
-                    try:
-                        m = m.decode() if isinstance(m, (bytes, bytearray)) else m
-                    except Exception:
-                        pass
-                    obj_raw = await self.redis.hgetall(f"{key}:{m}")
-                    obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
-                    try:
-                        items.append({
-                            "ts": int(obj.get("ts") or "0"),
-                            "plugin": obj.get("plugin"),
-                            "cls": obj.get("cls"),
-                            "dir": obj.get("dir"),
-                            "score": float(obj.get("score") or "0"),
-                            "bucket": b,
-                        })
-                    except Exception:
-                        continue
+                if not members:
+                    continue
+                    
+                async with self.redis.pipeline(transaction=False) as pipe:
+                    for m in members:
+                        m_str = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                        pipe.hgetall(f"{key}:{m_str}")
+                    results = await pipe.execute()
+                    
+                    for obj_raw in results:
+                        if not obj_raw:
+                            continue
+                        obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                        try:
+                            items.append({
+                                "ts": int(obj.get("ts") or "0"),
+                                "plugin": obj.get("plugin"),
+                                "cls": obj.get("cls"),
+                                "dir": obj.get("dir"),
+                                "score": float(obj.get("score") or "0"),
+                                "bucket": b,
+                                "priority": obj.get("priority") or "low",
+                            })
+                        except Exception:
+                            continue
             except Exception:
                 continue
         items.sort(key=lambda x: x.get("ts", 0))
@@ -154,21 +186,38 @@ class L1Aggregator:
     def _aggregate_structure(self, items: list):
         if not items:
             return {"direction": "neutral", "total_score": 0.0, "market_state": "range", "short_term_bias": False, "mid_term_bias": False}
+        
+        # Priority Weights
+        PRIO_MULTIPLIER = {
+            "low": 1.0,
+            "medium": 1.2,
+            "high": 1.5,
+            "critical": 2.0
+        }
+        
         # 按结构分桶聚合
         bucket_sums = {"short": 0.0, "mid": 0.0, "long": 0.0}
         neutral_medium_presence = {"short": False, "mid": False, "long": False}
+        
         for i in items:
             d = str(i.get("dir") or "")
             b = str(i.get("bucket") or "short")
+            p = str(i.get("priority") or "low").lower()
+            
             if d == "neutral":
-                if str(i.get("priority") or "").lower() == "medium":
+                if p in ("medium", "high", "critical"):
                     neutral_medium_presence[b] = True
                 # 中性事件不参与分数与方向投票
                 continue
+                
             sc = float(i.get("score") or 0.0)
-            signed = sc if d == "bullish" else (-sc if d == "bearish" else 0.0)
+            weight = PRIO_MULTIPLIER.get(p, 1.0)
+            final_score = sc * weight
+            
+            signed = final_score if d == "bullish" else (-final_score if d == "bearish" else 0.0)
             if b in bucket_sums:
                 bucket_sums[b] += signed
+                
         # 桶方向判定（带桶中性带）
         def dir_of(val: float, band: float):
             if abs(val) < band:

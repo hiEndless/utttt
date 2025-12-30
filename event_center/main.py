@@ -1,7 +1,7 @@
 import asyncio
-from l0_processor import L0Processor
-from l1_aggregator import L1Aggregator
-from final_grader import FinalGrader
+from event_center.pipeline.l0_processor import L0Processor
+from event_center.pipeline.l1_aggregator import L1Aggregator
+from event_center.pipeline.final_grader import FinalGrader
 from alerts_consumer import AlertsConsumer
 from force_stats_consumer import ForceStatsConsumer
 from event_center.indicators_event_generator import EventGenerator, RedisEventWriter

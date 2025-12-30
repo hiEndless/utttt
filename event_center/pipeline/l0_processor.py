@@ -16,64 +16,85 @@ class L0Processor:
         self.high_score = 3.0
         self.consistency_ratio = 0.6
 
-def tf_rank(tf: str) -> int:
-    order = {"1m": 1, "5m": 2, "15m": 3, "30m": 4, "1h": 5, "2h": 6, "4h": 7, "1d": 8}
-    return order.get(str(tf or ""), 99)
+    def tf_rank(self, tf: str) -> int:
+        order = {"1m": 1, "5m": 2, "15m": 3, "30m": 4, "1h": 5, "2h": 6, "4h": 7, "1d": 8}
+        return order.get(str(tf or ""), 99)
 
     async def _update_and_fetch_window(self, symbol: str, plugin: str, tf: str, ts_ms: int, direction: str, strength: float):
         key = f"l0:win:{symbol}:{plugin}:{tf}"
         member = f"{ts_ms}:{uuid.uuid4().hex[:6]}"
         hkey = f"{key}:{member}"
+        
+        # Optimize 1: Atomic update with pipeline
         try:
-            await self.redis.zadd(key, {member: ts_ms})
-            await self.redis.hset(hkey, mapping={"ts": str(ts_ms), "dir": str(direction or ""), "score": str(strength)})
+            async with self.redis.pipeline(transaction=True) as pipe:
+                pipe.zadd(key, {member: ts_ms})
+                pipe.hset(hkey, mapping={"ts": str(ts_ms), "dir": str(direction or ""), "score": str(strength)})
+                # Safety expiration
+                pipe.expire(hkey, self.window_seconds * 10)
+                await pipe.execute()
         except Exception:
             pass
+            
         win_sec = int(self.window_seconds)
         cutoff = ts_ms - win_sec * 1000
+        
+        # Optimize 2: Batch cleanup
         try:
-            # collect old members to delete hashes
             olds = await self.redis.zrangebyscore(key, min=0, max=cutoff)
             if olds:
-                for m in olds:
-                    try:
-                        m = m.decode() if isinstance(m, (bytes, bytearray)) else m
-                    except Exception:
-                        pass
-                    try:
-                        await self.redis.delete(f"{key}:{m}")
-                    except Exception:
-                        pass
-            await self.redis.zremrangebyscore(key, 0, cutoff)
+                async with self.redis.pipeline(transaction=False) as pipe:
+                    for m in olds:
+                        try:
+                            m_str = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                            pipe.delete(f"{key}:{m_str}")
+                        except Exception:
+                            pass
+                    pipe.zremrangebyscore(key, 0, cutoff)
+                    await pipe.execute()
+            else:
+                await self.redis.zremrangebyscore(key, 0, cutoff)
         except Exception:
             pass
-        # fetch recent N
+            
+        # Optimize 3: Batch fetch
         win_cnt = int(self.window_count)
         try:
             members = await self.redis.zrevrange(key, 0, win_cnt - 1)
         except Exception:
             members = []
+            
+        if not members:
+            return []
+
         out = []
-        for m in members or []:
-            try:
-                try:
-                    m = m.decode() if isinstance(m, (bytes, bytearray)) else m
-                except Exception:
-                    pass
-                hk = f"{key}:{m}"
-                obj_raw = await self.redis.hgetall(hk)
-                obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
-                # normalize types
-                ts_v = int(obj.get("ts") or "0")
-                dir_v = str(obj.get("dir") or "")
-                try:
-                    sc_v = float(obj.get("score") or "0")
-                except Exception:
-                    sc_v = 0.0
-                if ts_v >= cutoff:
-                    out.append({"ts": ts_v, "dir": dir_v, "score": sc_v})
-            except Exception:
-                continue
+        # Use pipeline to fetch all hashes at once
+        try:
+            async with self.redis.pipeline(transaction=False) as pipe:
+                decoded_members = []
+                for m in members:
+                    m_str = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                    decoded_members.append(m_str)
+                    pipe.hgetall(f"{key}:{m_str}")
+                
+                results = await pipe.execute()
+                
+                for i, obj_raw in enumerate(results):
+                    if not obj_raw: 
+                        continue
+                    obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                    ts_v = int(obj.get("ts") or "0")
+                    dir_v = str(obj.get("dir") or "")
+                    try:
+                        sc_v = float(obj.get("score") or "0")
+                    except Exception:
+                        sc_v = 0.0
+                    
+                    if ts_v >= cutoff:
+                        out.append({"ts": ts_v, "dir": dir_v, "score": sc_v})
+        except Exception:
+            pass
+            
         # sort ascending by ts
         out.sort(key=lambda x: x.get("ts", 0))
         return out
@@ -167,7 +188,7 @@ def tf_rank(tf: str) -> int:
                 tfs.extend(p.get("tfs") or [])
         except Exception:
             pass
-        tf = (min(tfs, key=tf_rank) if tfs else "unknown")
+        tf = (min(tfs, key=self.tf_rank) if tfs else "unknown")
         try:
             ts_ms = int(event.get("timestamp") or "0")
         except Exception:
@@ -196,6 +217,11 @@ def tf_rank(tf: str) -> int:
             else:
                 priority = "low"
 
+        try:
+            lvl = int(event.get("event_level") or 0)
+        except Exception:
+            lvl = 0
+
         l0 = {
             "event_id": event.get("event_id"),
             "timestamp": event.get("timestamp"),
@@ -205,7 +231,7 @@ def tf_rank(tf: str) -> int:
             "event_class": event.get("event_class") or event.get("class") or "",
             "event_type": event.get("event_type") or event.get("type") or "",
             "type": event.get("event_type") or event.get("type") or "",
-            "event_level": event.get("event_level") or "",
+            "event_level": lvl,
             "payload": json.dumps({
                 "raw": summary,
                 "l0": confirm,

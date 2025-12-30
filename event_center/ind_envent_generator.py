@@ -138,7 +138,7 @@ def _extract_plugin_evidence(res: dict):
     return out
 
 
-async def _run_one(symbol: str, exchange: str):
+async def _run_one(symbol: str, exchange: str, client: redis.Redis):
     try:
         res = await asyncio.to_thread(run_event_engine, symbol, exchange)
 
@@ -231,7 +231,6 @@ async def _run_one(symbol: str, exchange: str):
             payload=payload,
         )
 
-        client = _redis_client()
         client.xadd(cfg.raw_stream, raw)
         # print(raw)
         print(
@@ -257,7 +256,7 @@ async def run_loop(exchange: str, poll_sec: int = 60, concurrency: int = 16):
             for sym in symbols:
                 async def _task(s=sym):
                     async with sem:
-                        await _run_one(s, exchange)
+                        await _run_one(s, exchange, client)
                 tasks.append(asyncio.create_task(_task()))
             await asyncio.gather(*tasks, return_exceptions=True)
         except Exception as e:

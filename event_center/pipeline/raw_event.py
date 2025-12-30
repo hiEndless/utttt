@@ -47,7 +47,7 @@ def build_raw_event(
         "account_id": account_id,
         "event_class": event_class,
         "event_type": event_type,
-        "event_level": event_level,
+        "event_level": int(event_level),
         "payload": json.dumps(payload, ensure_ascii=False),
         "meta": json.dumps(meta, ensure_ascii=False),
     }
