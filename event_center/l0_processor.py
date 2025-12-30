@@ -1,19 +1,14 @@
 import asyncio
 import json
-import os
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
-from event_center.rules import load_rules, match_instant_rule
-
-
-RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.yml")
 
 
 class L0Processor:
     def __init__(self, redis_url: str = cfg.redis_url):
         self.redis = aioredis.from_url(redis_url)
-        self.rules = load_rules(RULES_PATH)
+        self.default_priority = "low"
         self.window_seconds = 300
         self.window_count = 5
         self.min_score = 2.0
@@ -95,7 +90,7 @@ class L0Processor:
         etype = str(event.get("event_type") or event.get("type") or "")
         if etype.startswith("meta_"):
             return
-        priority = self.rules.get("default_priority", "low")
+        priority = self.default_priority
         matched_rules = []
         # 解析载荷（支持字符串）
         # support RES v1.0

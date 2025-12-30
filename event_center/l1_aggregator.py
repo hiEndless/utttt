@@ -4,85 +4,140 @@ import time
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
-from event_center.rules import load_rules, match_payload_condition
-
-
-RULES_PATH = "rules.yml"
+import os
+import yaml
 
 
 class L1Aggregator:
     def __init__(self, redis_url: str = cfg.redis_url):
         self.redis = aioredis.from_url(redis_url)
-        self.rules = load_rules(RULES_PATH)
-        self.cooldown = {}
-        for s in self.rules.get("suppression", []) or []:
-            rid = s.get("rule_id")
-            cd = s.get("cooldown_seconds")
-            if rid and cd:
-                self.cooldown[rid] = int(cd)
+        self.neutral_band = 2.0
+        self.short_boost = 0.2
+        self.mid_boost = 0.3
+        self.window_seconds = 300
+        self.window_count = 10
+        self.class_map = self._load_class_map()
 
-    def _skey(self, rule_id, group_val):
-        return f"agg:{rule_id}:{group_val}"
+    def _load_class_map(self):
+        try:
+            base_dir = os.path.dirname(__file__)
+            cfg_dir = os.path.join(base_dir, "indicators_event", "config")
+            with open(os.path.join(cfg_dir, "indicator_class_map.yaml"), "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        except Exception:
+            return {}
 
-    async def _insert_and_check(self, rule, event):
-        group_by_field = rule.get("group_by")
-        group_val = event.get(group_by_field) if group_by_field else "global"
-        key = self._skey(rule["id"], group_val)
-        now = int(time.time())
-        member = f"{now}:{event.get('event_id')}"
-        await self.redis.zadd(key, {member: now})
-        lookback = int(rule.get("lookback_seconds", 600))
-        cutoff = now - lookback
-        await self.redis.zremrangebyscore(key, 0, cutoff)
-        cnt = await self.redis.zcount(key, cutoff, now)
-        cond = rule.get("condition", {})
-        if "count" in cond:
-            op = cond["count"].get("operator")
-            val = int(cond["count"].get("value", 0))
-            if op == ">=" and cnt >= val:
-                return True, cnt, key, group_val
-            if op == ">" and cnt > val:
-                return True, cnt, key, group_val
-            if op == "<=" and cnt <= val:
-                return True, cnt, key, group_val
-        return False, cnt, key, group_val
+    def _infer_cls(self, plugin_name: str):
+        m = self.class_map or {}
+        by_plug = (m.get("by_plugin") or {})
+        for cls, names in by_plug.items():
+            if isinstance(names, list) and str(plugin_name or "").lower() in [n.lower() for n in names]:
+                return cls
+        # fallback by keyword
+        n = str(plugin_name or "").lower()
+        for kw, cls in [
+            ("macd", "trend"),
+            ("ema", "trend"),
+            ("ma", "trend"),
+            ("boll", "volatility"),
+            ("williams", "momentum"),
+            ("rsi", "momentum"),
+            ("kdj", "momentum"),
+            ("atr", "volatility"),
+        ]:
+            if kw in n:
+                return cls
+        return "unknown"
+
+    async def _update_and_fetch_window(self, symbol: str, item: dict):
+        key = f"l1:win:{symbol}"
+        ts = int(item.get("ts") or int(time.time()))
+        member = json.dumps(item, ensure_ascii=False)
+        try:
+            await self.redis.zadd(key, {member: ts})
+        except Exception:
+            pass
+        cutoff = ts - self.window_seconds
+        try:
+            await self.redis.zremrangebyscore(key, 0, cutoff)
+        except Exception:
+            pass
+        try:
+            entries = await self.redis.zrevrange(key, 0, self.window_count - 1, withscores=False)
+        except Exception:
+            entries = []
+        out = []
+        for e in entries:
+            try:
+                obj = json.loads(e)
+                if int(obj.get("ts") or 0) >= cutoff:
+                    out.append(obj)
+            except Exception:
+                continue
+        out.sort(key=lambda x: int(x.get("ts") or 0))
+        return out
+
+    def _aggregate_structure(self, items: list):
+        if not items:
+            return {"direction": "neutral", "total_score": 0.0, "market_state": "range", "short_term_bias": False, "mid_term_bias": False}
+        has_trend = any((i.get("cls") == "trend" and i.get("dir") in ("bullish", "bearish") and float(i.get("score") or 0.0) >= 0.0) for i in items)
+        total = 0.0
+        short_bias = False
+        mid_bias = False
+        for i in items:
+            sc = float(i.get("score") or 0.0)
+            d = i.get("dir")
+            w = 1.0
+            if i.get("cls") != "trend" and has_trend:
+                w *= 0.5
+            align = i.get("align") or {}
+            bulls = align.get("bullish") or []
+            bears = align.get("bearish") or []
+            def has_pair(lst, a, b):
+                return (a in lst) and (b in lst)
+            if has_pair(bulls + bears, "1m", "5m"):
+                w *= (1.0 + self.short_boost)
+                short_bias = True
+            if has_pair(bulls + bears, "15m", "1h"):
+                w *= (1.0 + self.mid_boost)
+                mid_bias = True
+            signed = sc if d == "bullish" else (-sc if d == "bearish" else 0.0)
+            total += signed * w
+        direction = "neutral" if abs(total) < self.neutral_band else ("bullish" if total > 0 else "bearish")
+        state = "trend" if has_trend and direction != "neutral" else ("range" if direction == "neutral" else "momentum")
+        return {"direction": direction, "total_score": total, "market_state": state, "short_term_bias": short_bias, "mid_term_bias": mid_bias}
 
     async def process_l0_event(self, entry_id, data):
         event = data
-        for rule in self.rules.get("aggregation_rules", []) or []:
-            ef = rule.get("condition", {}).get("event_filter", {})
-            if ef.get("type"):
-                et = event.get("type") or event.get("event_type")
-                rt = ef["type"]
-                if "*" in rt:
-                    pref = rt.split("*", 1)[0]
-                    if not str(et or "").startswith(pref):
-                        continue
-                else:
-                    if rt != et:
-                        continue
-            if not match_payload_condition(event.get("payload", {}), ef.get("payload", {})):
-                continue
-            hit, cnt, key, group_val = await self._insert_and_check(rule, event)
-            if hit:
-                lock_key = f"agg_lock:{rule['id']}:{group_val}"
-                cooldown = int(self.cooldown.get(rule["id"], 300))
-                was_set = await self.redis.setnx(lock_key, str(int(time.time())))
-                if was_set:
-                    await self.redis.expire(lock_key, cooldown)
-                    l1 = {
-                        "rule_id": rule["id"],
-                        "account_id": event.get("account_id"),
-                        "symbol": event.get("symbol"),
-                        "stage": "l1",
-                        "group_val": group_val,
-                        "timestamp": int(time.time()),
-                        "count": cnt,
-                        "result_priority": rule.get("result_priority"),
-                    }
-                    l1 = {k: ("" if v is None else v) for k, v in l1.items()}
-                    await self.redis.xadd(cfg.l1_stream, l1)
-                    print(f"[L1] 命中 规则={rule['id']} 分组={group_val} 计数={cnt} 优先级={l1['result_priority']}")
+        symbol = event.get("symbol")
+        etype = event.get("type") or event.get("event_type") or ""
+        payload = event.get("payload") or {}
+        raw = payload.get("raw") or {}
+        l0 = payload.get("l0") or {}
+        direction = str(l0.get("l0_direction") or raw.get("direction") or "").lower()
+        score = float(l0.get("l0_score") or raw.get("signal_strength") or 0.0)
+        align = raw.get("timeframe_alignment") or {}
+        cls = self._infer_cls(etype)
+        now = int(time.time())
+        win_item = {"ts": now, "plugin": etype, "cls": cls, "dir": direction, "score": score, "align": align}
+        items = await self._update_and_fetch_window(symbol, win_item)
+        agg = self._aggregate_structure(items)
+        pr = "high" if agg["market_state"] == "trend" else ("medium" if agg["market_state"] == "range" else "low")
+        l1 = {
+            "account_id": event.get("account_id"),
+            "symbol": symbol,
+            "stage": "l1",
+            "timestamp": now,
+            "direction": agg["direction"],
+            "total_score": agg["total_score"],
+            "market_state": agg["market_state"],
+            "short_term_bias": str(agg["short_term_bias"]).lower(),
+            "mid_term_bias": str(agg["mid_term_bias"]).lower(),
+            "result_priority": pr,
+        }
+        l1 = {k: ("" if v is None else v) for k, v in l1.items()}
+        await self.redis.xadd(cfg.l1_stream, l1)
+        print(f"[L1] 输出 symbol={symbol} 状态={agg['market_state']} 方向={agg['direction']} 分数={agg['total_score']} 优先级={pr}")
 
     async def run(self):
         group = "l1_group"
