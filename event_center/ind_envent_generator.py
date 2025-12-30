@@ -6,7 +6,7 @@ import redis
 from typing import List, Set
 from event_center.config import cfg
 from event_center.indicators_event.engine.event_engine import run_event_engine
-from event_center.raw_event import build_raw_event
+from event_center.pipeline.raw_event import build_raw_event
 import time
 
 
@@ -164,9 +164,14 @@ async def _run_one(symbol: str, exchange: str, client: redis.Redis):
 
         if os.getenv("ENGINE_EXCLUDE_CONFLICT", "true").lower() == "true":
             if res.get("market_state") == "conflict":
+                print(f"[指标事件] 跳过写入 原因=conflict 交易所={exchange} 交易对={symbol}")
                 return
 
-        if band_val < min_band_val or align_depth < req_align:
+        if band_val < min_band_val:
+            print(f"[指标事件] 跳过写入 原因=band({band_val}<{min_band_val}) 交易所={exchange} 交易对={symbol}")
+            return
+        if align_depth < req_align:
+            print(f"[指标事件] 跳过写入 原因=alignment({align_depth}<{req_align}) 交易所={exchange} 交易对={symbol}")
             return
 
         # ====== 构造 Raw Payload（三层） ======
