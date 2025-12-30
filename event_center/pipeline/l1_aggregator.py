@@ -257,6 +257,12 @@ class L1Aggregator:
             "market_state": state,
             "short_term_bias": short_bias,
             "mid_term_bias": mid_bias,
+            "short_dir": short_dir,
+            "mid_dir": mid_dir,
+            "long_dir": long_dir,
+            "bucket_short_score": bucket_sums["short"],
+            "bucket_mid_score": bucket_sums["mid"],
+            "bucket_long_score": bucket_sums["long"],
         }
 
     async def process_l0_event(self, entry_id, data):
@@ -294,6 +300,12 @@ class L1Aggregator:
             "short_term_bias": str(agg["short_term_bias"]).lower(),
             "mid_term_bias": str(agg["mid_term_bias"]).lower(),
             "result_priority": pr,
+            "short_dir": str(agg.get("short_dir") or "").lower(),
+            "mid_dir": str(agg.get("mid_dir") or "").lower(),
+            "long_dir": str(agg.get("long_dir") or "").lower(),
+            "bucket_short_score": agg.get("bucket_short_score") or 0.0,
+            "bucket_mid_score": agg.get("bucket_mid_score") or 0.0,
+            "bucket_long_score": agg.get("bucket_long_score") or 0.0,
         }
         l1 = {k: ("" if v is None else v) for k, v in l1.items()}
         try:
