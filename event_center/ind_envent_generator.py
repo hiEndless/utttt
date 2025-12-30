@@ -233,7 +233,7 @@ async def _run_one(symbol: str, exchange: str):
 
         client = _redis_client()
         client.xadd(cfg.raw_stream, raw)
-        print(raw)
+        # print(raw)
         print(
             f"[指标事件] 已写入 Raw 流={cfg.raw_stream} "
             f"交易所={exchange} 交易对={symbol} 等级={raw.get('event_level')}"
