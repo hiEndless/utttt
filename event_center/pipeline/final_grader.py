@@ -193,6 +193,13 @@ class FinalGrader:
                         "indicators": ev.get("indicator_values"),
                     }
 
+                    origin_sources = None
+                    try:
+                        origin_sources = json.loads(ev.get("origin_sources")) if ev.get("origin_sources") else None
+                    except Exception:
+                        origin_sources = None
+                    origin_source_hint = ev.get("origin_source_hint") or "unknown"
+
                     final = {
                         "event_id": f"{symbol}.final.{ts_raw}",
                         "stage": "final",
@@ -224,6 +231,10 @@ class FinalGrader:
                             },
                             "reason_tags": reason_tags,
                             "lock_window_sec": min_interval,
+                            "provenance": {
+                                "origin_sources": origin_sources,
+                                "origin_source_hint": origin_source_hint,
+                            },
                             "_debug": debug_payload,
                         }, ensure_ascii=False),
 
@@ -233,6 +244,8 @@ class FinalGrader:
                             "source_event_id": ev.get("event_id"),
                             "ts_unit": "ms",
                             "min_interval_sec": min_interval,
+                            "origin_source_hint": origin_source_hint,
+                            "origin_sources": origin_sources,
                         }, ensure_ascii=False),
                     }
 

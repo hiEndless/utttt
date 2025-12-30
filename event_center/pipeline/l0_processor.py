@@ -231,6 +231,7 @@ class L0Processor:
             "event_class": event.get("event_class") or event.get("class") or "",
             "event_type": event.get("event_type") or event.get("type") or "",
             "type": event.get("event_type") or event.get("type") or "",
+            "source": event.get("source"),
             "event_level": lvl,
             "payload": json.dumps({
                 "raw": summary,

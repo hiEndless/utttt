@@ -83,6 +83,7 @@ class L1Aggregator:
                     "score": str(item.get("score") or 0.0),
                     "bucket": bucket,
                     "priority": str(item.get("priority") or "low"),
+                    "source": str(item.get("source") or ""),
                 })
                 pipe.expire(hkey, self.window_seconds * 10)
                 await pipe.execute()
@@ -139,8 +140,9 @@ class L1Aggregator:
                         sc_v = 0.0
                     bkt = str(obj.get("bucket") or bucket)
                     prio = str(obj.get("priority") or "low")
+                    src_v = str(obj.get("source") or "")
                     if ts_v >= cutoff:
-                        out.append({"ts": ts_v, "plugin": obj.get("plugin"), "cls": cls_v, "dir": dir_v, "score": sc_v, "bucket": bkt, "priority": prio})
+                        out.append({"ts": ts_v, "plugin": obj.get("plugin"), "cls": cls_v, "dir": dir_v, "score": sc_v, "bucket": bkt, "priority": prio, "source": src_v})
         except Exception:
             pass
             
@@ -183,6 +185,7 @@ class L1Aggregator:
                                 "score": float(obj.get("score") or "0"),
                                 "bucket": b,
                                 "priority": obj.get("priority") or "low",
+                                "source": obj.get("source") or "",
                             })
                         except Exception:
                             continue
@@ -206,11 +209,15 @@ class L1Aggregator:
         # 按结构分桶聚合
         bucket_sums = {"short": 0.0, "mid": 0.0, "long": 0.0}
         neutral_medium_presence = {"short": False, "mid": False, "long": False}
+        sources_set = set()
         
         for i in items:
             d = str(i.get("dir") or "")
             b = str(i.get("bucket") or "short")
             p = str(i.get("priority") or "low").lower()
+            s = str(i.get("source") or "")
+            if s:
+                sources_set.add(s)
             
             if d == "neutral":
                 if p in ("medium", "high", "critical"):
@@ -251,6 +258,25 @@ class L1Aggregator:
             state = "momentum"
         short_bias = short_dir != "neutral"
         mid_bias = mid_dir != "neutral"
+        def _src_hint(srcs: set) -> str:
+            if not srcs:
+                return "unknown"
+            m = []
+            for s in srcs:
+                if "indicators_event_generator" in s:
+                    m.append("indicators")
+                elif "ind_event_engine" in s:
+                    m.append("indicators")
+                elif "alerts_consumer" in s:
+                    m.append("alerts")
+                elif "force_stats_consumer" in s:
+                    m.append("liquidation")
+                else:
+                    m.append(s)
+            u = sorted(set(m))
+            if len(u) == 1:
+                return u[0]
+            return "mixed"
         return {
             "direction": direction,
             "total_score": total,
@@ -263,6 +289,8 @@ class L1Aggregator:
             "bucket_short_score": bucket_sums["short"],
             "bucket_mid_score": bucket_sums["mid"],
             "bucket_long_score": bucket_sums["long"],
+            "origin_sources": sorted(list(sources_set)),
+            "origin_source_hint": _src_hint(sources_set),
         }
 
     async def process_l0_event(self, entry_id, data):
@@ -284,12 +312,13 @@ class L1Aggregator:
         primary_tf = str(raw.get("primary_tf") or "")
         bucket = self._infer_bucket(primary_tf)
         prio = str(event.get("priority") or "low")
-        win_item = {"ts": ts, "plugin": etype, "cls": cls, "dir": direction, "score": score, "bucket": bucket, "priority": prio}
+        win_item = {"ts": ts, "plugin": etype, "cls": cls, "dir": direction, "score": score, "bucket": bucket, "priority": prio, "source": event.get("source") or ""}
         await self._update_and_fetch_window(symbol, bucket, win_item)
         items = await self._fetch_all_buckets(symbol)
         agg = self._aggregate_structure(items)
         pr = "high" if agg["market_state"] == "trend" else ("medium" if agg["market_state"] == "range" else "low")
         l1 = {
+            "event_id": event.get("event_id"),
             "account_id": event.get("account_id"),
             "symbol": symbol,
             "stage": "l1",
@@ -306,6 +335,8 @@ class L1Aggregator:
             "bucket_short_score": agg.get("bucket_short_score") or 0.0,
             "bucket_mid_score": agg.get("bucket_mid_score") or 0.0,
             "bucket_long_score": agg.get("bucket_long_score") or 0.0,
+            "origin_sources": json.dumps(agg.get("origin_sources") or []),
+            "origin_source_hint": agg.get("origin_source_hint") or "unknown",
         }
         l1 = {k: ("" if v is None else v) for k, v in l1.items()}
         try:
