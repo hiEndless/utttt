@@ -177,6 +177,15 @@ async def _run_one(symbol: str, exchange: str):
         #   未应用冲突降级与跨TF同类衰减，主要用于解释与审计
 
         plugins_evd = _extract_plugin_evidence(res)
+        # 选择代表插件及其主周期
+        top_plugin = None
+        if plugins_evd:
+            top_plugin = max(plugins_evd, key=lambda p: abs(float(p.get("score") or 0.0)))
+        primary_tf = ""
+        if top_plugin:
+            tfs_list = top_plugin.get("tfs") or []
+            if tfs_list:
+                primary_tf = str(tfs_list[0])
         payload = {
             # -------- summary（快速结论） --------
             "summary": {
@@ -185,6 +194,8 @@ async def _run_one(symbol: str, exchange: str):
                 "signal_strength": res.get("signal_strength"),
                 "signal_strength_band": res.get("signal_strength_band"),
                 "level": res.get("level"),
+                "plugin": (top_plugin.get("name") if top_plugin else ""),
+                "primary_tf": primary_tf,
             },
 
             # -------- structure（L0 / L1 依据） --------
@@ -206,9 +217,6 @@ async def _run_one(symbol: str, exchange: str):
         ts_ms = int(time.time() * 1000)
 
         # 事件类型改为来源于factors的插件名（取同族代表后的最强者）
-        top_plugin = None
-        if plugins_evd:
-            top_plugin = max(plugins_evd, key=lambda p: abs(float(p.get("score") or 0.0)))
         event_type_name = (top_plugin.get("name") if top_plugin else "tech.engine")
 
         raw = build_raw_event(

@@ -12,6 +12,7 @@ class L1Aggregator:
     def __init__(self, redis_url: str = cfg.redis_url):
         self.redis = aioredis.from_url(redis_url)
         self.neutral_band = 2.0
+        self.bucket_band_map = {"short": 0.6, "mid": 0.8, "long": 1.2}
         self.short_boost = 0.2
         self.mid_boost = 0.3
         self.window_seconds = 300
@@ -49,63 +50,157 @@ class L1Aggregator:
                 return cls
         return "unknown"
 
-    async def _update_and_fetch_window(self, symbol: str, item: dict):
-        key = f"l1:win:{symbol}"
-        ts = int(item.get("ts") or int(time.time()))
-        member = json.dumps(item, ensure_ascii=False)
+    def _bucket_of_tf(self, tf: str) -> str:
+        tf = str(tf or "").lower()
+        if tf in ("1m", "5m"):
+            return "short"
+        if tf in ("15m", "30m", "1h"):
+            return "mid"
+        if tf in ("2h", "4h", "1d"):
+            return "long"
+        return "short"
+
+    def _infer_bucket(self, primary_tf: str) -> str:
+        if primary_tf:
+            return self._bucket_of_tf(primary_tf)
+        return "short"
+
+    async def _update_and_fetch_window(self, symbol: str, bucket: str, item: dict):
+        key = f"l1:win:{symbol}:{bucket}"
+        ts_ms = int(item.get("ts") or int(time.time() * 1000))
+        member = str(ts_ms)
+        hkey = f"{key}:{member}"
         try:
-            await self.redis.zadd(key, {member: ts})
+            await self.redis.zadd(key, {member: ts_ms})
+            await self.redis.hset(hkey, mapping={
+                "ts": str(ts_ms),
+                "plugin": str(item.get("plugin") or ""),
+                "cls": str(item.get("cls") or ""),
+                "dir": str(item.get("dir") or ""),
+                "score": str(item.get("score") or 0.0),
+                "bucket": bucket,
+            })
         except Exception:
             pass
-        cutoff = ts - self.window_seconds
+        cutoff = ts_ms - self.window_seconds * 1000
         try:
+            olds = await self.redis.zrangebyscore(key, min=0, max=cutoff)
+            if olds:
+                for m in olds:
+                    try:
+                        await self.redis.delete(f"{key}:{m}")
+                    except Exception:
+                        pass
             await self.redis.zremrangebyscore(key, 0, cutoff)
         except Exception:
             pass
         try:
-            entries = await self.redis.zrevrange(key, 0, self.window_count - 1, withscores=False)
+            entries = await self.redis.zrevrange(key, 0, self.window_count - 1)
         except Exception:
             entries = []
         out = []
-        for e in entries:
+        for m in entries or []:
             try:
-                obj = json.loads(e)
-                if int(obj.get("ts") or 0) >= cutoff:
-                    out.append(obj)
+                try:
+                    m = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                except Exception:
+                    pass
+                obj_raw = await self.redis.hgetall(f"{key}:{m}")
+                obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                ts_v = int(obj.get("ts") or "0")
+                cls_v = str(obj.get("cls") or "")
+                dir_v = str(obj.get("dir") or "")
+                try:
+                    sc_v = float(obj.get("score") or "0")
+                except Exception:
+                    sc_v = 0.0
+                bkt = str(obj.get("bucket") or bucket)
+                if ts_v >= cutoff:
+                    out.append({"ts": ts_v, "plugin": obj.get("plugin"), "cls": cls_v, "dir": dir_v, "score": sc_v, "bucket": bkt})
             except Exception:
                 continue
         out.sort(key=lambda x: int(x.get("ts") or 0))
         return out
 
+    async def _fetch_all_buckets(self, symbol: str):
+        items = []
+        for b in ("short", "mid", "long"):
+            try:
+                key = f"l1:win:{symbol}:{b}"
+                members = await self.redis.zrevrange(key, 0, self.window_count - 1)
+                for m in members or []:
+                    try:
+                        m = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                    except Exception:
+                        pass
+                    obj_raw = await self.redis.hgetall(f"{key}:{m}")
+                    obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                    try:
+                        items.append({
+                            "ts": int(obj.get("ts") or "0"),
+                            "plugin": obj.get("plugin"),
+                            "cls": obj.get("cls"),
+                            "dir": obj.get("dir"),
+                            "score": float(obj.get("score") or "0"),
+                            "bucket": b,
+                        })
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+        items.sort(key=lambda x: x.get("ts", 0))
+        return items
+
     def _aggregate_structure(self, items: list):
         if not items:
             return {"direction": "neutral", "total_score": 0.0, "market_state": "range", "short_term_bias": False, "mid_term_bias": False}
-        has_trend = any((i.get("cls") == "trend" and i.get("dir") in ("bullish", "bearish") and float(i.get("score") or 0.0) >= 0.0) for i in items)
-        total = 0.0
-        short_bias = False
-        mid_bias = False
+        # 按结构分桶聚合
+        bucket_sums = {"short": 0.0, "mid": 0.0, "long": 0.0}
+        neutral_medium_presence = {"short": False, "mid": False, "long": False}
         for i in items:
+            d = str(i.get("dir") or "")
+            b = str(i.get("bucket") or "short")
+            if d == "neutral":
+                if str(i.get("priority") or "").lower() == "medium":
+                    neutral_medium_presence[b] = True
+                # 中性事件不参与分数与方向投票
+                continue
             sc = float(i.get("score") or 0.0)
-            d = i.get("dir")
-            w = 1.0
-            if i.get("cls") != "trend" and has_trend:
-                w *= 0.5
-            align = i.get("align") or {}
-            bulls = align.get("bullish") or []
-            bears = align.get("bearish") or []
-            def has_pair(lst, a, b):
-                return (a in lst) and (b in lst)
-            if has_pair(bulls + bears, "1m", "5m"):
-                w *= (1.0 + self.short_boost)
-                short_bias = True
-            if has_pair(bulls + bears, "15m", "1h"):
-                w *= (1.0 + self.mid_boost)
-                mid_bias = True
             signed = sc if d == "bullish" else (-sc if d == "bearish" else 0.0)
-            total += signed * w
+            if b in bucket_sums:
+                bucket_sums[b] += signed
+        # 桶方向判定（带桶中性带）
+        def dir_of(val: float, band: float):
+            if abs(val) < band:
+                return "neutral"
+            return "bullish" if val > 0 else "bearish"
+        short_dir = dir_of(bucket_sums["short"], self.bucket_band_map.get("short", 0.6))
+        mid_dir = dir_of(bucket_sums["mid"], self.bucket_band_map.get("mid", 0.8))
+        long_dir = dir_of(bucket_sums["long"], self.bucket_band_map.get("long", 1.2))
+        total = bucket_sums["short"] + bucket_sums["mid"] + bucket_sums["long"]
         direction = "neutral" if abs(total) < self.neutral_band else ("bullish" if total > 0 else "bearish")
-        state = "trend" if has_trend and direction != "neutral" else ("range" if direction == "neutral" else "momentum")
-        return {"direction": direction, "total_score": total, "market_state": state, "short_term_bias": short_bias, "mid_term_bias": mid_bias}
+        # 结构状态判定：严格依据桶一致性
+        if direction == "neutral":
+            state = "range"
+        else:
+            if short_dir != "neutral" and mid_dir == short_dir:
+                state = "trend"
+            elif short_dir != "neutral" and mid_dir == "neutral":
+                state = "momentum"
+            else:
+                # 其他情况（例如long主导或多桶不相邻同向），归为momentum以避免误判
+                state = "momentum"
+        if state == "trend" and (neutral_medium_presence["short"] or neutral_medium_presence["mid"]):
+            state = "momentum"
+        short_bias = short_dir != "neutral"
+        mid_bias = mid_dir != "neutral"
+        return {
+            "direction": direction,
+            "total_score": total,
+            "market_state": state,
+            "short_term_bias": short_bias,
+            "mid_term_bias": mid_bias,
+        }
 
     async def process_l0_event(self, entry_id, data):
         event = data
@@ -116,18 +211,26 @@ class L1Aggregator:
         l0 = payload.get("l0") or {}
         direction = str(l0.get("l0_direction") or raw.get("direction") or "").lower()
         score = float(l0.get("l0_score") or raw.get("signal_strength") or 0.0)
-        align = raw.get("timeframe_alignment") or {}
         cls = self._infer_cls(etype)
-        now = int(time.time())
-        win_item = {"ts": now, "plugin": etype, "cls": cls, "dir": direction, "score": score, "align": align}
-        items = await self._update_and_fetch_window(symbol, win_item)
+        # 统一使用毫秒时间戳，避免窗口尺度与顺序漂移
+        try:
+            ts_ms = int(event.get("timestamp") or "0")
+        except Exception:
+            ts_ms = 0
+        ts = ts_ms if ts_ms else int(time.time() * 1000)
+        primary_tf = str(raw.get("primary_tf") or "")
+        bucket = self._infer_bucket(primary_tf)
+        prio = str(event.get("priority") or "low")
+        win_item = {"ts": ts, "plugin": etype, "cls": cls, "dir": direction, "score": score, "bucket": bucket, "priority": prio}
+        await self._update_and_fetch_window(symbol, bucket, win_item)
+        items = await self._fetch_all_buckets(symbol)
         agg = self._aggregate_structure(items)
         pr = "high" if agg["market_state"] == "trend" else ("medium" if agg["market_state"] == "range" else "low")
         l1 = {
             "account_id": event.get("account_id"),
             "symbol": symbol,
             "stage": "l1",
-            "timestamp": now,
+            "timestamp": ts,
             "direction": agg["direction"],
             "total_score": agg["total_score"],
             "market_state": agg["market_state"],
@@ -137,6 +240,18 @@ class L1Aggregator:
         }
         l1 = {k: ("" if v is None else v) for k, v in l1.items()}
         await self.redis.xadd(cfg.l1_stream, l1)
+        try:
+            last_key = f"l1:last:{event.get('account_id')}:{symbol}"
+            await self.redis.hset(last_key, mapping={
+                "direction": agg["direction"],
+                "market_state": agg["market_state"],
+                "timestamp": str(ts),
+                "short_term_bias": str(agg["short_term_bias"]).lower(),
+                "mid_term_bias": str(agg["mid_term_bias"]).lower(),
+                "result_priority": pr,
+            })
+        except Exception:
+            pass
         print(f"[L1] 输出 symbol={symbol} 状态={agg['market_state']} 方向={agg['direction']} 分数={agg['total_score']} 优先级={pr}")
 
     async def run(self):

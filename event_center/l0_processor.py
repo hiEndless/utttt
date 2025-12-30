@@ -1,5 +1,6 @@
 import asyncio
 import json
+import uuid
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
@@ -15,32 +16,62 @@ class L0Processor:
         self.high_score = 3.0
         self.consistency_ratio = 0.6
 
-    async def _update_and_fetch_window(self, symbol: str, plugin: str, ts_ms: int, direction: str, strength: float):
-        key = f"l0:win:{symbol}:{plugin}"
-        member = json.dumps({"ts": ts_ms, "dir": direction, "score": strength}, ensure_ascii=False)
+def tf_rank(tf: str) -> int:
+    order = {"1m": 1, "5m": 2, "15m": 3, "30m": 4, "1h": 5, "2h": 6, "4h": 7, "1d": 8}
+    return order.get(str(tf or ""), 99)
+
+    async def _update_and_fetch_window(self, symbol: str, plugin: str, tf: str, ts_ms: int, direction: str, strength: float):
+        key = f"l0:win:{symbol}:{plugin}:{tf}"
+        member = f"{ts_ms}:{uuid.uuid4().hex[:6]}"
+        hkey = f"{key}:{member}"
         try:
             await self.redis.zadd(key, {member: ts_ms})
+            await self.redis.hset(hkey, mapping={"ts": str(ts_ms), "dir": str(direction or ""), "score": str(strength)})
         except Exception:
             pass
         win_sec = int(self.window_seconds)
         cutoff = ts_ms - win_sec * 1000
         try:
+            # collect old members to delete hashes
+            olds = await self.redis.zrangebyscore(key, min=0, max=cutoff)
+            if olds:
+                for m in olds:
+                    try:
+                        m = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                    except Exception:
+                        pass
+                    try:
+                        await self.redis.delete(f"{key}:{m}")
+                    except Exception:
+                        pass
             await self.redis.zremrangebyscore(key, 0, cutoff)
         except Exception:
             pass
         # fetch recent N
         win_cnt = int(self.window_count)
         try:
-            entries = await self.redis.zrevrange(key, 0, win_cnt - 1, withscores=False)
+            members = await self.redis.zrevrange(key, 0, win_cnt - 1)
         except Exception:
-            entries = []
-        # filter by time window
+            members = []
         out = []
-        for e in entries:
+        for m in members or []:
             try:
-                obj = json.loads(e)
-                if obj.get("ts", 0) >= cutoff:
-                    out.append(obj)
+                try:
+                    m = m.decode() if isinstance(m, (bytes, bytearray)) else m
+                except Exception:
+                    pass
+                hk = f"{key}:{m}"
+                obj_raw = await self.redis.hgetall(hk)
+                obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
+                # normalize types
+                ts_v = int(obj.get("ts") or "0")
+                dir_v = str(obj.get("dir") or "")
+                try:
+                    sc_v = float(obj.get("score") or "0")
+                except Exception:
+                    sc_v = 0.0
+                if ts_v >= cutoff:
+                    out.append({"ts": ts_v, "dir": dir_v, "score": sc_v})
             except Exception:
                 continue
         # sort ascending by ts
@@ -49,7 +80,7 @@ class L0Processor:
 
     def _confirm_signal(self, window_items: list):
         if not window_items:
-            return {"l0_direction": "neutral", "l0_score": 0.0, "consistency_ratio": 0.0, "avg_abs_score": 0.0, "flip_count": 0}
+            return {"l0_direction": "neutral", "l0_score": 0.0, "consistency_ratio": 0.0, "avg_abs_score": 0.0, "flip_count": 0, "neutral_reasons": ["empty_window"], "violated_min_ratio": False, "violated_min_score": False}
         dirs = [i.get("dir") for i in window_items if i.get("dir") in ("bullish", "bearish")]
         scores = [abs(float(i.get("score") or 0.0)) for i in window_items]
         avg_abs = sum(scores) / max(1, len(scores))
@@ -71,10 +102,18 @@ class L0Processor:
         l0_dir = majority if ratio >= min_ratio else "neutral"
         # base score
         l0_score = avg_abs
+        neutral_reasons = []
+        violated_min_ratio = ratio < min_ratio
+        violated_min_score = avg_abs < min_score
+        if violated_min_ratio:
+            neutral_reasons.append("low_consistency")
         if flips >= 2:
             l0_score *= 0.6
+            neutral_reasons.append("flip_penalty")
         # threshold gating
-        if l0_dir == "neutral" or avg_abs < min_score:
+        if violated_min_score:
+            neutral_reasons.append("low_strength")
+        if l0_dir == "neutral" or violated_min_score:
             l0_dir = "neutral"
         return {
             "l0_direction": l0_dir,
@@ -83,6 +122,11 @@ class L0Processor:
             "avg_abs_score": avg_abs,
             "flip_count": flips,
             "window_count": len(window_items),
+            "neutral_reasons": neutral_reasons,
+            "violated_min_ratio": violated_min_ratio,
+            "violated_min_score": violated_min_score,
+            "directional": l0_dir != "neutral",
+            "signal_type": ("non_directional" if l0_dir == "neutral" else "directional"),
         }
 
     async def process_msg(self, entry_id, data: dict):
@@ -104,18 +148,46 @@ class L0Processor:
         raw_dir = str(summary.get("direction") or "").lower()
         raw_strength = float(summary.get("signal_strength") or 0.0)
         symbol = event.get("symbol") or ""
-        plugin = etype or ""
+        evidence_plugins = []
+        try:
+            evd = payload.get("evidence") or {}
+            evidence_plugins = evd.get("plugins") or []
+        except Exception:
+            evidence_plugins = []
+        if evidence_plugins:
+            try:
+                plugin = "+".join(sorted([str(p.get("name")) for p in evidence_plugins if p.get("name")]))
+            except Exception:
+                plugin = etype or ""
+        else:
+            plugin = etype or ""
+        tfs = []
+        try:
+            for p in evidence_plugins:
+                tfs.extend(p.get("tfs") or [])
+        except Exception:
+            pass
+        tf = (min(tfs, key=tf_rank) if tfs else "unknown")
         try:
             ts_ms = int(event.get("timestamp") or "0")
         except Exception:
             ts_ms = 0
         # 更新窗口并确认信号
-        window_items = await self._update_and_fetch_window(symbol, plugin, ts_ms, raw_dir, raw_strength)
+        window_items = await self._update_and_fetch_window(symbol, plugin, tf, ts_ms, raw_dir, raw_strength)
         confirm = self._confirm_signal(window_items)
         # 映射priority
         high_thr = float(self.high_score)
         if confirm["l0_direction"] == "neutral":
-            priority = "low"
+            if confirm.get("violated_min_ratio"):
+                priority = "low"
+            elif confirm.get("l0_score", 0.0) >= high_thr:
+                priority = "medium"
+            elif confirm.get("violated_min_score"):
+                priority = "low"
+            elif confirm.get("l0_score", 0.0) >= float(self.min_score):
+                priority = "medium"
+            else:
+                priority = "low"
         else:
             if confirm["l0_score"] >= high_thr:
                 priority = "high"
