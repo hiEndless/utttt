@@ -288,7 +288,10 @@ class L1Aggregator:
             "result_priority": pr,
         }
         l1 = {k: ("" if v is None else v) for k, v in l1.items()}
-        await self.redis.xadd(cfg.l1_stream, l1)
+        try:
+            await self.redis.xadd(cfg.l1_stream, l1)
+        except Exception as e:
+            raise e
         try:
             last_key = f"l1:last:{event.get('account_id')}:{symbol}"
             await self.redis.hset(last_key, mapping={
