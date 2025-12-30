@@ -68,5 +68,5 @@ def run_event_engine(symbol: str, exchange: str):
 
 
 if __name__ == "__main__":
-    res = run_event_engine("BTCUSDT", "binance")
+    res = run_event_engine("ETHUSDT", "binance")
     print(res)

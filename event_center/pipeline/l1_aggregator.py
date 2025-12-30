@@ -149,6 +149,11 @@ class L1Aggregator:
 
     async def _fetch_all_buckets(self, symbol: str):
         items = []
+        try:
+            now_ms = int(time.time() * 1000)
+        except Exception:
+            now_ms = int(time.time() * 1000)
+        cutoff = now_ms - self.window_seconds * 1000
         for b in ("short", "mid", "long"):
             try:
                 key = f"l1:win:{symbol}:{b}"
@@ -167,8 +172,11 @@ class L1Aggregator:
                             continue
                         obj = {k.decode(): v.decode() for k, v in obj_raw.items()}
                         try:
+                            ts_val = int(obj.get("ts") or "0")
+                            if ts_val < cutoff:
+                                continue
                             items.append({
-                                "ts": int(obj.get("ts") or "0"),
+                                "ts": ts_val,
                                 "plugin": obj.get("plugin"),
                                 "cls": obj.get("cls"),
                                 "dir": obj.get("dir"),
