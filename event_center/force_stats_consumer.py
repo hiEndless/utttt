@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Deque
 from collections import deque, defaultdict
 from redis import asyncio as aioredis
 from event_center.config import cfg
-from event_center.raw_event import build_raw_event
+from event_center.pipeline.raw_event import build_raw_event
 from event_center.rules import load_rules
 
 
@@ -79,7 +79,7 @@ class ForceStatsConsumer:
         except Exception:
             pass
 
-    async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, details: dict, level: int):
+    async def _emit_raw(self, symbol: str, ts_ms: int, alert_type: str, payload: dict, level: int):
         level = max(2, int(level))
         # 先进行配额检查；重大事件（level>=5）越过配额限制
         if not self._budget_check(symbol, ts_ms, level):
@@ -100,7 +100,7 @@ class ForceStatsConsumer:
             event_type=alert_type,
             event_level=level,
             timestamp_ms=ts_ms,
-            payload=details,
+            payload=payload,
         )
         await self.redis.xadd(cfg.raw_stream, raw)
         self._budget_record(symbol, ts_ms)  # 记录配额
@@ -259,7 +259,41 @@ class ForceStatsConsumer:
             level = self._map_level_dyn(t, d_sell_qty, d_buy_qty, d_sell, d_buy, intensity, qty_thr, count_thr,
                                         intensity_thr)
             level = max(2, int(level))
-            await self._emit_raw(symbol, start_ts, t, details, level)
+            # 构建摘要以适配管线
+            if t in ("force_spike_buy", "force_buy_dominance", "force_rebound_buy"):
+                direction = "bullish"
+            elif t in ("force_spike_sell", "force_sell_dominance", "force_rebound_sell"):
+                direction = "bearish"
+            elif t == "force_intensity":
+                direction = "bullish" if (d_buy_qty + d_buy) >= (d_sell_qty + d_sell) else "bearish"
+            else:
+                direction = "neutral"
+            try:
+                if t in ("force_spike_buy", "force_spike_sell"):
+                    base_qty = d_sell_qty if t.endswith("sell") else d_buy_qty
+                    base_cnt = d_sell if t.endswith("sell") else d_buy
+                    strength = max(base_qty / max(qty_thr, 1e-9), base_cnt / max(count_thr, 1e-9))
+                elif t == "force_intensity":
+                    strength = intensity / max(intensity_thr, 1e-9)
+                elif t in ("force_buy_dominance", "force_sell_dominance"):
+                    ratio = (d_sell_qty / max(d_buy_qty, 1e-9)) if t.endswith("sell") else (d_buy_qty / max(d_sell_qty, 1e-9))
+                    strength = ratio / max(self.dominance_ratio, 1e-9)
+                else:
+                    strength = 2.0
+            except Exception:
+                strength = float(level)
+            payload = {
+                "summary": {
+                    "direction": direction,
+                    "signal_strength": float(strength),
+                    "primary_tf": "1m",
+                },
+                "evidence": {
+                    "plugins": [{"name": t, "tfs": ["1m"]}],
+                },
+                "details": details,
+            }
+            await self._emit_raw(symbol, start_ts, t, payload, level)
 
     def _map_level(self, t: str, d_sell_qty: float, d_buy_qty: float, d_sell: int, d_buy: int, intensity: int) -> int:
         cfg = (self.levels_cfg.get("levels") or {}).get(t)

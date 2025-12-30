@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 from redis import asyncio as aioredis
 
 from event_center.config import cfg
-from event_center.raw_event import build_raw_event
+from event_center.pipeline.raw_event import build_raw_event
 
 
 def normalize_alert_type(atype: str) -> str:
@@ -110,7 +110,41 @@ class AlertsConsumer:
         except Exception:
             pass
 
-    async def _to_raw_event(self, symbol: str, alert_type: str, ts_ms: int, details: dict) -> Dict[str, str]:
+    async def _to_raw_event(self, symbol: str, alert_type: str, ts_ms: int, details: dict, level: int) -> Dict[str, str]:
+        dir_map = {
+            "price.pct_up": "bullish",
+            "price.pct_down": "bearish",
+            "trend.one_side_up": "bullish",
+            "trend.one_side_down": "bearish",
+            "depth.ask_collapse": "bullish",
+            "depth.bid_collapse": "bearish",
+        }
+        direction = dir_map.get(alert_type, "neutral")
+        strength = float(level)
+        try:
+            if "pct" in details:
+                strength = abs(float(details.get("pct", 0.0))) * 100.0
+            elif "z" in details:
+                strength = abs(float(details.get("z", 0.0))) / 4.0
+            elif "ratio" in details:
+                r = float(details.get("ratio", 1.0))
+                strength = max(1.0, 0.3 / max(r, 1e-9))
+            elif "count" in details:
+                c = float(details.get("count", 0.0))
+                strength = max(1.0, c / 3.0)
+        except Exception:
+            pass
+        payload = {
+            "summary": {
+                "direction": direction,
+                "signal_strength": strength,
+                "primary_tf": "1m",
+            },
+            "evidence": {
+                "plugins": [{"name": alert_type, "tfs": ["1m"]}],
+            },
+            "details": details,
+        }
         return build_raw_event(
             exchange="binance",
             symbol=symbol,
@@ -118,9 +152,9 @@ class AlertsConsumer:
             source="alerts_consumer",
             event_class="market",
             event_type=alert_type,
-            event_level=2,
+            event_level=level,
             timestamp_ms=ts_ms,
-            payload=details,
+            payload=payload,
         )
 
     def _normalize_alert_type(self, atype: str) -> str:
@@ -250,17 +284,7 @@ class AlertsConsumer:
                             continue
                         if not self._budget_check(symbol, ts_ms, level):
                             continue
-                        raw = build_raw_event(
-                            exchange="binance",
-                            symbol=symbol,
-                            account_id="binance_public",
-                            source="alerts_consumer",
-                            event_class="market",
-                            event_type=norm_type,
-                            event_level=level,
-                            timestamp_ms=ts_ms,
-                            payload=details,
-                        )
+                        raw = await self._to_raw_event(symbol, norm_type, ts_ms, details, level)
                         await self.redis.xadd(cfg.raw_stream, raw)
                         self._last_emit_ts[(symbol, norm_type)] = ts_ms
                         self._last_payload_fp[(symbol, norm_type)] = self._fingerprint(details)

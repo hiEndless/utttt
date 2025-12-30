@@ -4,7 +4,7 @@ from event_center.config import cfg
 from event_center.indicators_event_plugins import get_plugins
 from event_center.indicators_event_plugins.meta_combo import load_weights, score_events, build_dashboard
 import time
-from event_center.raw_event import build_raw_event
+from event_center.pipeline.raw_event import build_raw_event
 import time
 import json
 
