@@ -176,6 +176,7 @@ async def _run_one(symbol: str, exchange: str):
         # - structure.raw_total：结构“基线强度”，仅做同TF同类去重 + 同TF跨类折扣 + 分桶聚合，
         #   未应用冲突降级与跨TF同类衰减，主要用于解释与审计
 
+        plugins_evd = _extract_plugin_evidence(res)
         payload = {
             # -------- summary（快速结论） --------
             "summary": {
@@ -197,12 +198,18 @@ async def _run_one(symbol: str, exchange: str):
 
             # -------- evidence（最小可解释证据） --------
             "evidence": {
-                "plugins": _extract_plugin_evidence(res),
+                "plugins": plugins_evd,
                 "factor_count": len(res.get("factors") or []),
             },
         }
 
         ts_ms = int(time.time() * 1000)
+
+        # 事件类型改为来源于factors的插件名（取同族代表后的最强者）
+        top_plugin = None
+        if plugins_evd:
+            top_plugin = max(plugins_evd, key=lambda p: abs(float(p.get("score") or 0.0)))
+        event_type_name = (top_plugin.get("name") if top_plugin else "tech.engine")
 
         raw = build_raw_event(
             exchange=exchange,
@@ -210,7 +217,7 @@ async def _run_one(symbol: str, exchange: str):
             account_id=f"{exchange}_public",
             source="ind_event_engine",
             event_class="technical",
-            event_type="tech.engine",
+            event_type=event_type_name,
             event_level=int(res.get("level") or 1),
             timestamp_ms=ts_ms,
             payload=payload,

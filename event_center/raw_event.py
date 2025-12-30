@@ -2,24 +2,25 @@ import json
 from typing import Any, Dict, Optional
 import uuid
 
+
 def build_event_id(symbol, event_type, ts_ms):
     return f"{symbol}.{event_type}.{ts_ms}"
 
 
 def build_raw_event(
-    *,
-    exchange: str,
-    symbol: str,
-    account_id: str,
-    source: str,
-    event_class: str,
-    event_type: str,
-    event_level: int,
-    timestamp_ms: int,
-    payload: Dict[str, Any],
-    meta_version: str = "1.0",
-    trace_id: Optional[str] = None,
-    latency_ms: Optional[int] = None,
+        *,
+        exchange: str,
+        symbol: str,
+        account_id: str,
+        source: str,
+        event_class: str,
+        event_type: str,
+        event_level: int,
+        timestamp_ms: int,
+        payload: Dict[str, Any],
+        meta_version: str = "1.0",
+        trace_id: Optional[str] = None,
+        latency_ms: Optional[int] = None,
 ) -> Dict[str, str]:
     event_id = build_event_id(symbol, event_type, timestamp_ms)
     meta = {
