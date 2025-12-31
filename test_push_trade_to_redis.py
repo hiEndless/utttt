@@ -39,7 +39,7 @@ TRADE_TASK_NAME = os.environ.get('TRADE_TASK_KEY', 'TASK_ADD_TRADE')
 
 # 默认交易参数（可通过环境变量修改）
 DEFAULT_SYMBOL = os.environ.get('TEST_SYMBOL', 'RVVUSDT')  # 交易对
-DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '0.005411'))  # 价格
+DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '0.005585'))  # 价格
 DEFAULT_AMOUNT = os.environ.get('TEST_AMOUNT', '0.1')  # 数量
 DEFAULT_LEVERAGE = float(os.environ.get('TEST_LEVERAGE', '5.0'))  # 杠杆
 DEFAULT_TASK_ID = int(os.environ.get('TEST_TASK_ID', '766'))  # 任务ID
@@ -110,8 +110,8 @@ def create_trade_json(order_type: str,
         "api_id": int(api_id),
         "user_id": int(user_id),
         "fast_mode": 1,
-        "investment": 500.0,
-        "benchMark": 500.0,
+        "investment": 100.0,
+        "benchMark": 100.0,
         "trade_trigger_mode": 0,
         "sl_trigger_px": float(sl_trigger_px),
         "tp_trigger_px": float(tp_trigger_px),
