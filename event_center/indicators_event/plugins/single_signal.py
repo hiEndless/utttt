@@ -5,7 +5,7 @@ import time
 class SingleSignal(Plugin):
     name = "single_signal"
 
-    tf_scope = ["1m","5m","15m","1h"]
+    tf_scope = ["1m", "5m", "15m", "1h"]
     indicators = ["rsi", "macd", "boll", "williams_r", "mfi", "ma"]
     requires_prev = True
 
@@ -23,9 +23,11 @@ class SingleSignal(Plugin):
             rsi_val = rsi.get("rsi14") or rsi.get("value")
             if isinstance(rsi_val, (int, float)):
                 if rsi_val < 30:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1, "src": "rsi", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1,
+                                "src": "rsi", "ts": int(time.time())})
                 elif rsi_val > 70:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1, "src": "rsi", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1,
+                                "src": "rsi", "ts": int(time.time())})
 
             dif = macd.get("dif")
             dea = macd.get("dea")
@@ -33,30 +35,38 @@ class SingleSignal(Plugin):
             prev_dea = macd.get("prev_dea")
             if all(isinstance(x, (int, float)) for x in [dif, dea, prev_dif, prev_dea]):
                 if dif > dea and prev_dif <= prev_dea:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 2, "src": "macd", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 2,
+                                "src": "macd", "ts": int(time.time())})
                 elif dif < dea and prev_dif >= prev_dea:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 2, "src": "macd", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 2,
+                                "src": "macd", "ts": int(time.time())})
 
             bbp = boll.get("percent_b") or boll.get("value")
             if isinstance(bbp, (int, float)):
                 if bbp < 0.2:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1, "src": "boll", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1,
+                                "src": "boll", "ts": int(time.time())})
                 elif bbp > 0.8:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1, "src": "boll", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1,
+                                "src": "boll", "ts": int(time.time())})
 
             wr_val = wr.get("williams_r") or wr.get("value")
             if isinstance(wr_val, (int, float)):
                 if wr_val < -80:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1, "src": "williams_r", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1,
+                                "src": "williams_r", "ts": int(time.time())})
                 elif wr_val > -20:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1, "src": "williams_r", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1,
+                                "src": "williams_r", "ts": int(time.time())})
 
             mfi_val = mfi.get("mfi") or mfi.get("value")
             if isinstance(mfi_val, (int, float)):
                 if mfi_val < 20:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1, "src": "mfi", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 1,
+                                "src": "mfi", "ts": int(time.time())})
                 elif mfi_val > 80:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1, "src": "mfi", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 1,
+                                "src": "mfi", "ts": int(time.time())})
 
             ma = vtf.get("ma") or {}
             prev_ma = ma.get("prev") or {}
@@ -66,9 +76,11 @@ class SingleSignal(Plugin):
             prev_ma50 = (prev_ma or {}).get("ma50")
             if all(isinstance(x, (int, float)) for x in [ma20, ma50, prev_ma20, prev_ma50]):
                 if ma20 > ma50 and prev_ma20 <= prev_ma50:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 2, "src": "ma", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bullish", "strength": 2,
+                                "src": "ma", "ts": int(time.time())})
                 elif ma20 < ma50 and prev_ma20 >= prev_ma50:
-                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 2, "src": "ma", "ts": int(time.time())})
+                    res.append({"plugin": self.name, "symbol": symbol, "tf": tf, "direction": "bearish", "strength": 2,
+                                "src": "ma", "ts": int(time.time())})
 
         return res
 
