@@ -37,10 +37,22 @@ class RouterFinalListener:
                     ac = self._j(ev.get("analysis_context") or "{}")
                     st = self._j(ev.get("structure") or "{}")
                     hint = meta.get("origin_source_hint") or (ac.get("provenance") or {}).get("origin_source_hint") or "unknown"
+                    exchange = ev.get("exchange") or meta.get("exchange") or (ac.get("provenance") or {}).get("exchange") or st.get("exchange")
+                    if not exchange:
+                        acc_id = ev.get("account_id") or ""
+                        if acc_id:
+                            exchange = (acc_id.split("_")[0] or "").lower()
+                    if not exchange:
+                        se_id = meta.get("source_event_id") or ""
+                        if se_id:
+                            exchange = (se_id.split(".")[0] or "").lower()
+                    if not exchange and hint in {"binance", "okx", "bybit", "bitget", "kraken", "coinbase", "huobi", "gate", "mexc"}:
+                        exchange = hint
                     symbol = ev.get("symbol") or ""
                     fp = ev.get("final_priority") or "low"
                     info = {
                         "route": hint,
+                        "exchange": exchange or "",
                         "symbol": symbol,
                         "final_priority": fp,
                         "event_id": ev.get("event_id") or "",
