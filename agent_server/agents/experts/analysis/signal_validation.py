@@ -4,6 +4,7 @@ from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.signal_validation import prompt
 from agno.models.message import Message
 import json
+import asyncio
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
@@ -81,4 +82,55 @@ class SignalValidationExpert:
 
 
 if __name__ == "__main__":
+    from agent_server.tools.tf_validation import compute_tf_validation
+    from agent_server.agent_context.builder import build_agent_context
+    from agent_server.utils.redis_client import RedisClient
+
+    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
+                    "event_id": "ETHUSDT.final.1767198324567", "market_state": "momentum", "direction": "bullish",
+                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10, "l1_total_score": 5.25,
+                    "tf_hint": ["1m", "5m"]}
+
+    exchange = final_signal.get("exchange")
+    symbol = final_signal.get("symbol")
+    direction = final_signal.get("direction")
+    tf_hint = final_signal.get("tf_hint")
+    tf_validation = compute_tf_validation(symbol, exchange, direction, tf_hint)
+
     expert = SignalValidationExpert()
+
+
+    async def _read_market_state(ex: str, sym: str):
+        rc = RedisClient()
+        key = f"background:{ex}:{sym}:market_state"
+        v = await rc.get(key)
+        try:
+            return json.loads(v or "{}") if v else {}
+        except Exception:
+            return {}
+
+
+    async def _demo():
+        bg = await _read_market_state(exchange, symbol)
+        full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
+                                                               "crowd_state": {}}
+        ctx = build_agent_context("signal_validation", full_context)
+        query = {
+            "symbol": symbol,
+            "exchange": exchange,
+            "final_event": {
+                "event_type": final_signal.get("route"),
+                "direction": direction,
+                "final_priority": final_signal.get("final_priority"),
+                "confidence": final_signal.get("confidence"),
+                "confidence_numeric": final_signal.get("confidence_numeric"),
+                "tf_hint": tf_hint,
+                "analysis_context": final_signal.get("analysis_context"),
+            },
+            "tf_validation": tf_validation,
+            "context": ctx,
+        }
+        await expert.run(query)
+
+
+    asyncio.run(_demo())

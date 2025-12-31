@@ -58,4 +58,37 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "forbidden_semantics": [],
         "allowed_paths": [],  # 特殊：full context
     },
+
+    "signal_validation": {
+        "agent": "signal_validation",
+        "role": "technical_signal",
+        "scope": ["short", "mid", "long"],
+        "uses_crowd_state": True,
+        "allows_cross_timeframe_inference": False,
+        "forbidden_semantics": [
+            "trend_forecast",
+            "strategy_advice",
+            "generate_new_direction",
+        ],
+        "allowed_paths": [
+            "market_state.short_term.direction",
+            "market_state.short_term.momentum",
+            "market_state.short_term.risk",
+            "market_state.short_term.confidence",
+
+            "market_state.mid_term.direction",
+            "market_state.mid_term.momentum",
+            "market_state.mid_term.confidence",
+
+            "market_state.long_term.direction",
+            "market_state.long_term.conflict",
+            "market_state.long_term.veto",
+
+            "crowd_state.bias",
+            "crowd_state.crowding_level",
+            "crowd_state.fragility",
+            "crowd_state.funding_pressure",
+            "crowd_state.consistency",
+        ],
+    },
 }
