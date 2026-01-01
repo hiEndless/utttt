@@ -93,7 +93,7 @@ async def _run():
             await asyncio.gather(task, return_exceptions=True)
         except Exception:
             pass
-        await redis.close()
+        await redis.aclose()
 
 
 def main():

@@ -71,7 +71,7 @@ async def _run():
             info["task"].cancel()
             await asyncio.gather(info["task"], return_exceptions=True)
         exchange_tasks.clear()
-        await redis.close()
+        await redis.aclose()
 
 
 def main():

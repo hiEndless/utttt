@@ -86,7 +86,7 @@ async def _run():
         for s in manager.list_symbols():
             await manager.stop_symbol(s)
         await http_client.close()
-        await redis.close()
+        await redis.aclose()
 
 
 def main():

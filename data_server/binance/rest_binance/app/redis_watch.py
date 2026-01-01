@@ -46,7 +46,7 @@ async def _test():
         symbols = await RedisSymbolWatcher(redis).list_symbols()
         print({"ping": pong, "symbols": list(symbols)})
     finally:
-        await redis.close()
+        await redis.aclose()
 
 
 if __name__ == "__main__":
