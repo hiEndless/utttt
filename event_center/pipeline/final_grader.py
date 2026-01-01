@@ -15,6 +15,8 @@ class FinalGrader:
     """
 
     GRADER_VERSION = "1.2.0"
+    FINAL_MIN_PRIORITY = "low"  # 最低优先级，低于此优先级的事件将被忽略
+    FINAL_REQUIRE_BACKGROUND = True  # 是否要求背景就绪后再推送 final（market_structure/market_state）
 
     PRIORITY_WEIGHT = {
         "low": 10,
@@ -100,7 +102,8 @@ class FinalGrader:
         except Exception:
             pass
 
-        min_priority = os.getenv("FINAL_MIN_PRIORITY", "low")
+        min_priority = self.FINAL_MIN_PRIORITY  # 最低优先级门控
+        require_bg = self.FINAL_REQUIRE_BACKGROUND  # 背景就绪开关
 
         while True:
             res = await self.redis.xreadgroup(
@@ -120,6 +123,22 @@ class FinalGrader:
 
                     account = ev.get("account_id")
                     symbol = ev.get("symbol")
+                    exchange = None
+                    # 从 event_id 或 account_id 推断交易所
+                    try:
+                        se_id = ev.get("event_id") or ""
+                        parts = se_id.split(".")
+                        if len(parts) >= 5:
+                            exchange = (parts[0] or "").lower()
+                    except Exception:
+                        exchange = None
+                    if not exchange:
+                        try:
+                            acc = ev.get("account_id") or ""
+                            if acc:
+                                exchange = (acc.split("_")[0] or "").lower()
+                        except Exception:
+                            exchange = None
 
                     ts_raw = int(ev.get("timestamp") or "0")
                     ts_ms = self._normalize_ts_ms(ts_raw)
@@ -135,11 +154,21 @@ class FinalGrader:
                     if self.PRIORITY_WEIGHT.get(prio, 0) < self.PRIORITY_WEIGHT.get(min_priority, 0):
                         await self.redis.xack(cfg.l1_stream, group, entry_id)
                         continue
+                    # 背景就绪检查：需同时存在 market_structure 与 market_state
+                    if require_bg and exchange and symbol:
+                        try:
+                            k1 = f"background:{exchange}:{symbol}:market_structure"
+                            k2 = f"background:{exchange}:{symbol}:market_state"
+                            e1 = await self.redis.exists(k1)
+                            e2 = await self.redis.exists(k2)
+                        except Exception:
+                            e1, e2 = 0, 0
+                        if not (e1 and e2):
+                            await self.redis.xack(cfg.l1_stream, group, entry_id)
+                            continue
 
-                    # debounce window
                     min_interval = 900 if mid_bias else 300
 
-                    # state + lock
                     state_key = f"final:last_state:{account}:{symbol}"
                     lock_key = f"final:lock:{account}:{symbol}:{market_state}:{direction}"
                     full_state = f"{market_state}:{direction}"
