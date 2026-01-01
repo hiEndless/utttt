@@ -8,7 +8,7 @@
 }
 """
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 import json
 
 from .registry import AGENT_REGISTRY
@@ -31,22 +31,23 @@ def wrap_agent_output(agent: str, output: Dict[str, Any]) -> Dict[str, Any]:
     return {"_context_meta": meta, "agent_output": output or {}}
 
 
-def compute_keys(agent: str, exchange: str, symbol: str, ts: int) -> Tuple[str, str]:
+def compute_stream_key(agent: str, exchange: str, symbol: str) -> str:
     a = agent.lower()
-    return (
-        f"agent_output:{exchange}:{symbol}:{a}:{ts}",
-        f"agent_output:{exchange}:{symbol}:{a}:latest",
-    )
+    return f"agent_output_stream:{exchange}:{symbol}:{a}"
 
+def compute_latest_key(agent: str, exchange: str, symbol: str) -> str:
+    a = agent.lower()
+    return f"agent_output:{exchange}:{symbol}:{a}:latest"
 
 async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any]) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
 
     payload = wrap_agent_output(agent, output)
     rc = RedisClient()
-    k1, k2 = compute_keys(agent, exchange, symbol, ts)
-    await rc.set_json(k1, payload)
-    await rc.set_json(k2, payload)
+    sk = compute_stream_key(agent, exchange, symbol)
+    lk = compute_latest_key(agent, exchange, symbol)
+    await rc.xadd_json(sk, payload, ts=ts)
+    await rc.set_json(lk, payload)
     return payload
 
 
@@ -54,8 +55,8 @@ async def read_latest(agent: str, exchange: str, symbol: str) -> Optional[Dict[s
     from agent_server.utils.redis_client import RedisClient
 
     rc = RedisClient()
-    _, k2 = compute_keys(agent, exchange, symbol, 0)
-    v = await rc.get(k2)
+    lk = compute_latest_key(agent, exchange, symbol)
+    v = await rc.get(lk)
     try:
         return json.loads(v or "{}") if v else None
     except Exception:

@@ -28,3 +28,25 @@ class RedisClient:
 
     async def get(self, key: str):
         return await self.client.get(key)
+
+    async def xadd_json(self, key: str, payload: dict, ts: int | None = None, maxlen: int | None = None, approximate: bool = True) -> str:
+        fields = {"payload": json.dumps(payload, ensure_ascii=False)}
+        if ts is not None:
+            fields["ts"] = int(ts)
+        return await self.client.xadd(key, fields, maxlen=maxlen, approximate=approximate)
+
+    async def xrevrange_latest(self, key: str):
+        try:
+            res = await self.client.xrevrange(key, max="+", min="-", count=1)
+            if not res:
+                return None
+            _, fields = res[0]
+            payload = fields.get("payload")
+            if isinstance(payload, str):
+                try:
+                    return json.loads(payload)
+                except Exception:
+                    return None
+            return None
+        except Exception:
+            return None

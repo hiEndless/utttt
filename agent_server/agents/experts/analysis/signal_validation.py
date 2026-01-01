@@ -5,6 +5,7 @@ from agent_server.configs.prompts.signal_validation import prompt
 from agno.models.message import Message
 import json
 import asyncio
+import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
@@ -63,10 +64,8 @@ class SignalValidationExpert:
             qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
-        try:
-            ts = int(qobj.get("ts") or qobj.get("ts_now") or 0)
-        except Exception:
-            ts = 0
+        ts = int(time.time() * 1000)
+
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
         except Exception:
@@ -87,9 +86,9 @@ if __name__ == "__main__":
     from agent_server.utils.redis_client import RedisClient
 
     final_signal = {"route": "indicators", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
-                    "event_id": "ETHUSDT.final.1767198324567", "market_state": "momentum", "direction": "bullish",
-                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10, "l1_total_score": 5.25,
-                    "tf_hint": ["1m", "5m"]}
+                    "event_id": "ETHUSDT.final.1767282634334", "market_state": "momentum", "direction": "bearish",
+                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
+                    "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
 
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
