@@ -167,6 +167,25 @@ class L0Processor:
         # 取引擎摘要作为RAW输入
         summary = payload.get("summary") if isinstance(payload, dict) else {}
         raw_dir = str(summary.get("direction") or "").lower()
+        try:
+            src = str(event.get("source") or "")
+            et = str(event.get("event_type") or event.get("type") or "")
+            if src == "force_stats_consumer" and et.startswith("force_"):
+                et_l = et.lower()
+                if "sell" in et_l:
+                    raw_dir = "bearish"
+                elif "buy" in et_l:
+                    raw_dir = "bullish"
+                elif "intensity" in et_l:
+                    details = payload.get("details") or {}
+                    try:
+                        d_sell = float(details.get("delta_sell", 0.0)) + float(details.get("delta_sell_qty", 0.0))
+                        d_buy = float(details.get("delta_buy", 0.0)) + float(details.get("delta_buy_qty", 0.0))
+                        raw_dir = "bullish" if d_buy >= d_sell else "bearish"
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         raw_strength = float(summary.get("signal_strength") or 0.0)
         symbol = event.get("symbol") or ""
         evidence_plugins = []

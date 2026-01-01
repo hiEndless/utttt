@@ -208,6 +208,7 @@ class FinalGrader:
                         "symbol": symbol,
                         "timestamp": str(ts_raw),
                         "final_priority": prio,
+                        "source_category": origin_source_hint,
 
                         # ---- Structure (agent核心读取) ----
                         "structure": json.dumps({

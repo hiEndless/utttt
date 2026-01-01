@@ -268,7 +268,7 @@ class L1Aggregator:
                 elif "ind_event_engine" in s:
                     m.append("indicators")
                 elif "alerts_consumer" in s:
-                    m.append("alerts")
+                    m.append("orderbook")
                 elif "force_stats_consumer" in s:
                     m.append("liquidation")
                 else:
