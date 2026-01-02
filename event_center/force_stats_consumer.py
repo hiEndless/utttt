@@ -11,9 +11,10 @@ from event_center.rules import load_rules
 
 
 class ForceStatsConsumer:
-    def __init__(self, redis_url: str = cfg.redis_url, scan_interval_s: float = 5.0):
+    def __init__(self, redis_url: str = cfg.redis_url, scan_interval_s: float = 5.0, exchange: str = "binance"):
         self.redis = aioredis.from_url(redis_url)
         self.scan_interval_s = scan_interval_s
+        self.exchange = exchange
         self.stream_offsets: Dict[str, str] = {}
         self.last_stats: Dict[str, Dict[str, float]] = {}
         self._running = False
@@ -52,7 +53,7 @@ class ForceStatsConsumer:
         try:
             cursor = 0
             keys: List[str] = []
-            pattern = "force_stats_stream:binance:*"
+            pattern = f"force_stats_stream:{self.exchange}:*"
             while True:
                 cursor, batch = await self.redis.scan(cursor=cursor, match=pattern, count=200)
                 keys.extend(batch)
@@ -92,9 +93,9 @@ class ForceStatsConsumer:
         except Exception:
             pass
         raw = build_raw_event(
-            exchange="binance",
+            exchange=self.exchange,
             symbol=symbol,
-            account_id="binance_public",
+            account_id=f"{self.exchange}_public",
             source="force_stats_consumer",
             event_class="market",
             event_type=alert_type,

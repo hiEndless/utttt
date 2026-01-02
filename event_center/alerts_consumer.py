@@ -81,9 +81,10 @@ def grade_alert(atype: str, details: dict) -> int:
 
 
 class AlertsConsumer:
-    def __init__(self, redis_url: str = cfg.redis_url, scan_interval_s: float = 5.0):
+    def __init__(self, redis_url: str = cfg.redis_url, scan_interval_s: float = 5.0, exchange: str = "binance"):
         self.redis = aioredis.from_url(redis_url)
         self.scan_interval_s = scan_interval_s
+        self.exchange = exchange
         self.stream_offsets: Dict[str, str] = {}
         self._running = False
         self.dedup_window_ms = 2000  # 去重窗口：同指纹事件在该窗口内不重复
@@ -98,7 +99,7 @@ class AlertsConsumer:
         try:
             cursor = 0
             keys: List[str] = []
-            pattern = "alerts:binance:*"
+            pattern = f"alerts:{self.exchange}:*"
             while True:
                 cursor, batch = await self.redis.scan(cursor=cursor, match=pattern, count=200)
                 keys.extend(batch)
@@ -146,9 +147,9 @@ class AlertsConsumer:
             "details": details,
         }
         return build_raw_event(
-            exchange="binance",
+            exchange=self.exchange,
             symbol=symbol,
-            account_id="binance_public",
+            account_id=f"{self.exchange}_public",
             source="alerts_consumer",
             event_class="market",
             event_type=alert_type,

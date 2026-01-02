@@ -81,12 +81,15 @@ async def main():
     poll = 60  # 指标事件生成轮询间隔（秒）
     conc = 16  # 指标事件生成并发度（同一交易所并发任务数）
 
-    tasks = [
-        asyncio.create_task(ac.run()),
-        asyncio.create_task(fsc.run()),
-    ]
+    tasks = []
     for ex in exchanges:
-        tasks.append(asyncio.create_task(ind_event_run_loop(ex, poll_sec=poll, concurrency=conc)))
+        ac_ex = AlertsConsumer(exchange=ex)
+        fsc_ex = ForceStatsConsumer(exchange=ex)
+        tasks.extend([
+            asyncio.create_task(ac_ex.run()),
+            asyncio.create_task(fsc_ex.run()),
+            asyncio.create_task(ind_event_run_loop(ex, poll_sec=poll, concurrency=conc)),
+        ])
     tasks.extend([
         asyncio.create_task(l0.run()),
         asyncio.create_task(l1.run()),

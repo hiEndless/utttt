@@ -33,12 +33,11 @@ def wrap_agent_output(agent: str, output: Dict[str, Any]) -> Dict[str, Any]:
 
 def compute_stream_key(agent: str, exchange: str, symbol: str) -> str:
     a = agent.lower()
-    return f"agent_output_stream:{exchange}:{symbol}:{a}"
+    return f"agent_output:{exchange}:{symbol}:{a}:stream"
 
 def compute_latest_key(agent: str, exchange: str, symbol: str) -> str:
     a = agent.lower()
     return f"agent_output:{exchange}:{symbol}:{a}:latest"
-
 async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any]) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
 

@@ -12,7 +12,7 @@ from agent_server.agents.experts.utils import (
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
-from agent_server.reducers.temporal_serial import reduce_once
+from agent_server.reducers.temporal_serial import reduce_agent_temporal
 
 
 class SignalValidationExpert:
@@ -84,7 +84,7 @@ class SignalValidationExpert:
                     verdict = "INVALID"
             except Exception:
                 verdict = "VALID"
-            await reduce_once(exchange, qobj.get("account_id") or "default", symbol, qev.get("position_side") or "NA", verdict, ts, conf_num if isinstance(conf_num, (int, float)) else None)
+            await reduce_agent_temporal(self.name, exchange, symbol, verdict, ts, conf_num if isinstance(conf_num, (int, float)) else None)
         except Exception:
             pass
 
