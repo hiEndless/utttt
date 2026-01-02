@@ -12,7 +12,6 @@ from agent_server.agents.experts.utils import (
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
-from agent_server.reducers.temporal_serial import reduce_agent_temporal
 
 
 class SignalValidationExpert:
@@ -73,18 +72,6 @@ class SignalValidationExpert:
             payload_obj = {"raw": final_result}
         try:
             await save_agent_output(self.name, exchange, symbol, ts, payload_obj)
-        except Exception:
-            pass
-        try:
-            qev = qobj.get("final_event") or {}
-            conf_num = qev.get("confidence_numeric")
-            verdict = "VALID"
-            try:
-                if conf_num is not None and float(conf_num) < 0.5:
-                    verdict = "INVALID"
-            except Exception:
-                verdict = "VALID"
-            await reduce_agent_temporal(self.name, exchange, symbol, verdict, ts, conf_num if isinstance(conf_num, (int, float)) else None)
         except Exception:
             pass
 

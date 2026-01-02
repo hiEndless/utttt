@@ -124,3 +124,19 @@ async def reduce_temporal_state(
     await rc.set_json(key, state)
 
     return state
+
+
+if __name__ == "__main__":
+    import asyncio
+    async def _demo():
+        state = await reduce_temporal_state(
+            exchange="binance",
+            account_id="acc_1",
+            symbol="BTCUSDT",
+            position_side="LONG",
+            verdict="VALID",
+            entry_ts=int(time.time() * 1000) - 3600000,
+            event_ts=int(time.time() * 1000),
+        )
+        print(json.dumps(state, ensure_ascii=False))
+    asyncio.run(_demo())
