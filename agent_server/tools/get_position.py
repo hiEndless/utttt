@@ -32,6 +32,7 @@ def get_position(exchange: str, symbol: str) -> list[dict]:
                 "notional": p.get("notional"),
                 "pnl_ratio": p.get("pnl_ratio"),
                 "entry_ts": p.get("updateTime"),
+                "trade_id": p.get("trade_id"),
             }
         )
     return out
