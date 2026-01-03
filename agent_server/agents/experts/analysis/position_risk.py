@@ -166,6 +166,8 @@ if __name__ == "__main__":
         last_suggestion_key = f"agent_output:position_risk:{exchange}:{symbol}:latest"
         last_suggestion_str = await rc.get(last_suggestion_key)
         
+        # 默认初始化：应对首次运行或 Redis 无数据的情况
+        # 使用 "HOLD" + 极长的时间间隔，表示“无近期操作历史”，让 Agent 从零开始评估
         last_action = "HOLD"
         last_action_ts = 0
         
