@@ -91,4 +91,32 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.consistency",
         ],
     },
+
+    "position_risk": {
+        "agent": "position_risk",
+        "role": "risk_management",
+        "scope": ["short", "mid", "long"],
+        "uses_crowd_state": True,
+        "allows_cross_timeframe_inference": False,
+        "forbidden_semantics": [
+            "trend_forecast",
+            "strategy_advice",
+            "generate_new_direction",
+            "override_signal_direction",
+        ],
+        "allowed_paths": [
+            # Market Structure & Trends
+            "market_state.long_term.direction",
+            "market_state.long_term.veto",
+            "market_state.short_term.structure",
+            "market_state.short_term.risk",
+            "market_state.micro_term.state",
+
+            # Crowd Context
+            "crowd_state.crowding_level",
+            "crowd_state.funding_pressure",
+            "crowd_state.fragility",
+            "crowd_state.bias",
+        ],
+    },
 }
