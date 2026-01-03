@@ -26,8 +26,13 @@ def build_meta(agent: str) -> Dict[str, Any]:
     }
 
 
-def wrap_agent_output(agent: str, output: Dict[str, Any]) -> Dict[str, Any]:
+def wrap_agent_output(agent: str, output: Dict[str, Any], exchange: Optional[str] = None,
+                      symbol: Optional[str] = None) -> Dict[str, Any]:
     meta = build_meta(agent)
+    if exchange is not None:
+        meta["exchange"] = exchange
+    if symbol is not None:
+        meta["symbol"] = symbol
     return {"_context_meta": meta, "agent_output": output or {}}
 
 
@@ -35,13 +40,16 @@ def compute_stream_key(agent: str, exchange: str, symbol: str) -> str:
     a = agent.lower()
     return f"agent_output:{exchange}:{symbol}:{a}:stream"
 
+
 def compute_latest_key(agent: str, exchange: str, symbol: str) -> str:
     a = agent.lower()
     return f"agent_output:{exchange}:{symbol}:{a}:latest"
+
+
 async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any]) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
 
-    payload = wrap_agent_output(agent, output)
+    payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol)
     rc = RedisClient()
     sk = compute_stream_key(agent, exchange, symbol)
     lk = compute_latest_key(agent, exchange, symbol)
