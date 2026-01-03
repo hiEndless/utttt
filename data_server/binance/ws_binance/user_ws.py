@@ -121,11 +121,13 @@ class BinanceUserWS:
 
 async def user_callback(data):
     balance = data.get("result").get("totalMarginBalance")
+    availableBalance = data.get("result").get("availableBalance")
     positions = data.get("result").get("positions")
     print("账户余额:", balance)
+    print("账户可用余额:", availableBalance)
     print("持仓:", positions)
     try:
-        await redis_client.set("balance:binance", str(balance) if balance is not None else "")
+        await redis_client.set("balance:binance", json.dumps({"balance": balance, "availableBalance": availableBalance}))
         BinanceAnalysisService().analysis(positions)
     except Exception as e:
         print(f"Redis 写入错误: {e}")
