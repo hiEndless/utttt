@@ -33,6 +33,7 @@ def get_position(exchange: str, symbol: str) -> list[dict]:
                 "pnl_ratio": p.get("pnl_ratio"),
                 "entry_ts": p.get("updateTime"),  # todo 此处有bug，更新时间会变化，等后续记录每笔交易的时候重新获取
                 "trade_id": p.get("trade_id"),
+                "initialMargin": p.get("initialMargin")  # 占用保证金
             }
         )
     return out
