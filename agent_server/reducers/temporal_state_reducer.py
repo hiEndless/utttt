@@ -18,14 +18,14 @@ TIME_MS_IN_MIN = 60_000
 
 def temporal_key(
     exchange: str,
-    account_id: str,
+    trade_id: str,
     symbol: str,
     position_side: str,
 ) -> str:
     return (
         f"risk:temporal_state:"
         f"{(exchange or '').lower()}:"
-        f"{(account_id or 'default').lower()}:"
+        f"{(trade_id or 'default').lower()}:"
         f"{(symbol or '').upper()}:"
         f"{(position_side or '').upper()}"
     )
@@ -38,7 +38,7 @@ def temporal_key(
 async def reduce_temporal_state(
     *,
     exchange: str,
-    account_id: str,
+    trade_id: str,
     symbol: str,
     position_side: str,      # LONG / SHORT
     verdict: str,            # INVALID / CONFLICT / VALID / STRONG
@@ -54,7 +54,7 @@ async def reduce_temporal_state(
     """
 
     rc = RedisClient()
-    key = temporal_key(exchange, account_id, symbol, position_side)
+    key = temporal_key(exchange, trade_id, symbol, position_side)
 
     now_ts = int(event_ts or time.time() * 1000)
     verdict = (verdict or "").upper()
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     async def _demo():
         state = await reduce_temporal_state(
             exchange="binance",
-            account_id="acc_1",
+            trade_id="acc_1",
             symbol="BTCUSDT",
             position_side="LONG",
             verdict="VALID",
