@@ -9,12 +9,39 @@ import asyncio
 import time
 import sys
 import json
+import os
 from datetime import datetime
 from typing import Dict, List, Optional
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
 from agno.models.message import Message
+
+# 优先从环境变量读取，否则从配置文件读取，最后使用默认值
+def get_modelscope_config():
+    """获取 ModelScope 配置"""
+    base_url = os.getenv("MODELSCOPE_BASE_URL", "https://api-inference.modelscope.cn/v1")
+    api_key = os.getenv("MODELSCOPE_API_KEY")
+    
+    # 如果环境变量没有，尝试从 source.py 读取
+    if not api_key:
+        try:
+            from agent_server.configs.source import query_db_env
+            cfg = query_db_env()
+            # 从任意一个 agent 配置中获取（它们都使用相同的 key）
+            if cfg and "technical" in cfg:
+                api_key = cfg["technical"].get("llm_api_key")
+        except Exception:
+            pass
+    
+    # 如果还是没有，使用硬编码的默认值（可能已过期）
+    if not api_key:
+        api_key = "ms-b3ea64d3-5c65-4146-aec9-5dddd1cb5ee7"
+    
+    return {
+        "base_url": base_url,
+        "api_key": api_key,
+    }
 
 # 从 llm_configs.py 导入模型配置
 try:
@@ -24,11 +51,8 @@ try:
         TOP_QUANTITATIVE_MODELS
     )
 except ImportError:
-    # 如果导入失败，使用默认配置
-    MODELSCOPE_CONFIG = {
-        "base_url": "https://api-inference.modelscope.cn/v1",
-        "api_key": "ms-b3ea64d3-5c65-4146-aec9-5dddd1cb5ee7",
-    }
+    # 如果导入失败，使用函数获取配置
+    MODELSCOPE_CONFIG = get_modelscope_config()
     REQUIRED_MODELS = {}
     TOP_QUANTITATIVE_MODELS = {}
 
@@ -72,8 +96,14 @@ class LLMPerformanceTester:
     def __init__(self, model_id: str, model_name: str = "", base_url: str = None, api_key: str = None):
         self.model_id = model_id
         self.model_name = model_name or model_id
-        self.base_url = base_url or MODELSCOPE_CONFIG["base_url"]
-        self.api_key = api_key or MODELSCOPE_CONFIG["api_key"]
+        
+        # 确保使用最新的配置
+        current_config = get_modelscope_config()
+        self.base_url = base_url or os.getenv("MODELSCOPE_BASE_URL") or current_config["base_url"]
+        self.api_key = api_key or os.getenv("MODELSCOPE_API_KEY") or current_config["api_key"]
+        
+        if not self.api_key or self.api_key.startswith("ms-") and len(self.api_key) < 40:
+            print(f"⚠️  警告: API Key 可能无效或已过期: {self.api_key[:20]}...")
         
         # 初始化模型和Agent
         self.model = OpenAILike(

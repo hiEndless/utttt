@@ -5,6 +5,7 @@
 import json
 import os
 from typing import Dict, Any, Optional
+from decimal import Decimal, ROUND_DOWN, ROUND_UP
 import redis.asyncio as aioredis
 from agent_server.config import settings
 
@@ -40,6 +41,131 @@ class TradingExecutor:
             "exchange": 2,  # 币安
             "proxies": {}  # 代理配置（如果需要）
         }
+    
+    def _get_symbol_step_size(self, symbol: str) -> float:
+        """
+        获取交易对的步长（stepSize）
+        
+        常见币种的默认精度：
+        - BTCUSDT, ETHUSDT: 0.001 (3位小数)
+        - BEATUSDT, 大多数山寨币: 0.01 (2位小数) 或 0.001 (3位小数)
+        - 小币种: 0.1 (1位小数) 或 1 (整数)
+        
+        Args:
+            symbol: 交易对
+            
+        Returns:
+            stepSize (默认 0.01，适用于大多数币种)
+        """
+        # 常见币种的精度映射（可以根据实际情况扩展）
+        precision_map = {
+            "BTCUSDT": 0.001,
+            "ETHUSDT": 0.001,
+            "BNBUSDT": 0.001,
+            "SOLUSDT": 0.01,
+            "ADAUSDT": 0.1,
+            "DOGEUSDT": 1.0,
+            "BEATUSDT": 1.0,  # BEATUSDT 使用整数精度（根据币安API错误信息调整）
+        }
+        
+        # 如果币种在映射中，使用映射值
+        if symbol in precision_map:
+            return precision_map[symbol]
+        
+        # 默认使用 0.01 (2位小数)，适用于大多数币种
+        # 如果遇到精度错误，可以调整为 0.001 或 0.1 或 1.0
+        return 0.01
+    
+    def _format_quantity(self, quantity: Any, symbol: str, order_type: str = "open") -> str:
+        """
+        格式化交易数量，符合币安精度要求
+        
+        Args:
+            quantity: 原始数量（可以是字符串、float、int）
+            symbol: 交易对
+            order_type: 订单类型 ("open", "close", "reduce")
+            
+        Returns:
+            格式化后的数量字符串
+        """
+        try:
+            # 获取步长
+            step_size = self._get_symbol_step_size(symbol)
+            
+            # 转换为 Decimal 进行精确计算
+            if isinstance(quantity, str):
+                quantity_decimal = Decimal(quantity)
+            else:
+                quantity_decimal = Decimal(str(float(quantity)))
+            
+            # 计算小数位数
+            step_decimal = Decimal(str(step_size))
+            step_str = str(step_size)
+            
+            # 计算小数位数（从 stepSize 中提取）
+            if '.' in step_str:
+                decimal_places = len(step_str.split('.')[-1].rstrip('0'))
+            else:
+                decimal_places = 0
+            
+            # 根据订单类型选择舍入方式
+            # 开仓：向下取整（避免超过可用资金）
+            # 平仓/减仓：向上取整（确保完全平仓）
+            rounding = ROUND_DOWN if order_type == "open" else ROUND_UP
+            
+            # 将数量对齐到步长
+            quantize_exp = Decimal('0.' + '0' * (decimal_places - 1) + '1') if decimal_places > 0 else Decimal('1')
+            rounded_quantity = quantity_decimal.quantize(quantize_exp, rounding=rounding)
+            
+            # 确保数量是 stepSize 的倍数
+            if step_size < 1:
+                # 对于小数步长，需要对齐
+                rounded_quantity = (rounded_quantity // step_decimal) * step_decimal
+                # 再次量化到正确的小数位数
+                rounded_quantity = rounded_quantity.quantize(quantize_exp, rounding=rounding)
+            
+            # 检查格式化后的数量是否为 0
+            # 如果为 0，使用向上取整确保至少为最小交易量
+            if rounded_quantity <= 0:
+                print(f"⚠️  警告：格式化后数量为 0，使用向上取整")
+                # 使用向上取整，至少为 stepSize
+                rounded_quantity = step_decimal
+                rounded_quantity = rounded_quantity.quantize(quantize_exp, rounding=ROUND_UP)
+            
+            # 转换为字符串
+            result_str = str(rounded_quantity)
+            
+            # 如果 stepSize 是整数（1.0），则返回整数格式
+            if decimal_places == 0:
+                # 移除小数点
+                if '.' in result_str:
+                    result_str = result_str.split('.')[0]
+                return result_str
+            
+            # 对于小数精度，确保格式正确
+            if '.' in result_str:
+                parts = result_str.split('.')
+                integer_part = parts[0]
+                decimal_part = parts[1].rstrip('0')  # 移除尾随零
+                
+                # 如果小数部分为空，但需要保留精度，则补零
+                if len(decimal_part) == 0 and decimal_places > 0:
+                    decimal_part = '0' * decimal_places
+                elif len(decimal_part) < decimal_places:
+                    # 补齐到所需精度
+                    decimal_part = decimal_part + '0' * (decimal_places - len(decimal_part))
+                
+                result_str = f"{integer_part}.{decimal_part}" if decimal_part else integer_part
+            else:
+                # 如果没有小数点，但需要小数精度，则添加
+                if decimal_places > 0:
+                    result_str = result_str + '.' + '0' * decimal_places
+            
+            return result_str
+            
+        except Exception as e:
+            print(f"⚠️  格式化数量失败: {e}, 使用原始值")
+            return str(quantity)
     
     async def _get_redis(self) -> aioredis.Redis:
         """获取 Redis 连接"""
@@ -98,6 +224,10 @@ class TradingExecutor:
         action = decision.get("action")
         symbol = decision.get("symbol", "BTCUSDT")
         
+        # 格式化数量（符合币安精度要求）
+        raw_sums = decision.get("sums", "0.1")
+        formatted_sums = self._format_quantity(raw_sums, symbol, action)
+        
         # 基础交易信息
         trade_json = {
             "order_type": action,  # "open" 或 "close"
@@ -105,7 +235,7 @@ class TradingExecutor:
             "positionSide": decision.get("positionSide", "LONG"),
             "side": decision.get("side", "BUY"),
             "leverage": float(decision.get("leverage", self.default_leverage)),
-            "sums": str(decision.get("sums", "0.1")),
+            "sums": formatted_sums,  # 使用格式化后的数量
             "openAvgPx": float(decision.get("openAvgPx", 0.0)),
             
             # 任务配置
