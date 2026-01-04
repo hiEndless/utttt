@@ -4,11 +4,12 @@ import signal
 import json
 import redis.asyncio as aioredis
 from agent_server.config import settings
-from agent_server.agent_workflow.risk_control import RiskControlWorkflow
+from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
 
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
+
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
         self.final_stream = self.FINAL_STREAM
@@ -28,7 +29,8 @@ class RouterFinalListener:
         except Exception:
             pass
         while True:
-            res = await self.redis.xreadgroup(self.group, self.consumer, streams={self.final_stream: ">"}, count=50, block=5000)
+            res = await self.redis.xreadgroup(self.group, self.consumer, streams={self.final_stream: ">"}, count=50,
+                                              block=5000)
             if not res:
                 continue
             for _stream_name, entries in res:
@@ -37,8 +39,10 @@ class RouterFinalListener:
                     meta = self._j(ev.get("meta") or "{}")
                     ac = self._j(ev.get("analysis_context") or "{}")
                     st = self._j(ev.get("structure") or "{}")
-                    hint = meta.get("origin_source_hint") or (ac.get("provenance") or {}).get("origin_source_hint") or "unknown"
-                    exchange = ev.get("exchange") or meta.get("exchange") or (ac.get("provenance") or {}).get("exchange") or st.get("exchange")
+                    hint = meta.get("origin_source_hint") or (ac.get("provenance") or {}).get(
+                        "origin_source_hint") or "unknown"
+                    exchange = ev.get("exchange") or meta.get("exchange") or (ac.get("provenance") or {}).get(
+                        "exchange") or st.get("exchange")
                     if not exchange:
                         acc_id = ev.get("account_id") or ""
                         if acc_id:
@@ -47,7 +51,8 @@ class RouterFinalListener:
                         se_id = meta.get("source_event_id") or ""
                         if se_id:
                             exchange = (se_id.split(".")[0] or "").lower()
-                    if not exchange and hint in {"binance", "okx", "bybit", "bitget", "kraken", "coinbase", "huobi", "gate", "mexc"}:
+                    if not exchange and hint in {"binance", "okx", "bybit", "bitget", "kraken", "coinbase", "huobi",
+                                                 "gate", "mexc"}:
                         exchange = hint
                     symbol = ev.get("symbol") or ""
                     fp = ev.get("final_priority") or "low"
@@ -69,11 +74,18 @@ class RouterFinalListener:
                         print("[FinalRouter] dispatch", json.dumps(info, ensure_ascii=False))
                     except Exception:
                         print("[FinalRouter] dispatch", info)
+
+                    # Dispatch to SignalValidationWorkflow
+                    # Ideally filter by route, but for now we process all valid signals
+                    if info.get("symbol") and info.get("route"):
+                        wf = SignalValidationWorkflow()
+                        asyncio.create_task(wf.arun(info))
                     await self.redis.xack(self.final_stream, self.group, entry_id)
 
 
 async def _run():
-    redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port, db=settings.redis_db, decode_responses=True)
+    redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port,
+                           db=settings.redis_db, decode_responses=True)
     listener = RouterFinalListener(redis)
     loop = asyncio.get_running_loop()
     stop = asyncio.Event()
