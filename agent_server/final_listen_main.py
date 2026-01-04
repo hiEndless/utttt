@@ -4,6 +4,7 @@ import signal
 import json
 import redis.asyncio as aioredis
 from agent_server.config import settings
+from agent_server.agent_workflow.risk_control import RiskControlWorkflow
 
 
 class RouterFinalListener:
