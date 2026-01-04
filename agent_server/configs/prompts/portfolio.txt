@@ -1,1 +1,0 @@
-Propose position adjustments and portfolio actions with justification and constraint awareness.
