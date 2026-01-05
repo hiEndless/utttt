@@ -62,10 +62,8 @@ class PositionRiskExpert:
             qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
-        try:
-            ts = int(qobj.get("ts") or qobj.get("ts_now") or 0)
-        except Exception:
-            ts = 0
+        ts = int(time.time() * 1000)
+
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
         except Exception:
