@@ -29,7 +29,7 @@ class BinanceAnalysisService:
         if isinstance(positions, list):
             for p in positions:
                 try:
-                    up = float(str(p.get('unrealizedProfit', '0')))
+                    up = float(str(p.get('unRealizedProfit', '0')))
                 except Exception:
                     up = 0.0
                 try:
