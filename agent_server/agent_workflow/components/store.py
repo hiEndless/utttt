@@ -1,6 +1,5 @@
 import time
 from agno.workflow import StepInput
-from agent_server.utils.persistence import WorkflowPersistence
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 
 
@@ -46,10 +45,7 @@ class StoreComponent(BaseWorkflowComponent):
                 "final_decision": decision
             }
 
-            # 使用 trade_id 作为主要索引进行保存
-            # 注意：这里我们传入 trade_id，底层的 save_trace 应该处理"追加"逻辑
-            # 或者我们构造一个唯一的 Key，如 trade_id:ts
-            await WorkflowPersistence.save_trace(trade_id, single_trade_trace)
+            #todo 存储到数据库
             saved_ids.append(trade_id)
         
-        return self._safe_json_dumps({"trace_id": trade_id, "saved_trades": saved_ids, "status": "completed"})
+        return self._safe_json_dumps({"saved_trades": saved_ids, "status": "completed"})
