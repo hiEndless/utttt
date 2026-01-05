@@ -2,6 +2,7 @@ import json
 from typing import Any, Dict
 from agent_server.utils.redis_client import RedisClient
 
+
 class BaseWorkflowComponent:
     def _parse_step_content(self, content):
         if isinstance(content, dict):
@@ -35,7 +36,7 @@ class BaseWorkflowComponent:
         bg_key = f"background:{exchange}:{symbol}:market_state"
         bg_str = await rc.get(bg_key)
         bg = json.loads(bg_str) if bg_str else {}
-        
+
         full_context = bg if isinstance(bg, dict) and bg else {
             "symbol": symbol, "ts": 0, "market_state": {}, "crowd_state": {}
         }

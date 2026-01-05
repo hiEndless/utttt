@@ -158,8 +158,26 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             except:
                 parsed_results.append({"raw": r})
 
+        # --- Aggregation Logic ---
+        decisions = []
+        for q, r in zip(queries, parsed_results):
+            pos_snapshot = q.get("position_snapshot", {})
+            pos_side = pos_snapshot.get("position_side", "NONE")
+            trade_id = pos_snapshot.get("trade_id")
+
+            payload = r.get("payload", r)
+            decision = payload.get("recommended_action", "HOLD")
+
+            decisions.append({
+                "trade_id": trade_id,
+                "side": pos_side,
+                "decision": decision,
+                "details": r
+            })
+
         return self._safe_json_dumps({
+            "decisions": decisions,
             "risk_results": parsed_results,
             "queries": queries,
-            "step1_result": prev_result  # 传递原始上下文
+            "step1_result": prev_result
         })

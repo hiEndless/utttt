@@ -4,9 +4,7 @@ from agent_server.utils.persistence import WorkflowPersistence
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 
 
-class PersistenceComponent(BaseWorkflowComponent):
-    def __init__(self, run_id: str):
-        self.run_id = run_id
+class StoreComponent(BaseWorkflowComponent):
 
     async def execute(self, ctx: StepInput) -> str:
         prev_result = self._parse_step_content(ctx.previous_step_content)
@@ -35,7 +33,6 @@ class PersistenceComponent(BaseWorkflowComponent):
             result = risk_results[i]
 
             single_trade_trace = {
-                "trace_id": self.run_id, # 依然保留 run_id 用于关联同一次批处理
                 "trade_id": trade_id,    # 核心业务主键
                 "ts": ts,
                 "event_input": step1["event_data"],
@@ -55,4 +52,4 @@ class PersistenceComponent(BaseWorkflowComponent):
             await WorkflowPersistence.save_trace(trade_id, single_trade_trace)
             saved_ids.append(trade_id)
         
-        return self._safe_json_dumps({"trace_id": self.run_id, "saved_trades": saved_ids, "status": "completed"})
+        return self._safe_json_dumps({"trace_id": trade_id, "saved_trades": saved_ids, "status": "completed"})
