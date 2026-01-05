@@ -8,7 +8,7 @@ from agent_server.utils.redis_client import RedisClient
 # 全局配置
 # =========================
 
-STREAK_CAP = 3   # 风控语义上限，0~3 即可
+STREAK_CAP = 3  # 风控语义上限，0~3 即可
 TIME_MS_IN_MIN = 60_000
 
 
@@ -17,10 +17,10 @@ TIME_MS_IN_MIN = 60_000
 # =========================
 
 def temporal_key(
-    exchange: str,
-    trade_id: str,
-    symbol: str,
-    position_side: str,
+        exchange: str,
+        trade_id: str,
+        symbol: str,
+        position_side: str,
 ) -> str:
     return (
         f"risk:temporal_state:"
@@ -36,14 +36,14 @@ def temporal_key(
 # =========================
 
 async def reduce_temporal_state(
-    *,
-    exchange: str,
-    trade_id: str,
-    symbol: str,
-    position_side: str,      # LONG / SHORT
-    verdict: str,            # INVALID / CONFLICT / VALID / STRONG
-    entry_ts: int,           # 由 Position Tracker 提供
-    event_ts: Optional[int] = None,
+        *,
+        exchange: str,
+        trade_id: str,
+        symbol: str,
+        position_side: str,  # LONG / SHORT
+        verdict: str,  # INVALID / CONFLICT / VALID / STRONG
+        entry_ts: int,  # 由 Position Tracker 提供
+        event_ts: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Deterministic Temporal State Reducer
@@ -128,6 +128,8 @@ async def reduce_temporal_state(
 
 if __name__ == "__main__":
     import asyncio
+
+
     async def _demo():
         state = await reduce_temporal_state(
             exchange="binance",
@@ -139,4 +141,6 @@ if __name__ == "__main__":
             event_ts=int(time.time() * 1000),
         )
         print(json.dumps(state, ensure_ascii=False))
+
+
     asyncio.run(_demo())
