@@ -32,6 +32,7 @@
 import json
 import os
 import sys
+import time
 import redis
 import requests
 from typing import Dict, Any, Optional
@@ -57,11 +58,11 @@ TRADE_TASK_NAME = os.environ.get('TRADE_TASK_KEY', 'TASK_ADD_TRADE')
 # 默认交易参数（可通过环境变量修改）
 # DEFAULT_SYMBOL = os.environ.get('TEST_SYMBOL', 'OGUSDT')  # 交易对
 # DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '6.853'))  # 价格
-DEFAULT_SYMBOL = os.environ.get('TEST_SYMBOL', 'MYXUSDT')  # 交易对
-DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '5.620'))  # 价格
+DEFAULT_SYMBOL = os.environ.get('TEST_SYMBOL', 'WIFUSDT')  # 交易对
+DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '0.3983'))  # 价格
 # 默认数量：确保名义价值至少为 5 USDT（币安最小要求）
 # 如果价格为 1.223，则至少需要 5 / 1.223 ≈ 4.09，向上取整为 5
-DEFAULT_AMOUNT = os.environ.get('TEST_AMOUNT', '100')  # 数量（调整为满足最小名义价值要求）
+DEFAULT_AMOUNT = os.environ.get('TEST_AMOUNT', '10000')  # 数量（调整为满足最小名义价值要求）
 DEFAULT_LEVERAGE = float(os.environ.get('TEST_LEVERAGE', '20.0'))  # 杠杆
 DEFAULT_TASK_ID = int(os.environ.get('TEST_TASK_ID', '23'))  # 任务ID
 DEFAULT_USER_ID = int(os.environ.get('TEST_USER_ID', '2'))  # 用户ID
@@ -69,8 +70,8 @@ DEFAULT_API_ID = int(os.environ.get('TEST_API_ID', '0'))  # API ID
 
 # 止盈止损配置（百分比模式）
 DEFAULT_TRADE_TRIGGER_MODE = int(os.environ.get('TEST_TRADE_TRIGGER_MODE', '1'))  # 止盈止损模式：0=关闭, 1=开启
-DEFAULT_TP_TRIGGER_PX = float(os.environ.get('TEST_TP_TRIGGER_PX', '10.0'))  # 止盈比例（百分比），例如：5.0 表示5%
-DEFAULT_SL_TRIGGER_PX = float(os.environ.get('TEST_SL_TRIGGER_PX', '20.0'))  # 止损比例（百分比），例如：2.0 表示2%
+DEFAULT_TP_TRIGGER_PX = float(os.environ.get('TEST_TP_TRIGGER_PX', '60.0'))  # 止盈比例（百分比），例如：5.0 表示5%
+DEFAULT_SL_TRIGGER_PX = float(os.environ.get('TEST_SL_TRIGGER_PX', '50.0'))  # 止损比例（百分比），例如：2.0 表示2%
 
 
 def query_binance_step_size(symbol: str, use_testnet: bool = True) -> Optional[float]:
@@ -445,28 +446,64 @@ def connect_redis(redis_config: Dict) -> Optional[redis.Redis]:
     Returns:
         Redis 客户端对象，如果连接失败则返回 None
     """
+    host = redis_config['host']
+    port = redis_config['port']
+    db = redis_config.get('db', 0)
+    
+    print(f"🔌 正在连接 Redis: {host}:{port}/{db}")
+    
     try:
-        r = redis.Redis(host=redis_config['host'],
-                        port=redis_config['port'],
-                        password=redis_config.get('password'),
-                        db=redis_config.get('db', 0),
-                        encoding=redis_config.get('encoding', 'utf-8'),
-                        decode_responses=redis_config.get(
-                            'decode_responses', False),
-                        socket_connect_timeout=5,
-                        socket_timeout=5)
-        # 测试连接
+        # 增加超时时间，并添加重试机制
+        r = redis.Redis(
+            host=host,
+            port=port,
+            password=redis_config.get('password'),
+            db=db,
+            encoding=redis_config.get('encoding', 'utf-8'),
+            decode_responses=redis_config.get('decode_responses', False),
+            socket_connect_timeout=10,  # 连接超时增加到10秒
+            socket_timeout=10,  # 读取超时增加到10秒
+            socket_keepalive=True,  # 启用 keepalive
+            socket_keepalive_options={}  # keepalive 选项
+        )
+        
+        # 测试连接，设置超时
+        start_time = time.time()
         r.ping()
+        elapsed = time.time() - start_time
+        
         print(
-            f"✅ Redis 连接成功: {redis_config['host']}:{redis_config['port']}/{redis_config.get('db', 0)}"
+            f"✅ Redis 连接成功: {host}:{port}/{db} (耗时: {elapsed:.2f}秒)"
         )
         return r
+        
     except redis.exceptions.ConnectionError as e:
         print(f"❌ Redis 连接失败: {e}")
-        print(f"   配置: {redis_config['host']}:{redis_config['port']}")
+        print(f"   配置: {host}:{port}/{db}")
+        print(f"   请检查:")
+        print(f"   - Redis 服务是否运行")
+        print(f"   - 主机地址和端口是否正确")
+        print(f"   - 网络连接是否正常")
+        print(f"   - 防火墙是否允许连接")
+        return None
+    except redis.exceptions.TimeoutError as e:
+        print(f"❌ Redis 连接超时: {e}")
+        print(f"   配置: {host}:{port}/{db}")
+        print(f"   可能原因:")
+        print(f"   - 网络延迟过高")
+        print(f"   - Redis 服务器响应慢")
+        print(f"   - 防火墙阻止连接")
+        return None
+    except redis.exceptions.AuthenticationError as e:
+        print(f"❌ Redis 认证失败: {e}")
+        print(f"   配置: {host}:{port}/{db}")
+        print(f"   请检查密码是否正确")
         return None
     except Exception as e:
-        print(f"❌ Redis 连接异常: {e}")
+        print(f"❌ Redis 连接异常: {type(e).__name__}: {e}")
+        print(f"   配置: {host}:{port}/{db}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -622,16 +659,7 @@ def main():
     # 打印交易摘要
     print_trade_summary(trade_json, example_name)
 
-    # 询问用户确认
-    print("⚠️  准备推送到 Redis 队列...")
-    print("   按 Enter 继续，或 Ctrl+C 取消")
-    try:
-        input()
-    except KeyboardInterrupt:
-        print("\n❌ 用户取消操作")
-        sys.exit(0)
-
-    # 推送到 Redis
+    # 直接推送到 Redis
     success = push_to_redis(trade_json, REDIS_CONFIG, TRADE_TASK_NAME)
 
     if success:
