@@ -40,4 +40,4 @@ def get_position(exchange: str, symbol: str) -> list[dict]:
 
 
 if __name__ == "__main__":
-    print(get_position("binance", "1000PEPEUSDT"))
+    print(get_position("binance", "ETHUSDT"))

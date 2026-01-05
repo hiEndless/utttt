@@ -61,7 +61,7 @@ class BinanceUserWS:
         ).hexdigest()
         return signature
 
-    def _request(self):
+    def _request(self, method="v2/account.status"):
         timestamp = int(time.time() * 1000)
         params = {"apiKey": self.api_key, "timestamp": timestamp}
         signature = self._sign_params(params)
@@ -69,7 +69,7 @@ class BinanceUserWS:
 
         request = {
             "id": f"605a6d20-6588-4cb9-afa0-b0ab087507ba",
-            "method": "v2/account.status",
+            "method": method,
             "params": params
         }
         return request
@@ -81,7 +81,9 @@ class BinanceUserWS:
                 ssl=self.ssl_context
         ) as ws:
             self._ws = ws
-            await ws.send(json.dumps(self._request()))
+            # 发送初始请求
+            await ws.send(json.dumps(self._request("v2/account.status")))
+            await ws.send(json.dumps(self._request("v2/account.position")))
 
             while self._running:
                 try:
@@ -93,12 +95,14 @@ class BinanceUserWS:
                         else:
                             self._callback(data)
                 except asyncio.TimeoutError:
-                    await ws.send(json.dumps(self._request()))
+                    # 超时发送两个请求
+                    await ws.send(json.dumps(self._request("v2/account.status")))
+                    await ws.send(json.dumps(self._request("v2/account.position")))
                 except websockets.ConnectionClosed as e:
-                    print(f"⚠️ WS closed: {e}")
+                    print(f"⚠️ WS 已关闭: {e}")
                     break
                 except Exception as e:
-                    print(f"❌ Message processing error: {e}")
+                    print(f"❌ 消息处理错误: {e}")
 
     async def run(self):
         self._running = True
@@ -106,7 +110,7 @@ class BinanceUserWS:
             try:
                 await self._connect()
             except Exception as e:
-                print(f"❌ WS connection error: {e}, reconnecting in {self.reconnect_delay}s")
+                print(f"❌ WS 连接错误: {e}, {self.reconnect_delay}秒后重连")
                 await asyncio.sleep(self.reconnect_delay)
 
     async def stop(self):
@@ -120,17 +124,30 @@ class BinanceUserWS:
 
 
 async def user_callback(data):
-    balance = data.get("result").get("totalMarginBalance")
-    availableBalance = data.get("result").get("availableBalance")
-    positions = data.get("result").get("positions")
-    print("账户余额:", balance)
-    print("账户可用余额:", availableBalance)
-    print("持仓:", positions)
-    try:
-        await redis_client.set("balance:binance", json.dumps({"balance": balance, "availableBalance": availableBalance}))
-        BinanceAnalysisService().analysis(positions)
-    except Exception as e:
-        print(f"Redis 写入错误: {e}")
+    result = data.get("result")
+    if result is None:
+        return
+
+    # 情况 1: 持仓响应 (List) - 来自 v2/account.position
+    if isinstance(result, list):
+        positions = result
+        print("持仓:", positions)
+        try:
+            BinanceAnalysisService().analysis(positions)
+        except Exception as e:
+            print(f"分析错误: {e}")
+
+    # 情况 2: 状态响应 (Dict) - 来自 v2/account.status
+    elif isinstance(result, dict):
+        balance = result.get("totalMarginBalance")
+        availableBalance = result.get("availableBalance")
+        
+        print("账户余额:", balance)
+        print("账户可用余额:", availableBalance)
+        try:
+            await redis_client.set("balance:binance", json.dumps({"balance": balance, "availableBalance": availableBalance}))
+        except Exception as e:
+            print(f"Redis 写入错误: {e}")
 
 
 if __name__ == "__main__":

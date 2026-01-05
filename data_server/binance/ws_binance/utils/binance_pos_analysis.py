@@ -17,6 +17,11 @@ class BinanceAnalysisService:
                 except Exception:
                     amt = 0.0
                 if amt != 0.0:
+                    if p.get("positionSide") == "BOTH":
+                        if amt > 0:
+                            p["positionSide"] = "LONG"
+                        else:
+                            p["positionSide"] = "SHORT"
                     filtered.append(p)
         return filtered
 
