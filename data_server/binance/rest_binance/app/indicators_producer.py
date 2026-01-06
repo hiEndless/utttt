@@ -1,10 +1,6 @@
 import json
 from signals.aggregate import compute_all_indicators
-
-try:
-    from .redis_client import get_redis_client
-except ImportError:
-    from redis_client import get_redis_client
+from utils.redis_client import get_redis_client
 
 
 def calculate_indicators(klines_data):

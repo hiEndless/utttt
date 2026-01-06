@@ -1,9 +1,5 @@
 import json
-
-try:
-    from .redis_client import get_redis_client
-except ImportError:
-    from redis_client import get_redis_client
+from utils.redis_client import get_redis_client
 
 
 def extract_endpoint_name(url: str) -> str:

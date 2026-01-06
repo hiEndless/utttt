@@ -5,7 +5,7 @@ import time
 import redis.asyncio as aioredis
 from config import settings
 from manager import SymbolTaskManager
-from redis_watch import RedisSymbolWatcher
+from utils.redis_watch import RedisSymbolWatcher
 from fetchers import (
     fetch_kline,
     fetch_takerLongShortRatio,
