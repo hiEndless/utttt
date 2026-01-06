@@ -211,11 +211,28 @@ class L1Aggregator:
         neutral_medium_presence = {"short": False, "mid": False, "long": False}
         sources_set = set()
         
+        # 新增：组件分数与指标明细
+        component_scores = {}
+        indicator_values = []
+        
         for i in items:
             d = str(i.get("dir") or "")
             b = str(i.get("bucket") or "short")
             p = str(i.get("priority") or "low").lower()
             s = str(i.get("source") or "")
+            cls = str(i.get("cls") or "unknown")
+            sc = float(i.get("score") or 0.0)
+            
+            # 记录明细
+            indicator_values.append({
+                "plugin": i.get("plugin"),
+                "cls": cls,
+                "dir": d,
+                "score": sc,
+                "bucket": b,
+                "priority": p
+            })
+
             if s:
                 sources_set.add(s)
             
@@ -225,13 +242,15 @@ class L1Aggregator:
                 # 中性事件不参与分数与方向投票
                 continue
                 
-            sc = float(i.get("score") or 0.0)
             weight = PRIO_MULTIPLIER.get(p, 1.0)
             final_score = sc * weight
             
             signed = final_score if d == "bullish" else (-final_score if d == "bearish" else 0.0)
             if b in bucket_sums:
                 bucket_sums[b] += signed
+            
+            # 累加组件分数
+            component_scores[cls] = component_scores.get(cls, 0.0) + signed
                 
         # 桶方向判定（带桶中性带）
         def dir_of(val: float, band: float):
@@ -289,6 +308,8 @@ class L1Aggregator:
             "bucket_short_score": bucket_sums["short"],
             "bucket_mid_score": bucket_sums["mid"],
             "bucket_long_score": bucket_sums["long"],
+            "component_scores": component_scores,
+            "indicator_values": indicator_values,
             "origin_sources": sorted(list(sources_set)),
             "origin_source_hint": _src_hint(sources_set),
         }
@@ -335,6 +356,8 @@ class L1Aggregator:
             "bucket_short_score": agg.get("bucket_short_score") or 0.0,
             "bucket_mid_score": agg.get("bucket_mid_score") or 0.0,
             "bucket_long_score": agg.get("bucket_long_score") or 0.0,
+            "component_scores": json.dumps(agg.get("component_scores") or {}),
+            "indicator_values": json.dumps(agg.get("indicator_values") or []),
             "origin_sources": json.dumps(agg.get("origin_sources") or []),
             "origin_source_hint": agg.get("origin_source_hint") or "unknown",
         }

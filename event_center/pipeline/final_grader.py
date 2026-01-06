@@ -206,6 +206,17 @@ class FinalGrader:
                     if abs(total_score) >= 3.0:
                         reason_tags.append("high_structure_score")
 
+                    # 解析 component_scores 和 indicator_values
+                    try:
+                        comp_scores = json.loads(ev.get("component_scores")) if ev.get("component_scores") else {}
+                    except Exception:
+                        comp_scores = {}
+                    
+                    try:
+                        ind_values = json.loads(ev.get("indicator_values")) if ev.get("indicator_values") else []
+                    except Exception:
+                        ind_values = []
+
                     # ---------- Debug payload (agent default不读取) ----------
                     debug_payload = {
                         "scores": {
@@ -218,8 +229,8 @@ class FinalGrader:
                             "mid": ev.get("mid_dir"),
                             "long": ev.get("long_dir"),
                         },
-                        "component_scores": ev.get("component_scores"),
-                        "indicators": ev.get("indicator_values"),
+                        "component_scores": comp_scores,
+                        "indicators": ind_values,
                     }
 
                     origin_sources = None

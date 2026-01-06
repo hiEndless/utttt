@@ -66,10 +66,17 @@ class TradeEvent(models.Model):
     event_at = fields.BigIntField(description="事件发生时间戳 (ms)")
 
     direction = fields.CharField(max_length=16, description="方向 (bullish/bearish/neutral)")
+    mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="事件发生时的价格")
     
     # 原始输入快照 (JSON)
     market_context = fields.JSONField(description="市场背景快照 (Trend, Volatility...)")
     event_data = fields.JSONField(description="事件原始数据 (analysis_context)")
+    indicators_snapshot = fields.JSONField(null=True, description="关键技术指标快照 (EMA, MACD, RSI...)")
+    
+    # 验证与总结
+    is_verified = fields.BooleanField(default=False, description="是否已验证准确性")
+    verification_at = fields.BigIntField(null=True, description="验证时间戳")
+    post_summary = fields.TextField(null=True, description="事后总结 (包含准确性复盘)")
 
     class Meta:
         table = "trade_events"
@@ -103,6 +110,7 @@ class AgentAnalysis(models.Model):
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
     agent_name = fields.CharField(max_length=32, description="Agent 名称 (e.g. signal_validation, position_risk)")
+    model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
 
     # 核心产出
     verdict = fields.CharField(null=True, max_length=32, description="结论 (VALID, INVALID, HOLD, REDUCE...)")
