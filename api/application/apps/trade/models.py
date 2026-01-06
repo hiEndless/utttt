@@ -6,7 +6,7 @@ class Trade(models.Model):
     交易主表：记录一次完整的交易生命周期
     """
     id = fields.IntField(pk=True, generated=True)
-    trade_id = fields.CharField(max_length=64, unique=True, description="交易ID (UUID)")
+    trade = fields.CharField(max_length=64, unique=True, description="交易ID (UUID)")
     symbol = fields.CharField(max_length=32, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, description="交易所 (e.g. binance)")
     position_side = fields.CharField(max_length=16, description="方向 (LONG/SHORT)")
@@ -35,7 +35,7 @@ class TradeAction(models.Model):
     交易操作记录表：记录开仓、平仓、加仓、减仓等具体操作
     """
     id = fields.IntField(pk=True, generated=True)
-    trade_id = fields.ForeignKeyField('models.Trade', related_name='actions', to_field='trade_id', description="关联的交易")
+    trade = fields.ForeignKeyField('models.Trade', related_name='actions', to_field='trade', description="关联的交易")
     action_type = fields.CharField(max_length=32, description="操作类型 (OPEN, CLOSE, INCREASE, DECREASE)")
     
     # 核心数据
@@ -51,7 +51,7 @@ class TradeAction(models.Model):
 
     class Meta:
         table = "trade_actions"
-        indexes = (("trade_id", "action_at"),)
+        indexes = (("trade", "action_at"),)
 
 
 class TradeEvent(models.Model):
@@ -60,7 +60,7 @@ class TradeEvent(models.Model):
     例如：价格波动、风控触发、信号更新等
     """
     id = fields.IntField(pk=True, generated=True)
-    trade_id = fields.ForeignKeyField('models.Trade', related_name='events', to_field='trade_id', description="关联的交易")
+    trade = fields.ForeignKeyField('models.Trade', related_name='events', to_field='trade', description="关联的交易")
     event_id = fields.CharField(max_length=64, description="事件id")
     event_type = fields.CharField(max_length=32, description="事件类型 (e.g. RISK_CHECK, SIGNAL_UPDATE)")
     event_at = fields.BigIntField(description="事件发生时间戳 (ms)")
@@ -80,7 +80,7 @@ class TradeEvent(models.Model):
 
     class Meta:
         table = "trade_events"
-        indexes = (("trade_id", "event_at"),)
+        indexes = (("trade", "event_at"),)
 
 
 class AgentAnalysis(models.Model):
