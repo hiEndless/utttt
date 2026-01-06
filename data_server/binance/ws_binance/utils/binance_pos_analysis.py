@@ -1,5 +1,7 @@
 from data_server.binance.ws_binance.utils.reids_connect import RedisClient
+from data_server.binance.ws_binance.utils.trade_recorder import TradeRecorder
 import uuid
+import datetime
 
 previous_data = None
 
@@ -7,6 +9,7 @@ previous_data = None
 class BinanceAnalysisService:
     def __init__(self):
         self.redis_client = RedisClient()
+        self.trade_recorder = TradeRecorder()
 
     def data_clean(self, new_data):
         filtered = []
@@ -115,7 +118,9 @@ class BinanceAnalysisService:
                         'old_pnl_ratio': old_pnl_ratio,
                         'new_pnl_ratio': new_pnl_ratio,
                         'trade_id': j.get('trade_id'),
-                        'change': change
+                        'change': change,
+                        'price': j.get('markPrice'),
+                        'updateTime': j.get('updateTime')
                     })
         print("修改：", results)
         return results
@@ -140,17 +145,27 @@ class BinanceAnalysisService:
             if added_items:
                 for item in added_items:
                     self.redis_client.conn.sadd("symbol:binance", f"{item.get('symbol')}")
+                    self.trade_recorder.save_new_trade(item)
 
             removed_items = self.find_removed_items(old_data, new_data)
             if removed_items:
+                current_time_ms = int(datetime.datetime.now().timestamp() * 1000)
+                # 尝试从 new_data 获取最新的时间戳，如果有的话
+                if new_data and isinstance(new_data, list) and len(new_data) > 0:
+                     t = new_data[0].get('updateTime')
+                     if t:
+                         current_time_ms = t
+                         
                 for item in removed_items:
                     self.redis_client.conn.srem("symbol:binance", f"{item.get('symbol')}")
                     print("存入数据库：", item)
+                    self.trade_recorder.close_trade(item, current_time_ms)
 
             changed_items = self.find_changed_items(old_data, new_data)
             if changed_items:
                 for item in changed_items:
                     print("变化的数据：", item)
+                    self.trade_recorder.update_trade(item)
         return
 
 

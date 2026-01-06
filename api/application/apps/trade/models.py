@@ -11,6 +11,8 @@ class Trade(models.Model):
     exchange = fields.CharField(max_length=32, description="交易所 (e.g. binance)")
     position_side = fields.CharField(max_length=16, description="方向 (LONG/SHORT)")
     size = fields.DecimalField(max_digits=20, decimal_places=8, description="持仓量 (positionAmt)")
+    max_size = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="最大持仓量")
+    closed_size = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="已平仓量")
 
     # 时间信息
     entry_time = fields.DatetimeField(description="开仓时间")

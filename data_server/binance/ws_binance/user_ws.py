@@ -1,4 +1,6 @@
 import asyncio
+import traceback
+
 import websockets
 import json
 import time
@@ -135,7 +137,7 @@ async def user_callback(data):
         try:
             BinanceAnalysisService().analysis(positions)
         except Exception as e:
-            print(f"分析错误: {e}")
+            print(f"分析错误: {e}，{traceback.print_exc()}")
 
     # 情况 2: 状态响应 (Dict) - 来自 v2/account.status
     elif isinstance(result, dict):
