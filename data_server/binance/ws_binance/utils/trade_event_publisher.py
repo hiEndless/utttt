@@ -20,7 +20,7 @@ class TradeEventPublisher:
     def publish_trade_event(self, event_type: str, item: dict, extra_data: dict = None):
         """
         推送交易事件到 Redis Stream
-        :param event_type: 事件类型，如 "TRADE_OPEN", "TRADE_CLOSE", "TRADE_INCREASE", "TRADE_DECREASE"
+        :param event_type: 事件类型，如 "trade.open", "trade.close", "trade.increase", "trade.decrease"
         :param item: 原始交易数据 item (包含 symbol, trade_id, positionAmt 等)
         :param extra_data: 额外补充的数据 (如 change_amount, pnl 等)
         """
@@ -53,7 +53,7 @@ class TradeEventPublisher:
 
             # 核心业务数据
             payload = {
-                "event_id": f"{symbol}.trade.{ts_ms}",
+                "event_id": f"{symbol}.{event_type}.{ts_ms}",
                 "stage": "execution",          # 区别于 "final" (market analysis)
                 "event_type": event_type,      # 具体交易动作
                 "account_id": account_id,
@@ -66,15 +66,15 @@ class TradeEventPublisher:
 
             # 写入 Redis Stream
             # 使用 safe_xadd_sync (虽然 RedisClient 没有暴露，但可以直接调用 conn.xadd)
-            # maxlen 设置为 10000 防止无限增长
-            self.redis_client.conn.xadd(self.FINAL_STREAM_KEY, payload, maxlen=10000)
+            # maxlen 设置为 1000 防止无限增长
+            self.redis_client.conn.xadd(self.FINAL_STREAM_KEY, payload, maxlen=1000)
             print(f"Trade Event Published: {event_type} {symbol} {trade_id}")
 
         except Exception as e:
             print(f"Failed to publish trade event: {e}")
 
     def on_trade_open(self, item):
-        self.publish_trade_event("TRADE_OPEN", item, {
+        self.publish_trade_event("trade.open", item, {
             "action": "OPEN",
             "change_amount": item.get('positionAmt', '0')
         })
@@ -83,14 +83,14 @@ class TradeEventPublisher:
         """
         :param amount: 平仓数量（通常为负值，表示减少）
         """
-        self.publish_trade_event("TRADE_CLOSE", item, {
+        self.publish_trade_event("trade.close", item, {
             "action": "CLOSE",
             "change_amount": amount,
             "pnl": item.get('unRealizedProfit', '0') # 这里的 PnL 可能不准，最好是平仓时的 Realized PnL，但 WS 推送可能不带
         })
 
     def on_trade_increase(self, item, amount):
-        self.publish_trade_event("TRADE_INCREASE", item, {
+        self.publish_trade_event("trade.increase", item, {
             "action": "INCREASE",
             "change_amount": amount
         })
@@ -99,7 +99,7 @@ class TradeEventPublisher:
         """
         :param amount: 减仓数量（通常为负值）
         """
-        self.publish_trade_event("TRADE_DECREASE", item, {
+        self.publish_trade_event("trade.decrease", item, {
             "action": "DECREASE",
             "change_amount": amount
         })
