@@ -2,11 +2,21 @@ from data_server.binance.ws_binance.utils.db_utils import PostgresDB
 from data_server.binance.ws_binance.utils.trade_event_publisher import TradeEventPublisher
 import datetime
 
+import os
+
 class TradeRecorder:
     def __init__(self, exchange="binance"):
         self.db = PostgresDB()
         self.exchange = exchange
         self.publisher = TradeEventPublisher(exchange=self.exchange)
+        
+        # 防抖配置
+        # 默认开启，阈值3分钟
+        self.debounce_enabled = os.getenv("TRADE_DEBOUNCE_ENABLED", "true").lower() == "true"
+        try:
+            self.debounce_minutes = float(os.getenv("TRADE_DEBOUNCE_MINUTES", "3.0"))
+        except Exception:
+            self.debounce_minutes = 3.0
 
     def _to_datetime(self, ts):
         if not ts:
@@ -89,8 +99,11 @@ class TradeRecorder:
             print(f"数据库记录平仓交易: {trade_id}")
             
             # 推送事件
-            # 如果 duration < 3 min，标记为短线交易，下游只验证不分析
-            is_short_term = duration_minutes < 3
+            # 如果 duration < debounce_minutes min，标记为短线交易，下游只验证不分析
+            is_short_term = False
+            if self.debounce_enabled and duration_minutes < self.debounce_minutes:
+                is_short_term = True
+                
             self.publisher.on_trade_close(item, action_amount, is_short_term=is_short_term)
             if is_short_term:
                 print(f"短线交易平仓 (持仓 {duration_minutes:.2f} 分钟)，已标记 is_short_term=True")
@@ -144,16 +157,16 @@ class TradeRecorder:
             print(f"数据库记录交易变更: {trade_id} {change_type}")
             
             # 推送事件
-            # 防抖逻辑：如果距离上一次更新时间 < 3分钟，标记为短线操作
+            # 防抖逻辑：如果距离上一次更新时间 < debounce_minutes 分钟，标记为短线操作
             last_update_time = item.get('lastUpdateTime')
             is_short_term = False
             
-            if last_update_time:
+            if self.debounce_enabled and last_update_time:
                 try:
                     # updateTime 和 lastUpdateTime 都是毫秒级时间戳
                     diff_ms = int(update_time) - int(last_update_time)
                     diff_min = diff_ms / 1000.0 / 60.0
-                    if diff_min < 3:
+                    if diff_min < self.debounce_minutes:
                         is_short_term = True
                         print(f"加减仓频率过高 ({diff_min:.2f} min)，已标记 is_short_term=True: {trade_id}")
                 except Exception as e:

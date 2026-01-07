@@ -96,7 +96,7 @@ class RouterFinalListener:
                         asyncio.create_task(wf.arun(info))
                     elif info.get("symbol") and info.get("route") == "trade":
                         # 处理 trade 类型信号
-                        is_short_term = meta.get("is_short_term") == True
+                        is_short_term = meta.get("is_short_term").lower() == "true"
                         
                         # 触发 TradeReviewWorkflow (示例)
                         # wf = TradeReviewWorkflow()
