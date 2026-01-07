@@ -4,7 +4,9 @@ from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.tools.tf_validation import compute_tf_validation
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
+from agent_server.utils.trade_event_recorder import get_recorder
 import json
+import asyncio
 
 
 class SignalValidationComponent(BaseWorkflowComponent):
@@ -19,6 +21,7 @@ class SignalValidationComponent(BaseWorkflowComponent):
         exchange = event_data.get("exchange", "binance")
         direction = event_data.get("direction")
         tf_hint = event_data.get("tf_hint")
+        event_id = event_data.get("event_id")  # 提取 event_id
 
         tf_validation = compute_tf_validation(symbol, exchange, direction, tf_hint)
 
@@ -47,6 +50,18 @@ class SignalValidationComponent(BaseWorkflowComponent):
             sv_output = json.loads(sv_output_str)
         except:
             sv_output = {"raw": sv_output_str}
+        
+        # 异步更新事件的市场背景快照（不阻塞当前流程）
+        if event_id and full_context:
+            recorder = get_recorder()
+            asyncio.create_task(
+                recorder.update_event_context(
+                    event_id=event_id,
+                    exchange=exchange,
+                    symbol=symbol,
+                    market_context=full_context
+                )
+            )
 
         return self._safe_json_dumps({
             "event_data": event_data,

@@ -5,6 +5,8 @@ import json
 import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
+from agent_server.utils.trade_event_recorder import get_recorder
+from agent_server.utils.price_fetcher import get_mark_price
 
 
 class RouterFinalListener:
@@ -15,6 +17,8 @@ class RouterFinalListener:
         self.final_stream = self.FINAL_STREAM
         self.group = "agent_final_router_group"
         self.consumer = "agent_final_router"
+        # 初始化事件记录器 (使用单例以共享连接池)
+        self.event_recorder = get_recorder()
 
     @staticmethod
     def _j(s: str):
@@ -44,10 +48,11 @@ class RouterFinalListener:
                     # 1. 基础字段解析
                     ev = {k: (v if isinstance(v, str) else str(v)) for k, v in fields.items()}
                     
-                    # 2. 解析嵌套的 JSON 结构 (meta, analysis_context, structure)
+                    # 2. 解析嵌套的 JSON 结构 (meta, analysis_context, structure, trade_details)
                     meta = self._j(ev.get("meta") or "{}")
                     ac = self._j(ev.get("analysis_context") or "{}")
                     st = self._j(ev.get("structure") or "{}")
+                    td = self._j(ev.get("trade_details") or "{}")
 
                     # 3. 提取路由提示 (origin_source_hint)
                     # 该字段决定了事件的来源类型 (如 indicators, orderbook, liquidation 等)
@@ -56,16 +61,18 @@ class RouterFinalListener:
 
                     # 4. 提取交易所信息 (exchange)
                     # 尝试从多个位置获取，如果没有明确指定，尝试从 account_id 或 source_event_id 推断
-                    exchange = (ev.get("account_id").split("_")[0] or "").lower()
+                    account_id = ev.get("account_id") or ""
+                    exchange = account_id.split("_")[0].lower() if account_id else ""
                     
                     if not exchange:
                         # 尝试从 source_event_id 解析 (例如: binance.BTCUSDT.trade... -> binance)
                         se_id = meta.get("source_event_id") or ""
                         if se_id:
-                            exchange = (se_id.split(".")[0] or "").lower()
+                            exchange = se_id.split(".")[0].lower()
 
                     symbol = ev.get("symbol") or ""
                     fp = ev.get("final_priority") or "low"
+                    event_type = ev.get("event_type") or ""
 
                     # 5. 构建分发信息对象
                     info = {
@@ -74,6 +81,10 @@ class RouterFinalListener:
                         "symbol": symbol,
                         "final_priority": fp,
                         "event_id": ev.get("event_id") or "",
+                        "event_type": event_type,
+                        "timestamp": ev.get("timestamp"),
+                        
+                        # 分析数据
                         "market_state": st.get("market_state"),
                         "direction": st.get("direction"),
                         "confidence": st.get("confidence"),
@@ -81,6 +92,11 @@ class RouterFinalListener:
                         "priority_weight": st.get("priority_weight"),
                         "l1_total_score": ac.get("l1_total_score"),
                         "tf_hint": ac.get("tf_hint"),
+                        "analysis_context": ac,
+                        
+                        # 完整数据 (供 recorder 和 price_fetcher 使用)
+                        "meta": meta,
+                        "trade_details": td,
                     }
 
                     try:
@@ -88,7 +104,14 @@ class RouterFinalListener:
                     except Exception:
                         print("[FinalRouter] dispatch", info)
 
-                    # 6. 根据路由分发任务
+                    # 6. 异步入库事件（不阻塞后续处理）
+                    # 使用统一的 get_mark_price 组件获取价格
+                    mark_price = await get_mark_price(info, exchange)
+                    
+                    # 创建入库任务（不等待结果，避免阻塞）
+                    asyncio.create_task(self.event_recorder.save_event(info, mark_price))
+                    
+                    # 7. 根据路由分发任务
                     # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
                     if info.get("symbol") and info.get("route") == "indicators":
                         wf = SignalValidationWorkflow()
@@ -96,7 +119,7 @@ class RouterFinalListener:
                         asyncio.create_task(wf.arun(info))
                     elif info.get("symbol") and info.get("route") == "trade":
                         # 处理 trade 类型信号
-                        is_short_term = meta.get("is_short_term").lower() == "true"
+                        is_short_term = meta.get("is_short_term", "false").lower() == "true"
                         
                         # 触发 TradeReviewWorkflow (示例)
                         # wf = TradeReviewWorkflow()
