@@ -1,9 +1,12 @@
 from data_server.binance.ws_binance.utils.db_utils import PostgresDB
+from data_server.binance.ws_binance.utils.trade_event_publisher import TradeEventPublisher
 import datetime
 
 class TradeRecorder:
-    def __init__(self):
+    def __init__(self, exchange="binance"):
         self.db = PostgresDB()
+        self.exchange = exchange
+        self.publisher = TradeEventPublisher(exchange=self.exchange)
 
     def _to_datetime(self, ts):
         if not ts:
@@ -39,6 +42,9 @@ class TradeRecorder:
             """
             self.db.execute(sql_action, (trade_id, size, entry_price, size, update_time))
             print(f"数据库记录新增交易: {trade_id}")
+            
+            # 推送事件
+            self.publisher.on_trade_open(item)
         except Exception as e:
             print(f"保存新开仓记录失败: {e}")
 
@@ -70,6 +76,9 @@ class TradeRecorder:
             """
             self.db.execute(sql_action, (trade_id, action_amount, close_price, current_time_ms))
             print(f"数据库记录平仓交易: {trade_id}")
+            
+            # 推送事件
+            self.publisher.on_trade_close(item, action_amount)
         except Exception as e:
             print(f"保存平仓记录失败: {e}")
 
@@ -117,5 +126,11 @@ class TradeRecorder:
             """
             self.db.execute(sql_action, (trade_id, change_type, amount, price, new_size, update_time))
             print(f"数据库记录交易变更: {trade_id} {change_type}")
+            
+            # 推送事件
+            if change_type == 'INCREASE':
+                self.publisher.on_trade_increase(item, amount)
+            else:
+                self.publisher.on_trade_decrease(item, amount)
         except Exception as e:
             print(f"保存交易变更记录失败: {e}")

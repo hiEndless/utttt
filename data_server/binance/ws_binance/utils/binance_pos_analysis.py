@@ -9,7 +9,7 @@ previous_data = None
 class BinanceAnalysisService:
     def __init__(self):
         self.redis_client = RedisClient()
-        self.trade_recorder = TradeRecorder()
+        self.trade_recorder = TradeRecorder(exchange="binance")
 
     def data_clean(self, new_data):
         filtered = []
