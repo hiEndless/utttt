@@ -18,46 +18,58 @@ class RouterFinalListener:
 
     @staticmethod
     def _j(s: str):
+        """安全解析 JSON 字符串"""
         try:
             return json.loads(s) if s else {}
         except Exception:
             return {}
 
     async def run(self):
+        """
+        监听 Redis Stream (final_events)，并根据路由提示分发到相应的工作流
+        """
         try:
+            # 尝试创建消费者组，如果已存在则忽略错误
             await self.redis.xgroup_create(self.final_stream, self.group, id="0", mkstream=True)
         except Exception:
             pass
         while True:
+            # 阻塞读取 Stream 消息
             res = await self.redis.xreadgroup(self.group, self.consumer, streams={self.final_stream: ">"}, count=50,
                                               block=5000)
             if not res:
                 continue
             for _stream_name, entries in res:
                 for entry_id, fields in entries:
+                    # 1. 基础字段解析
                     ev = {k: (v if isinstance(v, str) else str(v)) for k, v in fields.items()}
+                    
+                    # 2. 解析嵌套的 JSON 结构 (meta, analysis_context, structure)
                     meta = self._j(ev.get("meta") or "{}")
                     ac = self._j(ev.get("analysis_context") or "{}")
                     st = self._j(ev.get("structure") or "{}")
+
+                    # 3. 提取路由提示 (origin_source_hint)
+                    # 该字段决定了事件的来源类型 (如 indicators, orderbook, liquidation 等)
                     hint = meta.get("origin_source_hint") or (ac.get("provenance") or {}).get(
                         "origin_source_hint") or "unknown"
-                    exchange = ev.get("exchange") or meta.get("exchange") or (ac.get("provenance") or {}).get(
-                        "exchange") or st.get("exchange")
+
+                    # 4. 提取交易所信息 (exchange)
+                    # 尝试从多个位置获取，如果没有明确指定，尝试从 account_id 或 source_event_id 推断
+                    exchange = (ev.get("account_id").split("_")[0] or "").lower()
+                    
                     if not exchange:
-                        acc_id = ev.get("account_id") or ""
-                        if acc_id:
-                            exchange = (acc_id.split("_")[0] or "").lower()
-                    if not exchange:
+                        # 尝试从 source_event_id 解析 (例如: binance.BTCUSDT.trade... -> binance)
                         se_id = meta.get("source_event_id") or ""
                         if se_id:
                             exchange = (se_id.split(".")[0] or "").lower()
-                    if not exchange and hint in {"binance", "okx", "bybit", "bitget", "kraken", "coinbase", "huobi",
-                                                 "gate", "mexc"}:
-                        exchange = hint
+
                     symbol = ev.get("symbol") or ""
                     fp = ev.get("final_priority") or "low"
+
+                    # 5. 构建分发信息对象
                     info = {
-                        "route": hint,
+                        "route": hint,  # 路由依据
                         "exchange": exchange or "",
                         "symbol": symbol,
                         "final_priority": fp,
@@ -70,16 +82,23 @@ class RouterFinalListener:
                         "l1_total_score": ac.get("l1_total_score"),
                         "tf_hint": ac.get("tf_hint"),
                     }
+
                     try:
                         print("[FinalRouter] dispatch", json.dumps(info, ensure_ascii=False))
                     except Exception:
                         print("[FinalRouter] dispatch", info)
 
-                    # Dispatch to SignalValidationWorkflow
-                    # Ideally filter by route, but for now we process all valid signals
-                    if info.get("symbol") and info.get("route"):
+                    # 6. 根据路由分发任务
+                    # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
+                    if info.get("symbol") and info.get("route") == "indicators":
                         wf = SignalValidationWorkflow()
+                        # 异步启动工作流
                         asyncio.create_task(wf.arun(info))
+                    elif info.get("symbol") and info.get("route") == "trade":
+                        # 处理 trade 类型信号
+                        pass
+                    
+                    # 确认消息已处理
                     await self.redis.xack(self.final_stream, self.group, entry_id)
 
 

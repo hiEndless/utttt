@@ -53,7 +53,7 @@ class TradeEventPublisher:
 
             # 核心业务数据
             payload = {
-                "event_id": f"{symbol}.{event_type}.{ts_ms}",
+                "event_id": f"{self.exchange}.{symbol}.{event_type}.{ts_ms}",
                 "stage": "execution",          # 区别于 "final" (market analysis)
                 "event_type": event_type,      # 具体交易动作
                 "account_id": account_id,
@@ -61,7 +61,11 @@ class TradeEventPublisher:
                 "timestamp": str(ts_ms),
                 
                 # 将详情序列化为 JSON 字符串存储
-                "trade_details": json.dumps(trade_details, ensure_ascii=False)
+                "trade_details": json.dumps(trade_details, ensure_ascii=False),
+                "meta": json.dumps({
+                    "source_event_id": f"{self.exchange}.{symbol}.{event_type}.{ts_ms}",
+                    "origin_source_hint": "trade"
+                }, ensure_ascii=False)
             }
 
             # 写入 Redis Stream
