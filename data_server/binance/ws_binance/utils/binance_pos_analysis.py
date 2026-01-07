@@ -120,7 +120,8 @@ class BinanceAnalysisService:
                         'trade_id': j.get('trade_id'),
                         'change': change,
                         'price': j.get('markPrice'),
-                        'updateTime': j.get('updateTime')
+                        'updateTime': j.get('updateTime'),
+                        'lastUpdateTime': i.get('updateTime')  # 增加上一次更新时间
                     })
         print("修改：", results)
         return results

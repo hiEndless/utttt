@@ -17,12 +17,13 @@ class TradeEventPublisher:
         self.redis_client = RedisClient()
         self.exchange = exchange.lower()
 
-    def publish_trade_event(self, event_type: str, item: dict, extra_data: dict = None):
+    def publish_trade_event(self, event_type: str, item: dict, extra_data: dict = None, is_short_term: bool = False):
         """
         推送交易事件到 Redis Stream
         :param event_type: 事件类型，如 "trade.open", "trade.close", "trade.increase", "trade.decrease"
         :param item: 原始交易数据 item (包含 symbol, trade_id, positionAmt 等)
         :param extra_data: 额外补充的数据 (如 change_amount, pnl 等)
+        :param is_short_term: 是否为短线交易（用于下游过滤分析，只做验证）
         """
         try:
             ts_ms = int(time.time() * 1000)
@@ -59,12 +60,14 @@ class TradeEventPublisher:
                 "account_id": account_id,
                 "symbol": symbol,
                 "timestamp": str(ts_ms),
+                "is_short_term": "true" if is_short_term else "false", # 显式标记短线交易
                 
                 # 将详情序列化为 JSON 字符串存储
                 "trade_details": json.dumps(trade_details, ensure_ascii=False),
                 "meta": json.dumps({
                     "source_event_id": f"{self.exchange}.{symbol}.{event_type}.{ts_ms}",
-                    "origin_source_hint": "trade"
+                    "origin_source_hint": "trade",
+                    "is_short_term": is_short_term  # 在 meta 中也保留一份，方便不同解析方式
                 }, ensure_ascii=False)
             }
 
@@ -72,7 +75,7 @@ class TradeEventPublisher:
             # 使用 safe_xadd_sync (虽然 RedisClient 没有暴露，但可以直接调用 conn.xadd)
             # maxlen 设置为 1000 防止无限增长
             self.redis_client.conn.xadd(self.FINAL_STREAM_KEY, payload, maxlen=1000)
-            print(f"Trade Event Published: {event_type} {symbol} {trade_id}")
+            print(f"Trade Event Published: {event_type} {symbol} {trade_id} (short_term={is_short_term})")
 
         except Exception as e:
             print(f"Failed to publish trade event: {e}")
@@ -83,27 +86,28 @@ class TradeEventPublisher:
             "change_amount": item.get('positionAmt', '0')
         })
 
-    def on_trade_close(self, item, amount):
+    def on_trade_close(self, item, amount, is_short_term=False):
         """
         :param amount: 平仓数量（通常为负值，表示减少）
+        :param is_short_term: 是否为短线交易
         """
         self.publish_trade_event("trade.close", item, {
             "action": "CLOSE",
             "change_amount": amount,
             "pnl": item.get('unRealizedProfit', '0') # 这里的 PnL 可能不准，最好是平仓时的 Realized PnL，但 WS 推送可能不带
-        })
+        }, is_short_term=is_short_term)
 
-    def on_trade_increase(self, item, amount):
+    def on_trade_increase(self, item, amount, is_short_term=False):
         self.publish_trade_event("trade.increase", item, {
             "action": "INCREASE",
             "change_amount": amount
-        })
+        }, is_short_term=is_short_term)
 
-    def on_trade_decrease(self, item, amount):
+    def on_trade_decrease(self, item, amount, is_short_term=False):
         """
         :param amount: 减仓数量（通常为负值）
         """
         self.publish_trade_event("trade.decrease", item, {
             "action": "DECREASE",
             "change_amount": amount
-        })
+        }, is_short_term=is_short_term)

@@ -55,6 +55,17 @@ class TradeRecorder:
             close_price = item.get('markPrice', 0)
             close_time = self._to_datetime(current_time_ms)
             
+            # 1. 先查询开仓时间，计算持仓时长
+            sql_query_entry = "SELECT entry_time FROM trades WHERE trade = %s"
+            result = self.db.fetch_one(sql_query_entry, (trade_id,))
+            entry_time = result.get('entry_time') if result else None
+            
+            duration_minutes = 0
+            if entry_time:
+                # entry_time is datetime, close_time is datetime
+                duration_seconds = (close_time - entry_time).total_seconds()
+                duration_minutes = duration_seconds / 60.0
+
             # 更新 Trade 表 (要靠rest api去更新准确的)
             # 平仓时，增加 closed_size，并将 size 置为 0
             sql_trade = """
@@ -78,7 +89,12 @@ class TradeRecorder:
             print(f"数据库记录平仓交易: {trade_id}")
             
             # 推送事件
-            self.publisher.on_trade_close(item, action_amount)
+            # 如果 duration < 3 min，标记为短线交易，下游只验证不分析
+            is_short_term = duration_minutes < 3
+            self.publisher.on_trade_close(item, action_amount, is_short_term=is_short_term)
+            if is_short_term:
+                print(f"短线交易平仓 (持仓 {duration_minutes:.2f} 分钟)，已标记 is_short_term=True")
+
         except Exception as e:
             print(f"保存平仓记录失败: {e}")
 
@@ -128,9 +144,24 @@ class TradeRecorder:
             print(f"数据库记录交易变更: {trade_id} {change_type}")
             
             # 推送事件
+            # 防抖逻辑：如果距离上一次更新时间 < 3分钟，标记为短线操作
+            last_update_time = item.get('lastUpdateTime')
+            is_short_term = False
+            
+            if last_update_time:
+                try:
+                    # updateTime 和 lastUpdateTime 都是毫秒级时间戳
+                    diff_ms = int(update_time) - int(last_update_time)
+                    diff_min = diff_ms / 1000.0 / 60.0
+                    if diff_min < 3:
+                        is_short_term = True
+                        print(f"加减仓频率过高 ({diff_min:.2f} min)，已标记 is_short_term=True: {trade_id}")
+                except Exception as e:
+                    print(f"防抖时间计算错误: {e}")
+
             if change_type == 'INCREASE':
-                self.publisher.on_trade_increase(item, amount)
+                self.publisher.on_trade_increase(item, amount, is_short_term=is_short_term)
             else:
-                self.publisher.on_trade_decrease(item, amount)
+                self.publisher.on_trade_decrease(item, amount, is_short_term=is_short_term)
         except Exception as e:
             print(f"保存交易变更记录失败: {e}")
