@@ -96,7 +96,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "risk_limits": {
                     "max_loss_pct": -0.06,
                     "max_holding_min": 0,
-                    "max_exposure_pct": 0.3,
+                    "max_exposure_pct": 1.0,
                     "cooldown_after_invalid_min": 0
                 },
                 "portfolio_context": {
