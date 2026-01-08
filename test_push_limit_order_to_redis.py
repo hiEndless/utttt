@@ -59,7 +59,7 @@ TRADE_TASK_NAME = os.environ.get('TRADE_TASK_KEY', 'TASK_ADD_TRADE')
 
 # 默认交易参数（可通过环境变量修改）
 DEFAULT_SYMBOL = os.environ.get('TEST_SYMBOL', 'WIFUSDT')  # 交易对
-DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '0.39600'))  # 当前市价
+DEFAULT_PRICE = float(os.environ.get('TEST_PRICE', '0.4254'))  # 当前市价
 DEFAULT_AMOUNT = os.environ.get('TEST_AMOUNT', '10000')  # 数量
 DEFAULT_LEVERAGE = float(os.environ.get('TEST_LEVERAGE', '20.0'))  # 杠杆
 DEFAULT_TASK_ID = int(os.environ.get('TEST_TASK_ID', '23'))  # 任务ID
