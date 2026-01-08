@@ -64,7 +64,7 @@ class TradeEvent(models.Model):
     id = fields.IntField(pk=True, generated=True)
     trade = fields.ForeignKeyField('models.Trade', related_name='events', to_field='trade', description="关联的交易")
     event_id = fields.CharField(max_length=64, description="事件id")
-    event_type = fields.CharField(max_length=32, description="事件类型 (e.g. RISK_CHECK, SIGNAL_UPDATE)")
+    event_type = fields.CharField(max_length=32, description="事件类型")
     event_at = fields.BigIntField(description="事件发生时间戳 (ms)")
 
     direction = fields.CharField(max_length=16, description="方向 (bullish/bearish/neutral)")

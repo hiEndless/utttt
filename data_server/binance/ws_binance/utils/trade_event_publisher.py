@@ -3,6 +3,7 @@ import time
 import os
 from data_server.binance.ws_binance.utils.reids_connect import RedisClient
 
+
 class TradeEventPublisher:
     """
     负责将交易变更事件（开仓、平仓、加仓、减仓）推送到 Redis Stream (final_events)。
@@ -27,13 +28,13 @@ class TradeEventPublisher:
         """
         try:
             ts_ms = int(time.time() * 1000)
-            
+
             # 构建标准化的事件结构
             # 参考 FinalGrader 的输出格式，尽量保持字段风格一致，方便下游解析
-            
+
             symbol = item.get('symbol', 'unknown')
             trade_id = item.get('trade_id', 'unknown')
-            
+
             # 根据 exchange 字段动态设置 account_id
             account_id = f"{self.exchange}_account"
 
@@ -41,10 +42,10 @@ class TradeEventPublisher:
             trade_details = {
                 "trade_id": trade_id,
                 "position_side": item.get('positionSide', ''),
-                "current_size": str(item.get('positionAmt', '0')), # 当前持仓量
+                "current_size": str(item.get('positionAmt', '0')),  # 当前持仓量
                 "entry_price": str(item.get('entryPrice', '0')),
                 "mark_price": str(item.get('markPrice', '0')),
-                "pnl_ratio": str(item.get('pnl_ratio', '0')), # 收益率
+                "pnl_ratio": str(item.get('pnl_ratio', '0')),  # 收益率
             }
 
             if extra_data:
@@ -55,13 +56,13 @@ class TradeEventPublisher:
             # 核心业务数据
             payload = {
                 "event_id": f"{self.exchange}.{symbol}.{event_type}.{ts_ms}",
-                "stage": "execution",          # 区别于 "final" (market analysis)
-                "event_type": event_type,      # 具体交易动作
+                "stage": "execution",  # 区别于 "final" (market analysis)
+                "event_type": event_type,  # 具体交易动作
                 "account_id": account_id,
                 "symbol": symbol,
                 "timestamp": str(ts_ms),
-                "is_short_term": "true" if is_short_term else "false", # 显式标记短线交易
-                
+                "is_short_term": "true" if is_short_term else "false",  # 显式标记短线交易
+
                 # 将详情序列化为 JSON 字符串存储
                 "trade_details": json.dumps(trade_details, ensure_ascii=False),
                 "meta": json.dumps({
@@ -94,7 +95,7 @@ class TradeEventPublisher:
         self.publish_trade_event("trade.close", item, {
             "action": "CLOSE",
             "change_amount": amount,
-            "pnl": item.get('unRealizedProfit', '0') # 这里的 PnL 可能不准，最好是平仓时的 Realized PnL，但 WS 推送可能不带
+            "pnl": item.get('unRealizedProfit', '0')  # 这里的 PnL 可能不准，最好是平仓时的 Realized PnL，但 WS 推送可能不带
         }, is_short_term=is_short_term)
 
     def on_trade_increase(self, item, amount, is_short_term=False):
