@@ -14,8 +14,6 @@ async def main():
     l0 = L0Processor()
     l1 = L1Aggregator()
     fg = FinalGrader()
-    ac = AlertsConsumer()
-    fsc = ForceStatsConsumer()
 
     async def _discover_exchanges():
         redis = aioredis.from_url(cfg.redis_url, decode_responses=True)
