@@ -9,6 +9,7 @@ from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
+from agent_server.utils.account import get_available_exposure_pct
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
@@ -92,6 +93,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
             minutes_since_last = (ts_now - last_action_ts) / 1000 / 60 if last_action_ts > 0 else 9999
 
+            calculated_available_pct = await get_available_exposure_pct(exchange)
+
             operational_context = {
                 "risk_limits": {
                     "max_loss_pct": -0.06,
@@ -101,7 +104,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 },
                 "portfolio_context": {
                     "risk_mode": "normal",
-                    "available_exposure_pct": 0.12,
+                    "available_exposure_pct": calculated_available_pct,
                     "allow_add_position": True
                 },
                 "action_state": {

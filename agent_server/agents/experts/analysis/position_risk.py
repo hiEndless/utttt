@@ -10,6 +10,7 @@ from agent_server.agents.experts.utils import (
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
+from agent_server.utils.account import get_available_exposure_pct
 
 
 class PositionRiskExpert:
@@ -163,6 +164,9 @@ if __name__ == "__main__":
         rc = RedisClient()
         last_suggestion_key = f"agent_output:position_risk:{exchange}:{symbol}:latest"
         last_suggestion_str = await rc.get(last_suggestion_key)
+
+        # 获取账户余额计算可用仓位比例
+        calculated_available_pct = await get_available_exposure_pct(exchange)
         
         # 默认初始化：应对首次运行或 Redis 无数据的情况
         # 使用 "HOLD" + 极长的时间间隔，表示“无近期操作历史”，让 Agent 从零开始评估
@@ -191,7 +195,7 @@ if __name__ == "__main__":
             },
             "portfolio_context": {
                 "risk_mode": "normal",           # 账户风险模式: normal | conservative | aggressive
-                "available_exposure_pct": 0.12,  # 剩余可用仓位 (12%)
+                "available_exposure_pct": calculated_available_pct,  # 剩余可用仓位
                 "allow_add_position": True       # 是否允许加仓 (根据资金情况)
             },
             "action_state": {
