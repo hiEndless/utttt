@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
         operational_context = {
             "risk_limits": {
-                "max_loss_pct": -0.06,           # 最大亏损百分比 (建议参考值)
+                "max_loss_pct": -0.06,           # 最大亏损百分比 (建议参考值) 用户设置
                 "max_holding_min": 0,            # 最长持仓时间 (0 表示不限制，由上游策略决定)
                 "max_exposure_pct": 1.0,         # 单标的最大仓位占比
                 "cooldown_after_invalid_min": 0  # 建议模式下设为 0，保持对风险的实时敏感度

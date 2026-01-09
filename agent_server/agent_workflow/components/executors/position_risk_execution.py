@@ -96,8 +96,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             calculated_available_pct = await get_available_exposure_pct(exchange)
 
             operational_context = {
-                "risk_limits": {
-                    "max_loss_pct": -0.06,
+                "risk_limits": {            # 风险限制（用户设置，同时给默认值）
+                    "max_loss_pct": -0.3,  # 最大亏损百分比
                     "max_holding_min": 0,
                     "max_exposure_pct": 1.0,
                     "cooldown_after_invalid_min": 0
