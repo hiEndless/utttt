@@ -73,7 +73,9 @@ async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, out
                 model_version=model_id,
                 agent_name=agent,
                 analysis_data=output,
-                trade_id=trade_id
+                trade_id=trade_id,
+                exchange=exchange,
+                symbol=symbol
             )
         except Exception as e:
             # 记录日志但不阻断主流程

@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List
 from concurrent.futures import ThreadPoolExecutor
 from agent_server.utils.db_utils import PostgresDB
 from agent_server.tools.get_position import get_position
+from agent_server.utils.price_fetcher import get_mark_price_sync
 
 logger = logging.getLogger(__name__)
 
@@ -450,10 +451,12 @@ class TradeEventRecorder:
             logger.error(f"更新市场背景快照失败: {e}, event_id={event_id}", exc_info=True)
             return False
 
-    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
+    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], exchange: str, symbol: str, trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
         """
         保存 Agent 分析结果 (agent_analyses 表)
         
+        :param symbol:
+        :param exchange:
         :param event_id: 关联的事件ID
         :param agent_name: Agent 名称 (e.g. signal_validation, position_risk)
         :param analysis_data: 分析结果字典
@@ -485,7 +488,12 @@ class TradeEventRecorder:
                 suggestion = analysis_data.get("suggestion")
                 # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
                 final_model_version = model_version or analysis_data.get("model_version")
-                mark_price = analysis_data.get("mark_price")
+                
+                # 获取实时 mark_price
+                mark_price = get_mark_price_sync({"symbol": symbol, "exchange": exchange}, exchange)
+                if mark_price is None:
+                    mark_price = analysis_data.get("mark_price")
+
                 reasoning = analysis_data.get("reasoning")
                 full_output = analysis_data  # 整个数据存为 full_output
                 
