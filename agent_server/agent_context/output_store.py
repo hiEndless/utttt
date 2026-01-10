@@ -48,8 +48,10 @@ def compute_latest_key(agent: str, exchange: str, symbol: str) -> str:
     return f"agent_output:{exchange}:{symbol}:{a}:latest"
 
 
-async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any]) -> Dict[str, Any]:
+async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any],
+                            event_id: Optional[str] = None, trade_id: Optional[str] = None) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
+    from agent_server.utils.trade_event_recorder import get_recorder
 
     payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol, ts=ts)
     rc = RedisClient()
@@ -57,6 +59,21 @@ async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, out
     lk = compute_latest_key(agent, exchange, symbol)
     await rc.xadd_json(sk, payload, ts=ts)
     await rc.set_json(lk, payload)
+
+    # 异步保存到数据库
+    if event_id:
+        try:
+            recorder = get_recorder()
+            await recorder.save_agent_analysis(
+                event_id=event_id,
+                agent_name=agent,
+                analysis_data=output,
+                trade_id=trade_id
+            )
+        except Exception as e:
+            # 记录日志但不阻断主流程
+            print(f"Warning: Failed to save agent analysis to DB: {e}")
+
     return payload
 
 

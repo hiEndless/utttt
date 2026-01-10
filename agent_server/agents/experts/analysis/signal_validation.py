@@ -64,6 +64,7 @@ class SignalValidationExpert:
             qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
+        event_id = qobj.get("event_id")
         ts = int(time.time() * 1000)
 
         try:
@@ -71,7 +72,7 @@ class SignalValidationExpert:
         except Exception:
             payload_obj = {"raw": final_result}
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj)
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id)
         except Exception:
             pass
 

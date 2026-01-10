@@ -63,6 +63,8 @@ class PositionRiskExpert:
             qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
+        event_id = qobj.get("event_id")
+        trade_id = qobj.get("position_snapshot", {}).get("trade_id")
         ts = int(time.time() * 1000)
 
         try:
@@ -70,7 +72,7 @@ class PositionRiskExpert:
         except Exception:
             payload_obj = {"raw": final_result}
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj)
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id)
         except Exception:
             pass
 

@@ -31,6 +31,7 @@ class SignalValidationComponent(BaseWorkflowComponent):
         query = {
             "symbol": symbol,
             "exchange": exchange,
+            "event_id": event_id,  # 传递 event_id 给 Agent
             "final_event": {
                 "event_type": event_data.get("route"),
                 "direction": direction,

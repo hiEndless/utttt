@@ -122,6 +122,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             return {
                 "symbol": symbol,
                 "exchange": exchange,
+                "event_id": event_data.get("event_id"),
                 "ts_now": ts_now,
                 "position_snapshot": position_snapshot,
                 "signal_verdict": agent_output,
