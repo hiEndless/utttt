@@ -27,7 +27,7 @@ def build_meta(agent: str) -> Dict[str, Any]:
 
 
 def wrap_agent_output(agent: str, output: Dict[str, Any], exchange: Optional[str] = None,
-                      symbol: Optional[str] = None, ts: Optional[int] = None) -> Dict[str, Any]:
+                      symbol: Optional[str] = None, ts: Optional[int] = None, event_id: Optional[str] = None) -> Dict[str, Any]:
     meta = build_meta(agent)
     if exchange is not None:
         meta["exchange"] = exchange
@@ -35,6 +35,8 @@ def wrap_agent_output(agent: str, output: Dict[str, Any], exchange: Optional[str
         meta["symbol"] = symbol
     if ts is not None:
         meta["ts"] = ts
+    if event_id is not None:
+        meta["event_id"] = event_id
     return {"_context_meta": meta, "agent_output": output or {}}
 
 
@@ -53,7 +55,9 @@ async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, out
     from agent_server.utils.redis_client import RedisClient
     from agent_server.utils.trade_event_recorder import get_recorder
 
-    payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol, ts=ts)
+    payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol, ts=ts, event_id=event_id)
+    print(payload)
+
     rc = RedisClient()
     sk = compute_stream_key(agent, exchange, symbol)
     lk = compute_latest_key(agent, exchange, symbol)

@@ -87,12 +87,13 @@ if __name__ == "__main__":
     from agent_server.utils.redis_client import RedisClient
 
     final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
-                    "event_id": "BTCUSDT.final.1767282634334", "market_state": "momentum", "direction": "bearish",
+                    "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
                     "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
                     "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
 
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
+    event_id = final_signal.get("event_id")
     direction = final_signal.get("direction")
     tf_hint = final_signal.get("tf_hint")
     tf_validation = compute_tf_validation(symbol, exchange, direction, tf_hint)
@@ -118,6 +119,7 @@ if __name__ == "__main__":
         query = {
             "symbol": symbol,
             "exchange": exchange,
+            "event_id":event_id,
             "final_event": {
                 "event_type": final_signal.get("route"),
                 "direction": direction,
