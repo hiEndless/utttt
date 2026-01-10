@@ -72,7 +72,7 @@ class SignalValidationExpert:
         except Exception:
             payload_obj = {"raw": final_result}
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id)
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, model_id=model_id)
         except Exception:
             pass
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         query = {
             "symbol": symbol,
             "exchange": exchange,
-            "event_id":event_id,
+            "event_id": event_id,
             "final_event": {
                 "event_type": final_signal.get("route"),
                 "direction": direction,

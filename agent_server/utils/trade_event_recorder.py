@@ -450,7 +450,7 @@ class TradeEventRecorder:
             logger.error(f"更新市场背景快照失败: {e}, event_id={event_id}", exc_info=True)
             return False
 
-    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], trade_id: Optional[str] = None) -> bool:
+    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
         """
         保存 Agent 分析结果 (agent_analyses 表)
         
@@ -458,6 +458,7 @@ class TradeEventRecorder:
         :param agent_name: Agent 名称 (e.g. signal_validation, position_risk)
         :param analysis_data: 分析结果字典
         :param trade_id: 可选。如果指定，只保存到该交易关联的事件记录；否则保存到该 event_id 关联的所有记录。
+        :param model_version: 模型版本
         :return: 是否成功
         """
         try:
@@ -482,7 +483,8 @@ class TradeEventRecorder:
                 verdict = analysis_data.get("verdict")
                 confidence = analysis_data.get("confidence")
                 suggestion = analysis_data.get("suggestion")
-                model_version = analysis_data.get("model_version")
+                # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
+                final_model_version = model_version or analysis_data.get("model_version")
                 mark_price = analysis_data.get("mark_price")
                 reasoning = analysis_data.get("reasoning")
                 full_output = analysis_data  # 整个数据存为 full_output
@@ -504,7 +506,7 @@ class TradeEventRecorder:
                     self.db.execute(insert_sql, [
                         event_db_id,
                         agent_name,
-                        model_version,
+                        final_model_version,
                         verdict,
                         confidence,
                         suggestion,

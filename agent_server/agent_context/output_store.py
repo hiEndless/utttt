@@ -51,12 +51,12 @@ def compute_latest_key(agent: str, exchange: str, symbol: str) -> str:
 
 
 async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, output: Dict[str, Any],
-                            event_id: Optional[str] = None, trade_id: Optional[str] = None) -> Dict[str, Any]:
+                            event_id: Optional[str] = None, trade_id: Optional[str] = None, model_id: Optional[str] = None) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
     from agent_server.utils.trade_event_recorder import get_recorder
 
     payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol, ts=ts, event_id=event_id)
-    print(payload)
+    # print(payload)
 
     rc = RedisClient()
     sk = compute_stream_key(agent, exchange, symbol)
@@ -70,6 +70,7 @@ async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, out
             recorder = get_recorder()
             await recorder.save_agent_analysis(
                 event_id=event_id,
+                model_version=model_id,
                 agent_name=agent,
                 analysis_data=output,
                 trade_id=trade_id
