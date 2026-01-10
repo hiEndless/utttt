@@ -64,17 +64,27 @@ class PositionRiskExpert:
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
         event_id = qobj.get("event_id")
-        trade_id = qobj.get("position_snapshot", {}).get("trade_id")
+        trade_id = qobj.get("trade_id")
         ts = int(time.time() * 1000)
 
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
+            
+            # 适配数据库字段映射
+            if "recommended_action" in payload_obj:
+                payload_obj["suggestion"] = payload_obj["recommended_action"]
+            if "risk_state" in payload_obj:
+                payload_obj["verdict"] = payload_obj["risk_state"]
+            if "reason_tags" in payload_obj:
+                payload_obj["reasoning"] = payload_obj["reason_tags"]
+                
         except Exception:
             payload_obj = {"raw": final_result}
+
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id)
-        except Exception:
-            pass
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id, model_id=model_id)
+        except Exception as e:
+            print(f"Failed to save agent output: {e}")
 
         output = _json_dumps_safe(final_result)
         print(output)
@@ -90,7 +100,7 @@ if __name__ == "__main__":
 
     sv_out = {
         "_context_meta": {"agent": "signal_validation", "role": "technical_signal", "scope": ["short", "mid", "long"],
-                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000},
+                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000, "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
         "agent_output": {"verdict": "INVALID", "direction": "bearish", "confidence_adjustment": "down",
                          "reasoning": ["所有关键周期（15m/30m/1h）tf_validation_conclusion均为conflict，构成硬性技术否决条件。",
                                        "市场短期虽为bearish，但动能持续减弱，且长期方向中性并具veto权，削弱方向环境支持。",
@@ -100,6 +110,7 @@ if __name__ == "__main__":
     ts = sv_out["_context_meta"]["ts"]
     exchange = sv_out["_context_meta"]["exchange"]
     symbol = sv_out["_context_meta"]["symbol"]
+    event_id = sv_out["_context_meta"]["event_id"]
 
     position = get_position(exchange, symbol)[0]
     position_side = position["position_side"]
@@ -222,6 +233,8 @@ if __name__ == "__main__":
         query = {
             "symbol": symbol,
             "exchange": exchange,
+            "event_id": event_id,
+            "trade_id": trade_id,
             "ts_now": int(time.time() * 1000),
             "position_snapshot": position,
             "signal_verdict": sv_out["agent_output"],
