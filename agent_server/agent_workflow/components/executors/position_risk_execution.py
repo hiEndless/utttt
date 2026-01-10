@@ -31,7 +31,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")
         
-        print(f"--- [步骤 2&3] 持仓风控执行：{symbol} ---")
+        print(f"--- 持仓风控执行：{symbol} ---")
 
         # 1. 获取持仓
         positions = get_position(exchange, symbol)

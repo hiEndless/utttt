@@ -428,7 +428,82 @@ class TradeEventRecorder:
         except Exception as e:
             logger.error(f"更新市场背景快照失败: {e}, event_id={event_id}", exc_info=True)
             return False
-    
+
+    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], trade_id: Optional[str] = None) -> bool:
+        """
+        保存 Agent 分析结果 (agent_analyses 表)
+        
+        :param event_id: 关联的事件ID
+        :param agent_name: Agent 名称 (e.g. signal_validation, position_risk)
+        :param analysis_data: 分析结果字典
+        :param trade_id: 可选。如果指定，只保存到该交易关联的事件记录；否则保存到该 event_id 关联的所有记录。
+        :return: 是否成功
+        """
+        try:
+            def _save_sync():
+                # 1. 找到关联的 trade_events
+                sql = "SELECT id FROM trade_events WHERE event_id = %s"
+                params = [event_id]
+                
+                if trade_id:
+                    sql += " AND trade_id = %s"
+                    params.append(trade_id)
+                
+                event_rows = self.db.fetch_all(sql, params)
+                
+                if not event_rows:
+                    logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
+                    return False
+                
+                event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
+                
+                # 2. 提取通用字段
+                verdict = analysis_data.get("verdict")
+                confidence = analysis_data.get("confidence")
+                suggestion = analysis_data.get("suggestion")
+                model_version = analysis_data.get("model_version")
+                mark_price = analysis_data.get("mark_price")
+                reasoning = analysis_data.get("reasoning")
+                full_output = analysis_data  # 整个数据存为 full_output
+                
+                # 3. 为每个关联的事件插入分析记录
+                insert_sql = """
+                    INSERT INTO agent_analyses (
+                        event_id, agent_name, model_version,
+                        verdict, confidence, suggestion, mark_price,
+                        reasoning, full_output, created_at
+                    ) VALUES (
+                        %s, %s, %s,
+                        %s, %s, %s, %s,
+                        %s, %s, NOW()
+                    )
+                """
+                
+                for event_db_id in event_db_ids:
+                    self.db.execute(insert_sql, [
+                        event_db_id,
+                        agent_name,
+                        model_version,
+                        verdict,
+                        confidence,
+                        suggestion,
+                        mark_price,
+                        json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
+                        json.dumps(full_output, ensure_ascii=False)
+                    ])
+                
+                logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")
+                return True
+
+            # 异步执行
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _save_sync)
+            return result
+            
+        except Exception as e:
+            logger.error(f"保存Agent分析结果失败: {e}, agent={agent_name}", exc_info=True)
+            return False
+
     def close(self):
         """关闭资源"""
         try:
