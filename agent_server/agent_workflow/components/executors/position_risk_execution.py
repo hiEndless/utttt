@@ -67,9 +67,11 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
+            trade_id = position_snapshot.get("trade_id")
+            
             state = await reduce_temporal_state(
                 exchange=exchange,
-                trade_id=position_snapshot.get("trade_id", "sim"),
+                trade_id=trade_id or "sim",
                 symbol=symbol,
                 position_side=position_snapshot.get("position_side", "LONG"),
                 verdict=verdict,
@@ -96,26 +98,26 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             calculated_available_pct = await get_available_exposure_pct(exchange)
 
             operational_context = {
-                "risk_limits": {            # 风险限制（用户设置，同时给默认值）
-                    "max_loss_pct": -0.3,  # 最大亏损百分比
-                    "max_holding_min": 0,
-                    "max_exposure_pct": 1.0,
-                    "cooldown_after_invalid_min": 0
+                "risk_limits": {
+                    "max_loss_pct": -0.06,  # 最大亏损百分比 (建议参考值) 用户设置
+                    "max_holding_min": 0,  # 最长持仓时间 (0 表示不限制，由上游策略决定)
+                    "max_exposure_pct": 1.0,  # 单标的最大仓位占比
+                    "cooldown_after_invalid_min": 0  # 建议模式下设为 0，保持对风险的实时敏感度
                 },
                 "portfolio_context": {
-                    "risk_mode": "normal",
-                    "available_exposure_pct": calculated_available_pct,
-                    "allow_add_position": True
+                    "risk_mode": "normal",  # 账户风险模式: normal | conservative | aggressive
+                    "available_exposure_pct": calculated_available_pct,  # 剩余可用仓位
+                    "allow_add_position": True  # 是否允许加仓 (根据资金情况)
                 },
                 "action_state": {
-                    "last_action": last_action,
+                    "last_action": last_action,  # 使用上一次的“建议”作为 last_action
                     "last_action_min_ago": minutes_since_last,
-                    "recent_action_count": 0,
-                    "cooldown_active": False
+                    "recent_action_count": 0,  # 建议模式下可忽略频次限制
+                    "cooldown_active": False  # 建议模式下关闭冷却，允许随时输出最新建议
                 },
                 "system_mode": {
-                    "mode": "advisory",
-                    "allow_reverse": True
+                    "mode": "advisory",  # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
+                    "allow_reverse": True  # 允许灵活调整观点
                 }
             }
 
@@ -123,6 +125,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "symbol": symbol,
                 "exchange": exchange,
                 "event_id": event_data.get("event_id"),
+                "trade_id": trade_id,
                 "ts_now": ts_now,
                 "position_snapshot": position_snapshot,
                 "signal_verdict": agent_output,
