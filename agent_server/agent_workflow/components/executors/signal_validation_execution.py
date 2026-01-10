@@ -7,6 +7,7 @@ from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
 import json
 import asyncio
+import time
 
 
 class SignalValidationComponent(BaseWorkflowComponent):
@@ -27,19 +28,22 @@ class SignalValidationComponent(BaseWorkflowComponent):
 
         full_context = await self._fetch_market_context(exchange, symbol)
         agent_ctx = build_agent_context("signal_validation", full_context)
+        
+        ts_now = int(time.time() * 1000)
 
         query = {
             "symbol": symbol,
             "exchange": exchange,
             "event_id": event_id,  # 传递 event_id 给 Agent
+            "ts_now": ts_now,
             "final_event": {
                 "event_type": event_data.get("route"),
                 "direction": direction,
                 "final_priority": event_data.get("final_priority"),
                 "confidence": event_data.get("confidence"),
                 "confidence_numeric": event_data.get("confidence_numeric"),
-                "tf_hint": tf_hint,
-                "analysis_context": event_data.get("l1_total_score"),
+                "tf_hint": tf_hint or [],
+                "analysis_context": event_data.get("analysis_context") or event_data.get("l1_total_score"),
             },
             "tf_validation": tf_validation,
             "context": agent_ctx,
