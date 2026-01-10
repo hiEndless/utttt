@@ -11,6 +11,7 @@ from agent_server.utils.price_fetcher import get_mark_price
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
+    DEBUG = True
 
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
@@ -113,18 +114,19 @@ class RouterFinalListener:
                     
                     # 7. 根据路由分发任务
                     # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
-                    if info.get("symbol") and info.get("route") == "indicators":
-                        wf = SignalValidationWorkflow()
-                        # 异步启动工作流
-                        asyncio.create_task(wf.arun(info))
-                    elif info.get("symbol") and info.get("route") == "trade":
-                        # 处理 trade 类型信号
-                        is_short_term = meta.get("is_short_term", "false").lower() == "true"
-                        
-                        # 触发 TradeReviewWorkflow (示例)
-                        # wf = TradeReviewWorkflow()
-                        # asyncio.create_task(wf.arun(info, is_short_term=is_short_term))
-                        pass
+                    if not self.DEBUG:
+                        if info.get("symbol") and info.get("route") == "indicators":
+                            wf = SignalValidationWorkflow()
+                            # 异步启动工作流
+                            asyncio.create_task(wf.arun(info))
+                        elif info.get("symbol") and info.get("route") == "trade":
+                            # 处理 trade 类型信号
+                            is_short_term = meta.get("is_short_term", "false").lower() == "true"
+                            
+                            # 触发 TradeReviewWorkflow (示例)
+                            # wf = TradeReviewWorkflow()
+                            # asyncio.create_task(wf.arun(info, is_short_term=is_short_term))
+                            pass
                     
                     # 确认消息已处理
                     await self.redis.xack(self.final_stream, self.group, entry_id)
