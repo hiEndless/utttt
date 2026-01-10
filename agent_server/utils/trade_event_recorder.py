@@ -76,11 +76,32 @@ class TradeEventRecorder:
     def _extract_direction(self, event_info: Dict[str, Any]) -> str:
         """
         提取方向信息
-        从 structure.direction 或 direction 字段获取
+        1. 交易类事件：从 trade_details.position_side 提取 (LONG -> bullish, SHORT -> bearish)
+        2. 分析类事件：从 direction 字段获取 (bullish/bearish/neutral)
         """
-        direction = event_info.get("direction", "").lower()
-        if direction in ("bullish", "bearish", "neutral"):
-            return direction
+        # 1. 交易类事件处理
+        route = event_info.get("route")
+        event_type = event_info.get("event_type", "")
+        
+        if route == "trade" or event_type.startswith("trade."):
+            trade_details = event_info.get("trade_details") or {}
+            position_side = trade_details.get("position_side")
+            if position_side:
+                # 统一映射为 bullish/bearish 以符合数据模型定义
+                side = position_side.upper()
+                if side == "LONG":
+                    return "bullish"
+                elif side == "SHORT":
+                    return "bearish"
+                return "neutral"
+        
+        # 2. 现有逻辑（分析类事件）
+        direction = event_info.get("direction", "")
+        if isinstance(direction, str):
+            direction = direction.lower()
+            if direction in ("bullish", "bearish", "neutral"):
+                return direction
+        
         return "neutral"
     
     def _extract_market_context(self, event_info: Dict[str, Any]) -> Dict[str, Any]:
