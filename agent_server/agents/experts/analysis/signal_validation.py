@@ -85,8 +85,8 @@ if __name__ == "__main__":
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
 
-    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
-                    "event_id": "ETHUSDT.final.1767282634334", "market_state": "momentum", "direction": "bearish",
+    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
+                    "event_id": "BTCUSDT.final.1767282634334", "market_state": "momentum", "direction": "bearish",
                     "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
                     "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
 

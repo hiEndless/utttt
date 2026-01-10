@@ -88,12 +88,12 @@ if __name__ == "__main__":
 
     sv_out = {
         "_context_meta": {"agent": "signal_validation", "role": "technical_signal", "scope": ["short", "mid", "long"],
-                          "uses_crowd_state": True, "exchange": "binance", "symbol": "ETHUSDT", "ts": 1730000000},
+                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000},
         "agent_output": {"verdict": "INVALID", "direction": "bearish", "confidence_adjustment": "down",
-                         "reasoning": ["所有验证周期（15m/30m/1h）均显示conflict，技术结构不支持bearish方向。",
-                                       "市场背景明确为bullish，短中长期趋势一致，与bearish方向直接矛盾。",
-                                       "人群高度多头拥挤且脆弱，潜在轧空风险，进一步削弱bearish信号可信度。"]}}
-    
+                         "reasoning": ["所有关键周期（15m/30m/1h）tf_validation_conclusion均为conflict，构成硬性技术否决条件。",
+                                       "市场短期虽为bearish，但动能持续减弱，且长期方向中性并具veto权，削弱方向环境支持。",
+                                       "人群结构显示高拥挤度与高脆弱性，多头主导下易引发反向挤压，加剧方向失效风险。"]}}
+
     verdict = sv_out["agent_output"]["verdict"]
     ts = sv_out["_context_meta"]["ts"]
     exchange = sv_out["_context_meta"]["exchange"]
@@ -105,7 +105,9 @@ if __name__ == "__main__":
     trade_id = position.pop("trade_id")
     initialMargin = position.pop("initialMargin")  # 占用保证金，用于计算仓位占比
 
-    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, entry_ts: int, ts: int):
+
+    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, entry_ts: int,
+                      ts: int):
         state = await reduce_temporal_state(
             exchange=exchange,
             trade_id=trade_id,
@@ -117,9 +119,12 @@ if __name__ == "__main__":
         )
         print(json.dumps(state, ensure_ascii=False))
         return state
+
+
     state = asyncio.run(_reduce(exchange, trade_id, symbol, position_side, verdict, entry_ts, ts))
 
     expert = PositionRiskExpert()
+
 
     async def _read_market_state(ex: str, sym: str):
         rc = RedisClient()
@@ -133,11 +138,12 @@ if __name__ == "__main__":
 
     import time
 
+
     async def _demo():
         bg = await _read_market_state(exchange, symbol)
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
                                                                "crowd_state": {}}
-        
+
         # 1. 使用 position_risk 视角构建上下文 (自动过滤无关字段)
         ctx = build_agent_context("position_risk", full_context)
 
@@ -167,12 +173,12 @@ if __name__ == "__main__":
 
         # 获取账户余额计算可用仓位比例
         calculated_available_pct = await get_available_exposure_pct(exchange)
-        
+
         # 默认初始化：应对首次运行或 Redis 无数据的情况
         # 使用 "HOLD" + 极长的时间间隔，表示“无近期操作历史”，让 Agent 从零开始评估
         last_action = "HOLD"
         last_action_ts = 0
-        
+
         if last_suggestion_str:
             try:
                 ls = json.loads(last_suggestion_str)
@@ -188,25 +194,25 @@ if __name__ == "__main__":
 
         operational_context = {
             "risk_limits": {
-                "max_loss_pct": -0.06,           # 最大亏损百分比 (建议参考值) 用户设置
-                "max_holding_min": 0,            # 最长持仓时间 (0 表示不限制，由上游策略决定)
-                "max_exposure_pct": 1.0,         # 单标的最大仓位占比
+                "max_loss_pct": -0.06,  # 最大亏损百分比 (建议参考值) 用户设置
+                "max_holding_min": 0,  # 最长持仓时间 (0 表示不限制，由上游策略决定)
+                "max_exposure_pct": 1.0,  # 单标的最大仓位占比
                 "cooldown_after_invalid_min": 0  # 建议模式下设为 0，保持对风险的实时敏感度
             },
             "portfolio_context": {
-                "risk_mode": "normal",           # 账户风险模式: normal | conservative | aggressive
+                "risk_mode": "normal",  # 账户风险模式: normal | conservative | aggressive
                 "available_exposure_pct": calculated_available_pct,  # 剩余可用仓位
-                "allow_add_position": True       # 是否允许加仓 (根据资金情况)
+                "allow_add_position": True  # 是否允许加仓 (根据资金情况)
             },
             "action_state": {
-                "last_action": last_action,      # 使用上一次的“建议”作为 last_action
+                "last_action": last_action,  # 使用上一次的“建议”作为 last_action
                 "last_action_min_ago": minutes_since_last,
-                "recent_action_count": 0,        # 建议模式下可忽略频次限制
-                "cooldown_active": False         # 建议模式下关闭冷却，允许随时输出最新建议
+                "recent_action_count": 0,  # 建议模式下可忽略频次限制
+                "cooldown_active": False  # 建议模式下关闭冷却，允许随时输出最新建议
             },
             "system_mode": {
-                "mode": "advisory",              # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
-                "allow_reverse": True            # 允许灵活调整观点
+                "mode": "advisory",  # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
+                "allow_reverse": True  # 允许灵活调整观点
             }
         }
 
@@ -228,5 +234,6 @@ if __name__ == "__main__":
         print("=========================\n")
 
         await expert.run(query)
+
 
     asyncio.run(_demo())
