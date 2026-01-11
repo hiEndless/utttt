@@ -21,7 +21,8 @@ class TradeEventRecorder:
         初始化记录器
         :param max_workers: 线程池大小，用于异步执行同步数据库操作
         """
-        self.db = PostgresDB()
+        # 延迟初始化数据库连接，允许数据库不可用时服务仍能启动
+        self.db = PostgresDB(lazy_init=True)
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         
     def _safe_parse_json(self, data: str) -> Dict[str, Any]:

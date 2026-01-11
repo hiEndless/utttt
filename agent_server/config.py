@@ -7,7 +7,7 @@ class Settings:
     redis_password: str = os.environ.get('REDIS_PASSWORD', None)
     redis_port: int = int(os.environ.get('REDIS_PORT', 6379))
     redis_db: int = int(os.environ.get('REDIS_DB', 1))
-    api_base_url: str = os.environ.get('API_BASE_URL', 'http://localhost:9931/api')
+    api_base_url: str = os.environ.get('API_BASE_URL', 'http://localhost:8000/api')
     rate_limits_seconds: dict = {
         '1m': 60,
         '5m': 150,

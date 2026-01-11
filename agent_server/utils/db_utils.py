@@ -21,7 +21,7 @@ class PostgresDB:
     _pool_lock = False
 
     def __init__(self, max_retries: int = 3, retry_delay: float = 1.0,
-                 min_conn: int = 1, max_conn: int = 20):
+                 min_conn: int = 1, max_conn: int = 20, lazy_init: bool = True):
         self.conn_params = {
             'dbname': os.getenv('DB_DATABASE'),
             'user': os.getenv('DB_USER'),
@@ -35,15 +35,23 @@ class PostgresDB:
         self.max_conn = max_conn
         self.conn = None
         self.cursor = None
+        self.lazy_init = lazy_init
 
-        # 初始化连接池
-        self._init_connection_pool()
+        # 延迟初始化连接池（如果 lazy_init=False 则立即初始化）
+        if not lazy_init:
+            self._init_connection_pool()
 
     def _init_connection_pool(self):
         """初始化连接池"""
         if PostgresDB._pool is None and not PostgresDB._pool_lock:
             PostgresDB._pool_lock = True
             try:
+                # 检查必要的连接参数
+                if not all([self.conn_params.get('host'), self.conn_params.get('dbname')]):
+                    logger.warning("数据库连接参数不完整，跳过连接池初始化。请设置 DB_HOST, DB_DATABASE 等环境变量。")
+                    PostgresDB._pool_lock = False
+                    return
+                
                 PostgresDB._pool = pool.ThreadedConnectionPool(
                     minconn=self.min_conn,
                     maxconn=self.max_conn,
@@ -51,9 +59,10 @@ class PostgresDB:
                 )
                 logger.info(f"连接池初始化成功，最小连接数: {self.min_conn}, 最大连接数: {self.max_conn}")
             except Exception as e:
-                logger.error(f"连接池初始化失败: {e}")
+                logger.warning(f"连接池初始化失败: {e}")
+                logger.warning("服务将继续运行，但数据库相关功能将不可用。请检查数据库配置和环境变量。")
                 self._log_connection_error(e)
-                raise
+                # 不再抛出异常，允许服务继续运行
             finally:
                 PostgresDB._pool_lock = False
 
@@ -89,6 +98,9 @@ class PostgresDB:
         try:
             if PostgresDB._pool is None:
                 self._init_connection_pool()
+            
+            if PostgresDB._pool is None:
+                raise RuntimeError("数据库连接池未初始化，请检查数据库配置")
 
             conn = self._retry_operation(PostgresDB._pool.getconn)
             yield conn
@@ -97,7 +109,7 @@ class PostgresDB:
                 conn.rollback()
             raise
         finally:
-            if conn:
+            if conn and PostgresDB._pool:
                 PostgresDB._pool.putconn(conn)
 
     def connect(self):
@@ -105,6 +117,9 @@ class PostgresDB:
         try:
             if PostgresDB._pool is None:
                 self._init_connection_pool()
+            
+            if PostgresDB._pool is None:
+                raise RuntimeError("数据库连接池未初始化，请检查数据库配置")
 
             self.conn = self._retry_operation(PostgresDB._pool.getconn)
             self.cursor = self.conn.cursor()
@@ -138,6 +153,10 @@ class PostgresDB:
         """执行批量SQL操作"""
         if not params_list:
             return
+        
+        if PostgresDB._pool is None:
+            logger.warning("数据库连接池未初始化，跳过批量操作")
+            return
 
         def _execute_batch_operation():
             # 确保连接是打开的
@@ -161,6 +180,9 @@ class PostgresDB:
 
     def execute(self, sql: str, params: Dict[str, Any] = None):
         """执行单条SQL操作"""
+        if PostgresDB._pool is None:
+            logger.warning("数据库连接池未初始化，跳过SQL执行")
+            return
 
         def _execute_operation():
             # 确保连接是打开的
@@ -183,6 +205,9 @@ class PostgresDB:
 
     def fetch_all(self, sql: str, params: Dict[str, Any] = None) -> List[tuple]:
         """执行查询并返回所有结果"""
+        if PostgresDB._pool is None:
+            logger.warning("数据库连接池未初始化，返回空结果")
+            return []
 
         def _fetch_all_operation():
             # 确保连接是打开的
@@ -202,6 +227,9 @@ class PostgresDB:
 
     def fetch_one(self, sql: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """执行查询并返回单条结果（字典格式）"""
+        if PostgresDB._pool is None:
+            logger.warning("数据库连接池未初始化，返回None")
+            return None
 
         def _fetch_one_operation():
             # 确保连接是打开的
