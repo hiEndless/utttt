@@ -210,15 +210,24 @@ class AnalysisVerifier:
                         # 判断逻辑
                         is_accurate = self._judge_accuracy(position_side, pct_change, suggestion)
                         
-                        # 更新 analysis
-                        update_ana_sql = "UPDATE agent_analyses SET is_accurate = %s WHERE id = %s"
-                        self.db.execute(update_ana_sql, [is_accurate, ana_id])
+                        # 更新 analysis，同时落库验证时价格，避免后续按时间回拉价格导致不一致
+                        update_ana_sql = """
+                            UPDATE agent_analyses
+                            SET is_accurate = %s, verification_mark_price = %s
+                            WHERE id = %s
+                        """
+                        self.db.execute(update_ana_sql, [is_accurate, current_price, ana_id])
                         has_verification = True
                     
                     # 6. 标记事件为已验证 (只有当确实进行了验证操作后)
                     if has_verification:
-                        update_event_sql = "UPDATE trade_events SET is_verified = TRUE, verification_at = %s WHERE id = %s"
-                        self.db.execute(update_event_sql, [verification_time, event_pk])
+                        # 记录事件验证时间与验证时价格，保证复盘可重复
+                        update_event_sql = """
+                            UPDATE trade_events
+                            SET is_verified = TRUE, verification_at = %s, verification_mark_price = %s
+                            WHERE id = %s
+                        """
+                        self.db.execute(update_event_sql, [verification_time, current_price, event_pk])
                         
                         logger.info(f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
                 

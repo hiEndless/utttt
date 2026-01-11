@@ -82,6 +82,7 @@ class TradeEvent(models.Model):
     # 验证与总结
     is_verified = fields.BooleanField(default=False, description="是否已验证准确性")
     verification_at = fields.BigIntField(null=True, description="验证时间戳")
+    verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
     post_summary = fields.TextField(null=True, description="事后总结 (包含准确性复盘)")
 
     class Meta:
@@ -130,6 +131,7 @@ class AgentAnalysis(models.Model):
     # 风控专用字段
     suggestion = fields.CharField(max_length=32, null=True, description="持仓建议 (ADD_POSITION, HOLD, DEFENSIVE, REDUCE, EXIT)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="分析时的标记价格")
+    verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
     is_accurate = fields.CharField(
         max_length=16, 
         null=True, 
@@ -144,6 +146,5 @@ class AgentAnalysis(models.Model):
 
     class Meta:
         table = "agent_analyses"
-
 
 
