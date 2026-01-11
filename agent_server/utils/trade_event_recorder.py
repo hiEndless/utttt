@@ -245,6 +245,9 @@ class TradeEventRecorder:
         try:
             event_id = event_info.get("event_id", "")
             event_type = self._extract_event_type(event_info)
+            exchange = event_info.get("exchange", "").lower()
+            symbol = event_info.get("symbol", "")
+            
             # 时间戳转换为毫秒（如果不是）
             event_at = int(event_info.get("timestamp", 0))
             if event_at < 10**12:  # 如果是秒级时间戳，转为毫秒
@@ -271,7 +274,9 @@ class TradeEventRecorder:
                         mark_price = %s,
                         market_context = %s,
                         event_data = %s,
-                        indicators_snapshot = %s
+                        indicators_snapshot = %s,
+                        symbol = %s,
+                        exchange = %s
                     WHERE event_id = %s AND trade_id = %s
                 """
                 update_params = [
@@ -280,6 +285,8 @@ class TradeEventRecorder:
                     json.dumps(market_context, ensure_ascii=False),
                     json.dumps(event_data, ensure_ascii=False),
                     json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
+                    symbol,
+                    exchange,
                     event_id,
                     trade_id,
                 ]
@@ -292,12 +299,14 @@ class TradeEventRecorder:
                         trade_id, event_id, event_type, event_at,
                         direction, mark_price,
                         market_context, event_data, indicators_snapshot,
-                        is_verified, verification_at, post_summary
+                        is_verified, verification_at, post_summary,
+                        symbol, exchange
                     ) VALUES (
                         %s, %s, %s, %s,
                         %s, %s,
                         %s, %s, %s,
-                        %s, %s, %s
+                        %s, %s, %s,
+                        %s, %s
                     )
                 """
                 
@@ -314,6 +323,8 @@ class TradeEventRecorder:
                     False,  # is_verified
                     None,   # verification_at
                     None,   # post_summary
+                    symbol,
+                    exchange
                 ]
                 
                 self.db.execute(sql, params)
@@ -502,11 +513,13 @@ class TradeEventRecorder:
                     INSERT INTO agent_analyses (
                         event_id, agent_name, model_version,
                         verdict, confidence, suggestion, mark_price,
-                        reasoning, full_output, created_at
+                        reasoning, full_output, created_at,
+                        symbol, exchange
                     ) VALUES (
                         %s, %s, %s,
                         %s, %s, %s, %s,
-                        %s, %s, NOW()
+                        %s, %s, NOW(),
+                        %s, %s
                     )
                 """
                 
@@ -520,7 +533,9 @@ class TradeEventRecorder:
                         suggestion,
                         mark_price,
                         json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
-                        json.dumps(full_output, ensure_ascii=False)
+                        json.dumps(full_output, ensure_ascii=False),
+                        symbol,
+                        exchange
                     ])
                 
                 logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")

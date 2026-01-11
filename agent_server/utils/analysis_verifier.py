@@ -14,6 +14,9 @@ class AnalysisVerifier:
     Agent 分析结果验证组件
     负责根据价格走势验证之前的 Agent 分析建议是否准确
     """
+
+    # 需要验证方向性决策的 Agent 列表
+    TARGET_AGENTS = ("position_risk",)
     
     def __init__(self, db: PostgresDB, executor: ThreadPoolExecutor):
         """
@@ -75,30 +78,25 @@ class AnalysisVerifier:
         """
         获取需要验证的 trade_id 列表 (同步方法)
         
-        策略：不依赖 Redis 的活跃状态，而是直接查询数据库中该 Symbol 下
-        所有存在“未验证事件”的 Trade。这样即使交易已平仓（Redis已清除），
-        只要有遗留的未验证事件，也能被捞出来处理。
+        策略：直接根据 is_verified + exchange + symbol 查找
+        利用新增的 redundancy fields 进行高效查询
         """
         trade_ids = []
         try:
-            # 直接联表查询：找到所有在该 exchange/symbol 下，且有未验证分析记录的 trade_id
-            # 注意：trade_events 表的外键是 trade_id (对应 trades.trade)
+            # 直接查询 trade_events 表中符合条件的 trade_id
             sql = """
-                SELECT DISTINCT te.trade_id
-                FROM trade_events te
-                JOIN trades t ON te.trade_id = t.trade
-                WHERE t.exchange = %s 
-                  AND t.symbol = %s
-                  AND te.is_verified = FALSE
-                  AND EXISTS (SELECT 1 FROM agent_analyses aa WHERE aa.event_id = te.id)
+                SELECT DISTINCT trade_id
+                FROM trade_events
+                WHERE exchange = %s 
+                  AND symbol = %s
+                  AND is_verified = FALSE
+                  AND EXISTS (SELECT 1 FROM agent_analyses aa WHERE aa.event_id = trade_events.id)
             """
             
             results = self.db.fetch_all(sql, [exchange, symbol])
             
             if results:
                 for row in results:
-                    # fetch_all 返回的是元组列表或者是字典列表（取决于 db_utils 实现）
-                    # 根据之前的代码逻辑，这里似乎可能返回元组或字典
                     tid = row[0] if isinstance(row, tuple) else row.get("trade_id")
                     if tid:
                         trade_ids.append(tid)
@@ -126,74 +124,90 @@ class AnalysisVerifier:
                 if position_side not in ("LONG", "SHORT"):
                     continue
 
-                # 2. 查找该交易下所有未验证且有分析记录的事件
-                # 注意：可能存在多个积压的未验证事件，我们一次性处理掉，或者只处理最近的一个
-                # 按照用户需求：查找之前没有验证的事件
-                # 这里的逻辑是：只要是该 trade_id 下的，且 is_verified=False，且有 agent_analyses 的，都应该验证
-                # 但为了性能和逻辑简单，我们通常只验证最近的一个，或者验证所有符合条件的
-                # 考虑到价格是实时变化的，验证“很久以前”的事件可能意义不同（那时的价格和现在的价格比较？）
-                # 通常是验证“上一个”事件。
+                # 2. 查找该交易下所有未验证且有目标 Agent 分析记录的事件
+                # 不再限制 LIMIT 1，而是获取所有待验证事件
+                # 只有当事件包含指定 agent (如 position_risk) 的分析时才需要验证
                 
-                # 修正逻辑：查找最近的一个未验证事件
-                sql_event = """
+                placeholders = ','.join(['%s'] * len(self.TARGET_AGENTS))
+                
+                sql_events = f"""
                     SELECT te.id, te.mark_price, te.event_at
                     FROM trade_events te
                     WHERE te.trade_id = %s 
                       AND te.is_verified = FALSE
-                      AND EXISTS (SELECT 1 FROM agent_analyses aa WHERE aa.event_id = te.id)
-                    ORDER BY te.event_at DESC
-                    LIMIT 1
+                      AND EXISTS (
+                          SELECT 1 FROM agent_analyses aa 
+                          WHERE aa.event_id = te.id 
+                          AND aa.agent_name IN ({placeholders})
+                      )
+                    ORDER BY te.event_at ASC
                 """
-                event_row = self.db.fetch_one(sql_event, [tid])
                 
-                if not event_row:
+                params = [tid] + list(self.TARGET_AGENTS)
+                event_rows = self.db.fetch_all(sql_events, params)
+                
+                if not event_rows:
                     continue
                 
-                event_pk = event_row.get("id")
-                prev_price = event_row.get("mark_price")
-                
-                # 如果 event 表里没有 mark_price，尝试从 analysis 表里获取
-                if prev_price is None:
-                    sql_analysis_price = "SELECT mark_price FROM agent_analyses WHERE event_id = %s LIMIT 1"
-                    ana_row = self.db.fetch_one(sql_analysis_price, [event_pk])
-                    if ana_row:
-                        prev_price = ana_row.get("mark_price")
-                
-                if prev_price is None or float(prev_price) == 0:
-                    continue
-                
-                prev_price = float(prev_price)
-                
-                # 3. 计算涨跌幅
-                pct_change = (current_price - prev_price) / prev_price
-                
-                # 4. 获取该事件的所有分析记录
-                sql_analyses = "SELECT id, suggestion, mark_price FROM agent_analyses WHERE event_id = %s"
-                analyses = self.db.fetch_all(sql_analyses, [event_pk])
-                
-                # 5. 逐个验证
-                import time
                 verification_time = int(time.time() * 1000)
-                
-                for ana in analyses:
-                    ana_id = ana.get("id")
-                    suggestion = ana.get("suggestion")
+
+                for event_row in event_rows:
+                    event_pk = event_row.get("id")
+                    # 使用 tuple index 访问如果 fetch_all 返回的是元组
+                    if event_pk is None and isinstance(event_row, tuple):
+                         event_pk = event_row[0]
+                         
+                    prev_price = event_row.get("mark_price")
+                    if prev_price is None and isinstance(event_row, tuple):
+                        prev_price = event_row[1]
+
+                    # 如果 event 表里没有 mark_price，尝试从 analysis 表里获取
+                    if prev_price is None:
+                        sql_analysis_price = "SELECT mark_price FROM agent_analyses WHERE event_id = %s LIMIT 1"
+                        ana_row = self.db.fetch_one(sql_analysis_price, [event_pk])
+                        if ana_row:
+                            prev_price = ana_row.get("mark_price")
                     
-                    if not suggestion:
+                    if prev_price is None or float(prev_price) == 0:
                         continue
-                        
-                    # 判断逻辑
-                    is_accurate = self._judge_accuracy(position_side, pct_change, suggestion)
                     
-                    # 更新 analysis
-                    update_ana_sql = "UPDATE agent_analyses SET is_accurate = %s WHERE id = %s"
-                    self.db.execute(update_ana_sql, [is_accurate, ana_id])
-                
-                # 6. 标记事件为已验证
-                update_event_sql = "UPDATE trade_events SET is_verified = TRUE, verification_at = %s WHERE id = %s"
-                self.db.execute(update_event_sql, [verification_time, event_pk])
-                
-                logger.info(f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
+                    prev_price = float(prev_price)
+                    
+                    # 3. 计算涨跌幅
+                    pct_change = (current_price - prev_price) / prev_price
+                    
+                    # 4. 获取该事件的所有分析记录（仅限目标 agent）
+                    sql_analyses = f"""
+                        SELECT id, suggestion, mark_price, agent_name 
+                        FROM agent_analyses 
+                        WHERE event_id = %s AND agent_name IN ({placeholders})
+                    """
+                    ana_params = [event_pk] + list(self.TARGET_AGENTS)
+                    analyses = self.db.fetch_all(sql_analyses, ana_params)
+                    
+                    # 5. 逐个验证
+                    has_verification = False
+                    for ana in analyses:
+                        ana_id = ana.get("id") or (ana[0] if isinstance(ana, tuple) else None)
+                        suggestion = ana.get("suggestion") or (ana[1] if isinstance(ana, tuple) else None)
+                        
+                        if not suggestion:
+                            continue
+                            
+                        # 判断逻辑
+                        is_accurate = self._judge_accuracy(position_side, pct_change, suggestion)
+                        
+                        # 更新 analysis
+                        update_ana_sql = "UPDATE agent_analyses SET is_accurate = %s WHERE id = %s"
+                        self.db.execute(update_ana_sql, [is_accurate, ana_id])
+                        has_verification = True
+                    
+                    # 6. 标记事件为已验证 (只有当确实进行了验证操作后)
+                    if has_verification:
+                        update_event_sql = "UPDATE trade_events SET is_verified = TRUE, verification_at = %s WHERE id = %s"
+                        self.db.execute(update_event_sql, [verification_time, event_pk])
+                        
+                        logger.info(f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
                 
             except Exception as e:
                 logger.error(f"验证单个交易失败: trade_id={tid}, {e}")
