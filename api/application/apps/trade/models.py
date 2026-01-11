@@ -66,6 +66,10 @@ class TradeEvent(models.Model):
     event_id = fields.CharField(max_length=64, description="事件id")
     event_type = fields.CharField(max_length=32, description="事件类型")
     event_at = fields.BigIntField(description="事件发生时间戳 (ms)")
+    
+    # 冗余字段方便查询
+    symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
+    exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
 
     direction = fields.CharField(max_length=16, description="方向 (bullish/bearish/neutral)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="事件发生时的价格")
@@ -111,6 +115,11 @@ class AgentAnalysis(models.Model):
     """
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
+    
+    # 冗余字段方便查询
+    symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
+    exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
+
     agent_name = fields.CharField(max_length=32, description="Agent 名称 (e.g. signal_validation, position_risk)")
     model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
 

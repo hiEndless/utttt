@@ -6,6 +6,7 @@ import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
 from agent_server.utils.trade_event_recorder import get_recorder
+from agent_server.utils.analysis_verifier import AnalysisVerifier
 from agent_server.tools.price_fetcher import get_mark_price
 
 
@@ -20,6 +21,11 @@ class RouterFinalListener:
         self.consumer = "agent_final_router"
         # 初始化事件记录器 (使用单例以共享连接池)
         self.event_recorder = get_recorder()
+        # 初始化分析验证器 (复用 recorder 的 DB 和 Executor)
+        self.analysis_verifier = AnalysisVerifier(
+            self.event_recorder.db,
+            self.event_recorder.executor
+        )
 
     @staticmethod
     def _j(s: str):
@@ -111,6 +117,9 @@ class RouterFinalListener:
                     
                     # 创建入库任务（不等待结果，避免阻塞）
                     asyncio.create_task(self.event_recorder.save_event(info, mark_price))
+                    
+                    # 验证上一个事件的分析结果 (异步)
+                    asyncio.create_task(self.analysis_verifier.verify_previous_analyses(info, mark_price))
                     
                     # 7. 根据路由分发任务
                     # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
