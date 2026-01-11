@@ -51,7 +51,7 @@ lxml==5.4.0
 markdown-it-py==4.0.0
 matplotlib==3.10.3
 mdurl==0.1.2
-mplfinance==0.12.10b0
+mplfinance==0.12.9b7
 multidict==6.7.0
 numpy==2.2.3
 openai==2.7.1
@@ -62,14 +62,13 @@ pillow==11.1.0
 propcache==0.4.1
 proto-plus==1.26.1
 protobuf==6.33.1
-psycopg2==2.9.10
 psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pycparser==2.22
-pydantic==2.10.6
+pydantic>=2.11.3
 pydantic-settings==2.11.0
-pydantic_core==2.27.2
+pydantic_core
 Pygments==2.19.2
 PyJWT==2.10.1
 pyparsing==3.2.1
@@ -104,3 +103,4 @@ urllib3==2.3.0
 uvicorn==0.34.0
 websockets==15.0.1
 yarl==1.22.0
+ta
