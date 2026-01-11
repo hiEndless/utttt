@@ -8,6 +8,7 @@ from agent_server.tools.get_position import get_position
 from agent_server.utils.price_fetcher import get_mark_price_sync
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)  # 减少噪音，只显示错误
 
 
 class TradeEventRecorder:
@@ -34,7 +35,7 @@ class TradeEventRecorder:
                 return json.loads(data)
             return data if isinstance(data, dict) else {}
         except Exception as e:
-            logger.warning(f"JSON 解析失败: {e}, 原始数据: {data[:100]}")
+            logger.debug(f"JSON 解析失败: {e}, 原始数据: {data[:100]}")
             return {}
     
     def _get_trade_ids_from_redis(self, exchange: str, symbol: str) -> List[str]:
@@ -200,7 +201,7 @@ class TradeEventRecorder:
                     )
                     return trade_ids
         except Exception as e:
-            logger.warning(f"从 Redis 获取 trade_id 失败: {e}, 降级到数据库查询")
+            logger.debug(f"从 Redis 获取 trade_id 失败: {e}, 降级到数据库查询")
         
         # 2. Redis 未找到，查询数据库（未平仓的交易）
         try:
@@ -230,7 +231,7 @@ class TradeEventRecorder:
                 )
                 return trade_ids
             
-            logger.warning(
+            logger.debug(
                 f"未找到活跃交易: exchange={exchange}, symbol={symbol}, position_side={position_side}"
             )
             return []
@@ -339,7 +340,7 @@ class TradeEventRecorder:
             symbol = event_info.get("symbol", "")
             
             if not exchange or not symbol:
-                logger.warning(f"缺少必要字段: exchange={exchange}, symbol={symbol}")
+                logger.debug(f"缺少必要字段: exchange={exchange}, symbol={symbol}")
                 return False
             
             # 2. 确定 trade_ids
@@ -363,7 +364,7 @@ class TradeEventRecorder:
                 )
             
             if not trade_ids:
-                logger.warning(f"无法关联 trade_id，跳过入库: exchange={exchange}, symbol={symbol}")
+                logger.debug(f"无法关联 trade_id，跳过入库: exchange={exchange}, symbol={symbol}")
                 return False
             
             # 3. 为每个 trade_id 保存事件（多空双开时会保存多条记录）
@@ -425,7 +426,7 @@ class TradeEventRecorder:
                 existing = self.db.fetch_one(check_sql, [event_id])
                 
                 if not existing:
-                    logger.warning(f"事件不存在，无法更新: event_id={event_id}")
+                    logger.debug(f"事件不存在，无法更新: event_id={event_id}")
                     return False
                 
                 # 更新所有匹配 event_id 的记录的 market_context 字段
@@ -478,7 +479,7 @@ class TradeEventRecorder:
                 event_rows = self.db.fetch_all(sql, params)
                 
                 if not event_rows:
-                    logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
+                    logger.debug(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
                     return False
                 
                 event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]

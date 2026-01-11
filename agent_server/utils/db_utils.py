@@ -12,8 +12,8 @@ from contextlib import contextmanager
 load_dotenv()
 
 # 配置日志
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)  # 数据库警告改为 ERROR，减少噪音
 
 
 class PostgresDB:
@@ -48,7 +48,7 @@ class PostgresDB:
             try:
                 # 检查必要的连接参数
                 if not all([self.conn_params.get('host'), self.conn_params.get('dbname')]):
-                    logger.warning("数据库连接参数不完整，跳过连接池初始化。请设置 DB_HOST, DB_DATABASE 等环境变量。")
+                    logger.debug("数据库连接参数不完整，跳过连接池初始化。请设置 DB_HOST, DB_DATABASE 等环境变量。")
                     PostgresDB._pool_lock = False
                     return
                 
@@ -59,8 +59,8 @@ class PostgresDB:
                 )
                 logger.info(f"连接池初始化成功，最小连接数: {self.min_conn}, 最大连接数: {self.max_conn}")
             except Exception as e:
-                logger.warning(f"连接池初始化失败: {e}")
-                logger.warning("服务将继续运行，但数据库相关功能将不可用。请检查数据库配置和环境变量。")
+                logger.debug(f"连接池初始化失败: {e}")
+                logger.debug("服务将继续运行，但数据库相关功能将不可用。请检查数据库配置和环境变量。")
                 self._log_connection_error(e)
                 # 不再抛出异常，允许服务继续运行
             finally:
@@ -155,7 +155,7 @@ class PostgresDB:
             return
         
         if PostgresDB._pool is None:
-            logger.warning("数据库连接池未初始化，跳过批量操作")
+            logger.debug("数据库连接池未初始化，跳过批量操作")
             return
 
         def _execute_batch_operation():
@@ -181,7 +181,7 @@ class PostgresDB:
     def execute(self, sql: str, params: Dict[str, Any] = None):
         """执行单条SQL操作"""
         if PostgresDB._pool is None:
-            logger.warning("数据库连接池未初始化，跳过SQL执行")
+            logger.debug("数据库连接池未初始化，跳过SQL执行")
             return
 
         def _execute_operation():
@@ -206,7 +206,7 @@ class PostgresDB:
     def fetch_all(self, sql: str, params: Dict[str, Any] = None) -> List[tuple]:
         """执行查询并返回所有结果"""
         if PostgresDB._pool is None:
-            logger.warning("数据库连接池未初始化，返回空结果")
+            logger.debug("数据库连接池未初始化，返回空结果")
             return []
 
         def _fetch_all_operation():
@@ -228,7 +228,7 @@ class PostgresDB:
     def fetch_one(self, sql: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """执行查询并返回单条结果（字典格式）"""
         if PostgresDB._pool is None:
-            logger.warning("数据库连接池未初始化，返回None")
+            logger.debug("数据库连接池未初始化，返回None")
             return None
 
         def _fetch_one_operation():

@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 from agent_server.utils.redis_client import RedisClient
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)  # 减少噪音，只显示错误
 
 
 async def get_mark_price(
@@ -37,7 +38,7 @@ async def get_mark_price(
         symbol = event_info.get("symbol", "")
 
         if not symbol:
-            logger.warning("缺少 symbol 字段，无法获取 mark_price")
+            logger.debug("缺少 symbol 字段，无法获取 mark_price")
             return None
 
         # 1. 如果是 trade 事件，从 trade_details 中提取
@@ -68,13 +69,13 @@ async def get_mark_price(
                         logger.debug(f"从 Redis Hash 读取 mark_price: {mark_price} ({symbol})")
                         return mark_price
                     else:
-                        logger.warning(f"Redis Hash 中未找到 price 字段: {price_key}")
+                        logger.debug(f"Redis Hash 中未找到 price 字段: {price_key}")
                         return None
                 # 其他错误抛出
                 raise e
 
             if not price_data_str:
-                logger.warning(f"Redis 中未找到价格数据: {price_key}")
+                logger.debug(f"Redis 中未找到价格数据: {price_key}")
                 return None
 
             # 价格数据可能是 Hash 结构（通过 HGET）或者 JSON 字符串
@@ -90,7 +91,7 @@ async def get_mark_price(
                 logger.debug(f"从 Redis 读取 mark_price: {mark_price} ({symbol})")
                 return mark_price
             else:
-                logger.warning(f"Redis 中的 price 无效: {mark_price} ({symbol})")
+                logger.debug(f"Redis 中的 price 无效: {mark_price} ({symbol})")
                 return None
 
         except Exception as e:
@@ -134,18 +135,22 @@ async def get_mark_price_from_redis(
             price_str = await redis_client.client.hget(price_key, "price")
 
             if price_str:
-                mark_price = float(price_str)
-                logger.debug(f"从 Redis Hash 读取 mark_price: {mark_price} ({symbol})")
-                return mark_price
+                try:
+                    mark_price = float(price_str)
+                    logger.debug(f"从 Redis Hash 读取 mark_price: {mark_price} ({symbol})")
+                    return mark_price
+                except (ValueError, TypeError):
+                    logger.debug(f"价格格式无效: {price_str} ({symbol})")
+                    return None
             else:
-                logger.warning(f"Redis Hash 中未找到 price 字段: {price_key}")
+                logger.debug(f"Redis Hash 中未找到 price 字段: {price_key}")
                 return None
         else:
             # 使用 GET 读取普通字符串或 JSON
             price_data_str = await redis_client.get(price_key)
 
             if not price_data_str:
-                logger.warning(f"Redis 中未找到价格数据: {price_key}")
+                logger.debug(f"Redis 中未找到价格数据: {price_key}")
                 return None
 
             try:
@@ -158,7 +163,7 @@ async def get_mark_price_from_redis(
                 logger.debug(f"从 Redis 读取 mark_price: {mark_price} ({symbol})")
                 return mark_price
             else:
-                logger.warning(f"Redis 中的 price 无效: {mark_price} ({symbol})")
+                logger.debug(f"Redis 中的 price 无效: {mark_price} ({symbol})")
                 return None
 
     except Exception as e:

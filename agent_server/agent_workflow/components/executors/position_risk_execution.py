@@ -31,7 +31,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")
         
-        print(f"--- 持仓风控执行：{symbol} ---")
+        # 不再打印，由 trade_logger 统一记录
 
         # 1. 获取持仓
         positions = get_position(exchange, symbol)
@@ -44,7 +44,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         if full_context:
             context_to_use = full_context
         else:
-            print(f"  -> 未找到上游 Context，正在自行获取...")
+            # 未找到上游 Context，自行获取（静默处理）
             context_to_use = await self._fetch_market_context(exchange, symbol)
 
         pr_ctx = build_agent_context("position_risk", context_to_use)
@@ -140,7 +140,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         tasks = []
 
         if not positions:
-            print(f"  -> 无持仓，跳过风控评估")
+            # 无持仓，跳过风控评估（静默处理）
+            pass
         else:
             for pos in positions:
                 # 构建 Prompt
@@ -150,7 +151,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 # 立即提交任务
                 trade_id = pos.get("trade_id", "UNKNOWN")
                 side = pos.get("position_side", "UNKNOWN")
-                print(f"  -> 提交风控任务: TradeID={trade_id}, 方向={side}")
+                # 提交风控任务（静默处理）
                 tasks.append(self.expert.run(json.dumps(q, ensure_ascii=False)))
 
         # 5. 等待并发结果

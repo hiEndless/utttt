@@ -16,7 +16,7 @@ class SignalValidationComponent(BaseWorkflowComponent):
 
     async def execute(self, ctx: StepInput) -> str:
         event_data = ctx.input
-        print(f"--- 信号验证：{event_data.get('symbol')} ---")
+        # 不再打印，由 trade_logger 统一记录
 
         symbol = event_data.get("symbol", "unknown")
         exchange = event_data.get("exchange", "binance")
