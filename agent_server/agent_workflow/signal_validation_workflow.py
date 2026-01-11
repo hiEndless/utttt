@@ -1,4 +1,5 @@
 import uuid
+import asyncio
 from typing import Optional
 from agno.workflow import Workflow
 
@@ -28,3 +29,13 @@ class SignalValidationWorkflow(Workflow):
             ],
             **kwargs
         )
+
+
+if __name__ == "__main__":
+    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
+                "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
+                "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
+                "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
+
+    workflow = SignalValidationWorkflow()
+    asyncio.run(workflow.arun(final_signal))

@@ -4,6 +4,7 @@ from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.position_risk import prompt
 from agno.models.message import Message
 import json
+import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
@@ -147,9 +148,6 @@ if __name__ == "__main__":
             return json.loads(v or "{}") if v else {}
         except Exception:
             return {}
-
-
-    import time
 
 
     async def _demo():
