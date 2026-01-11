@@ -20,7 +20,11 @@ class HTTPClient:
         async with self._lock:
             if self._session and not self._session.closed:
                 return self._session
-            timeout = aiohttp.ClientTimeout(total=settings.http_timeout_s)
+            timeout = aiohttp.ClientTimeout(
+                total=settings.http_timeout_s,
+                connect=10,
+                sock_read=settings.http_timeout_s
+            )
             self._session = aiohttp.ClientSession(timeout=timeout, trust_env=False)
             return self._session
 
@@ -49,6 +53,12 @@ class HTTPClient:
                     text = await resp.text()
                     logger.warning("non_retryable_http_status %s %s", status, url)
                     return {"status": status, "text": text}
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                logger.warning("http_request_failed attempt=%s method=%s url=%s error=%s", attempt, method, url, str(e))
+                if attempt >= max_retries:
+                    raise
+                await backoff_sleep(attempt)
+                attempt += 1
             except Exception as e:
                 logger.exception("http_request_failed attempt=%s method=%s url=%s error=%s", attempt, method, url, e)
                 if attempt >= max_retries:
