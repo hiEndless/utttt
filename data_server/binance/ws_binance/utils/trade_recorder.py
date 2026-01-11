@@ -20,11 +20,11 @@ class TradeRecorder:
 
     def _to_datetime(self, ts):
         if not ts:
-            return datetime.datetime.now()
+            return datetime.datetime.now(datetime.timezone.utc)
         try:
-            return datetime.datetime.fromtimestamp(int(ts) / 1000.0)
+            return datetime.datetime.fromtimestamp(int(ts) / 1000.0, tz=datetime.timezone.utc)
         except Exception:
-            return datetime.datetime.now()
+            return datetime.datetime.now(datetime.timezone.utc)
 
     def save_new_trade(self, item):
         """保存新开仓记录"""

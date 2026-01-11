@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List
 from concurrent.futures import ThreadPoolExecutor
 from agent_server.utils.db_utils import PostgresDB
 from agent_server.tools.get_position import get_position
+from agent_server.utils.price_fetcher import get_mark_price_sync
 
 logger = logging.getLogger(__name__)
 
@@ -76,11 +77,32 @@ class TradeEventRecorder:
     def _extract_direction(self, event_info: Dict[str, Any]) -> str:
         """
         提取方向信息
-        从 structure.direction 或 direction 字段获取
+        1. 交易类事件：从 trade_details.position_side 提取 (LONG -> bullish, SHORT -> bearish)
+        2. 分析类事件：从 direction 字段获取 (bullish/bearish/neutral)
         """
-        direction = event_info.get("direction", "").lower()
-        if direction in ("bullish", "bearish", "neutral"):
-            return direction
+        # 1. 交易类事件处理
+        route = event_info.get("route")
+        event_type = event_info.get("event_type", "")
+        
+        if route == "trade" or event_type.startswith("trade."):
+            trade_details = event_info.get("trade_details") or {}
+            position_side = trade_details.get("position_side")
+            if position_side:
+                # 统一映射为 bullish/bearish 以符合数据模型定义
+                side = position_side.upper()
+                if side == "LONG":
+                    return "bullish"
+                elif side == "SHORT":
+                    return "bearish"
+                return "neutral"
+        
+        # 2. 现有逻辑（分析类事件）
+        direction = event_info.get("direction", "")
+        if isinstance(direction, str):
+            direction = direction.lower()
+            if direction in ("bullish", "bearish", "neutral"):
+                return direction
+        
         return "neutral"
     
     def _extract_market_context(self, event_info: Dict[str, Any]) -> Dict[str, Any]:
@@ -428,7 +450,91 @@ class TradeEventRecorder:
         except Exception as e:
             logger.error(f"更新市场背景快照失败: {e}, event_id={event_id}", exc_info=True)
             return False
-    
+
+    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], exchange: str, symbol: str, trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
+        """
+        保存 Agent 分析结果 (agent_analyses 表)
+        
+        :param symbol:
+        :param exchange:
+        :param event_id: 关联的事件ID
+        :param agent_name: Agent 名称 (e.g. signal_validation, position_risk)
+        :param analysis_data: 分析结果字典
+        :param trade_id: 可选。如果指定，只保存到该交易关联的事件记录；否则保存到该 event_id 关联的所有记录。
+        :param model_version: 模型版本
+        :return: 是否成功
+        """
+        try:
+            def _save_sync():
+                # 1. 找到关联的 trade_events
+                sql = "SELECT id FROM trade_events WHERE event_id = %s"
+                params = [event_id]
+                
+                if trade_id:
+                    sql += " AND trade_id = %s"
+                    params.append(trade_id)
+                
+                event_rows = self.db.fetch_all(sql, params)
+                
+                if not event_rows:
+                    logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
+                    return False
+                
+                event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
+                
+                # 2. 提取通用字段
+                verdict = analysis_data.get("verdict")
+                confidence = analysis_data.get("confidence")
+                suggestion = analysis_data.get("suggestion")
+                # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
+                final_model_version = model_version or analysis_data.get("model_version")
+                
+                # 获取实时 mark_price
+                mark_price = get_mark_price_sync({"symbol": symbol, "exchange": exchange}, exchange)
+                if mark_price is None:
+                    mark_price = analysis_data.get("mark_price")
+
+                reasoning = analysis_data.get("reasoning")
+                full_output = analysis_data  # 整个数据存为 full_output
+                
+                # 3. 为每个关联的事件插入分析记录
+                insert_sql = """
+                    INSERT INTO agent_analyses (
+                        event_id, agent_name, model_version,
+                        verdict, confidence, suggestion, mark_price,
+                        reasoning, full_output, created_at
+                    ) VALUES (
+                        %s, %s, %s,
+                        %s, %s, %s, %s,
+                        %s, %s, NOW()
+                    )
+                """
+                
+                for event_db_id in event_db_ids:
+                    self.db.execute(insert_sql, [
+                        event_db_id,
+                        agent_name,
+                        final_model_version,
+                        verdict,
+                        confidence,
+                        suggestion,
+                        mark_price,
+                        json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
+                        json.dumps(full_output, ensure_ascii=False)
+                    ])
+                
+                logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")
+                return True
+
+            # 异步执行
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _save_sync)
+            return result
+            
+        except Exception as e:
+            logger.error(f"保存Agent分析结果失败: {e}, agent={agent_name}", exc_info=True)
+            return False
+
     def close(self):
         """关闭资源"""
         try:
