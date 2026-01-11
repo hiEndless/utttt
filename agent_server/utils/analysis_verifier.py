@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import time
+import traceback
 from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
 from agent_server.utils.db_utils import PostgresDB
-from agent_server.tools.get_position import get_position
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +18,30 @@ class AnalysisVerifier:
     # 需要验证方向性决策的 Agent 列表
     TARGET_AGENTS = ("position_risk",)
     
-    def __init__(self, db: PostgresDB, executor: ThreadPoolExecutor):
+    def __init__(self, max_workers: int = 3):
         """
         初始化验证器
         :param db: 数据库连接实例 (复用 TradeEventRecorder 的连接)
         :param executor: 线程池执行器 (复用 TradeEventRecorder 的线程池)
         """
-        self.db = db
-        self.executor = executor
+        self.db = PostgresDB()
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+
+    def _row_get(self, row: Any, key: str, tuple_index: Optional[int] = None, default: Any = None) -> Any:
+        """
+        兼容 db_utils 可能返回的 dict/tuple 行结构，统一取字段值。
+        - dict: 使用 row.get(key)
+        - tuple: 使用指定的 tuple_index 取值
+        """
+        if row is None:
+            return default
+        if isinstance(row, dict):
+            return row.get(key, default)
+        if isinstance(row, tuple):
+            if tuple_index is None:
+                return default
+            return row[tuple_index] if 0 <= tuple_index < len(row) else default
+        return default
 
     async def verify_previous_analyses(self, current_event_info: Dict[str, Any], current_mark_price: float) -> None:
         """
@@ -120,7 +136,8 @@ class AnalysisVerifier:
                 if not trade_row:
                     continue
                 
-                position_side = trade_row.get("position_side", "").upper() # LONG / SHORT
+                # db 可能返回 tuple，避免直接 .get 报错
+                position_side = str(self._row_get(trade_row, "position_side", 0, "")).upper()  # LONG / SHORT
                 if position_side not in ("LONG", "SHORT"):
                     continue
 
@@ -152,21 +169,16 @@ class AnalysisVerifier:
                 verification_time = int(time.time() * 1000)
 
                 for event_row in event_rows:
-                    event_pk = event_row.get("id")
-                    # 使用 tuple index 访问如果 fetch_all 返回的是元组
-                    if event_pk is None and isinstance(event_row, tuple):
-                         event_pk = event_row[0]
-                         
-                    prev_price = event_row.get("mark_price")
-                    if prev_price is None and isinstance(event_row, tuple):
-                        prev_price = event_row[1]
+                    # db 可能返回 tuple（如: (id, mark_price, event_at)），统一取值避免 .get 报错
+                    event_pk = self._row_get(event_row, "id", 0)
+                    prev_price = self._row_get(event_row, "mark_price", 1)
 
                     # 如果 event 表里没有 mark_price，尝试从 analysis 表里获取
                     if prev_price is None:
                         sql_analysis_price = "SELECT mark_price FROM agent_analyses WHERE event_id = %s LIMIT 1"
                         ana_row = self.db.fetch_one(sql_analysis_price, [event_pk])
                         if ana_row:
-                            prev_price = ana_row.get("mark_price")
+                            prev_price = self._row_get(ana_row, "mark_price", 0)
                     
                     if prev_price is None or float(prev_price) == 0:
                         continue
@@ -188,8 +200,9 @@ class AnalysisVerifier:
                     # 5. 逐个验证
                     has_verification = False
                     for ana in analyses:
-                        ana_id = ana.get("id") or (ana[0] if isinstance(ana, tuple) else None)
-                        suggestion = ana.get("suggestion") or (ana[1] if isinstance(ana, tuple) else None)
+                        # db 可能返回 tuple，避免直接 .get 报错
+                        ana_id = self._row_get(ana, "id", 0)
+                        suggestion = self._row_get(ana, "suggestion", 1)
                         
                         if not suggestion:
                             continue
@@ -210,7 +223,7 @@ class AnalysisVerifier:
                         logger.info(f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
                 
             except Exception as e:
-                logger.error(f"验证单个交易失败: trade_id={tid}, {e}")
+                logger.error(f"验证单个交易失败: trade_id={tid}, {e}, {traceback.print_exc()}")
 
     def _judge_accuracy(self, position_side: str, pct_change: float, suggestion: str) -> str:
         """
@@ -257,3 +270,22 @@ class AnalysisVerifier:
                 return "NEUTRAL"
         
         return "NEUTRAL"
+
+
+if __name__ == "__main__":
+    import asyncio
+    # 创建一个实例
+    verifier = AnalysisVerifier()
+    
+    # 验证所有交易
+    info = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
+                    "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
+                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
+                    "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
+    
+    mark_price = 43000.0
+
+    async def demo():
+        await verifier.verify_previous_analyses(info, mark_price)
+
+    asyncio.run(demo())
