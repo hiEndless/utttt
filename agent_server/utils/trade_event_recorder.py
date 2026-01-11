@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List
 from concurrent.futures import ThreadPoolExecutor
 from agent_server.utils.db_utils import PostgresDB
 from agent_server.tools.get_position import get_position
-from agent_server.utils.price_fetcher import get_mark_price_sync
+from agent_server.tools.price_fetcher import get_mark_price_sync
 
 logger = logging.getLogger(__name__)
 

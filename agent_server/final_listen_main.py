@@ -6,7 +6,7 @@ import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
 from agent_server.utils.trade_event_recorder import get_recorder
-from agent_server.utils.price_fetcher import get_mark_price
+from agent_server.tools.price_fetcher import get_mark_price
 
 
 class RouterFinalListener:
