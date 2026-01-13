@@ -208,15 +208,15 @@ class AnalysisVerifier:
                             continue
                             
                         # 判断逻辑
-                        is_accurate = self._judge_accuracy(position_side, pct_change, suggestion)
+                        market_accuracy, decision_quality = self._judge_accuracy(position_side, pct_change, suggestion)
                         
                         # 更新 analysis，同时落库验证时价格，避免后续按时间回拉价格导致不一致
                         update_ana_sql = """
                             UPDATE agent_analyses
-                            SET is_accurate = %s, verification_mark_price = %s
+                            SET market_accuracy = %s, decision_quality = %s, verification_mark_price = %s
                             WHERE id = %s
                         """
-                        self.db.execute(update_ana_sql, [is_accurate, current_price, ana_id])
+                        self.db.execute(update_ana_sql, [market_accuracy, decision_quality, current_price, ana_id])
                         has_verification = True
                     
                     # 6. 标记事件为已验证 (只有当确实进行了验证操作后)
@@ -234,9 +234,10 @@ class AnalysisVerifier:
             except Exception as e:
                 logger.error(f"验证单个交易失败: trade_id={tid}, {e}, {traceback.print_exc()}")
 
-    def _judge_accuracy(self, position_side: str, pct_change: float, suggestion: str) -> str:
+    def _judge_accuracy(self, position_side: str, pct_change: float, suggestion: str) -> tuple[str, str]:
         """
         根据价格变化和建议判断准确性
+        返回: (market_accuracy, decision_quality)
         """
         # 阈值
         THRESHOLD = 0.005 # 0.5%
@@ -256,29 +257,32 @@ class AnalysisVerifier:
                 else: is_unfavorable = True
         
         # 判定
+        # market_accuracy: CORRECT, WRONG, NEUTRAL
+        # decision_quality: GOOD, BAD, DEFENSIVE, OVERAGGRESSIVE
+        
         if is_favorable:
             if suggestion in ("ADD_POSITION", "HOLD"):
-                return "ACCURATE"
+                return "CORRECT", "GOOD"
             elif suggestion == "DEFENSIVE":
-                return "NEUTRAL"
+                return "CORRECT", "DEFENSIVE"
             elif suggestion in ("REDUCE", "EXIT"):
-                return "INACCURATE"
+                return "WRONG", "BAD" # 卖飞
                 
         elif is_unfavorable:
             if suggestion in ("REDUCE", "EXIT", "DEFENSIVE"):
-                return "ACCURATE"
+                return "CORRECT", "GOOD"
             elif suggestion in ("ADD_POSITION", "HOLD"):
-                return "INACCURATE"
+                return "WRONG", "BAD" # 死扛
                 
         else: # is_sideways
             if suggestion in ("HOLD", "DEFENSIVE"):
-                return "ACCURATE"
+                return "NEUTRAL", "GOOD"
             elif suggestion == "ADD_POSITION":
-                return "INACCURATE"
+                return "WRONG", "OVERAGGRESSIVE" # 震荡期加仓，容易磨损
             elif suggestion in ("REDUCE", "EXIT"):
-                return "NEUTRAL"
+                return "NEUTRAL", "DEFENSIVE" # 反应过度但规避风险
         
-        return "NEUTRAL"
+        return "NEUTRAL", "DEFENSIVE"
 
 
 if __name__ == "__main__":

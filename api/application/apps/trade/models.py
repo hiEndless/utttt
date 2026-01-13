@@ -26,6 +26,13 @@ class Trade(models.Model):
     # 额外信息 (快照)
     entry_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="开仓均价")
     close_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="平仓均价")
+
+    summary = fields.JSONField(null=True, description="平仓后交易概要(JSON)")
+    trade_verdict = fields.CharField(
+        max_length=32,
+        null=True,
+        description="交易定性结论 (GOOD_TRADE, BAD_TRADE, GOOD_LOSS, BAD_WIN)"
+    )
     
     class Meta:
         table = "trades"
@@ -50,6 +57,18 @@ class TradeAction(models.Model):
     # 时间
     action_at = fields.BigIntField(description="操作时间戳 updateTime")
     created_at = fields.DatetimeField(auto_now_add=True)
+    
+    # 人工干预
+    follows_system = fields.BooleanField(
+        null=True,
+        description="是否遵循系统建议"
+    )
+
+    override_reason = fields.CharField(
+        max_length=64,
+        null=True,
+        description="人工干预原因 (fear, conviction, news, discretion...)"
+    )
 
     class Meta:
         table = "trade_actions"
@@ -83,6 +102,7 @@ class TradeEvent(models.Model):
     is_verified = fields.BooleanField(default=False, description="是否已验证准确性")
     verification_at = fields.BigIntField(null=True, description="验证时间戳")
     verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
+    event_importance = fields.IntField(default=0, description="事件重要性 (0-100, 事后评估)")
     post_summary = fields.TextField(null=True, description="事后总结 (包含准确性复盘)")
 
     class Meta:
@@ -97,22 +117,26 @@ class AgentAnalysis(models.Model):
     以持多单(LONG)为例的判断逻辑(SHORT同理反之)：
     
     1. 价格上涨(有利方向)：
-       - ADD_POSITION: 正确。乘胜追击。
-       - HOLD: 正确。坐享其成。
-       - DEFENSIVE: 半对半错(或偏向错误)。涨幅猛则踏空；涨幅弱则合理。总体偏保守。
-       - REDUCE/EXIT: 错误。卖飞。
+       - ADD_POSITION / HOLD: 
+         market_accuracy=CORRECT (看对), decision_quality=GOOD (做对)
+       - DEFENSIVE: 
+         market_accuracy=CORRECT (看对), decision_quality=DEFENSIVE (偏保守/踏空)
+       - REDUCE / EXIT: 
+         market_accuracy=WRONG (卖飞), decision_quality=BAD (做错)
     
     2. 价格下跌(不利方向)：
-       - ADD_POSITION: 错误。逆势加仓。
-       - HOLD: 错误。死扛亏损。
-       - DEFENSIVE: 正确。预警风险，可能避免更大损失。
-       - REDUCE/EXIT: 正确。及时止损。
+       - ADD_POSITION / HOLD: 
+         market_accuracy=WRONG (看错), decision_quality=BAD (死扛)
+       - REDUCE / EXIT / DEFENSIVE: 
+         market_accuracy=CORRECT (看对风险), decision_quality=GOOD (及时止损)
     
     3. 价格震荡(幅度<0.5%)：
-       - ADD_POSITION: 中性/错误。容易磨损成本。
-       - HOLD: 正确。多看少动。
-       - DEFENSIVE: 正确。变盘前兆保持警惕。
-       - REDUCE/EXIT: 中性。反应过度但规避了不确定性。
+       - HOLD / DEFENSIVE: 
+         market_accuracy=NEUTRAL (中性), decision_quality=GOOD (稳健)
+       - ADD_POSITION: 
+         market_accuracy=WRONG (误判), decision_quality=OVERAGGRESSIVE (过度激进/磨损)
+       - REDUCE / EXIT: 
+         market_accuracy=NEUTRAL (中性), decision_quality=DEFENSIVE (过度反应但安全)
     """
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
@@ -132,10 +156,16 @@ class AgentAnalysis(models.Model):
     suggestion = fields.CharField(max_length=32, null=True, description="持仓建议 (ADD_POSITION, HOLD, DEFENSIVE, REDUCE, EXIT)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="分析时的标记价格")
     verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
-    is_accurate = fields.CharField(
-        max_length=16, 
-        null=True, 
-        description="建议准确性 (ACCURATE: 正确预判行情, INACCURATE: 误判/卖飞/死扛, NEUTRAL: 震荡期防守/无功无过)"
+    
+    market_accuracy = fields.CharField(
+        max_length=16,
+        null=True,
+        description="行情判断准确性 (CORRECT, WRONG, NEUTRAL)"
+    )
+    decision_quality = fields.CharField(
+        max_length=16,
+        null=True,
+        description="决策质量 (GOOD, BAD, DEFENSIVE, OVERAGGRESSIVE)"
     )
 
     # 详细内容
