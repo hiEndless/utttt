@@ -28,6 +28,7 @@ class Trade(models.Model):
     close_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="平仓均价")
 
     summary = fields.JSONField(null=True, description="平仓后交易概要(JSON)")
+    # summary中的字段，单独提取存储
     trade_verdict = fields.CharField(
         max_length=32,
         null=True,
@@ -63,7 +64,7 @@ class TradeAction(models.Model):
         null=True,
         description="是否遵循系统建议"
     )
-
+    # 后续手动补充，用于复盘
     override_reason = fields.CharField(
         max_length=64,
         null=True,
