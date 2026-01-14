@@ -94,6 +94,7 @@ class PositionRiskExpert:
 
 if __name__ == "__main__":
     from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
+    from agent_server.reducers.position_risk_decider import decide_position_action
     from agent_server.tools.get_position import get_position
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
@@ -228,6 +229,14 @@ if __name__ == "__main__":
         }
 
         # 5. 组装最终 Query
+        decision_rules = decide_position_action(
+            holding_duration_min=state["holding_duration_min"],
+            time_since_last_event_min=(int(time.time() * 1000) - state["last_update_ts"]) // 60_000,
+            valid_streak=state["valid_streak"],
+            invalid_streak=state["invalid_streak"],
+            conflict_streak=state["conflict_streak"],
+        )
+
         query = {
             "symbol": symbol,
             "exchange": exchange,
@@ -237,6 +246,7 @@ if __name__ == "__main__":
             "position_snapshot": position,
             "signal_verdict": sv_out["agent_output"],
             "temporal_state": state,
+            "risk_rules_decision": decision_rules,
             "market_context": market_context,
             "crowd_context": crowd_context,
             "operational_context": operational_context  # 新增字段

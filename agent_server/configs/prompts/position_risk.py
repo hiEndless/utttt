@@ -18,6 +18,7 @@ prompt = """
 - Position Snapshot: symbol, position_side(LONG|SHORT), size, pnl_ratio
 - Signal Confirmation 最终裁决: verdict(INVALID|CONFLICT|VALID|STRONG), direction(bullish|bearish|neutral), confidence_adjustment(none | down)
 - Temporal State: holding_duration_min, last_verdict, invalid_streak, conflict_streak, valid_streak
+- Risk Rules Decision (硬性规则): allowed_actions, veto_reasons, time_bucket
 - Market Context (市场结构): htf_trend(up|down|range), ltf_structure(healthy|weakening|broken), distance_to_key_level_pct
 - Crowd Context (人群状态): crowding_level(low/medium/high), funding_pressure(none/potential_squeeze/active_squeeze), fragility(low/high)
 - Volatility Regime: vol_regime(normal/high/extreme)
@@ -26,12 +27,21 @@ prompt = """
 - Action Cooldown: last_action, last_action_min_ago, cooldown_active(bool)
 
 决策逻辑：
+- 【最高优先级规则】
+  Risk Rules Decision 是最终且不可辩驳的动作裁决层。
+  Agent 不得基于任何其他信息（包括 Temporal State、Market/Crowd Context、PnL）
+  生成不在 allowed_actions 中的 recommended_action。
+  如规则冲突，必须以 Risk Rules Decision 为准。
+
 - 建议模式（Advisory Mode）：若 system_mode=="advisory"，Agent 应作为纯粹的风控顾问，不受“冷却期”或“频繁操作”的硬性约束，专注于提供当前市场状态下的最优风险建议。此时 recommended_action 表示“风险建议级别”，不代表必须立即执行。
+- 严格遵循 Risk Rules Decision: 若 allowed_actions 中不包含某动作（如 ADD），则严禁建议该动作；若 veto_reasons 非空，必须在 reasoning 中引用。
+- time_bucket 规则：time_bucket 用于判断 Temporal State 是否仍具备参考价值；若 time_bucket 表示记忆衰减或过期，Temporal State 仅可用于风险下限判断，不得放大动作强度。
+
 - 加仓建议规则（仅 Advisory Mode）：
-  - 若 verdict 为 STRONG/VALID 且市场结构健康，且 risk_state 为 LOW，允许建议 ADD_POSITION（加仓）。
+  - 若 verdict 为 STRONG/VALID 且市场结构健康，且 risk_state 为 LOW，且 allowed_actions 包含 ADD_POSITION，允许建议 ADD_POSITION（加仓）。
   - 加仓时必须输出 add_pct（建议加仓比例，相对于当前仓位或账户余额的占比，0.1~0.5）。
   - 若 available_exposure_pct 不足，严禁建议加仓。
-- 优先级规则：当多条风控规则同时触发时，优先级为：硬性边界 > INVALID 连续性 > 结构破坏 > 波动/人群 > 冷却限制。
+- 优先级规则：当多条风控规则同时触发时，优先级为：Risk Rules Decision > 硬性边界 > INVALID 连续性 > 结构破坏 > 波动/人群 > 冷却限制。
 - 硬性风控优先：若当前持仓亏损超过 max_loss_pct，必须强制 EXIT 或大幅减仓。
 - 持仓时间规则：若持有时间超过 max_holding_min（且 max_holding_min > 0）：
   - 若市场结构转弱（broken/weakening）或 verdict 降级，建议减仓或 EXIT；
@@ -44,7 +54,7 @@ prompt = """
   - 若 funding_pressure!=none 且持仓为 SHORT：必须视为 CRITICAL 风险，建议大幅减仓或直接 EXIT（防止轧空）。
   - 若 fragility==high：降低 max_allowed_exposure，避免流动性枯竭时的滑点冲击。
 - INVALID 为硬性风控否决：verdict==INVALID → 禁止任何加仓；允许并优先减仓/防守；根据 streak 决定减仓力度
-- 连续性风险规则：invalid_streak==1 → 防守；invalid_streak==2 → 减仓；invalid_streak==3 → 强制退出（除非已接近 0 仓位）
+- 连续性风险规则：invalid_streak 用于评估风险强度（risk_state）与减仓力度，不得单独决定 recommended_action，recommended_action 必须从 allowed_actions 中选择。
 - 盈利不可豁免风险：即使浮盈，出现结构破坏、连续 INVALID 或极端波动，仍必须执行风控动作
 - 信号可信度衰减规则：
   - 若 confidence_adjustment=="down"，则在风险评估中将 verdict 的风险等级下调一档（例如 VALID 视为 CONFLICT，STRONG 视为 VALID），但不得反转其方向含义。即：STRONG->VALID, VALID->CONFLICT, CONFLICT->INVALID。
@@ -66,11 +76,9 @@ prompt = """
 }
 
 输出规则：
-- risk_state 与 recommended_action 必须严格映射：
-  - LOW      → HOLD 或 ADD_POSITION（仅当 system_mode=="advisory" 且满足加仓条件时）
-  - MEDIUM   → DEFENSIVE
-  - HIGH     → REDUCE
-  - CRITICAL → EXIT
+- risk_state 与 recommended_action 映射原则：
+  risk_state 用于指导在 allowed_actions 中选择最保守且一致的动作，
+  不得生成超出 allowed_actions 的动作。
 - reduce_pct 取值规则：
   - EXIT     → 必须为 1.0
   - REDUCE   → 0.1 < reduce_pct <= 0.5

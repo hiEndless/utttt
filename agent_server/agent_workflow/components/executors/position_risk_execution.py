@@ -5,6 +5,7 @@ from typing import Dict, Optional, List
 from agno.workflow import StepInput
 from agent_server.tools.get_position import get_position
 from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
+from agent_server.reducers.position_risk_decider import decide_position_action
 from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
@@ -79,6 +80,14 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 event_ts=ts_now,
             )
 
+            decision_rules = decide_position_action(
+                holding_duration_min=state["holding_duration_min"],
+                time_since_last_event_min=(ts_now - state["last_update_ts"]) // 60_000,
+                valid_streak=state["valid_streak"],
+                invalid_streak=state["invalid_streak"],
+                conflict_streak=state["conflict_streak"],
+            )
+
             rc = RedisClient()
             last_suggestion_key = f"agent_output:position_risk:{exchange}:{symbol}:latest"
             last_suggestion_str = await rc.get(last_suggestion_key)
@@ -130,6 +139,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "position_snapshot": position_snapshot,
                 "signal_verdict": agent_output,
                 "temporal_state": state,
+                "risk_rules_decision": decision_rules,
                 "market_context": market_context,
                 "crowd_context": crowd_context,
                 "operational_context": operational_context
