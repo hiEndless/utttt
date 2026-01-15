@@ -20,6 +20,8 @@ prompt = """
   - 各事件的事后总结（event_summary）
 - 你的事后视角 **只用于复盘这笔交易本身**，
   不得反向修改、否定或污染单个事件的原始判断。
+- event_summary 描述的是【事件发生当下】系统对市场与风险的认知状态及其变化（ex-ante cognition snapshot），
+  而不是对事件本身是否“正确”“关键”或“是否应当导致某个交易动作”的事后评价。
 
 ## 2) 总结的是「交易执行质量」，不是「市场预测能力」
 - 你评估的是：
@@ -29,11 +31,18 @@ prompt = """
   - 策略模型是否需要调整
 
 ## 3) 多事件融合（交易级）
-- 输入中可能包含多个事件（event_x）。
+- 输入中可能包含多个事件（Key为事件ID，Value为事件详情）。
 - 每个事件已有独立的 event_summary（包含准确性复盘）。
 - 你的任务是：
   - 将这些事件在时间与逻辑上串联
+  - 事件顺序必须严格以事件时间（event_id 中的 timestamp）为准，不得因叙事重要性调整顺序。
+  - 事件时间应从 event_id 或事件 Key 中解析 timestamp，并据此进行严格时间排序。
   - 判断交易是否遵循了合理的认知演化路径
+
+## 4) 严禁隐性归因（Hard Prohibition）
+- 你不得对任何单个事件的重要性（importance）、价值高低或是否关键作出评价。
+- 你只能描述“交易在当时是否尊重了事件所表达的认知”，而不能评价事件本身是否正确或重要。
+- 不得将 event_summary 中的 state_change、directional_impact 直接等价为具体交易义务（如必须平仓、必须反向、必须减仓）。
 
 ---
 
@@ -66,6 +75,12 @@ prompt = """
 - 执行是否偏离当时可得信息  
 而不是单纯基于 pnl_ratio 数值大小。
 
+**特别判定准则：**
+- 判断 **GOOD_LOSS** 或 **BAD_WIN** 时，“当时可得的事件认知框架”是唯一合法基准。
+- **严禁** 使用事后市场走势来否定当时被接受的风险假设。
+- 当 event.direction 与 event_summary.directional_impact 出现不一致时，
+  不得对其进行正确性裁决，只能描述交易执行是否与当时被接受的认知状态保持一致。
+
 ---
 
 # 三、输入数据参考（Context）
@@ -73,7 +88,13 @@ prompt = """
 在进行分析前，请关注以下输入字段：
 - `entry/exit` info: 开平仓价格与时间
 - `pnl_ratio`: 最终盈亏比
-- `events`: 交易期间发生的关键事件列表，重点关注 `event_summary` 中的事后评价
+- `events`: 交易期间发生的关键事件列表。
+  - 重点关注 `event_summary` 中的认知快照：
+    - `core_signal`: 核心信号描述
+    - `state_change`: 认知状态变更
+    - `directional_impact`: 方向性影响
+    - `confidence_level`: 置信度 (LOW | MEDIUM | HIGH)
+  - **注意**：不再包含 `market_context`，请完全依赖 `event_summary` 还原当时认知。
 
 ---
 
@@ -86,8 +107,8 @@ prompt = """
 - 所有字段必须存在
 
 **关于字段用途的特别说明：**
-- `reasoning`: 仅用于 **调试与审计**，请详细记录推理过程（High Context）。
-- `summary`: 用于 **长期记忆与检索**，必须精炼、客观、结论导向（Low Context）。
+- `reasoning`: 仅用于 **调试与审计**，请详细记录推理过程（High Context）。禁止给出任何“未来改进建议”或“操作建议”，仅允许描述 事实 → 认知 → 执行 → 结果 的因果链。
+- `summary`: 用于 **长期记忆与检索**，必须精炼、客观、结论导向（Low Context）。必须做到：可脱离 reasoning 单独阅读；不依赖上下文隐含信息；不包含推理细节。
 
 ```json
 {
@@ -98,10 +119,10 @@ prompt = """
   "summary": {
     "trade_overview": "【长期记忆层】简要回顾交易全过程（精炼）",
     "execution_consistency": "评估执行与计划的一致性",
-    "event_alignment": "评估关键事件的处理是否得当",
-    "key_lessons": [
-      "关键教训 1（必须以「认知、节奏、风险理解」表述，禁止包含'应早点卖'等事后操作指令）",
-      "关键教训 2"
+    "event_alignment": "评估交易执行是否与事件序列所反映的认知状态保持一致",
+    "key_observations": [
+      "关于认知与执行一致性的客观观察 1",
+      "关于风险暴露与节奏的客观观察 2"
     ],
     "notable_deviations": ["值得注意的偏离行为 1"]
   }
