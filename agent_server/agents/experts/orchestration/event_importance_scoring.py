@@ -2,7 +2,7 @@ from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
 import os
-from agent_server.configs.prompts.trade_summary import prompt
+from agent_server.configs.prompts.event_importance_scoring import prompt
 from agno.models.message import Message
 import json
 import asyncio
@@ -15,8 +15,8 @@ from agent_server.agents.experts.utils import (
 )
 
 
-class TradeSummaryExpert:
-    name = "trade_summary"
+class EventImportanceScoringExpert:
+    name = "event_importance_scoring"
 
     async def run(self, query: dict, exchange: str, symbol: str) -> str:
 

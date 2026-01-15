@@ -2,7 +2,7 @@ from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
 import os
-from agent_server.configs.prompts.market_structure import prompt
+from agent_server.configs.prompts.event_summary import prompt
 from agno.models.message import Message
 import json
 import asyncio
