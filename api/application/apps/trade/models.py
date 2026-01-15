@@ -105,7 +105,7 @@ class TradeEvent(models.Model):
     verification_at = fields.BigIntField(null=True, description="验证时间戳")
     verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
     event_importance = fields.IntField(default=0, description="事件重要性 (0-100, 事后评估)")
-    post_summary = fields.TextField(null=True, description="事后总结 (包含准确性复盘)")
+    event_summary = fields.TextField(null=True, description="事后总结 (包含准确性复盘)")
 
     class Meta:
         table = "trade_events"
