@@ -22,6 +22,7 @@ class Trade(models.Model):
 
     # 资金信息
     pnl = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="已实现盈亏")
+    pnl_ratio = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="收益率")
     
     # 额外信息 (快照)
     entry_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="开仓均价")
