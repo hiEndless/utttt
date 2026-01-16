@@ -1,5 +1,6 @@
 from data_server.binance.ws_binance.utils.db_utils import PostgresDB
 from data_server.binance.ws_binance.utils.trade_event_publisher import TradeEventPublisher
+from data_server.binance.ws_binance.bn_client.futures_client import BinanceFuturesClient
 import datetime
 
 import os
@@ -9,6 +10,13 @@ class TradeRecorder:
         self.db = PostgresDB()
         self.exchange = exchange
         self.publisher = TradeEventPublisher(exchange=self.exchange)
+        
+        # 初始化 Binance API Client
+        api_key = os.getenv("BINANCE_API_KEY", "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0")
+        api_secret = os.getenv("BINANCE_API_SECRET", "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B")
+        self.bn_client = None
+        if api_key and api_secret:
+            self.bn_client = BinanceFuturesClient(api_key, api_secret)
         
         # 防抖配置
         # 默认开启，阈值3分钟
@@ -36,6 +44,90 @@ class TradeRecorder:
             return 1  # 默认值
         except Exception:
             return 1
+
+    def _sync_last_trade_details(self, trade_id, symbol):
+        """调用 REST API 获取最近一笔交易的详细信息并更新数据库"""
+        if not self.bn_client:
+            return
+
+        try:
+            # 获取最近的交易记录
+            trades = self.bn_client.get_user_trades(symbol=symbol, limit=10)
+            last_trade = self.bn_client.get_last_position(trades)
+            
+            if last_trade:
+                realized_pnl = float(last_trade.get('realizedPnl', 0))
+                order_id = str(last_trade.get('orderId', ''))
+                action_at = int(last_trade.get('time', 0))
+                
+                # 更新 trade_actions 表中最新的一条记录
+                # 使用子查询找到该 trade_id 下最新的 action
+                sql = """
+                    UPDATE trade_actions 
+                    SET realized_pnl = %s, 
+                        order_id = %s, 
+                        action_at = %s
+                    WHERE id = (
+                        SELECT id FROM trade_actions 
+                        WHERE trade_id = %s 
+                        ORDER BY created_at DESC 
+                        LIMIT 1
+                    )
+                """
+                self.db.execute(sql, (realized_pnl, order_id, action_at, trade_id))
+                print(f"同步交易详情成功: {trade_id}, pnl={realized_pnl}, order_id={order_id}")
+        except Exception as e:
+            print(f"同步交易详情失败: {e}")
+
+    def _sync_closed_trade_pnl(self, trade_id, symbol, position_side, entry_time, leverage):
+        """
+        平仓后同步计算 PnL 和 PnL Ratio
+        pnl = gross_pnl
+        pnl_ratio = return_pct * leverage
+        """
+        if not self.bn_client or not entry_time:
+            return
+
+        try:
+            # 1. Fetch trades (increase limit to cover history)
+            trades = self.bn_client.get_user_trades(symbol=symbol, limit=200)
+            
+            # 2. Calculate closed positions
+            closed_positions = self.bn_client.calculate_closed_positions(trades, symbol)
+            
+            # 3. Match
+            target_ts = entry_time.timestamp() * 1000
+            matched_cp = None
+            
+            for cp in closed_positions:
+                cp_side = cp.get('side')
+                cp_entry_time = cp.get('entry_time')
+                
+                # 匹配方向且开仓时间接近 (允许 5秒 误差)
+                if cp_side == position_side and cp_entry_time and abs(cp_entry_time - target_ts) < 5000:
+                    matched_cp = cp
+                    break
+            
+            if matched_cp:
+                gross_pnl = matched_cp.get('gross_pnl', 0)
+                return_pct = matched_cp.get('return_pct', 0)
+                pnl_ratio = return_pct * leverage
+                
+                # 4. Update DB
+                sql = """
+                    UPDATE trades 
+                    SET pnl = %s, 
+                        pnl_ratio = %s,
+                        updated_at = NOW()
+                    WHERE trade = %s
+                """
+                self.db.execute(sql, (gross_pnl, pnl_ratio, trade_id))
+                print(f"同步平仓PnL成功: {trade_id}, pnl={gross_pnl}, pnl_ratio={pnl_ratio}")
+            else:
+                print(f"未找到匹配的平仓记录: {trade_id}, symbol={symbol}, side={position_side}")
+                
+        except Exception as e:
+            print(f"同步平仓PnL失败: {e}")
 
     def save_new_trade(self, item):
         """保存新开仓记录"""
@@ -82,8 +174,14 @@ class TradeRecorder:
             
             # 推送事件
             self.publisher.on_trade_open(item)
+            
+            # 同步 REST API 详情
+            self._sync_last_trade_details(trade_id, symbol)
+            
+            # 同步平仓 PnL
+            self._sync_closed_trade_pnl(trade_id, symbol, position_side, entry_time, leverage)
         except Exception as e:
-            print(f"保存新开仓记录失败: {e}")
+            print(f"保存平仓记录失败: {e}")
 
     def close_trade(self, item, current_time_ms):
         """保存平仓记录"""
@@ -153,6 +251,11 @@ class TradeRecorder:
             if is_short_term:
                 print(f"短线交易平仓 (持仓 {duration_minutes:.2f} 分钟)，已标记 is_short_term=True")
 
+             # 同步 REST API 详情
+            self._sync_last_trade_details(trade_id, symbol)
+            
+            # 同步平仓 PnL
+            self._sync_closed_trade_pnl(trade_id, symbol, position_side, entry_time, leverage)
         except Exception as e:
             print(f"保存平仓记录失败: {e}")
 
@@ -235,5 +338,8 @@ class TradeRecorder:
                 self.publisher.on_trade_increase(item, amount, is_short_term=is_short_term)
             else:
                 self.publisher.on_trade_decrease(item, amount, is_short_term=is_short_term)
+            
+            # 同步 REST API 详情
+            self._sync_last_trade_details(trade_id, symbol)
         except Exception as e:
             print(f"保存交易变更记录失败: {e}")
