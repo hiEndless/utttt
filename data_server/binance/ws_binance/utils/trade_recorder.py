@@ -72,11 +72,12 @@ class TradeRecorder:
                 INSERT INTO trade_actions (
                     trade_id, action_type, amount, price, size, 
                     realized_pnl, order_id,
-                    action_at, created_at
+                    action_at, created_at,
+                    symbol, exchange, position_side
                 )
-                VALUES (%s, 'OPEN', %s, %s, %s, %s, %s, %s, NOW())
+                VALUES (%s, 'OPEN', %s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, size, entry_price, size, None, None, update_time))
+            self.db.execute(sql_action, (trade_id, size, entry_price, size, None, None, update_time, symbol, self.exchange, position_side))
             print(f"数据库记录新增交易: {trade_id} (Leverage: {leverage})")
             
             # 推送事件
@@ -91,10 +92,12 @@ class TradeRecorder:
             close_price = item.get('markPrice', 0)
             close_time = self._to_datetime(current_time_ms)
             
-            # 1. 先查询开仓时间，计算持仓时长
-            sql_query_entry = "SELECT entry_time FROM trades WHERE trade = %s"
+            # 1. 先查询开仓时间，计算持仓时长，同时获取 symbol/position_side
+            sql_query_entry = "SELECT entry_time, symbol, position_side FROM trades WHERE trade = %s"
             result = self.db.fetch_one(sql_query_entry, (trade_id,))
             entry_time = result.get('entry_time') if result else None
+            symbol = result.get('symbol') if result else item.get('symbol')
+            position_side = result.get('position_side') if result else item.get('positionSide')
             
             duration_minutes = 0
             if entry_time:
@@ -132,11 +135,12 @@ class TradeRecorder:
                 INSERT INTO trade_actions (
                     trade_id, action_type, amount, price, size, 
                     realized_pnl, order_id,
-                    action_at, created_at
+                    action_at, created_at,
+                    symbol, exchange, position_side
                 )
-                VALUES (%s, 'CLOSE', %s, %s, 0, %s, %s, %s, NOW())
+                VALUES (%s, 'CLOSE', %s, %s, 0, %s, %s, %s, NOW(), %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, action_amount, close_price, None, None, current_time_ms))
+            self.db.execute(sql_action, (trade_id, action_amount, close_price, None, None, current_time_ms, symbol, self.exchange, position_side))
             print(f"数据库记录平仓交易: {trade_id}")
             
             # 推送事件
@@ -165,6 +169,17 @@ class TradeRecorder:
             old_size = float(item.get('old_position_amt', 0))
             amount = new_size - old_size
             
+            symbol = item.get('symbol')
+            position_side = item.get('positionSide')
+
+            # 如果 item 中缺失关键信息，尝试从数据库补充
+            if not symbol or not position_side:
+                info_sql = "SELECT symbol, position_side FROM trades WHERE trade = %s"
+                info_res = self.db.fetch_one(info_sql, (trade_id,))
+                if info_res:
+                    symbol = symbol or info_res.get('symbol')
+                    position_side = position_side or info_res.get('position_side')
+            
             # 更新 Trade 表
             if change_type == 'INCREASE':
                 # 加仓：更新 size，同时如果新 size 大于 max_size，则更新 max_size
@@ -191,10 +206,13 @@ class TradeRecorder:
 
             # 插入 TradeAction 表
             sql_action = """
-                INSERT INTO trade_actions (trade_id, action_type, amount, price, size, action_at, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                INSERT INTO trade_actions (
+                    trade_id, action_type, amount, price, size, action_at, created_at,
+                    symbol, exchange, position_side
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, change_type, amount, price, new_size, update_time))
+            self.db.execute(sql_action, (trade_id, change_type, amount, price, new_size, update_time, symbol, self.exchange, position_side))
             print(f"数据库记录交易变更: {trade_id} {change_type}")
             
             # 推送事件

@@ -50,6 +50,11 @@ class TradeAction(models.Model):
     trade = fields.ForeignKeyField('models.Trade', related_name='actions', to_field='trade', description="关联的交易")
     action_type = fields.CharField(max_length=32, description="操作类型 (OPEN, CLOSE, INCREASE, DECREASE)")
     
+    # 冗余字段方便查询 (用于不关联Trade直接统计收益)
+    symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
+    exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
+    position_side = fields.CharField(max_length=16, null=True, description="方向 (LONG/SHORT)")
+
     # 核心数据
     amount = fields.DecimalField(max_digits=20, decimal_places=8, description="变动数量 (positionAmt)")
     price = fields.DecimalField(max_digits=20, decimal_places=8, description="成交价格/标记价格 (entryPrice/markPrice)")
