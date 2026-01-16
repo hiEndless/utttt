@@ -10,6 +10,7 @@ class Trade(models.Model):
     symbol = fields.CharField(max_length=32, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, description="交易所 (e.g. binance)")
     position_side = fields.CharField(max_length=16, description="方向 (LONG/SHORT)")
+    leverage = fields.IntField(null=True, description="杠杆倍数")
     size = fields.DecimalField(max_digits=20, decimal_places=8, description="持仓量 (positionAmt)")
     max_size = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="最大持仓量")
     closed_size = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="已平仓量")
@@ -21,8 +22,8 @@ class Trade(models.Model):
     updated_at = fields.DatetimeField(auto_now=True, description="记录更新时间")
 
     # 资金信息
-    pnl = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="已实现盈亏")
-    pnl_ratio = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="收益率")
+    pnl = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="已实现盈亏 (Gross PnL, 包含资金费)")
+    pnl_ratio = fields.DecimalField(max_digits=20, decimal_places=8, default=0, description="收益率 (ROI)")
     
     # 额外信息 (快照)
     entry_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="开仓均价")
@@ -55,6 +56,12 @@ class TradeAction(models.Model):
     
     # 变动后状态快照
     size = fields.DecimalField(max_digits=20, decimal_places=8, description="变动后总持仓量")
+
+    # 收益与费用 (基于成交记录重建)
+    realized_pnl = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="该笔成交实现的盈亏")
+    
+    # 交易所原始ID
+    order_id = fields.CharField(max_length=64, null=True, description="交易所订单ID")
     
     # 时间
     action_at = fields.BigIntField(description="操作时间戳 updateTime")

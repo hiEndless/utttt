@@ -26,6 +26,17 @@ class TradeRecorder:
         except Exception:
             return datetime.datetime.now(datetime.timezone.utc)
 
+    def _calculate_leverage(self, item):
+        """计算杠杆倍数 = notional / positionInitialMargin"""
+        try:
+            notional = abs(float(item.get('notional', 0)))
+            initial_margin = abs(float(item.get('positionInitialMargin', 0)))
+            if initial_margin > 0:
+                return int(round(notional / initial_margin))
+            return 1  # 默认值
+        except Exception:
+            return 1
+
     def save_new_trade(self, item):
         """保存新开仓记录"""
         try:
@@ -36,22 +47,37 @@ class TradeRecorder:
             entry_price = item.get('entryPrice', 0)
             update_time = item.get('updateTime')
             entry_time = self._to_datetime(update_time)
+            
+            # 计算杠杆
+            leverage = self._calculate_leverage(item)
 
             # 插入 Trade 表
+            # 初始化时 pnl, net_pnl, total_commission, pnl_ratio 均为 0
             sql_trade = """
-                INSERT INTO trades (trade, symbol, exchange, position_side, size, max_size, entry_time, created_at, updated_at, pnl, entry_price)
-                VALUES (%s, %s, 'binance', %s, %s, %s, %s, NOW(), NOW(), 0, %s)
+                INSERT INTO trades (
+                    trade, symbol, exchange, position_side, leverage, size, max_size, 
+                    entry_time, created_at, updated_at, 
+                    pnl, net_pnl, total_commission, pnl_ratio, entry_price
+                )
+                VALUES (%s, %s, 'binance', %s, %s, %s, %s, %s, NOW(), NOW(), 0, 0, 0, 0, %s)
                 ON CONFLICT (trade) DO NOTHING
             """
-            self.db.execute(sql_trade, (trade_id, symbol, position_side, size, size, entry_time, entry_price))
+            self.db.execute(sql_trade, (
+                trade_id, symbol, position_side, leverage, size, size, entry_time, entry_price
+            ))
 
             # 插入 TradeAction 表 (OPEN)
+            # realized_pnl 和 order_id 默认留空，后续通过 REST API 补充
             sql_action = """
-                INSERT INTO trade_actions (trade_id, action_type, amount, price, size, action_at, created_at)
-                VALUES (%s, 'OPEN', %s, %s, %s, %s, NOW())
+                INSERT INTO trade_actions (
+                    trade_id, action_type, amount, price, size, 
+                    realized_pnl, order_id,
+                    action_at, created_at
+                )
+                VALUES (%s, 'OPEN', %s, %s, %s, %s, %s, %s, NOW())
             """
-            self.db.execute(sql_action, (trade_id, size, entry_price, size, update_time))
-            print(f"数据库记录新增交易: {trade_id}")
+            self.db.execute(sql_action, (trade_id, size, entry_price, size, None, None, update_time))
+            print(f"数据库记录新增交易: {trade_id} (Leverage: {leverage})")
             
             # 推送事件
             self.publisher.on_trade_open(item)
@@ -76,26 +102,41 @@ class TradeRecorder:
                 duration_seconds = (close_time - entry_time).total_seconds()
                 duration_minutes = duration_seconds / 60.0
 
-            # 更新 Trade 表 (要靠rest api去更新准确的)
+            # 计算平仓时的杠杆 (防止用户持仓期间调整)
+            leverage = self._calculate_leverage(item)
+
+            # 更新 Trade 表
             # 平仓时，增加 closed_size，并将 size 置为 0
+            # 注意：pnl, net_pnl, total_commission, pnl_ratio 这里暂时无法准确计算(缺手续费)，
+            # 仍需依赖后续的 rest api 修正。这里先更新状态和杠杆。
             sql_trade = """
                 UPDATE trades 
-                SET close_time = %s, close_price = %s, updated_at = NOW(), size = 0, closed_size = closed_size + %s
+                SET close_time = %s, 
+                    close_price = %s, 
+                    leverage = %s,
+                    updated_at = NOW(), 
+                    size = 0, 
+                    closed_size = closed_size + %s
                 WHERE trade = %s
             """
             # 平仓数量是负的当前持仓量
             amount = float(item.get('positionAmt', 0)) # amount for closed_size should be positive magnitude
-            self.db.execute(sql_trade, (close_time, close_price, amount, trade_id))
+            self.db.execute(sql_trade, (close_time, close_price, leverage, amount, trade_id))
 
             # 插入 TradeAction 表 (CLOSE)
             # 记录动作为负值
             action_amount = -amount
+            # realized_pnl 和 order_id 默认留空，后续通过 REST API 补充
             
             sql_action = """
-                INSERT INTO trade_actions (trade_id, action_type, amount, price, size, action_at, created_at)
-                VALUES (%s, 'CLOSE', %s, %s, 0, %s, NOW())
+                INSERT INTO trade_actions (
+                    trade_id, action_type, amount, price, size, 
+                    realized_pnl, order_id,
+                    action_at, created_at
+                )
+                VALUES (%s, 'CLOSE', %s, %s, 0, %s, %s, %s, NOW())
             """
-            self.db.execute(sql_action, (trade_id, action_amount, close_price, current_time_ms))
+            self.db.execute(sql_action, (trade_id, action_amount, close_price, None, None, current_time_ms))
             print(f"数据库记录平仓交易: {trade_id}")
             
             # 推送事件
