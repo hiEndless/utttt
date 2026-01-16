@@ -37,11 +37,10 @@ trade_logger.addHandler(console_handler)
 
 class TradeL1Listener:
     """
-    直接监听 l1_events stream，过滤指定币种（如 PIPPINUSDT）
+    直接监听 l1_events stream，处理所有币种
     并触发交易决策工作流
     """
     L1_STREAM = "l1_events"
-    TARGET_SYMBOL = os.environ.get("TRADE_SYMBOL", "PIPPINUSDT")  # 可通过环境变量配置
     DEBUG = True
 
     def __init__(self, redis: aioredis.Redis):
@@ -49,18 +48,25 @@ class TradeL1Listener:
         self.l1_stream = self.L1_STREAM
         self.group = "trade_l1_group"
         self.consumer = "trade_l1_consumer"
-        self.target_symbol = self.TARGET_SYMBOL.upper()
         self.event_recorder = get_recorder()
+        
+        # 去重和冷却期配置
+        self.dedup_ttl = 300  # 5分钟内不重复处理相同 event_id
+        self.cooldown_ttl = 10  # 10秒内不重复处理相同 symbol 的事件
+        self.max_concurrent_workflows = 3  # 最大并发工作流数
+        self.running_workflows = set()  # 正在运行的工作流 event_id
         
         trade_logger.info(f"=== Trade L1 Listener 启动 ===")
         trade_logger.info(f"监听流: {self.l1_stream}")
-        trade_logger.info(f"目标币种: {self.target_symbol}")
+        trade_logger.info(f"处理模式: 所有币种")
+        trade_logger.info(f"去重TTL: {self.dedup_ttl}秒 | 冷却期: {self.cooldown_ttl}秒 | 最大并发: {self.max_concurrent_workflows}")
         log_file = os.path.join(TRADE_LOG_DIR, f'trade_decision_{datetime.now().strftime("%Y%m%d")}.log')
         print(f"\n{'='*60}")
         print(f"[TradeListener] 启动成功")
         print(f"  监听流: {self.l1_stream}")
-        print(f"  目标币种: {self.target_symbol}")
+        print(f"  处理模式: 所有币种")
         print(f"  日志文件: {log_file}")
+        print(f"  去重TTL: {self.dedup_ttl}秒 | 冷却期: {self.cooldown_ttl}秒")
         print(f"{'='*60}\n")
 
     @staticmethod
@@ -101,8 +107,36 @@ class TradeL1Listener:
         except Exception as e:
             print(f"[TradeListener] Redis 存储失败: {e}")
 
+    async def _passes_dedup(self, event_id: str) -> bool:
+        """检查事件是否已处理过（去重）"""
+        if not event_id:
+            return True
+        key = f"trade_l1:dedup:{event_id}"
+        try:
+            ok = await self.redis.setnx(key, "1")
+            if ok:
+                await self.redis.expire(key, self.dedup_ttl)
+            return ok is True
+        except Exception as e:
+            trade_logger.debug(f"去重检查失败: {e}")
+            return True  # 出错时允许处理，避免阻塞
+
+    async def _passes_cooldown(self, symbol: str) -> bool:
+        """检查是否在冷却期内（防止短时间内重复处理）"""
+        if not symbol:
+            return True
+        key = f"trade_l1:cooldown:{symbol}"
+        try:
+            ok = await self.redis.setnx(key, "1")
+            if ok:
+                await self.redis.expire(key, self.cooldown_ttl)
+            return ok is True
+        except Exception as e:
+            trade_logger.debug(f"冷却期检查失败: {e}")
+            return True  # 出错时允许处理
+
     async def run(self):
-        """监听 l1_events stream，过滤目标币种并触发交易决策"""
+        """监听 l1_events stream，处理所有币种并触发交易决策"""
         try:
             await self.redis.xgroup_create(self.l1_stream, self.group, id="0", mkstream=True)
         except Exception:
@@ -131,8 +165,34 @@ class TradeL1Listener:
                         
                         symbol = ev.get("symbol", "").upper()
                         
-                        # 只处理目标币种
-                        if symbol != self.target_symbol:
+                        # 跳过没有 symbol 的事件
+                        if not symbol:
+                            await self.redis.xack(self.l1_stream, self.group, entry_id)
+                            continue
+                        
+                        # 构建事件信息（转换为 final_event 格式以便复用工作流）
+                        exchange = "binance"  # 默认，可以从 event_id 解析
+                        event_id = ev.get("event_id", "")
+                        if event_id:
+                            parts = event_id.split(".")
+                            if len(parts) > 0:
+                                exchange = parts[0].lower()
+                        
+                        # 去重检查：如果已处理过，跳过
+                        if not await self._passes_dedup(event_id):
+                            trade_logger.debug(f"跳过重复事件 | {symbol} | event_id={event_id}")
+                            await self.redis.xack(self.l1_stream, self.group, entry_id)
+                            continue
+                        
+                        # 冷却期检查：如果 symbol 在冷却期内，跳过
+                        if not await self._passes_cooldown(symbol):
+                            trade_logger.debug(f"跳过冷却期内事件 | {symbol} | event_id={event_id}")
+                            await self.redis.xack(self.l1_stream, self.group, entry_id)
+                            continue
+                        
+                        # 并发限制：如果正在运行的工作流太多，跳过
+                        if len(self.running_workflows) >= self.max_concurrent_workflows:
+                            trade_logger.debug(f"并发限制，跳过 | {symbol} | event_id={event_id} | 运行中={len(self.running_workflows)}")
                             await self.redis.xack(self.l1_stream, self.group, entry_id)
                             continue
                         
@@ -145,14 +205,6 @@ class TradeL1Listener:
                             "total_score": ev.get("total_score"),
                             "priority": ev.get("result_priority", ev.get("priority", "low"))
                         })
-                        
-                        # 构建事件信息（转换为 final_event 格式以便复用工作流）
-                        exchange = "binance"  # 默认，可以从 event_id 解析
-                        event_id = ev.get("event_id", "")
-                        if event_id:
-                            parts = event_id.split(".")
-                            if len(parts) > 0:
-                                exchange = parts[0].lower()
                         
                         # 构建 info 对象（兼容 SignalValidationWorkflow）
                         info = {
@@ -203,13 +255,18 @@ class TradeL1Listener:
                         
                         # 触发交易决策工作流
                         try:
+                            # 添加到运行中集合
+                            self.running_workflows.add(event_id)
+                            
                             wf = SignalValidationWorkflow()
                             # 异步启动工作流（不等待完成）
                             workflow_task = asyncio.create_task(wf.arun(info))
                             
-                            # 等待工作流完成并记录结果
+                            # 等待工作流完成并记录结果（完成后从集合中移除）
                             asyncio.create_task(self._wait_and_log_workflow(symbol, event_id, workflow_task))
                         except Exception as e:
+                            # 出错时也要从集合中移除
+                            self.running_workflows.discard(event_id)
                             trade_logger.error(f"工作流启动失败 | {symbol} | event_id={event_id} | error={e}")
                             self._log_trade_event("WORKFLOW_ERROR", symbol, {
                                 "event_id": event_id,
@@ -276,6 +333,9 @@ class TradeL1Listener:
                 "event_id": event_id,
                 "error": str(e)
             })
+        finally:
+            # 无论成功还是失败，都要从运行中集合移除
+            self.running_workflows.discard(event_id)
 
 
 async def _run():

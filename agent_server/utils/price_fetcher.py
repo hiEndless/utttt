@@ -106,7 +106,8 @@ async def get_mark_price(
 async def get_mark_price_from_redis(
         exchange: str,
         symbol: str,
-        use_hash: bool = True
+        use_hash: bool = True,
+        db: int | None = None
 ) -> Optional[float]:
     """
     直接从 Redis 读取 mark_price（工具方法）
@@ -114,6 +115,7 @@ async def get_mark_price_from_redis(
     :param exchange: 交易所名称
     :param symbol: 交易对
     :param use_hash: 是否使用 HGET 读取（Redis Hash 结构）
+    :param db: 指定 Redis DB，如果为 None 则使用 settings.redis_db
     :return: mark_price (float) 或 None
     
     使用示例：
@@ -123,10 +125,16 @@ async def get_mark_price_from_redis(
     
     # 方式2: 普通 GET
     price = await get_mark_price_from_redis("binance", "BTCUSDT", use_hash=False)
+    
+    # 方式3: 指定 DB
+    price = await get_mark_price_from_redis("binance", "BTCUSDT", db=1)
     ```
     """
     try:
-        redis_client = RedisClient()
+        # 如果指定了 db，使用指定的 DB；否则使用默认配置
+        from agent_server.config import settings
+        current_db = db if db is not None else settings.redis_db
+        redis_client = RedisClient(db=db) if db is not None else RedisClient()
         price_key = f"price:{exchange}:{symbol}"
 
         if use_hash:
@@ -137,21 +145,58 @@ async def get_mark_price_from_redis(
             if price_str:
                 try:
                     mark_price = float(price_str)
-                    logger.debug(f"从 Redis Hash 读取 mark_price: {mark_price} ({symbol})")
+                    logger.debug(f"从 Redis Hash 读取 mark_price: {mark_price} ({symbol}) | DB={current_db}")
                     return mark_price
                 except (ValueError, TypeError):
                     logger.debug(f"价格格式无效: {price_str} ({symbol})")
                     return None
             else:
-                logger.debug(f"Redis Hash 中未找到 price 字段: {price_key}")
+                logger.warning(f"Redis Hash 中未找到 price 字段: {price_key} | DB={current_db}")
+                # 尝试从其他 DB 读取（DB 8 -> DB 1）
+                if db is None:
+                    db_candidates = [8, 1]
+                    db_candidates = [d for d in db_candidates if d != current_db]  # 排除已尝试的 DB
+                    
+                    for try_db in db_candidates:
+                        try:
+                            logger.debug(f"尝试从 DB {try_db} 读取价格数据...")
+                            redis_client_try = RedisClient(db=try_db)
+                            price_str_try = await redis_client_try.client.hget(price_key, "price")
+                            if price_str_try:
+                                mark_price = float(price_str_try)
+                                logger.info(f"从 DB {try_db} 读取到价格: {mark_price} ({symbol})")
+                                return mark_price
+                        except Exception as e:
+                            logger.debug(f"从 DB {try_db} 读取失败: {e}")
+                            continue
                 return None
         else:
             # 使用 GET 读取普通字符串或 JSON
             price_data_str = await redis_client.get(price_key)
 
             if not price_data_str:
-                logger.debug(f"Redis 中未找到价格数据: {price_key}")
-                return None
+                logger.warning(f"Redis 中未找到价格数据: {price_key} | DB={current_db}")
+                # 尝试从其他 DB 读取（DB 8 -> DB 1）
+                if db is None:
+                    db_candidates = [8, 1]
+                    db_candidates = [d for d in db_candidates if d != current_db]  # 排除已尝试的 DB
+                    
+                    for try_db in db_candidates:
+                        try:
+                            logger.debug(f"尝试从 DB {try_db} 读取价格数据...")
+                            redis_client_try = RedisClient(db=try_db)
+                            price_data_str = await redis_client_try.get(price_key)
+                            if price_data_str:
+                                logger.info(f"从 DB {try_db} 读取到价格数据: {symbol}")
+                                break
+                        except Exception as e:
+                            logger.debug(f"从 DB {try_db} 读取失败: {e}")
+                            continue
+                    
+                    if not price_data_str:
+                        return None
+                else:
+                    return None
 
             try:
                 price_data = json.loads(price_data_str)
@@ -160,7 +205,7 @@ async def get_mark_price_from_redis(
                 mark_price = float(price_data_str)
 
             if mark_price > 0:
-                logger.debug(f"从 Redis 读取 mark_price: {mark_price} ({symbol})")
+                logger.debug(f"从 Redis 读取 mark_price: {mark_price} ({symbol}) | DB={current_db}")
                 return mark_price
             else:
                 logger.debug(f"Redis 中的 price 无效: {mark_price} ({symbol})")

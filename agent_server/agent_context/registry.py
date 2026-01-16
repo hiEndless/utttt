@@ -119,4 +119,14 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.bias",
         ],
     },
+
+    "trade_decision": {
+        "agent": "trade_decision",
+        "role": "trade_execution",
+        "scope": ["cross"],
+        "uses_crowd_state": True,
+        "allows_cross_timeframe_inference": True,
+        "forbidden_semantics": [],
+        "allowed_paths": [],  # 特殊：full context
+    },
 }
