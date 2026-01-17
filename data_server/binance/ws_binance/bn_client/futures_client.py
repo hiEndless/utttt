@@ -273,7 +273,7 @@ class BinanceFuturesClient:
                             "qty": round(close_qty_sum, 6),
                             "entry_time": open_time,
                             "close_time": ts,
-                            "open_price": round(avg_open_price, 6),
+                            "entry_price": round(avg_open_price, 6),
                             "close_price": round(close_price, 6),
                             "gross_pnl": round(realized_pnl_sum, 6),
                             "notional": round(notional, 6),
@@ -333,7 +333,7 @@ class BinanceFuturesClient:
                             "qty": round(close_qty_sum, 6),
                             "entry_time": open_time,
                             "close_time": ts,
-                            "open_price": round(avg_open_price, 6),
+                            "entry_price": round(avg_open_price, 6),
                             "close_price": round(close_price, 6),
                             "gross_pnl": round(realized_pnl_sum, 6),
                             "notional": round(notional, 6),
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     API_KEY = os.getenv("BINANCE_API_KEY", "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0")
     API_SECRET = os.getenv("BINANCE_API_SECRET", "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B")
 
-    symbol = "BTCUSDT"
+    symbol = "ETHUSDT"
 
     try:
         client = BinanceFuturesClient(API_KEY, API_SECRET)

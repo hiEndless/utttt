@@ -112,17 +112,24 @@ class TradeRecorder:
                 gross_pnl = matched_cp.get('gross_pnl', 0)
                 return_pct = matched_cp.get('return_pct', 0)
                 pnl_ratio = return_pct * leverage
+                close_time_ms = matched_cp.get('close_time')
+                close_time = self._to_datetime(close_time_ms) if close_time_ms else None
+                entry_price = matched_cp.get('entry_price', 0)
+                close_price = matched_cp.get('close_price', 0)
                 
                 # 4. Update DB
                 sql = """
                     UPDATE trades 
                     SET pnl = %s, 
                         pnl_ratio = %s,
+                        close_time = %s,
+                        entry_price = %s,
+                        close_price = %s,
                         updated_at = NOW()
                     WHERE trade = %s
                 """
-                self.db.execute(sql, (gross_pnl, pnl_ratio, trade_id))
-                print(f"同步平仓PnL成功: {trade_id}, pnl={gross_pnl}, pnl_ratio={pnl_ratio}")
+                self.db.execute(sql, (gross_pnl, pnl_ratio, close_time, entry_price, close_price, trade_id))
+                print(f"同步平仓PnL成功: {trade_id}, pnl={gross_pnl}, pnl_ratio={pnl_ratio}, close_time={close_time}, entry_price={entry_price}, close_price={close_price}")
             else:
                 print(f"未找到匹配的平仓记录: {trade_id}, symbol={symbol}, side={position_side}")
                 
@@ -149,9 +156,9 @@ class TradeRecorder:
                 INSERT INTO trades (
                     trade, symbol, exchange, position_side, leverage, size, max_size, 
                     entry_time, created_at, updated_at, 
-                    pnl, net_pnl, total_commission, pnl_ratio, entry_price
+                    pnl, pnl_ratio, entry_price
                 )
-                VALUES (%s, %s, 'binance', %s, %s, %s, %s, %s, NOW(), NOW(), 0, 0, 0, 0, %s)
+                VALUES (%s, %s, 'binance', %s, %s, %s, %s, %s, NOW(), NOW(), 0, 0, %s)
                 ON CONFLICT (trade) DO NOTHING
             """
             self.db.execute(sql_trade, (
