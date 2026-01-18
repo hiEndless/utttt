@@ -15,6 +15,26 @@ import redis
 # 配置 trade 决策日志
 trade_logger = logging.getLogger("trade_decision")
 
+# 推理日志配置（只配置一次，避免重复）
+REASONING_LOG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "logs")
+os.makedirs(REASONING_LOG_DIR, exist_ok=True)
+
+reasoning_logger = logging.getLogger("trade_reasoning")
+reasoning_logger.setLevel(logging.INFO)
+reasoning_logger.propagate = False
+
+# 检查是否已经有handler，避免重复添加
+if not reasoning_logger.handlers:
+    # 推理日志文件handler
+    reasoning_file_handler = logging.FileHandler(
+        os.path.join(REASONING_LOG_DIR, f"trade_reasoning_{datetime.now().strftime('%Y%m%d')}.log"),
+        encoding='utf-8'
+    )
+    reasoning_file_handler.setFormatter(
+        logging.Formatter('%(asctime)s [REASONING] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    )
+    reasoning_logger.addHandler(reasoning_file_handler)
+
 
 class TradeDecisionExecutionComponent(BaseWorkflowComponent):
     """
@@ -142,31 +162,148 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         
         return []
 
-    def _calculate_tp_sl_from_klines(self, klines_5m: List, klines_15m: List, current_price: float, direction: str) -> Dict[str, float]:
+    def _analyze_trend_from_klines(self, klines_15m: List, klines_30m: List, current_price: float, market_structure: Dict = None) -> Dict[str, any]:
         """
-        根据5m和15m K线数据计算合理的止盈止损百分比（使用ATR类似的方法）
+        根据15m和30m K线数据判断趋势方向，结合市场结构验证
+        
+        Args:
+            klines_15m: 15分钟K线数据列表
+            klines_30m: 30分钟K线数据列表
+            current_price: 当前价格
+            market_structure: 市场结构数据（可选，用于验证）
+        
+        Returns:
+            {"trend": "bullish|bearish|neutral", "strength": "strong|moderate|weak", "confidence": float}
+        """
+        try:
+            trend_signals = []
+            
+            # 分析15m趋势
+            if klines_15m and len(klines_15m) >= 5:
+                recent_15m = klines_15m[-20:] if len(klines_15m) > 20 else klines_15m
+                closes_15m = [float(k[4]) for k in recent_15m if len(k) > 4]
+                if len(closes_15m) >= 5:
+                    # 计算移动平均线（简单移动平均）
+                    ma_short = sum(closes_15m[-5:]) / 5
+                    ma_long = sum(closes_15m[-10:]) / 10 if len(closes_15m) >= 10 else ma_short
+                    
+                    # 判断趋势（更严格的判断：需要价格明显高于/低于均线）
+                    price_vs_ma_short = (closes_15m[-1] - ma_short) / ma_short * 100 if ma_short > 0 else 0
+                    if ma_short > ma_long and price_vs_ma_short > 0.1:  # 价格高于短期均线至少0.1%
+                        trend_signals.append("bullish")
+                    elif ma_short < ma_long and price_vs_ma_short < -0.1:  # 价格低于短期均线至少0.1%
+                        trend_signals.append("bearish")
+                    else:
+                        trend_signals.append("neutral")
+            
+            # 分析30m趋势
+            if klines_30m and len(klines_30m) >= 5:
+                recent_30m = klines_30m[-20:] if len(klines_30m) > 20 else klines_30m
+                closes_30m = [float(k[4]) for k in recent_30m if len(k) > 4]
+                if len(closes_30m) >= 5:
+                    ma_short = sum(closes_30m[-5:]) / 5
+                    ma_long = sum(closes_30m[-10:]) / 10 if len(closes_30m) >= 10 else ma_short
+                    
+                    price_vs_ma_short = (closes_30m[-1] - ma_short) / ma_short * 100 if ma_short > 0 else 0
+                    if ma_short > ma_long and price_vs_ma_short > 0.1:
+                        trend_signals.append("bullish")
+                    elif ma_short < ma_long and price_vs_ma_short < -0.1:
+                        trend_signals.append("bearish")
+                    else:
+                        trend_signals.append("neutral")
+            
+            # 综合判断
+            bullish_count = trend_signals.count("bullish")
+            bearish_count = trend_signals.count("bearish")
+            
+            # 如果市场结构存在，进行验证
+            if market_structure:
+                overall_bias = market_structure.get("market_participant_summary", {}).get("overall_bias", "")
+                if overall_bias:
+                    # 如果市场结构与K线趋势一致，提高置信度
+                    if overall_bias == "long" and bullish_count > bearish_count:
+                        confidence_boost = 0.1
+                    elif overall_bias == "short" and bearish_count > bullish_count:
+                        confidence_boost = 0.1
+                    else:
+                        # 如果不一致，降低置信度，可能趋势判断有误
+                        confidence_boost = -0.2
+                else:
+                    confidence_boost = 0
+            else:
+                confidence_boost = 0
+            
+            if bullish_count > bearish_count:
+                trend = "bullish"
+                strength = "strong" if bullish_count == 2 else "moderate"
+                confidence = min(0.9, max(0.3, (0.8 if bullish_count == 2 else 0.6) + confidence_boost))
+            elif bearish_count > bullish_count:
+                trend = "bearish"
+                strength = "strong" if bearish_count == 2 else "moderate"
+                confidence = min(0.9, max(0.3, (0.8 if bearish_count == 2 else 0.6) + confidence_boost))
+            else:
+                trend = "neutral"
+                strength = "weak"
+                confidence = 0.5
+            
+            return {
+                "trend": trend,
+                "strength": strength,
+                "confidence": confidence
+            }
+        except Exception as e:
+            trade_logger.warning(f"分析趋势失败: {e}")
+            return {"trend": "neutral", "strength": "weak", "confidence": 0.5}
+
+    def _calculate_tp_sl_from_klines(self, klines_5m: List, klines_15m: List, klines_30m: List, current_price: float, direction: str, trend_analysis: Dict = None, is_counter_trend: bool = False) -> Dict[str, float]:
+        """
+        根据5m K线数据计算合理的止盈止损百分比
+        原则：止盈方向的趋势要大于止损方向，有足够的止盈空间和止损保险
         
         Args:
             klines_5m: 5分钟K线数据列表，格式: [[timestamp, open, high, low, close, volume], ...]
-            klines_15m: 15分钟K线数据列表
+            klines_15m: 15分钟K线数据列表（用于参考）
+            klines_30m: 30分钟K线数据列表（用于参考）
             current_price: 当前价格
             direction: 交易方向 "LONG" 或 "SHORT"
+            trend_analysis: 趋势分析结果（可选）
         
         Returns:
             {"tp_percent": float, "sl_percent": float}
         """
         try:
             # 默认值（如果无法计算）
-            default_tp = 1.5  # 1.5%
-            default_sl = 0.8   # 0.8%
+            default_tp = 2.5  # 2.5%
+            default_sl = 1.5   # 1.5%
             
-            if not klines_5m and not klines_15m:
+            if not klines_5m:
                 return {"tp_percent": default_tp, "sl_percent": default_sl}
             
-            # 计算5m周期的ATR（平均真实波幅）- 使用最近14根K线
+            # 分析5m周期的支撑阻力位和波动空间
+            recent_5m = klines_5m[-30:] if len(klines_5m) > 30 else klines_5m  # 使用最近30根（2.5小时）
+            
+            if len(recent_5m) < 5:
+                return {"tp_percent": default_tp, "sl_percent": default_sl}
+            
+            # 提取高低点
+            highs = [float(k[2]) for k in recent_5m if len(k) > 2]
+            lows = [float(k[3]) for k in recent_5m if len(k) > 3]
+            closes = [float(k[4]) for k in recent_5m if len(k) > 4]
+            
+            if not highs or not lows or not closes:
+                return {"tp_percent": default_tp, "sl_percent": default_sl}
+            
+            max_high = max(highs)
+            min_low = min(lows)
+            current_close = closes[-1]
+            
+            # 计算向上和向下的空间
+            upward_space = (max_high - current_price) / current_price * 100 if current_price > 0 else 0
+            downward_space = (current_price - min_low) / current_price * 100 if current_price > 0 else 0
+            
+            # 计算5m的ATR（用于确定最小止损）
             atr_5m = 0.0
-            if klines_5m and len(klines_5m) >= 2:
-                recent_5m = klines_5m[-14:] if len(klines_5m) > 14 else klines_5m
+            if len(recent_5m) >= 2:
                 true_ranges = []
                 for i in range(1, len(recent_5m)):
                     prev_close = float(recent_5m[i-1][4]) if len(recent_5m[i-1]) > 4 else current_price
@@ -182,44 +319,50 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             else:
                 atr_5m_percent = 0.0
             
-            # 计算15m周期的ATR（使用最近10根K线）
-            atr_15m = 0.0
-            if klines_15m and len(klines_15m) >= 2:
-                recent_15m = klines_15m[-10:] if len(klines_15m) > 10 else klines_15m
-                true_ranges = []
-                for i in range(1, len(recent_15m)):
-                    prev_close = float(recent_15m[i-1][4]) if len(recent_15m[i-1]) > 4 else current_price
-                    high = float(recent_15m[i][2]) if len(recent_15m[i]) > 2 else current_price
-                    low = float(recent_15m[i][3]) if len(recent_15m[i]) > 3 else current_price
-                    tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
-                    true_ranges.append(tr)
-                if true_ranges:
-                    atr_15m = sum(true_ranges) / len(true_ranges)
-                    atr_15m_percent = (atr_15m / current_price) * 100 if current_price > 0 else 0
-                else:
-                    atr_15m_percent = 0.0
-            else:
-                atr_15m_percent = 0.0
-            
-            # 使用较大的ATR作为参考（更准确反映波动）
-            avg_atr = max(atr_5m_percent, atr_15m_percent) if atr_5m_percent > 0 or atr_15m_percent > 0 else 0
-            
-            # 根据ATR计算止盈止损（更合理的比例）
-            if avg_atr > 0:
-                # 止盈：2-3倍ATR（但不超过3%）
-                tp_percent = min(avg_atr * 2.5, 3.0)
-                # 止损：1-1.5倍ATR（但不超过1.5%）
-                sl_percent = min(avg_atr * 1.2, 1.5)
+            # 根据交易方向计算止盈止损
+            if direction == "LONG":
+                # 做多：止盈在上方，止损在下方
+                # 止盈：向上空间的60-80%，但至少是2倍ATR，最多5%
+                tp_candidate1 = upward_space * 0.7 if upward_space > 0 else 0
+                tp_candidate2 = atr_5m_percent * 2.5 if atr_5m_percent > 0 else 0
+                tp_percent = max(tp_candidate1, tp_candidate2, 2.0)  # 至少2%
+                tp_percent = min(tp_percent, 5.0)  # 最多5%
                 
-                # 确保最小值
-                tp_percent = max(tp_percent, 0.8)  # 至少0.8%
-                sl_percent = max(sl_percent, 0.5)  # 至少0.5%
-            else:
-                # 如果无法计算ATR，使用默认值
-                tp_percent = default_tp
-                sl_percent = default_sl
+                # 止损：向下空间的40-60%，但至少是1.5倍ATR，最多3%
+                # 止损要足够保险，不能被轻易清洗
+                # 如果是逆势交易，使用更大的止损空间（至少2.5%）
+                sl_candidate1 = downward_space * 0.5 if downward_space > 0 else 0
+                sl_candidate2 = atr_5m_percent * 1.8 if atr_5m_percent > 0 else 0
+                sl_min = 2.5 if is_counter_trend else 1.2  # 逆势交易至少2.5%
+                sl_max = 4.0 if is_counter_trend else 3.0  # 逆势交易最多4%
+                sl_percent = max(sl_candidate1, sl_candidate2, sl_min)
+                sl_percent = min(sl_percent, sl_max)
+                
+                # 确保止盈空间大于止损空间（至少1.3倍）
+                if tp_percent < sl_percent * 1.3:
+                    tp_percent = sl_percent * 1.3
+                    tp_percent = min(tp_percent, 5.0)
+                
+            else:  # SHORT
+                # 做空：止盈在下方，止损在上方
+                tp_candidate1 = downward_space * 0.7 if downward_space > 0 else 0
+                tp_candidate2 = atr_5m_percent * 2.5 if atr_5m_percent > 0 else 0
+                tp_percent = max(tp_candidate1, tp_candidate2, 2.0)
+                tp_percent = min(tp_percent, 5.0)
+                
+                # 如果是逆势交易，使用更大的止损空间（至少2.5%）
+                sl_candidate1 = upward_space * 0.5 if upward_space > 0 else 0
+                sl_candidate2 = atr_5m_percent * 1.8 if atr_5m_percent > 0 else 0
+                sl_min = 2.5 if is_counter_trend else 1.2  # 逆势交易至少2.5%
+                sl_max = 4.0 if is_counter_trend else 3.0  # 逆势交易最多4%
+                sl_percent = max(sl_candidate1, sl_candidate2, sl_min)
+                sl_percent = min(sl_percent, sl_max)
+                
+                if tp_percent < sl_percent * 1.3:
+                    tp_percent = sl_percent * 1.3
+                    tp_percent = min(tp_percent, 5.0)
             
-            trade_logger.info(f"ATR计算 | 5m_ATR={atr_5m_percent:.2f}% | 15m_ATR={atr_15m_percent:.2f}% | 使用={avg_atr:.2f}% | TP={tp_percent:.2f}% | SL={sl_percent:.2f}%")
+            trade_logger.info(f"止盈止损计算 | {direction} | 向上空间={upward_space:.2f}% | 向下空间={downward_space:.2f}% | 5m_ATR={atr_5m_percent:.2f}% | TP={tp_percent:.2f}% | SL={sl_percent:.2f}%")
             
             return {
                 "tp_percent": round(tp_percent, 2),
@@ -227,7 +370,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             }
         except Exception as e:
             trade_logger.warning(f"计算止盈止损失败: {e}")
-            return {"tp_percent": 1.5, "sl_percent": 0.8}
+            return {"tp_percent": 2.5, "sl_percent": 1.5}
 
     async def _push_to_trade_queue(self, trade_json: Dict) -> bool:
         """推送交易订单到 Redis 队列"""
@@ -457,21 +600,30 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         
         trade_logger.info(f"=== 交易决策开始 === | {symbol} | {event_id}")
         
+        # 开始推理日志记录
+        reasoning_logger.info("=" * 80)
+        reasoning_logger.info(f"推理开始 | {symbol} | {event_id} | {datetime.now().isoformat()}")
+        reasoning_logger.info("=" * 80)
+        
         # 1. 获取当前价格
         mark_price = await get_mark_price_from_redis(exchange, symbol)
         if not mark_price or mark_price <= 0:
             trade_logger.warning(f"无法获取当前价格 | {symbol} | event_id={event_id} | key=price:{exchange}:{symbol}")
+            reasoning_logger.warning(f"价格数据 | {symbol} | 无法获取当前价格")
             # 即使没有价格，也继续执行（可能后续步骤会处理）
             mark_price = 0.0
         else:
             trade_logger.info(f"当前价格 | {symbol} | {mark_price}")
+            reasoning_logger.info(f"价格数据 | {symbol} | mark_price={mark_price}")
 
         # 2. 获取 L1 事件
         l1_event = await self._fetch_l1_event(exchange, symbol)
         if l1_event:
             trade_logger.info(f"L1事件 | {symbol} | direction={l1_event.get('direction')} | score={l1_event.get('total_score')}")
+            reasoning_logger.info(f"L1事件数据 | {symbol} | {json.dumps(l1_event, ensure_ascii=False)}")
         else:
             trade_logger.warning(f"未找到L1事件 | {symbol}")
+            reasoning_logger.warning(f"L1事件数据 | {symbol} | 未找到")
 
         # 3. 获取市场结构
         market_structure = await self._fetch_market_structure(exchange, symbol)
@@ -486,16 +638,28 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             alignment = consistency.get("sentiment_alignment", "unknown")
             
             trade_logger.info(f"市场结构 | {symbol} | overall_bias={overall_bias} | funding_bias={funding_bias} | alignment={alignment}")
+            reasoning_logger.info(f"市场结构数据 | {symbol} | overall_bias={overall_bias} | funding_bias={funding_bias} | alignment={alignment}")
+            # 记录完整的市场结构（简化版，避免日志过长）
+            market_structure_summary = {
+                "overall_bias": overall_bias,
+                "funding_bias": funding_bias,
+                "alignment": alignment
+            }
+            reasoning_logger.info(f"市场结构详情 | {symbol} | {json.dumps(market_structure_summary, ensure_ascii=False)}")
         else:
             trade_logger.warning(f"未找到market_structure | {symbol}")
+            reasoning_logger.warning(f"市场结构数据 | {symbol} | 未找到")
 
-        # 3.5. 获取5m和15m K线数据（用于计算止盈止损）
+        # 3.5. 获取K线数据（用于趋势判断和止盈止损计算）
         klines_5m = await self._fetch_klines(exchange, symbol, "5m")
         klines_15m = await self._fetch_klines(exchange, symbol, "15m")
+        klines_30m = await self._fetch_klines(exchange, symbol, "30m")
         if klines_5m:
             trade_logger.info(f"获取到5m K线数据 | {symbol} | 数量={len(klines_5m)}")
         if klines_15m:
             trade_logger.info(f"获取到15m K线数据 | {symbol} | 数量={len(klines_15m)}")
+        if klines_30m:
+            trade_logger.info(f"获取到30m K线数据 | {symbol} | 数量={len(klines_30m)}")
 
         # 4. 获取当前持仓（从 position_risk 结果中提取）
         positions = []
@@ -528,6 +692,23 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         
         trade_logger.info(f"风控建议 | {symbol} | risk_state={risk_advice.get('risk_state')} | action={risk_advice.get('recommended_action')}")
 
+        # 5.1. 分析15m和30m趋势（用于判断大趋势方向）
+        # 获取市场结构用于趋势验证
+        market_structure_data = None
+        try:
+            market_structure_key = f"background:binance:{symbol}:market_structure"
+            rc = RedisClient()
+            market_structure_str = await rc.client.get(market_structure_key)
+            if market_structure_str:
+                market_structure_data = json.loads(market_structure_str) if isinstance(market_structure_str, str) else market_structure_str
+        except Exception as e:
+            trade_logger.debug(f"获取市场结构失败 | {symbol} | {e}")
+        
+        trend_analysis = self._analyze_trend_from_klines(klines_15m, klines_30m, mark_price, market_structure_data)
+        trade_logger.info(f"趋势分析 | {symbol} | 15m+30m趋势={trend_analysis.get('trend')} | 强度={trend_analysis.get('strength')} | 置信度={trend_analysis.get('confidence')}")
+        reasoning_logger.info(f"趋势分析结果 | {symbol} | {json.dumps(trend_analysis, ensure_ascii=False)}")
+        reasoning_logger.info(f"K线数据统计 | {symbol} | 5m={len(klines_5m)}根 | 15m={len(klines_15m)}根 | 30m={len(klines_30m)}根")
+
         query = {
             "symbol": symbol,
             "exchange": exchange,
@@ -547,6 +728,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             },
             "l1_event": l1_event or {},
             "market_structure": market_structure or {},
+            "trend_analysis": trend_analysis,  # 添加趋势分析结果
             "positions": positions,
             "default_margin": 200.0,  # 默认保证金 200U
             "default_leverage": 20.0  # 默认杠杆 20倍
@@ -555,6 +737,11 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         # 6. 调用 TradeDecisionExpert
         trade_logger.info(f"调用TradeDecisionExpert | {symbol} | {event_id}")
         
+        # 记录LLM查询内容
+        query_str = json.dumps(query, ensure_ascii=False, indent=2)
+        reasoning_logger.info(f"LLM查询输入 | {symbol} | {event_id}")
+        reasoning_logger.info(f"查询内容:\n{query_str}")
+        
         try:
             import asyncio
             # 设置超时：60秒
@@ -562,8 +749,11 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 self.expert.run(json.dumps(query, ensure_ascii=False)),
                 timeout=60.0
             )
+            reasoning_logger.info(f"LLM响应 | {symbol} | {event_id} | 响应长度={len(td_output_str)}")
+            reasoning_logger.info(f"LLM原始响应:\n{td_output_str[:2000]}")  # 限制长度避免日志过长
         except asyncio.TimeoutError:
             trade_logger.error(f"TradeDecisionExpert 调用超时 | {symbol} | {event_id}")
+            reasoning_logger.error(f"LLM调用异常 | {symbol} | {event_id} | 超时（60秒）")
             td_output = {
                 "decision": "NO_ACTION",
                 "should_execute": False,
@@ -572,6 +762,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             }
         except Exception as e:
             trade_logger.error(f"TradeDecisionExpert 调用失败 | {symbol} | {event_id} | {e}")
+            reasoning_logger.error(f"LLM调用异常 | {symbol} | {event_id} | 错误={e}")
             td_output = {
                 "decision": "NO_ACTION",
                 "should_execute": False,
@@ -588,17 +779,27 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                     extracted = _extract_json_from_text(td_output["raw"])
                     if extracted:
                         td_output = extracted
+                        reasoning_logger.info(f"LLM输出解析 | {symbol} | 从raw字段提取JSON成功")
+                    else:
+                        reasoning_logger.warning(f"LLM输出解析 | {symbol} | 从raw字段提取JSON失败")
             except json.JSONDecodeError:
                 # 如果直接解析失败，尝试提取 JSON
+                reasoning_logger.warning(f"LLM输出解析 | {symbol} | JSON解析失败，尝试提取")
                 from agent_server.agents.experts.utils import _extract_json_from_text
                 extracted = _extract_json_from_text(td_output_str)
                 if extracted:
                     td_output = extracted
+                    reasoning_logger.info(f"LLM输出解析 | {symbol} | 提取JSON成功")
                 else:
                     td_output = {"raw": td_output_str, "decision": "NO_ACTION", "should_execute": False}
+                    reasoning_logger.warning(f"LLM输出解析 | {symbol} | 提取JSON失败，使用默认值")
             except Exception as e:
                 trade_logger.warning(f"解析 TradeDecisionExpert 输出失败 | {symbol} | {e}")
+                reasoning_logger.error(f"LLM输出解析异常 | {symbol} | 错误={e}")
                 td_output = {"raw": td_output_str, "decision": "NO_ACTION", "should_execute": False}
+            
+            # 记录解析后的决策结果
+            reasoning_logger.info(f"LLM决策结果 | {symbol} | {json.dumps(td_output, ensure_ascii=False, indent=2)}")
 
         decision = td_output.get("decision", "NO_ACTION")
         should_execute = td_output.get("should_execute", False)
@@ -609,38 +810,121 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         if "reasoning" in td_output:
             trade_logger.info(f"决策理由 | {symbol} | {json.dumps(td_output.get('reasoning'), ensure_ascii=False)}")
 
+        # 6.5. 验证开仓方向是否与趋势一致（代码层面二次验证 - 放宽限制）
+        if should_execute and decision in ["OPEN_LONG", "OPEN_SHORT"]:
+            trend = trend_analysis.get("trend", "neutral")
+            strength = trend_analysis.get("strength", "weak")
+            l1_score = abs(float(l1_event.get("total_score", 0))) if l1_event else 0
+            
+            reasoning_logger.info(f"趋势验证 | {symbol} | LLM决策={decision} | 趋势={trend} | 强度={strength} | L1分数={l1_score}")
+            
+            # 严格趋势验证：strong趋势时，完全禁止逆势交易（除非L1信号极端强烈>=60）
+            # 这是为了避免逆势交易导致亏损
+            if trend == "bullish" and strength == "strong" and decision == "OPEN_SHORT":
+                if l1_score < 60:  # 只有极端强烈的L1信号(>=60)才允许逆势
+                    trade_logger.warning(f"趋势冲突 | {symbol} | 趋势=bullish(strong)但决策=OPEN_SHORT，禁止逆势交易（L1信号={l1_score}）")
+                    reasoning_logger.warning(f"趋势冲突检测 | {symbol} | 趋势=bullish(strong)但决策=OPEN_SHORT，禁止逆势交易（L1信号={l1_score}）")
+                    decision = "NO_ACTION"
+                    should_execute = False
+                    td_output["decision"] = "NO_ACTION"
+                    td_output["should_execute"] = False
+                    td_output["reason"] = f"趋势分析显示bullish(strong)，禁止逆势做空（L1信号={l1_score}，需要>=60才允许逆势）"
+                else:
+                    reasoning_logger.warning(f"趋势冲突但允许 | {symbol} | 趋势=bullish(strong)但L1信号极端强烈({l1_score})，允许逆势做空但风险极高")
+            elif trend == "bearish" and strength == "strong" and decision == "OPEN_LONG":
+                if l1_score < 60:  # 只有极端强烈的L1信号(>=60)才允许逆势
+                    trade_logger.warning(f"趋势冲突 | {symbol} | 趋势=bearish(strong)但决策=OPEN_LONG，禁止逆势交易（L1信号={l1_score}）")
+                    reasoning_logger.warning(f"趋势冲突检测 | {symbol} | 趋势=bearish(strong)但决策=OPEN_LONG，禁止逆势交易（L1信号={l1_score}）")
+                    decision = "NO_ACTION"
+                    should_execute = False
+                    td_output["decision"] = "NO_ACTION"
+                    td_output["should_execute"] = False
+                    td_output["reason"] = f"趋势分析显示bearish(strong)，禁止逆势做多（L1信号={l1_score}，需要>=60才允许逆势）"
+                else:
+                    reasoning_logger.warning(f"趋势冲突但允许 | {symbol} | 趋势=bearish(strong)但L1信号极端强烈({l1_score})，允许逆势做多但风险极高")
+            else:
+                if trend != "neutral" and strength in ["strong", "moderate"]:
+                    # 趋势与决策一致，记录
+                    if (trend == "bullish" and decision == "OPEN_LONG") or (trend == "bearish" and decision == "OPEN_SHORT"):
+                        reasoning_logger.info(f"趋势验证通过 | {symbol} | 决策={decision} | 趋势={trend}({strength}) | 方向一致")
+                    else:
+                        reasoning_logger.info(f"趋势验证通过 | {symbol} | 决策={decision} | 趋势={trend}({strength}) | 方向冲突但L1信号足够强({l1_score})，允许开仓")
+                else:
+                    reasoning_logger.info(f"趋势验证通过 | {symbol} | 决策={decision} | 趋势={trend}({strength}) | 趋势不明确，基于L1信号决策")
+
         # 7. 如果 should_execute==true，推送到交易队列
+        calculated_tp_sl = None  # 初始化变量
         if should_execute and decision in ["OPEN_LONG", "OPEN_SHORT", "CLOSE", "REDUCE"]:
-            # 根据5m和15m K线数据计算合理的止盈止损
+            reasoning_logger.info(f"执行交易准备 | {symbol} | decision={decision} | should_execute={should_execute}")
+            
+            # 检查是否逆势交易
+            is_counter_trend = False
+            if trend_analysis:
+                trend = trend_analysis.get("trend", "neutral")
+                strength = trend_analysis.get("strength", "weak")
+                if strength == "strong":
+                    if (trend == "bullish" and decision == "OPEN_SHORT") or (trend == "bearish" and decision == "OPEN_LONG"):
+                        is_counter_trend = True
+                        reasoning_logger.warning(f"逆势交易检测 | {symbol} | 决策={decision} | 趋势={trend}({strength}) | 将使用更大的止损空间")
+            
+            # 根据5m K线数据计算合理的止盈止损（考虑趋势和支撑阻力）
             calculated_tp_sl = self._calculate_tp_sl_from_klines(
                 klines_5m, 
-                klines_15m, 
+                klines_15m,
+                klines_30m,
                 mark_price, 
-                "LONG" if decision in ["OPEN_LONG"] else "SHORT"
+                "LONG" if decision in ["OPEN_LONG"] else "SHORT",
+                trend_analysis,
+                is_counter_trend
             )
-            trade_logger.info(f"计算止盈止损 | {symbol} | 5m波动={len(klines_5m)}根 | 15m波动={len(klines_15m)}根 | TP={calculated_tp_sl['tp_percent']}% | SL={calculated_tp_sl['sl_percent']}%")
+            trade_logger.info(f"计算止盈止损 | {symbol} | 5m数据={len(klines_5m)}根 | TP={calculated_tp_sl['tp_percent']}% | SL={calculated_tp_sl['sl_percent']}%")
+            reasoning_logger.info(f"止盈止损计算 | {symbol} | {json.dumps(calculated_tp_sl, ensure_ascii=False)}")
             
             trade_json = self._build_trade_json(td_output, event_data, mark_price, calculated_tp_sl)
             if trade_json:
+                reasoning_logger.info(f"交易JSON构建 | {symbol} | {json.dumps(trade_json, ensure_ascii=False, indent=2)}")
+                
                 success = await self._push_to_trade_queue(trade_json)
                 td_output["trade_pushed"] = success
                 td_output["trade_json"] = trade_json
                 
                 if success:
                     trade_logger.info(f"交易订单已推送 | {symbol} | {decision} | quantity={trade_json.get('sums')} | price={trade_json.get('openAvgPx')}")
+                    reasoning_logger.info(f"交易推送成功 | {symbol} | {decision} | quantity={trade_json.get('sums')} | price={trade_json.get('openAvgPx')} | TP={trade_json.get('tp_trigger_px')}% | SL={trade_json.get('sl_trigger_px')}%")
                 else:
                     trade_logger.error(f"交易订单推送失败 | {symbol} | {decision}")
+                    reasoning_logger.error(f"交易推送失败 | {symbol} | {decision}")
             else:
                 td_output["trade_pushed"] = False
                 td_output["error"] = "无法构建交易 JSON"
                 trade_logger.error(f"无法构建交易JSON | {symbol} | {decision}")
+                reasoning_logger.error(f"交易JSON构建失败 | {symbol} | {decision}")
         else:
             td_output["trade_pushed"] = False
             td_output["reason"] = f"should_execute={should_execute}, decision={decision}"
             trade_logger.info(f"不执行交易 | {symbol} | reason={td_output.get('reason')}")
+            reasoning_logger.info(f"不执行交易 | {symbol} | reason={td_output.get('reason')}")
 
         # 记录完整决策过程到 Redis
         await self._save_decision_to_redis(symbol, event_id, td_output, query)
+
+        # 记录最终推理结果摘要
+        final_summary = {
+            "symbol": symbol,
+            "event_id": event_id,
+            "decision": decision,
+            "should_execute": should_execute,
+            "confidence": confidence,
+            "trend_analysis": trend_analysis,
+            "calculated_tp_sl": calculated_tp_sl,
+            "trade_pushed": td_output.get("trade_pushed", False),
+            "reasoning": td_output.get("reasoning", [])
+        }
+        reasoning_logger.info(f"推理结果摘要 | {symbol} | {json.dumps(final_summary, ensure_ascii=False, indent=2)}")
+        reasoning_logger.info("=" * 80)
+        reasoning_logger.info(f"推理完成 | {symbol} | {event_id} | decision={decision}")
+        reasoning_logger.info("=" * 80)
+        reasoning_logger.info("")  # 空行分隔
 
         trade_logger.info(f"=== 交易决策完成 === | {symbol} | {event_id} | decision={decision}")
         
