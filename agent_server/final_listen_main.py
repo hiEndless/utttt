@@ -12,7 +12,7 @@ from agent_server.tools.price_fetcher import get_mark_price
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
-    DEBUG = True
+    DEBUG = False
 
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
@@ -130,7 +130,11 @@ class RouterFinalListener:
                             asyncio.create_task(wf.arun(info))
                         elif info.get("symbol") and info.get("route") == "trade":
                             # 处理 trade 类型信号
-                            is_short_term = meta.get("is_short_term", "false").lower() == "true"
+                            raw_is_short = meta.get("is_short_term", False)
+                            if isinstance(raw_is_short, str):
+                                is_short_term = raw_is_short.lower() == "true"
+                            else:
+                                is_short_term = bool(raw_is_short)
                             
                             # 触发 TradeReviewWorkflow (示例)
                             # wf = TradeReviewWorkflow()

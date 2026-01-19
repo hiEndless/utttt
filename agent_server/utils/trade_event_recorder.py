@@ -183,12 +183,13 @@ class TradeEventRecorder:
             if redis_trade_ids:
                 # 如果指定了 position_side，需要过滤
                 if position_side:
-                    # 需要查询每个 trade_id 对应的 position_side
-                    for tid in redis_trade_ids:
-                        sql = "SELECT position_side FROM trades WHERE trade = %s AND close_time IS NULL"
-                        result = self.db.fetch_one(sql, [tid])
-                        if result and result.get("position_side") == position_side:
-                            trade_ids.append(tid)
+                    with PostgresDB() as db:
+                        # 需要查询每个 trade_id 对应的 position_side
+                        for tid in redis_trade_ids:
+                            sql = "SELECT position_side FROM trades WHERE trade = %s AND close_time IS NULL"
+                            result = db.fetch_one(sql, [tid])
+                            if result and result.get("position_side") == position_side:
+                                trade_ids.append(tid)
                 else:
                     trade_ids = redis_trade_ids
                 
@@ -203,31 +204,32 @@ class TradeEventRecorder:
         
         # 2. Redis 未找到，查询数据库（未平仓的交易）
         try:
-            sql = """
-                SELECT trade, position_side FROM trades
-                WHERE exchange = %s AND symbol = %s AND close_time IS NULL
-            """
-            params = [exchange, symbol]
-            
-            if position_side:
-                sql += " AND position_side = %s"
-                params.append(position_side)
-            
-            sql += " ORDER BY entry_time DESC"
-            
-            results = self.db.fetch_all(sql, params)
-            
-            if results:
-                for row in results:
-                    trade_id = row[0] if isinstance(row, tuple) else row.get("trade")
-                    if trade_id:
-                        trade_ids.append(trade_id)
+            with PostgresDB() as db:
+                sql = """
+                    SELECT trade, position_side FROM trades
+                    WHERE exchange = %s AND symbol = %s AND close_time IS NULL
+                """
+                params = [exchange, symbol]
                 
-                logger.info(
-                    f"从数据库获取活跃交易: exchange={exchange}, symbol={symbol}, "
-                    f"position_side={position_side}, trade_ids={trade_ids}"
-                )
-                return trade_ids
+                if position_side:
+                    sql += " AND position_side = %s"
+                    params.append(position_side)
+                
+                sql += " ORDER BY entry_time DESC"
+                
+                results = db.fetch_all(sql, params)
+                
+                if results:
+                    for row in results:
+                        trade_id = row[0] if isinstance(row, tuple) else row.get("trade")
+                        if trade_id:
+                            trade_ids.append(trade_id)
+                    
+                    logger.info(
+                        f"从数据库获取活跃交易: exchange={exchange}, symbol={symbol}, "
+                        f"position_side={position_side}, trade_ids={trade_ids}"
+                    )
+                    return trade_ids
             
             logger.warning(
                 f"未找到活跃交易: exchange={exchange}, symbol={symbol}, position_side={position_side}"
@@ -263,72 +265,72 @@ class TradeEventRecorder:
             # 多空双开场景：同一 event_id 可能对应多个 trade_id
             # 通过 (event_id, trade_id) 联合唯一来区分不同持仓的事件
             
-            check_sql = "SELECT id FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
-            existing = self.db.fetch_one(check_sql, [event_id, trade_id])
-            
-            if existing:
-                # 已存在，更新记录
-                update_sql = """
-                    UPDATE trade_events SET
-                        event_at = %s,
-                        mark_price = %s,
-                        market_context = %s,
-                        event_data = %s,
-                        indicators_snapshot = %s,
-                        symbol = %s,
-                        exchange = %s
-                    WHERE event_id = %s AND trade_id = %s
-                """
-                update_params = [
-                    event_at,
-                    mark_price,
-                    json.dumps(market_context, ensure_ascii=False),
-                    json.dumps(event_data, ensure_ascii=False),
-                    json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
-                    symbol,
-                    exchange,
-                    event_id,
-                    trade_id,
-                ]
-                self.db.execute(update_sql, update_params)
-                logger.info(f"事件已更新: trade_id={trade_id}, event_id={event_id}, event_type={event_type}")
-            else:
-                # 不存在，插入新记录
-                sql = """
-                    INSERT INTO trade_events (
-                        trade_id, event_id, event_type, event_at,
-                        direction, mark_price,
-                        market_context, event_data, indicators_snapshot,
-                        is_verified, verification_at, post_summary,
-                        symbol, exchange
-                    ) VALUES (
-                        %s, %s, %s, %s,
-                        %s, %s,
-                        %s, %s, %s,
-                        %s, %s, %s,
-                        %s, %s
-                    )
-                """
+            with PostgresDB() as db:
+                check_sql = "SELECT id FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
+                existing = db.fetch_one(check_sql, [event_id, trade_id])
                 
-                params = [
-                    trade_id,
-                    event_id,  # 保持原始 event_id 格式
-                    event_type,
-                    event_at,
-                    direction,
-                    mark_price,
-                    json.dumps(market_context, ensure_ascii=False),
-                    json.dumps(event_data, ensure_ascii=False),
-                    json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
-                    False,  # is_verified
-                    None,   # verification_at
-                    None,   # post_summary
-                    symbol,
-                    exchange
-                ]
-                
-                self.db.execute(sql, params)
-                logger.info(f"事件已入库: trade_id={trade_id}, event_id={event_id}, event_type={event_type}")
+                if existing:
+                    # 已存在，更新记录
+                    update_sql = """
+                        UPDATE trade_events SET
+                            event_at = %s,
+                            mark_price = %s,
+                            market_context = %s,
+                            event_data = %s,
+                            indicators_snapshot = %s,
+                            symbol = %s,
+                            exchange = %s
+                        WHERE event_id = %s AND trade_id = %s
+                    """
+                    update_params = [
+                        event_at,
+                        mark_price,
+                        json.dumps(market_context, ensure_ascii=False),
+                        json.dumps(event_data, ensure_ascii=False),
+                        json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
+                        symbol,
+                        exchange,
+                        event_id,
+                        trade_id,
+                    ]
+                    db.execute(update_sql, update_params)
+                    logger.info(f"事件已更新: trade_id={trade_id}, event_id={event_id}, event_type={event_type}")
+                else:
+                    # 不存在，插入新记录
+                    sql = """
+                        INSERT INTO trade_events (
+                            trade_id, event_id, event_type, event_at,
+                            direction, mark_price,
+                            market_context, event_data, indicators_snapshot,
+                            is_verified, verification_at,
+                            symbol, exchange
+                        ) VALUES (
+                            %s, %s, %s, %s,
+                            %s, %s,
+                            %s, %s, %s,
+                            %s, %s,
+                            %s, %s
+                        )
+                    """
+                    
+                    params = [
+                        trade_id,
+                        event_id,  # 保持原始 event_id 格式
+                        event_type,
+                        event_at,
+                        direction,
+                        mark_price,
+                        json.dumps(market_context, ensure_ascii=False),
+                        json.dumps(event_data, ensure_ascii=False),
+                        json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
+                        False,  # is_verified
+                        None,   # verification_at
+                        symbol,
+                        exchange
+                    ]
+                    
+                    db.execute(sql, params)
+                    logger.info(f"事件已入库: trade_id={trade_id}, event_id={event_id}, event_type={event_type}")
             
         except Exception as e:
             logger.error(f"事件入库失败: {e}, trade_id={trade_id}", exc_info=True)
@@ -430,28 +432,29 @@ class TradeEventRecorder:
         """
         try:
             def _update_sync():
-                # 检查事件是否存在（至少存在一条）
-                check_sql = "SELECT id FROM trade_events WHERE event_id = %s LIMIT 1"
-                existing = self.db.fetch_one(check_sql, [event_id])
-                
-                if not existing:
-                    logger.warning(f"事件不存在，无法更新: event_id={event_id}")
-                    return False
-                
-                # 更新所有匹配 event_id 的记录的 market_context 字段
-                # 无论是多空双开还是单开，只要 event_id 匹配，说明它们共享同一个市场背景
-                update_sql = """
-                    UPDATE trade_events 
-                    SET market_context = %s
-                    WHERE event_id = %s
-                """
-                self.db.execute(update_sql, [
-                    json.dumps(market_context, ensure_ascii=False),
-                    event_id
-                ])
-                
-                logger.info(f"市场背景快照已更新: event_id={event_id}, exchange={exchange}, symbol={symbol}")
-                return True
+                with PostgresDB() as db:
+                    # 检查事件是否存在（至少存在一条）
+                    check_sql = "SELECT id FROM trade_events WHERE event_id = %s LIMIT 1"
+                    existing = db.fetch_one(check_sql, [event_id])
+                    
+                    if not existing:
+                        logger.warning(f"事件不存在，无法更新: event_id={event_id}")
+                        return False
+                    
+                    # 更新所有匹配 event_id 的记录的 market_context 字段
+                    # 无论是多空双开还是单开，只要 event_id 匹配，说明它们共享同一个市场背景
+                    update_sql = """
+                        UPDATE trade_events 
+                        SET market_context = %s
+                        WHERE event_id = %s
+                    """
+                    db.execute(update_sql, [
+                        json.dumps(market_context, ensure_ascii=False),
+                        event_id
+                    ])
+                    
+                    logger.info(f"市场背景快照已更新: event_id={event_id}, exchange={exchange}, symbol={symbol}")
+                    return True
             
             # 异步执行
             loop = asyncio.get_event_loop()
@@ -477,69 +480,70 @@ class TradeEventRecorder:
         """
         try:
             def _save_sync():
-                # 1. 找到关联的 trade_events
-                sql = "SELECT id FROM trade_events WHERE event_id = %s"
-                params = [event_id]
-                
-                if trade_id:
-                    sql += " AND trade_id = %s"
-                    params.append(trade_id)
-                
-                event_rows = self.db.fetch_all(sql, params)
-                
-                if not event_rows:
-                    logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
-                    return False
-                
-                event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
-                
-                # 2. 提取通用字段
-                verdict = analysis_data.get("verdict")
-                confidence = analysis_data.get("confidence")
-                suggestion = analysis_data.get("suggestion")
-                # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
-                final_model_version = model_version or analysis_data.get("model_version")
-                
-                # 获取实时 mark_price
-                mark_price = get_mark_price_sync({"symbol": symbol, "exchange": exchange}, exchange)
-                if mark_price is None:
-                    mark_price = analysis_data.get("mark_price")
+                with PostgresDB() as db:
+                    # 1. 找到关联的 trade_events
+                    sql = "SELECT id FROM trade_events WHERE event_id = %s"
+                    params = [event_id]
+                    
+                    if trade_id:
+                        sql += " AND trade_id = %s"
+                        params.append(trade_id)
+                    
+                    event_rows = db.fetch_all(sql, params)
+                    
+                    if not event_rows:
+                        logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
+                        return False
+                    
+                    event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
+                    
+                    # 2. 提取通用字段
+                    verdict = analysis_data.get("verdict")
+                    confidence = analysis_data.get("confidence")
+                    suggestion = analysis_data.get("suggestion")
+                    # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
+                    final_model_version = model_version or analysis_data.get("model_version")
+                    
+                    # 获取实时 mark_price
+                    mark_price = get_mark_price_sync({"symbol": symbol, "exchange": exchange}, exchange)
+                    if mark_price is None:
+                        mark_price = analysis_data.get("mark_price")
 
-                reasoning = analysis_data.get("reasoning")
-                full_output = analysis_data  # 整个数据存为 full_output
-                
-                # 3. 为每个关联的事件插入分析记录
-                insert_sql = """
-                    INSERT INTO agent_analyses (
-                        event_id, agent_name, model_version,
-                        verdict, confidence, suggestion, mark_price,
-                        reasoning, full_output, created_at,
-                        symbol, exchange
-                    ) VALUES (
-                        %s, %s, %s,
-                        %s, %s, %s, %s,
-                        %s, %s, NOW(),
-                        %s, %s
-                    )
-                """
-                
-                for event_db_id in event_db_ids:
-                    self.db.execute(insert_sql, [
-                        event_db_id,
-                        agent_name,
-                        final_model_version,
-                        verdict,
-                        confidence,
-                        suggestion,
-                        mark_price,
-                        json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
-                        json.dumps(full_output, ensure_ascii=False),
-                        symbol,
-                        exchange
-                    ])
-                
-                logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")
-                return True
+                    reasoning = analysis_data.get("reasoning")
+                    full_output = analysis_data  # 整个数据存为 full_output
+                    
+                    # 3. 为每个关联的事件插入分析记录
+                    insert_sql = """
+                        INSERT INTO agent_analyses (
+                            event_id, agent_name, model_version,
+                            verdict, confidence, suggestion, mark_price,
+                            reasoning, full_output, created_at,
+                            symbol, exchange
+                        ) VALUES (
+                            %s, %s, %s,
+                            %s, %s, %s, %s,
+                            %s, %s, NOW(),
+                            %s, %s
+                        )
+                    """
+                    
+                    for event_db_id in event_db_ids:
+                        db.execute(insert_sql, [
+                            event_db_id,
+                            agent_name,
+                            final_model_version,
+                            verdict,
+                            confidence,
+                            suggestion,
+                            mark_price,
+                            json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
+                            json.dumps(full_output, ensure_ascii=False),
+                            symbol,
+                            exchange
+                        ])
+                    
+                    logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")
+                    return True
 
             # 异步执行
             loop = asyncio.get_event_loop()
