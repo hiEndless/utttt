@@ -85,6 +85,7 @@ if __name__ == "__main__":
     from agent_server.tools.tf_validation import compute_tf_validation
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
+    from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
 
     final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
                     'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
@@ -99,5 +100,6 @@ if __name__ == "__main__":
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
     event_id = final_signal.get("event_id")
-    action = final_signal.get("event_type").split('.')[-1]
-    print(event_type)
+    trade_details = final_signal.get("trade_details")
+    trade_core = abstract_trade_event(trade_details)
+    print(trade_core)
