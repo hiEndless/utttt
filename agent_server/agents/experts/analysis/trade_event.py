@@ -4,6 +4,7 @@ from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.trade_event import prompt
 from agno.models.message import Message
 import json
+import asyncio
 import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
@@ -81,6 +82,8 @@ class TradeEventExpert:
 
 if __name__ == "__main__":
     from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
+    from agent_server.agent_context.builder import build_agent_context
+    from agent_server.utils.redis_client import RedisClient
 
     final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
                     'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
@@ -97,4 +100,22 @@ if __name__ == "__main__":
     event_id = final_signal.get("event_id")
     trade_details = final_signal.get("trade_details")
     trade_core = abstract_trade_event(trade_details)
-    print(trade_core)
+
+    async def _read_market_state(ex: str, sym: str):
+        rc = RedisClient()
+        key = f"background:{ex}:{sym}:market_state"
+        v = await rc.get(key)
+        try:
+            return json.loads(v or "{}") if v else {}
+        except Exception:
+            return {}
+
+    async def _demo():
+        bg = await _read_market_state(exchange, symbol)
+        full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
+                                                               "crowd_state": {}}
+        ctx = build_agent_context("signal_validation", full_context)
+        print(ctx)
+
+
+    asyncio.run(_demo())

@@ -119,4 +119,24 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.bias",
         ],
     },
+
+    "trade_event": {
+        "agent": "trade_event",
+        "role": "trade_analysis",
+        "scope": ["micro", "short"],
+        "uses_crowd_state": True,
+        "allows_cross_timeframe_inference": False,
+        "forbidden_semantics": [
+            "strategy_advice",
+        ],
+        "allowed_paths": [
+            "market_state.micro_term.state",
+            "market_state.short_term.direction",
+            "market_state.short_term.risk",
+            "market_state.mid_term.direction",
+            "crowd_state.bias",
+            "crowd_state.crowding_level",
+            "crowd_state.funding_pressure",
+        ],
+    },
 }
