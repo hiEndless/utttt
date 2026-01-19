@@ -79,3 +79,25 @@ class TradeEventExpert:
         output = _json_dumps_safe(final_result)
         print(output)
         return output
+
+
+if __name__ == "__main__":
+    from agent_server.tools.tf_validation import compute_tf_validation
+    from agent_server.agent_context.builder import build_agent_context
+    from agent_server.utils.redis_client import RedisClient
+
+    final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
+                    'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
+                    'timestamp': '1768803852754', 'market_state': None, 'direction': None, 'confidence': None,
+                    'confidence_numeric': None, 'priority_weight': None, 'l1_total_score': None, 'tf_hint': None,
+                    'analysis_context': {}, 'meta': {'source_event_id': 'binance.ETHUSDT.trade.open.1768803852754',
+                                                     'origin_source_hint': 'trade', 'is_short_term': False},
+                    'trade_details': {'trade_id': 'e95cbad77cde4d8e80d405d1ff9a6f5f', 'position_side': 'SHORT',
+                                      'current_size': '-0.007', 'entry_price': '3193.0', 'mark_price': '3193.00000000',
+                                      'pnl_ratio': '0.0', 'action': 'OPEN', 'change_amount': '-0.007'}}
+
+    exchange = final_signal.get("exchange")
+    symbol = final_signal.get("symbol")
+    event_id = final_signal.get("event_id")
+    action = final_signal.get("event_type").split('.')[-1]
+    print(event_type)

@@ -195,12 +195,12 @@ if __name__ == "__main__":
     import asyncio
     import os
     import sys
-    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
-    from agent_server.agents.experts.background.crowd_state_compactor import crowd_state_compactor
+    from agent_server.agents.experts.background.utils.crowd_state_compactor import crowd_state_compactor
 
     API_KLINE_READ = "/kline/background/read_multi"
 

@@ -4,8 +4,8 @@ from typing import Dict, List
 from agent_server.config import settings
 from agent_server.agents.experts.background.market_structure import MarketStructureExpert
 from agent_server.agents.experts.background.kline import KLineExpert
-from agent_server.agents.experts.background.market_state import market_state_aggregator, save_market_state, has_full_intervals
-from agent_server.agents.experts.background.crowd_state_compactor import crowd_state_compactor
+from agent_server.agents.experts.background.utils.market_state import market_state_aggregator, save_market_state, has_full_intervals
+from agent_server.agents.experts.background.utils.crowd_state_compactor import crowd_state_compactor
 from agent_server.utils.http_client import http_client
 
 API_MR_ANALYZE = "/market_raw/analyze"
