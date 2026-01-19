@@ -1,8 +1,7 @@
 from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.signal_validation import SignalValidationExpert
-from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
-from agent_server.tools.tf_validation import compute_tf_validation
+from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
 import json

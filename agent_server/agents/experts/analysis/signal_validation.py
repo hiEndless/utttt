@@ -8,7 +8,6 @@ import asyncio
 import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
-    _ensure_json_serializable,
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
@@ -82,7 +81,7 @@ class SignalValidationExpert:
 
 
 if __name__ == "__main__":
-    from agent_server.tools.tf_validation import compute_tf_validation
+    from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
 

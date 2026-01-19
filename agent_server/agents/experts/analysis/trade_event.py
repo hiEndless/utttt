@@ -4,11 +4,9 @@ from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.trade_event import prompt
 from agno.models.message import Message
 import json
-import asyncio
 import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
-    _ensure_json_serializable,
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
@@ -82,9 +80,6 @@ class TradeEventExpert:
 
 
 if __name__ == "__main__":
-    from agent_server.tools.tf_validation import compute_tf_validation
-    from agent_server.agent_context.builder import build_agent_context
-    from agent_server.utils.redis_client import RedisClient
     from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
 
     final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
