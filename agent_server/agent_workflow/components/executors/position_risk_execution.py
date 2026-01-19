@@ -40,6 +40,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         # 2. 准备上下文数据
         agent_output = sv_output.get("agent_output", sv_output)
         verdict = agent_output.get("verdict", "UNKNOWN")
+        alignment = agent_output.get("alignment")
         
         # 优先使用上游传递的 context，如果缺失则自行获取
         if full_context:
@@ -76,6 +77,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 symbol=symbol,
                 position_side=position_snapshot.get("position_side", "LONG"),
                 verdict=verdict,
+                alignment=alignment,
                 entry_ts=int(position_snapshot.get("entry_ts", 0)),
                 event_ts=ts_now,
             )

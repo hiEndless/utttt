@@ -100,6 +100,7 @@ if __name__ == "__main__":
     event_id = final_signal.get("event_id")
     trade_details = final_signal.get("trade_details")
     trade_core = abstract_trade_event(trade_details)
+    print(trade_core)
 
     async def _read_market_state(ex: str, sym: str):
         rc = RedisClient()

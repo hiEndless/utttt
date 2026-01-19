@@ -103,12 +103,13 @@ if __name__ == "__main__":
     sv_out = {
         "_context_meta": {"agent": "signal_validation", "role": "technical_signal", "scope": ["short", "mid", "long"],
                           "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000, "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
-        "agent_output": {"verdict": "INVALID", "direction": "bearish", "confidence_adjustment": "down",
+        "agent_output": {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
                          "reasoning": ["所有关键周期（15m/30m/1h）tf_validation_conclusion均为conflict，构成硬性技术否决条件。",
                                        "市场短期虽为bearish，但动能持续减弱，且长期方向中性并具veto权，削弱方向环境支持。",
                                        "人群结构显示高拥挤度与高脆弱性，多头主导下易引发反向挤压，加剧方向失效风险。"]}}
 
     verdict = sv_out["agent_output"]["verdict"]
+    alignment = sv_out["agent_output"].get("alignment")
     ts = sv_out["_context_meta"]["ts"]
     exchange = sv_out["_context_meta"]["exchange"]
     symbol = sv_out["_context_meta"]["symbol"]
@@ -121,7 +122,7 @@ if __name__ == "__main__":
     initialMargin = position.pop("initialMargin")  # 占用保证金，用于计算仓位占比
 
 
-    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, entry_ts: int,
+    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, alignment: str, entry_ts: int,
                       ts: int):
         state = await reduce_temporal_state(
             exchange=exchange,
@@ -129,6 +130,7 @@ if __name__ == "__main__":
             symbol=symbol,
             position_side=position_side,
             verdict=verdict,
+            alignment=alignment,
             entry_ts=entry_ts,
             event_ts=ts,
         )
@@ -136,7 +138,7 @@ if __name__ == "__main__":
         return state
 
 
-    state = asyncio.run(_reduce(exchange, trade_id, symbol, position_side, verdict, entry_ts, ts))
+    state = asyncio.run(_reduce(exchange, trade_id, symbol, position_side, verdict, alignment, entry_ts, ts))
 
     expert = PositionRiskExpert()
 

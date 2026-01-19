@@ -499,7 +499,7 @@ class TradeEventRecorder:
                     
                     # 2. 提取通用字段
                     verdict = analysis_data.get("verdict")
-                    confidence = analysis_data.get("confidence")
+                    alignment = analysis_data.get("alignment")
                     suggestion = analysis_data.get("suggestion")
                     # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
                     final_model_version = model_version or analysis_data.get("model_version")
@@ -516,7 +516,7 @@ class TradeEventRecorder:
                     insert_sql = """
                         INSERT INTO agent_analyses (
                             event_id, agent_name, model_version,
-                            verdict, confidence, suggestion, mark_price,
+                            verdict, alignment, suggestion, mark_price,
                             reasoning, full_output, created_at,
                             symbol, exchange
                         ) VALUES (
@@ -533,7 +533,7 @@ class TradeEventRecorder:
                             agent_name,
                             final_model_version,
                             verdict,
-                            confidence,
+                            alignment,
                             suggestion,
                             mark_price,
                             json.dumps(reasoning, ensure_ascii=False) if reasoning else None,

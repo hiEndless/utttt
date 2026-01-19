@@ -164,7 +164,7 @@ class AgentAnalysis(models.Model):
 
     # 核心产出
     verdict = fields.CharField(null=True, max_length=32, description="结论 (VALID, INVALID, HOLD, REDUCE...)")
-    confidence = fields.FloatField(null=True, description="置信度 (0-1)")
+    alignment = fields.CharField(null=True, max_length=32, description="方向与市场结构是否对齐 (ALIGNED | CONFLICT | STRONGLY_CONFLICT)")
     
     # 风控专用字段
     suggestion = fields.CharField(max_length=32, null=True, description="持仓建议 (ADD_POSITION, HOLD, DEFENSIVE, REDUCE, EXIT)")

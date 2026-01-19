@@ -41,7 +41,8 @@ async def reduce_temporal_state(
         trade_id: str,
         symbol: str,
         position_side: str,  # LONG / SHORT
-        verdict: str,  # INVALID / CONFLICT / VALID / STRONG
+        verdict: str,  # INVALID / WEAK_VALID / VALID
+        alignment: Optional[str] = None,  # STRONGLY_CONFLICT / CONFLICT / ALIGNED
         entry_ts: int,  # 由 Position Tracker 提供
         event_ts: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -50,7 +51,7 @@ async def reduce_temporal_state(
 
     - 不扫描仓位
     - 不推断 entry_ts
-    - 只压缩 verdict 序列
+    - 只压缩 verdict/alignment 序列
     """
 
     rc = RedisClient()
@@ -58,6 +59,7 @@ async def reduce_temporal_state(
 
     now_ts = int(event_ts or time.time() * 1000)
     verdict = (verdict or "").upper()
+    alignment = (alignment or "").upper()
 
     # -------------------------
     # 读取旧状态（如果不存在则初始化）
@@ -75,20 +77,33 @@ async def reduce_temporal_state(
     # -------------------------
     # Streak 状态机（核心逻辑）
     # -------------------------
-    if verdict == "INVALID":
+    
+    # 1. 致命风险 (INVALID / STRONGLY_CONFLICT)
+    if verdict == "INVALID" or alignment == "STRONGLY_CONFLICT":
         invalid_streak = min(invalid_streak + 1, STREAK_CAP)
         conflict_streak = 0
         valid_streak = 0
 
-    elif verdict == "CONFLICT":
+    # 2. 结构冲突 (WEAK_VALID / CONFLICT)
+    # 注意：旧代码中的 verdict="CONFLICT" 映射到此处
+    elif verdict == "WEAK_VALID" or verdict == "CONFLICT" or alignment == "CONFLICT":
         conflict_streak = min(conflict_streak + 1, STREAK_CAP)
         invalid_streak = 0
         valid_streak = 0
 
+    # 3. 结构一致 (VALID / ALIGNED)
+    # 必须 alignment 也为 ALIGNED (或为空以兼容旧逻辑)
     elif verdict in ("VALID", "STRONG"):
-        valid_streak = min(valid_streak + 1, STREAK_CAP)
-        invalid_streak = 0
-        conflict_streak = 0
+        # 如果 alignment 存在且不为 ALIGNED，则不能算完全 VALID Streak (降级处理)
+        if alignment and alignment != "ALIGNED":
+             # 这种情况理论上不应发生(已被上面捕获)，但作为兜底，归入 conflict
+             conflict_streak = min(conflict_streak + 1, STREAK_CAP)
+             invalid_streak = 0
+             valid_streak = 0
+        else:
+            valid_streak = min(valid_streak + 1, STREAK_CAP)
+            invalid_streak = 0
+            conflict_streak = 0
 
     else:
         # 未知 verdict：保持原状态（不建议，但安全）
@@ -110,6 +125,7 @@ async def reduce_temporal_state(
         "holding_duration_min": holding_duration_min,
 
         "last_verdict": verdict,
+        "last_alignment": alignment,  # 新增字段记录
 
         "invalid_streak": invalid_streak,
         "conflict_streak": conflict_streak,
@@ -136,7 +152,8 @@ if __name__ == "__main__":
             trade_id="acc_1",
             symbol="BTCUSDT",
             position_side="LONG",
-            verdict="VALID",
+            verdict="WEAK_VALID",
+            alignment="CONFLICT",
             entry_ts=int(time.time() * 1000) - 3600000,
             event_ts=int(time.time() * 1000),
         )
