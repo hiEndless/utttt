@@ -5,6 +5,7 @@ import json
 import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
+from agent_server.agent_workflow.trade_event_workflow import TradeEventWorkflow
 from agent_server.utils.trade_event_recorder import get_recorder
 from agent_server.utils.analysis_verifier import AnalysisVerifier
 from agent_server.tools.price_fetcher import get_mark_price
@@ -135,11 +136,10 @@ class RouterFinalListener:
                                 is_short_term = raw_is_short.lower() == "true"
                             else:
                                 is_short_term = bool(raw_is_short)
-                            
-                            # 触发 TradeReviewWorkflow (示例)
-                            # wf = TradeReviewWorkflow()
-                            # asyncio.create_task(wf.arun(info, is_short_term=is_short_term))
-                            pass
+                            info["is_short_term"] = is_short_term
+                                
+                            wf = TradeEventWorkflow()
+                            asyncio.create_task(wf.arun(info))
                     
                     # 确认消息已处理
                     await self.redis.xack(self.final_stream, self.group, entry_id)

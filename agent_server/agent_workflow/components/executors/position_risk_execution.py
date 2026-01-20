@@ -28,6 +28,10 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         event_data = prev_result["event_data"]
         prev_output = prev_result["output"]
         full_context = prev_result["full_context"]
+        # 判断是否有skipped字段
+        if prev_output.get("skipped"):
+            print(f"--- 持仓风控跳过：{event_data.get('symbol')} (Previous Skipped) ---")
+            return self._safe_json_dumps(prev_output)
 
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")

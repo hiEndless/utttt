@@ -17,6 +17,20 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         event_data = ctx.input
         print(f"--- 交易事件分析：{event_data.get('symbol')} ---")
 
+        # 预判逻辑：如果是开仓事件或短线交易，跳过 LLM 分析以节省成本
+        # event_type 格式通常为 "trade.open" 或 "trade.close"
+        event_type_raw = event_data.get("event_type", "")
+        event_action = event_type_raw.split(".")[-1].lower() if event_type_raw else "unknown"
+        is_short_term = event_data.get("is_short_term", False)
+
+        if event_action == "open" or is_short_term:
+            print(f"  -> 跳过分析: Action={event_action}, ShortTerm={is_short_term}")
+            return self._safe_json_dumps({
+                "event_data": event_data,
+                "output": {"skipped": True, "reason": f"action_{event_action}_shortterm_{is_short_term}"},
+                "full_context": None,
+            })
+
         symbol = event_data.get("symbol", "unknown")
         exchange = event_data.get("exchange", "binance")
         event_id = event_data.get("event_id")
