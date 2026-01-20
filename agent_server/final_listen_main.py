@@ -123,7 +123,6 @@ class RouterFinalListener:
                     asyncio.create_task(self.analysis_verifier.verify_previous_analyses(info, mark_price))
                     
                     # 7. 根据路由分发任务
-                    # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
                     if not self.DEBUG:
                         if info.get("symbol") and info.get("route") == "indicators":
                             wf = SignalValidationWorkflow()
