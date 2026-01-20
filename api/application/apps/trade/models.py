@@ -108,7 +108,7 @@ class TradeEvent(models.Model):
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="事件发生时的价格")
     
     # 原始输入快照 (JSON)
-    market_context = fields.JSONField(description="市场背景快照 (Trend, Volatility...)")
+    market_context = fields.JSONField(null=True, description="市场背景快照 (Trend, Volatility...)")
     event_data = fields.JSONField(description="事件原始数据 (analysis_context)")
     indicators_snapshot = fields.JSONField(null=True, description="关键技术指标快照 (EMA, MACD, RSI...)")
     

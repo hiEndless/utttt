@@ -256,7 +256,8 @@ class TradeEventRecorder:
                 event_at = event_at * 1000
             direction = self._extract_direction(event_info)
             
-            market_context = self._extract_market_context(event_info)
+            # market_context = self._extract_market_context(event_info)
+            market_context = None
             event_data = self._extract_event_data(event_info)
             indicators_snapshot = self._extract_indicators_snapshot(event_info)
             
