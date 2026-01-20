@@ -26,7 +26,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         prev_result = self._parse_step_content(ctx.previous_step_content)
 
         event_data = prev_result["event_data"]
-        sv_output = prev_result["sv_output"]
+        prev_output = prev_result["output"]
         full_context = prev_result["full_context"]
 
         symbol = event_data.get("symbol")
@@ -36,9 +36,20 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         # 1. 获取持仓
         positions = get_position(exchange, symbol)
+
+        # 针对交易事件，只评估对应方向的持仓
+        if event_data.get("route") == "trade":
+            trade_details = event_data.get("trade_details", {})
+            target_side = trade_details.get("position_side")
+            if target_side:
+                positions = [
+                    p for p in positions
+                    if str(p.get("position_side")).upper() == str(target_side).upper()
+                ]
+                print(f"  -> [Trade Event] 仅评估 {target_side} 方向持仓")
         
         # 2. 准备上下文数据
-        agent_output = sv_output.get("agent_output", sv_output)
+        agent_output = prev_output.get("agent_output", prev_output)
         verdict = agent_output.get("verdict", "UNKNOWN")
         alignment = agent_output.get("alignment")
         
@@ -193,7 +204,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "decision": decision,
                 "details": r
             })
-
+        print(decisions)
         return self._safe_json_dumps({
             "decisions": decisions,
             "risk_results": parsed_results,

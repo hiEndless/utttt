@@ -69,6 +69,6 @@ class SignalValidationComponent(BaseWorkflowComponent):
 
         return self._safe_json_dumps({
             "event_data": event_data,
-            "sv_output": sv_output,
+            "output": sv_output,
             "full_context": full_context,
         })
