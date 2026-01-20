@@ -31,8 +31,24 @@ class TradeEventExpert:
             instructions=prompt,
         )
 
+        # 预处理 query，分离 LLM 核心输入与系统元数据
+        try:
+            qobj = json.loads(query) if isinstance(query, str) else (query or {})
+        except Exception:
+            qobj = {}
+
+        # 构造 LLM 专用精简输入（去除 symbol, event_id 等元数据）
+        trade_core = qobj.get("trade_core", {})
+        context_data = qobj.get("context", {})
+        
+        # 展平结构: trade_core + context (包含 market_state, crowd_state 等)
+        llm_input = {
+            "trade_core": trade_core,
+            **context_data
+        }
+
         run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+            Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
             stream=False,
             debug_mode=True,
         )
@@ -57,10 +73,6 @@ class TradeEventExpert:
                 final_result = extracted_raw
 
         # 构建产出物系统数据结构
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
         event_id = qobj.get("event_id")
@@ -98,9 +110,11 @@ if __name__ == "__main__":
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
     event_id = final_signal.get("event_id")
+    direction = final_signal.get("direction")
     trade_details = final_signal.get("trade_details")
     trade_core = abstract_trade_event(trade_details)
-    print(trade_core)
+
+    expert = TradeEventExpert()
 
     async def _read_market_state(ex: str, sym: str):
         rc = RedisClient()
@@ -116,7 +130,14 @@ if __name__ == "__main__":
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
                                                                "crowd_state": {}}
         ctx = build_agent_context("signal_validation", full_context)
-        print(ctx)
+        query = {
+            "symbol": symbol,
+            "exchange": exchange,
+            "event_id": event_id,
+            "trade_core": trade_core,
+            "context": ctx,
+        }
+        await expert.run(query)
 
 
     asyncio.run(_demo())
