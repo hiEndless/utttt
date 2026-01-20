@@ -208,7 +208,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "decision": decision,
                 "details": r
             })
-        print(decisions)
+
         return self._safe_json_dumps({
             "decisions": decisions,
             "risk_results": parsed_results,
