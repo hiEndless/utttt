@@ -115,6 +115,15 @@ class RouterFinalListener:
                     # 6. 异步入库事件（不阻塞后续处理）
                     # 使用统一的 get_mark_price 组件获取价格
                     mark_price = await get_mark_price(info, exchange)
+
+                    if info.get("symbol") and info.get("route") == "trade":
+                        # 处理 trade 类型信号
+                        raw_is_short = meta.get("is_short_term", False)
+                        if isinstance(raw_is_short, str):
+                            is_short_term = raw_is_short.lower() == "true"
+                        else:
+                            is_short_term = bool(raw_is_short)
+                        info["is_short_term"] = is_short_term
                     
                     # 创建入库任务（不等待结果，避免阻塞）
                     asyncio.create_task(self.event_recorder.save_event(info, mark_price))
@@ -129,14 +138,6 @@ class RouterFinalListener:
                             # 异步启动工作流
                             asyncio.create_task(wf.arun(info))
                         elif info.get("symbol") and info.get("route") == "trade":
-                            # 处理 trade 类型信号
-                            raw_is_short = meta.get("is_short_term", False)
-                            if isinstance(raw_is_short, str):
-                                is_short_term = raw_is_short.lower() == "true"
-                            else:
-                                is_short_term = bool(raw_is_short)
-                            info["is_short_term"] = is_short_term
-                                
                             wf = TradeEventWorkflow()
                             asyncio.create_task(wf.arun(info))
                     

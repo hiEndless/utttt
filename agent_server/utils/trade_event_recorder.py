@@ -261,17 +261,47 @@ class TradeEventRecorder:
             event_data = self._extract_event_data(event_info)
             indicators_snapshot = self._extract_indicators_snapshot(event_info)
             
+            # 判断是否需要自动标记为已验证（仅针对交易事件：跳过分析的事件）
+            is_verified = False
+            event_summary = None
+            
+            if event_info.get("route") == "trade":
+                # 1. 开仓事件
+                is_open_event = "trade.open" in event_type.lower()
+                # 2. 短线交易事件 (从 event_info 获取，或者从 meta 获取)
+                is_short_term = event_info.get("is_short_term")
+                if is_short_term is None:
+                    meta = event_info.get("meta") or {}
+                    raw_short = meta.get("is_short_term")
+                    if isinstance(raw_short, str):
+                        is_short_term = raw_short.lower() == "true"
+                    else:
+                        is_short_term = bool(raw_short)
+                
+                if is_open_event:
+                    is_verified = True
+                    event_summary = "系统策略：开仓事件不进行即时Agent分析，默认标记为已验证。"
+                elif is_short_term:
+                    is_verified = True
+                    event_summary = "系统策略：短线高频交易不进行Agent分析，默认标记为已验证。"
+
             # 插入 trade_events 表
             # 注意：外键字段名是 trade_id (对应 Trade 模型的 trade 字段)
             # 多空双开场景：同一 event_id 可能对应多个 trade_id
             # 通过 (event_id, trade_id) 联合唯一来区分不同持仓的事件
             
             with PostgresDB() as db:
-                check_sql = "SELECT id FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
+                check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
                 existing = db.fetch_one(check_sql, [event_id, trade_id])
                 
                 if existing:
                     # 已存在，更新记录
+                    # 如果本次判定需要验证，或者数据库中已经是验证状态，则保持为 True
+                    # 避免将已验证（True）的记录覆盖为未验证（False）
+                    db_is_verified = existing[1] if isinstance(existing, tuple) else existing.get("is_verified")
+                    final_is_verified = is_verified or db_is_verified
+                    
+                    # 构建更新语句
                     update_sql = """
                         UPDATE trade_events SET
                             event_at = %s,
@@ -280,8 +310,8 @@ class TradeEventRecorder:
                             event_data = %s,
                             indicators_snapshot = %s,
                             symbol = %s,
-                            exchange = %s
-                        WHERE event_id = %s AND trade_id = %s
+                            exchange = %s,
+                            is_verified = %s
                     """
                     update_params = [
                         event_at,
@@ -291,9 +321,17 @@ class TradeEventRecorder:
                         json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
                         symbol,
                         exchange,
-                        event_id,
-                        trade_id,
+                        final_is_verified
                     ]
+                    
+                    # 只有当本次有特定的 summary 时才更新该字段，避免覆盖人工 summary
+                    if event_summary:
+                        update_sql += ", event_summary = %s"
+                        update_params.append(event_summary)
+                        
+                    update_sql += " WHERE event_id = %s AND trade_id = %s"
+                    update_params.extend([event_id, trade_id])
+                    
                     db.execute(update_sql, update_params)
                     logger.info(f"事件已更新: trade_id={trade_id}, event_id={event_id}, event_type={event_type}")
                 else:
@@ -304,13 +342,15 @@ class TradeEventRecorder:
                             direction, mark_price,
                             market_context, event_data, indicators_snapshot,
                             is_verified, verification_at,
-                            symbol, exchange
+                            symbol, exchange,
+                            event_summary
                         ) VALUES (
                             %s, %s, %s, %s,
                             %s, %s,
                             %s, %s, %s,
                             %s, %s,
-                            %s, %s
+                            %s, %s,
+                            %s
                         )
                     """
                     
@@ -324,10 +364,11 @@ class TradeEventRecorder:
                         json.dumps(market_context, ensure_ascii=False),
                         json.dumps(event_data, ensure_ascii=False),
                         json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
-                        False,  # is_verified
+                        is_verified,  # 使用计算出的 is_verified
                         None,   # verification_at
                         symbol,
-                        exchange
+                        exchange,
+                        event_summary
                     ]
                     
                     db.execute(sql, params)
