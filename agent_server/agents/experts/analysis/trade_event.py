@@ -96,6 +96,7 @@ if __name__ == "__main__":
     from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
+    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 
     final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
                     'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
@@ -130,6 +131,12 @@ if __name__ == "__main__":
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
                                                                "crowd_state": {}}
         ctx = build_agent_context("signal_validation", full_context)
+        
+        # Inject deterministic crowd interpretation
+        position_side = trade_details.get("position_side", "flat")
+        interpretation = build_crowd_interpretation(full_context, position_side)
+        ctx["crowd_interpretation"] = interpretation
+        
         query = {
             "symbol": symbol,
             "exchange": exchange,
