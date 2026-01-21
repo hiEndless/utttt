@@ -266,8 +266,10 @@ class TradeEventRecorder:
             event_summary = None
             
             if event_info.get("route") == "trade":
-                # 1. 开仓事件
+                # 1. 开仓/平仓事件
                 is_open_event = "trade.open" in event_type.lower()
+                is_close_event = "trade.close" in event_type.lower()
+                
                 # 2. 短线交易事件 (从 event_info 获取，或者从 meta 获取)
                 is_short_term = event_info.get("is_short_term")
                 if is_short_term is None:
@@ -280,10 +282,13 @@ class TradeEventRecorder:
                 
                 if is_open_event:
                     is_verified = True
-                    event_summary = "系统策略：开仓事件不进行即时Agent分析，默认标记为已验证。"
+                    event_summary = "系统策略：开仓事件不进行分析"
+                elif is_close_event:
+                    is_verified = True
+                    event_summary = "系统策略：平仓事件不进行分析"
                 elif is_short_term:
                     is_verified = True
-                    event_summary = "系统策略：短线高频交易不进行Agent分析，默认标记为已验证。"
+                    event_summary = "系统策略：短线高频交易不进行分析"
 
             # 插入 trade_events 表
             # 注意：外键字段名是 trade_id (对应 Trade 模型的 trade 字段)
