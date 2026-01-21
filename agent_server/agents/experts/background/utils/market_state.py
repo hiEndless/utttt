@@ -182,6 +182,7 @@ async def save_market_state(exchange: str, symbol: str, market_state: Dict) -> N
     key = f"background:{exchange}:{symbol}:market_state"
     await client.set_json(key, market_state)
 
+
 def has_full_intervals(kline_backgrounds: List[Dict]) -> bool:
     present = set()
     for bg in kline_backgrounds:
@@ -190,11 +191,13 @@ def has_full_intervals(kline_backgrounds: List[Dict]) -> bool:
             present.add(itv)
     return REQUIRED_INTERVALS.issubset(present)
 
+
 if __name__ == "__main__":
     import json
     import asyncio
     import os
     import sys
+
     _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
@@ -230,10 +233,16 @@ if __name__ == "__main__":
             crowd_raw = (crowd_res or {}).get("data") if isinstance(crowd_res, dict) else None
             crowd_compact = crowd_state_compactor(crowd_raw or {})
 
+            # 提取 crowd_positioning 字段
+            crowd_positioning = crowd_raw.pop("crowd_positioning", None)
             agg = market_state_aggregator("BTCUSDT", items, crowd_compact)
+
+            if crowd_positioning:
+                agg["crowd_positioning"] = crowd_positioning
             print(json.dumps(agg, ensure_ascii=False))
             await save_market_state("binance", "BTCUSDT", agg)
         finally:
             await http_client.close()
+
 
     asyncio.run(run())

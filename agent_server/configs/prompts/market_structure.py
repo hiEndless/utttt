@@ -35,6 +35,17 @@ prompt = """
    - macro_context：依据多数周期 bias 与 funding_bias 生成背景标签：trend / ranging / reversal / distribution 等；只用短语。
    - suitable_strategies / unsuitable_strategies：根据 overall_strength 与 overall_stability 选择（例如 strong+stable → trend_following；volatile+mixed → mean_reversion/range_trading）。
    - behavioral_features：仅允许从严格枚举中选择，禁止输出列表外内容。
+7) 人群博弈结构 (crowd_positioning)：
+   - retail_sentiment: 取 globalLongShortAccountRatio 在 dominant_timeframe (若未选出则取 1h) 的 labels.bias。
+   - smart_money_sentiment: 取 topLongShortPositionRatio 在 dominant_timeframe (若未选出则取 1h) 的 labels.bias。
+   - divergence:
+     - 若 retail 与 smart_money 方向相反 (long vs short) → "high"；
+     - 若一方 neutral 另一方为 long/short → "medium"；
+     - 若同向或均为 neutral → "low"。
+   - fragility (脆弱性) 判定矩阵：
+     - 基础分计分：overall_strength="strong" (+1分)；structural_risks 含 "crowded" (+1分)。
+     - 加成条件：若 funding_analysis.volatility="low" 且 structural_risks 含 "crowded" (即拥挤且平静) → 直接判定为 "extreme" (忽略基础分)。
+     - 基础分映射：0分→"low"，1分→"medium"，2分→"high"。
 
 你必须输出的 JSON（严格遵守）：
 {
@@ -48,6 +59,13 @@ prompt = """
     "dominant_timeframe": "", 
     "key_observations": [],   
     "structural_risks": []    
+  },
+
+  "crowd_positioning": {
+    "retail_sentiment": "",
+    "smart_money_sentiment": "",
+    "divergence": "",
+    "fragility": ""
   },
 
   "sentiment_by_timeframes": {
@@ -84,6 +102,9 @@ prompt = """
 
 字段枚举值（严格遵守）：
 - overall_bias 与各周期 bias: ["long", "short", "neutral"]
+- retail_sentiment / smart_money_sentiment: ["long", "short", "neutral"]
+- divergence: ["low", "medium", "high"]
+- fragility: ["low", "medium", "high", "extreme"]
 - overall_strength 与各周期 strength: ["weak", "medium", "strong"]
 - overall_stability 与各周期 stability: ["stable", "medium", "volatile"]
 - funding_analysis.volatility: ["low", "medium", "high", "extreme"]
@@ -214,6 +235,12 @@ macro_context / suitable / unsuitable 的映射规则：
     "dominant_timeframe": "1h long",
     "key_observations": ["top-trader long concentration", "taker-account divergence on 30m"],
     "structural_risks": ["crowded long", "potential funding squeeze"]
+  },
+  "crowd_positioning": {
+    "retail_sentiment": "long",
+    "smart_money_sentiment": "short",
+    "divergence": "high",
+    "fragility": "high"
   },
   "sentiment_by_timeframes": {"5m": {"bias": "neutral", "strength": "weak", "stability": "volatile", "notes": []}, ...},
   "funding_analysis": {"bias": "bullish", "volatility": "medium", "trend": "down", "notes": []},
