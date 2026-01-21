@@ -100,7 +100,8 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         3. 如果缓存失效或为空，轮询等待后台生成（最多等 100秒）。
         """
         # 获取事件发生时间
-        event_ts = event_data.get("timestamp", 0)
+        event_ts = float(event_data.get("timestamp", 0))
+            
         # 如果是秒级时间戳，转毫秒
         if event_ts < 10**12:
             event_ts *= 1000
