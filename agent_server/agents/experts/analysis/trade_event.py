@@ -9,12 +9,44 @@ import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 from agent_server.agent_context.output_store import save_agent_output
 
 
 class TradeEventExpert:
     name = "trade_event"
+
+    # Define schema for LLM output validation
+    SCHEMA = {
+        "verdict": {
+            "type": str,
+            "required": True,
+            "options": ["VALID", "WEAK_VALID", "INVALID"],
+            "description": "裁决结果：VALID(有效) | WEAK_VALID(弱有效) | INVALID(无效)"
+        },
+        "alignment": {
+            "type": str,
+            "required": True,
+            "options": ["ALIGNED", "CONFLICT", "STRONGLY_CONFLICT"],
+            "description": "结构一致性：ALIGNED(一致) | CONFLICT(冲突) | STRONGLY_CONFLICT(严重冲突)"
+        },
+        "confidence_adjustment": {
+            "type": str,
+            "required": True,
+            "options": ["none", "down"],
+            "description": "可信度调整：none(无) | down(下调)"
+        },
+        "reasoning": {
+            "type": list,
+            "required": True,
+            "description": "结构性原因列表（通常包含3点）"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: str) -> str:
 
@@ -47,30 +79,25 @@ class TradeEventExpert:
             **context_data
         }
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[TradeEventExpert] {msg}")
+            )
+        except Exception as e:
+            # Fallback to raw output or error if validation fails completely
+            print(f"[TradeEventExpert] Validation failed after retries: {e}")
+            final_result = {"error": str(e), "verdict": "INVALID", "alignment": "CONFLICT", "reasoning": ["Validation failed"]}
 
         # 构建产出物系统数据结构
         symbol = qobj.get("symbol") or "UNKNOWN"

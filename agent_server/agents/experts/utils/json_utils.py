@@ -1,17 +1,26 @@
 import json
 import re
+from json_repair import repair_json
 
 
 def _extract_json_from_text(text: str):
     if not isinstance(text, str):
         return None
+    
+    # 1. Try standard regex extraction first (fastest)
     m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
     if m:
         candidate = m.group(1).strip()
         try:
             return json.loads(candidate)
         except json.JSONDecodeError:
-            pass
+            # Fallback to repair_json
+            try:
+                return repair_json(candidate, return_objects=True)
+            except Exception:
+                pass
+
+    # 2. Try finding brackets
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
@@ -19,8 +28,17 @@ def _extract_json_from_text(text: str):
         try:
             return json.loads(candidate)
         except json.JSONDecodeError:
-            pass
-    return None
+            try:
+                return repair_json(candidate, return_objects=True)
+            except Exception:
+                pass
+    
+    # 3. Last resort: try repairing the whole text (if it's a messy JSON without clear boundaries)
+    try:
+        # skip_json_loads=True because we likely already failed or text is messy
+        return repair_json(text, return_objects=True, skip_json_loads=True)
+    except Exception:
+        return None
 
 
 def _ensure_json_serializable(obj):
