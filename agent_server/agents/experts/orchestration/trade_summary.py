@@ -12,11 +12,47 @@ from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 
 
 class TradeSummaryExpert:
     name = "trade_summary"
+
+    # Define Schema
+    SCHEMA = {
+        "symbol": {
+            "type": str,
+            "required": True,
+            "description": "Trading symbol"
+        },
+        "position_side": {
+            "type": str,
+            "required": True,
+            "options": ["LONG", "SHORT"],
+            "description": "Position side"
+        },
+        "reasoning": {
+            "type": str,
+            "required": True,
+            "description": "Detailed reasoning process (Audit Log)"
+        },
+        "trade_verdict": {
+            "type": str,
+            "required": True,
+            "options": ["GOOD_TRADE", "BAD_TRADE", "GOOD_LOSS", "BAD_WIN"],
+            "description": "Trade verdict"
+        },
+        "summary": {
+            "type": dict,
+            "required": True,
+            "description": "Summary for long-term memory"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: dict, exchange: str, symbol: str) -> str:
 
@@ -33,42 +69,42 @@ class TradeSummaryExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[TradeSummaryExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[TradeSummaryExpert] Validation failed after retries: {e}")
+            final_result = {
+                "symbol": symbol,
+                "position_side": "LONG",  # Default, hard to guess
+                "reasoning": f"Validation failed: {str(e)}",
+                "trade_verdict": "BAD_TRADE", # Fail-safe verdict
+                "summary": {
+                    "trade_overview": "Analysis failed due to validation errors.",
+                    "execution_consistency": "Unknown",
+                    "event_alignment": "Unknown",
+                    "key_observations": [],
+                    "notable_deviations": []
+                }
+            }
 
         ts = int(time.time() * 1000)
         if isinstance(final_result, dict):
             final_result["ts"] = ts
         else:
             final_result = {"data": final_result, "ts": ts}
-
-        # interval = str(query.get("interval") or "unknown")
-        # key = f"background:{exchange}:{symbol}:{interval}"
-        # value_to_store = _ensure_json_serializable(final_result)
-        # client = RedisClient()
-        # await client.set_json(key, value_to_store)
 
         output = _json_dumps_safe(final_result)
         print(output)

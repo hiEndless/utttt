@@ -9,6 +9,8 @@ from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.utils.account import get_available_exposure_pct
@@ -16,6 +18,59 @@ from agent_server.utils.account import get_available_exposure_pct
 
 class PositionRiskExpert:
     name = "position_risk"
+
+    # Define Schema
+    SCHEMA = {
+        "risk_state": {
+            "type": str,
+            "required": True,
+            "options": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+            "description": "Risk state level"
+        },
+        "recommended_action": {
+            "type": str,
+            "required": True,
+            "options": ["ADD_POSITION", "HOLD", "DEFENSIVE", "REDUCE", "EXIT"],
+            "description": "Recommended action"
+        },
+        "max_allowed_exposure": {
+            "type": float,
+            "required": True,
+            "range": (0.0, 1.0),
+            "description": "Maximum allowed exposure percentage"
+        },
+        "reduce_pct": {
+            "type": float,
+            "required": False,
+            "range": (0.0, 1.0),
+            "description": "Reduction percentage if action is REDUCE or EXIT"
+        },
+        "add_pct": {
+            "type": float,
+            "required": False,
+            "range": (0.0, 1.0),
+            "description": "Addition percentage if action is ADD_POSITION"
+        },
+        "tighten_stop": {
+            "type": bool,
+            "required": True,
+            "description": "Whether to tighten stop loss"
+        },
+        "freeze_add_position_min": {
+            "type": int,
+            "required": True,
+            "range": (0, 10000),
+            "description": "Minutes to freeze adding position"
+        },
+        "reason_tags": {
+            "type": list,
+            "required": True,
+            "description": "List of reasons for the decision"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: str) -> str:
 
@@ -32,30 +87,34 @@ class PositionRiskExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[PositionRiskExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[PositionRiskExpert] Validation failed after retries: {e}")
+            # Fallback for critical failure
+            final_result = {
+                "risk_state": "CRITICAL",
+                "recommended_action": "HOLD",  # Safe default
+                "max_allowed_exposure": 0.0,
+                "reduce_pct": 0.0,
+                "add_pct": 0.0,
+                "tighten_stop": True,
+                "freeze_add_position_min": 60,
+                "reason_tags": ["validation_failed_fallback", str(e)]
+            }
 
         # 构建产出物系统数据结构
         try:

@@ -9,12 +9,44 @@ import time
 from agent_server.agents.experts.utils import (
     _extract_json_from_text,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 from agent_server.agent_context.output_store import save_agent_output
 
 
 class SignalValidationExpert:
     name = "signal_validation"
+
+    # Define Schema
+    SCHEMA = {
+        "verdict": {
+            "type": str,
+            "required": True,
+            "options": ["VALID", "WEAK_VALID", "INVALID"],
+            "description": "Validation verdict"
+        },
+        "alignment": {
+            "type": str,
+            "required": True,
+            "options": ["ALIGNED", "CONFLICT", "STRONGLY_CONFLICT"],
+            "description": "Structural alignment"
+        },
+        "confidence_adjustment": {
+            "type": str,
+            "required": True,
+            "options": ["none", "down"],
+            "description": "Confidence adjustment"
+        },
+        "reasoning": {
+            "type": list,
+            "required": True,
+            "description": "List of structural reasons"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: str) -> str:
 
@@ -31,30 +63,29 @@ class SignalValidationExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[SignalValidationExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[SignalValidationExpert] Validation failed after retries: {e}")
+            final_result = {
+                "verdict": "INVALID",
+                "alignment": "CONFLICT",
+                "confidence_adjustment": "down",
+                "reasoning": ["validation_failed", str(e)]
+            }
 
         # 构建产出物系统数据结构
         try:
