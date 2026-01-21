@@ -32,7 +32,7 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         # 预判逻辑：如果是开仓事件或短线交易，跳过 LLM 分析以节省成本
         is_short_term = event_data.get("is_short_term", False)
 
-        if event_action == "open" or is_short_term:
+        if event_action in ["open", "close"] or is_short_term:
             print(f"  -> 跳过分析: Action={event_action}, ShortTerm={is_short_term}")
             
             # 即使跳过分析，也应该记录市场快照
