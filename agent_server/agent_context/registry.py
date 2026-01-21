@@ -71,6 +71,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "generate_new_direction",
         ],
         "allowed_paths": [
+            "crowd_positioning",
             "market_state.short_term.direction",
             "market_state.short_term.momentum",
             "market_state.short_term.risk",
@@ -105,6 +106,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "override_signal_direction",
         ],
         "allowed_paths": [
+            "crowd_positioning",
             # Market Structure & Trends
             "market_state.long_term.direction",
             "market_state.long_term.veto",
@@ -130,6 +132,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "strategy_advice",
         ],
         "allowed_paths": [
+            "crowd_positioning",
             "market_state.micro_term.state",
             "market_state.short_term.direction",
             "market_state.short_term.risk",

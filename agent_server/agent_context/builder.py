@@ -16,8 +16,8 @@ def _drop_internal_fields(ms: Dict[str, Any]) -> None:
 
 
 def build_agent_context(
-    agent: str,
-    full_context: Dict[str, Any],
+        agent: str,
+        full_context: Dict[str, Any],
 ) -> Dict[str, Any]:
     agent = agent.lower()
     validate_agent(agent)
