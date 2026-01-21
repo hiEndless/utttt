@@ -7,6 +7,7 @@ prompt = """
 - tf_validation：各周期的 trend_alignment, momentum_alignment, structure_alignment, key_level_conflict, reversal_risk, validation_conclusion
 - Market Background：趋势环境、结构状态、波动与风险
 - Crowd / Positioning Background：多空力量分布、拥挤度、脆弱性
+- Crowd Interpretation (博弈解释): position_direction(long/short), crowd_bias(long/short), relationship(same/opposite), implication(headwind/tailwind/neutral), execution_confirmation(confirmed/unconfirmed), stability(stable/unstable), risk_tags(crowding_instability/fragility_non_linear_risk/funding_squeeze_risk)
 
 裁决目标：
 - 评估该信号在当前背景下是否具备结构一致性 (Alignment)
@@ -16,6 +17,7 @@ prompt = """
 1) 严格不产生方向：
    - 禁止输出、推荐或修正任何交易方向。
    - 仅将 final.direction 视为待验证的“隐含前提”。
+   - position_direction 仅用于验证 interpretation 与 final.direction 是否匹配，不得作为任何方向性判断或倾向性评价的依据。
 
 2) tf_validation 为硬性技术约束：
    - 任一关键周期 validation_conclusion == conflict → 视为 STRONGLY_CONFLICT
@@ -30,6 +32,10 @@ prompt = """
 4) 人群结构为风险修正因子：
    - 单边拥挤、高脆弱性 → 不直接导致 CONFLICT，但触发 confidence_adjustment=down
    - 分歧或去拥挤 → 风险中性
+   - Crowd Interpretation 裁决顺序（强制）：
+     - implication=="headwind" 且 stability=="unstable" → 必须触发 confidence_adjustment=down (crowding risk)
+     - implication=="tailwind" 且 execution_confirmation=="confirmed" → 可作为一致性支持依据 (consistency_support)，但不得表述为“看多/看空合理”
+     - implication=="tailwind" 但 verdict 为 CONFLICT/INVALID → 不得单独用于翻转否决结论 (no override)
 
 5) final_priority 仅作参考：
    - 它反映信号源的紧迫程度，但不得作为掩盖结构冲突的理由。

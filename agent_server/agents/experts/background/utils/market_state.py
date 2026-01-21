@@ -110,7 +110,7 @@ def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
     }
 
 
-def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_state: Dict | None = None) -> Dict:
+def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_state: Dict | None = None, crowd_positioning: Dict | None = None) -> Dict:
     grouped: Dict[str, List[Dict]] = {k: [] for k in INTERVAL_GROUPS}
     latest_ts = 0
 
@@ -172,6 +172,9 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_st
             lt["veto"] = True
         # 添加压缩的人群背景信息
         market_state["crowd_state"] = crowd_state
+
+    if crowd_positioning:
+        market_state["crowd_positioning"] = crowd_positioning
 
     return market_state
 
@@ -235,10 +238,8 @@ if __name__ == "__main__":
 
             # 提取 crowd_positioning 字段
             crowd_positioning = crowd_raw.pop("crowd_positioning", None)
-            agg = market_state_aggregator("BTCUSDT", items, crowd_compact)
+            agg = market_state_aggregator("BTCUSDT", items, crowd_compact, crowd_positioning)
 
-            if crowd_positioning:
-                agg["crowd_positioning"] = crowd_positioning
             print(json.dumps(agg, ensure_ascii=False))
             await save_market_state("binance", "BTCUSDT", agg)
         finally:

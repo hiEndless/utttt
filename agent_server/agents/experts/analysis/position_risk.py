@@ -70,7 +70,7 @@ class PositionRiskExpert:
 
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-            
+
             # 适配数据库字段映射
             if "recommended_action" in payload_obj:
                 payload_obj["suggestion"] = payload_obj["recommended_action"]
@@ -78,12 +78,13 @@ class PositionRiskExpert:
                 payload_obj["verdict"] = payload_obj["risk_state"]
             if "reason_tags" in payload_obj:
                 payload_obj["reasoning"] = payload_obj["reason_tags"]
-                
+
         except Exception:
             payload_obj = {"raw": final_result}
 
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id, model_id=model_id)
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id,
+                                    model_id=model_id)
         except Exception as e:
             print(f"Failed to save agent output: {e}")
 
@@ -98,11 +99,13 @@ if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
+    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
     import asyncio
 
     sv_out = {
         "_context_meta": {"agent": "signal_validation", "role": "technical_signal", "scope": ["short", "mid", "long"],
-                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000, "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
+                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000,
+                          "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
         "agent_output": {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
                          "reasoning": ["所有关键周期（15m/30m/1h）tf_validation_conclusion均为conflict，构成硬性技术否决条件。",
                                        "市场短期虽为bearish，但动能持续减弱，且长期方向中性并具veto权，削弱方向环境支持。",
@@ -122,7 +125,8 @@ if __name__ == "__main__":
     initialMargin = position.pop("initialMargin")  # 占用保证金，用于计算仓位占比
 
 
-    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, alignment: str, entry_ts: int,
+    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, alignment: str,
+                      entry_ts: int,
                       ts: int):
         state = await reduce_temporal_state(
             exchange=exchange,
@@ -161,6 +165,11 @@ if __name__ == "__main__":
         # 1. 使用 position_risk 视角构建上下文 (自动过滤无关字段)
         ctx = build_agent_context("position_risk", full_context)
 
+        # Inject deterministic crowd interpretation
+        # Note: position["position_side"] is already available here
+        interpretation = build_crowd_interpretation(full_context, position_side)
+        ctx["crowd_interpretation"] = interpretation
+
         # 2. 提取 Market Context (扁平化)
         ms = ctx.get("market_state", {})
         market_context = {
@@ -178,6 +187,8 @@ if __name__ == "__main__":
             "fragility": cs.get("fragility", "unknown"),
             "bias": cs.get("bias", "unknown")
         }
+
+        crowd_interpretation = ctx.get("crowd_interpretation", {})
 
         # 4. 模拟 Operational Context (建议模式适配)
         # 从 Redis 获取上一次的建议记录，用于填充 action_state
@@ -251,6 +262,7 @@ if __name__ == "__main__":
             "risk_rules_decision": decision_rules,
             "market_context": market_context,
             "crowd_context": crowd_context,
+            "crowd_interpretation": crowd_interpretation,
             "operational_context": operational_context  # 新增字段
         }
 

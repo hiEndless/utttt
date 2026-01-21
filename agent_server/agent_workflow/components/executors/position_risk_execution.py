@@ -8,6 +8,7 @@ from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
 from agent_server.reducers.position_risk_decider import decide_position_action
 from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
+from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import get_available_exposure_pct
@@ -85,12 +86,22 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
             trade_id = position_snapshot.get("trade_id")
+            pos_side = position_snapshot.get("position_side", "LONG")
             
+            # Position-aware Context Injection
+            # 为当前处理的持仓方向生成专属的解释
+            interpretation = build_crowd_interpretation(context_to_use, pos_side)
+            pr_ctx["crowd_interpretation"] = interpretation
+
+            # Re-extract Crowd Context from injected interpretation
+            # 此时 crowd_context 已经是“顺风/逆风”等结论性描述
+            injected_crowd = pr_ctx.get("crowd_interpretation", {})
+
             state = await reduce_temporal_state(
                 exchange=exchange,
                 trade_id=trade_id or "sim",
                 symbol=symbol,
-                position_side=position_snapshot.get("position_side", "LONG"),
+                position_side=pos_side,
                 verdict=verdict,
                 alignment=alignment,
                 entry_ts=int(position_snapshot.get("entry_ts", 0)),
@@ -159,6 +170,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "risk_rules_decision": decision_rules,
                 "market_context": market_context,
                 "crowd_context": crowd_context,
+                "crowd_interpretation": injected_crowd,
                 "operational_context": operational_context
             }
 

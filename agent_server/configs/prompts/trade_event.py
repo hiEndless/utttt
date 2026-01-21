@@ -15,6 +15,7 @@ prompt = """
 3. position_context: 盈亏背景 (pnl_state, pnl_bias)
 4. market_state: 市场状态 (short/mid/long_term direction, momentum, risk, veto)
 5. crowd_state: 人群状态 (bias, crowding_level, fragility, funding_pressure)
+6. crowd_interpretation: 博弈解释 (relationship, implication, stability, risk_tags)
 
 ---
 裁决目标：
@@ -49,6 +50,9 @@ prompt = """
 5) 人群结构为风险修正因子：
    - 高拥挤 + 高脆弱性 + 风险扩张 → 必须触发 confidence_adjustment=down
    - 一致性冲突（crowd consistency conflicted）→ 提升结构不确定性
+   - Crowd Interpretation 裁决（强制）：
+     - implication=="headwind" 且 stability=="unstable" → 若 exposure_change="INCREASE"，必须视为 STRUCTURAL CONFLICT (逆势拥挤加仓)
+     - implication=="tailwind" → 仅视为中性或有利因子，不得抵消明确的 long_term veto 或 structure broken
 
 ---
 输出格式要求：

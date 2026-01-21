@@ -3,7 +3,7 @@
 from typing import Any, Dict
 import json
 
-from .utils import get_by_path, set_by_path
+from .utils.path import get_by_path, set_by_path
 from .profiles import get_allowed_paths
 from .validators import validate_agent, forbid_full_context
 from .registry import AGENT_REGISTRY

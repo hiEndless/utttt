@@ -84,6 +84,7 @@ if __name__ == "__main__":
     from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
+    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 
     final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
                     "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
@@ -115,6 +116,12 @@ if __name__ == "__main__":
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
                                                                "crowd_state": {}}
         ctx = build_agent_context("signal_validation", full_context)
+        
+        # Inject deterministic crowd interpretation (replaces raw crowd_positioning)
+        interpretation = build_crowd_interpretation(full_context, direction)
+        ctx["crowd_interpretation"] = interpretation
+        # print(ctx)
+
         query = {
             "symbol": symbol,
             "exchange": exchange,

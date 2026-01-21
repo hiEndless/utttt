@@ -71,7 +71,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "generate_new_direction",
         ],
         "allowed_paths": [
-            "crowd_positioning",
+            # crowd_positioning REMOVED: Decision layer should not see raw game theory data
             "market_state.short_term.direction",
             "market_state.short_term.momentum",
             "market_state.short_term.risk",
@@ -106,7 +106,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "override_signal_direction",
         ],
         "allowed_paths": [
-            "crowd_positioning",
+            # crowd_positioning REMOVED: Decision layer should not see raw game theory data
             # Market Structure & Trends
             "market_state.long_term.direction",
             "market_state.long_term.veto",
@@ -132,7 +132,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "strategy_advice",
         ],
         "allowed_paths": [
-            "crowd_positioning",
+            # crowd_positioning REMOVED
             "market_state.micro_term.state",
             "market_state.short_term.direction",
             "market_state.short_term.risk",
