@@ -76,10 +76,10 @@ def detect_long_term_veto(
 
 
 def aggregate_structural_group(backgrounds: List[Dict], group: str) -> Dict:
-    trends = [b["trend"] for b in backgrounds]
-    structures = [b["structure"]["state"] for b in backgrounds]
-    momentums = [b["environment"]["momentum_state"] for b in backgrounds]
-    risks = [b["environment"]["risk_state"] for b in backgrounds]
+    trends = [b.get("trend", "unknown") for b in backgrounds]
+    structures = [b.get("structure", {}).get("state", "unknown") for b in backgrounds]
+    momentums = [b.get("environment", {}).get("momentum_state", "unknown") for b in backgrounds]
+    risks = [b.get("environment", {}).get("risk_state", "unknown") for b in backgrounds]
 
     agreement = _agreement(trends)
     weight = CONFIDENCE_WEIGHT.get(group, 1.0)
