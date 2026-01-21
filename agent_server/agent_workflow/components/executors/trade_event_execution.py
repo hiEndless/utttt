@@ -142,4 +142,16 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
                 return full_context
                 
         print("  -> [Wait] 等待超时，使用当前可用数据")
+
+        # 特殊处理：如果是 open 事件，且等待超时，说明后台分析可能卡死或延迟过大
+        # 此时不应使用旧的 context（可能误导），而是构造一个空的/错误的 context
+        event_type_raw = event_data.get("event_type", "")
+        event_action = event_type_raw.split(".")[-1].lower() if event_type_raw else "unknown"
+
+        if event_action == "open":
+            print("  -> [Timeout] Open 事件超时，构造 Fallback Context")
+            return {
+                "error": "timed out"
+            }
+
         return full_context
