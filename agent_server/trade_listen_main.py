@@ -355,13 +355,25 @@ async def _run():
         print("\n[TradeListener] 收到停止信号，正在关闭...")
         stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    # Windows 不支持 add_signal_handler，需要捕获 NotImplementedError
+    is_windows = False
+    try:
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    except NotImplementedError:
+        # Windows 系统不支持，使用 KeyboardInterrupt 处理
+        is_windows = True
     task = asyncio.create_task(listener.run(), name="trade_l1_listener")
     
     try:
         while not stop.is_set():
             await asyncio.sleep(0.3)
+    except asyncio.CancelledError:
+        # Windows 上，KeyboardInterrupt 会导致任务被取消
+        if is_windows:
+            trade_logger.info("收到停止信号，正在关闭... (KeyboardInterrupt)")
+            print("\n[TradeListener] 收到停止信号，正在关闭...")
+        raise
     finally:
         try:
             task.cancel()

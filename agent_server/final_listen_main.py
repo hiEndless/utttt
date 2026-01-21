@@ -143,12 +143,23 @@ async def _run():
         logging.getLogger("final").info("received_stop_signal")
         stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    # Windows 不支持 add_signal_handler，需要捕获 NotImplementedError
+    is_windows = False
+    try:
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    except NotImplementedError:
+        # Windows 系统不支持，使用 KeyboardInterrupt 处理
+        is_windows = True
     task = asyncio.create_task(listener.run(), name="final_events_router")
     try:
         while not stop.is_set():
             await asyncio.sleep(0.3)
+    except asyncio.CancelledError:
+        # Windows 上，KeyboardInterrupt 会导致任务被取消
+        if is_windows:
+            logging.getLogger("final").info("received_stop_signal (KeyboardInterrupt)")
+        raise
     finally:
         try:
             task.cancel()
