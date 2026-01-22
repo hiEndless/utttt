@@ -139,6 +139,17 @@ def _stability(vol: float) -> str:
     return "volatile"
 
 
+def _zscore(val: float, mean: float, std: float) -> float:
+    if std == 0:
+        return 0.0
+    return (val - mean) / std
+
+
+def _safe_get_stat(stats: Dict[str, Any], key: str, field: str) -> float:
+    """Helper to safely get nested stats."""
+    return stats.get(key, {}).get(field, 0.0)
+
+
 def _latest_ts(items: List[Dict[str, Any]], key: str = "timestamp") -> int:
     if not items:
         return 0
@@ -177,35 +188,70 @@ def _analyze_period(dtype: str, items: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     cur = _current_for_type(dtype, items[-1])
 
-    series = _series_ls(dtype, items[-10:])
-    mean = _mean(series)
-    vol = _stdev(series)
-    delta = series[-1] - series[-2] if len(series) >= 2 else 0
+    # Analyze LS Ratio (Long/Short Ratio)
+    # Using last 30 points for better stats
+    series_ls = _series_ls(dtype, items[-30:])
+    mean_ls = _mean(series_ls)
+    vol_ls = _stdev(series_ls)
+    delta_ls = series_ls[-1] - series_ls[-2] if len(series_ls) >= 2 else 0
+    zscore_ls = _zscore(series_ls[-1], mean_ls, vol_ls)
+
+    # Analyze Long Pct (Account Long %)
+    if dtype == "takerLongShortRatio":
+        # For taker, calculate from buy/sell vol
+        series_lp = []
+        for x in items[-30:]:
+            bv = float(x.get("buyVol", 0) or 0)
+            sv = float(x.get("sellVol", 0) or 0)
+            tot = bv + sv
+            series_lp.append(bv / tot if tot else 0)
+    else:
+        # For account ratios, use longAccount
+        series_lp = [float(x.get("longAccount", 0)) for x in items[-30:]]
+
+    mean_lp = _mean(series_lp)
+    vol_lp = _stdev(series_lp)
+    delta_lp = series_lp[-1] - series_lp[-2] if len(series_lp) >= 2 else 0
+    zscore_lp = _zscore(series_lp[-1], mean_lp, vol_lp)
 
     # Long/Short trend
     if len(items) >= 2:
         prev = items[-2]
-        prev_long = float(prev.get("longAccount", cur["long_pct"]))
-        prev_short = float(prev.get("shortAccount", cur["short_pct"]))
+        prev_long = float(prev.get("longAccount", cur.get("long_pct", 0)))
+        prev_short = float(prev.get("shortAccount", cur.get("short_pct", 0)))
     else:
-        prev_long, prev_short = cur["long_pct"], cur["short_pct"]
+        prev_long, prev_short = cur.get("long_pct", 0), cur.get("short_pct", 0)
 
     return {
         "current": cur,
         "stats": {
-            "mean_ls_ratio": mean,
-            "delta_ls_ratio": delta,
-            "vol_ls_ratio": vol,
+            "mean_ls_ratio": mean_ls,
+            "delta_ls_ratio": delta_ls,
+            "vol_ls_ratio": vol_ls,
+            "ls_ratio": {
+                "value": series_ls[-1] if series_ls else 0,
+                "mean": mean_ls,
+                "delta": delta_ls,
+                "vol": vol_ls,
+                "zscore": zscore_ls,
+            },
+            "long_pct": {
+                "value": series_lp[-1] if series_lp else 0,
+                "mean": mean_lp,
+                "delta": delta_lp,
+                "vol": vol_lp,
+                "zscore": zscore_lp,
+            },
         },
         "trend": {
-            "ls_trend": _trend(delta),
-            "long_trend": _trend(cur["long_pct"] - prev_long),
-            "short_trend": _trend(cur["short_pct"] - prev_short),
+            "ls_trend": _trend(delta_ls),
+            "long_trend": _trend(cur.get("long_pct", 0) - prev_long),
+            "short_trend": _trend(cur.get("short_pct", 0) - prev_short),
         },
         "labels": {
-            "bias": _bias(cur["ls_ratio"]),
-            "strength": _strength(cur["ls_ratio"]),
-            "stability": _stability(vol),
+            "bias": _bias(cur.get("ls_ratio", 1.0)),
+            "strength": _strength(cur.get("ls_ratio", 1.0)),
+            "stability": _stability(vol_ls),
         },
     }
 
@@ -292,6 +338,88 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
             latest_ts = max(latest_ts, _latest_ts(items))
 
     out["participant_structure"] = ps
+
+    # ------------------------------
+    # Detailed Trend Analysis (For all 5 sources)
+    # ------------------------------
+    trends = {}
+
+    # Helper to build analysis for standard types
+    def build_type_analysis(type_name: str, metric_key: str):
+        if type_name not in ps:
+            return None
+        
+        # Get base value from 5m (most sensitive)
+        base_data = ps[type_name].get("5m", {})
+        if not base_data or not base_data.get("current"):
+            # Try to find any available period
+            for p in PERIODS:
+                if ps[type_name].get(p, {}).get("current"):
+                    base_data = ps[type_name][p]
+                    break
+        
+        if not base_data:
+            return None
+
+        # Determine current value based on metric_key
+        # metric_key is usually 'ls_ratio' or 'long_pct'
+        # In 'current', keys are 'ls_ratio', 'long_pct', 'short_pct'
+        current_val = base_data["current"].get(metric_key, 0)
+
+        deltas = {}
+        zscores = {}
+
+        for p in PERIODS:
+            p_stats = ps[type_name].get(p, {}).get("stats", {})
+            # stats structure: { 'ls_ratio': {value, delta, zscore}, 'long_pct': {...} }
+            stat_obj = p_stats.get(metric_key, {})
+            if stat_obj:
+                deltas[p] = round(stat_obj.get("delta", 0), 4)
+                zscores[p] = round(stat_obj.get("zscore", 0), 2)
+        
+        return {
+            "value": round(float(current_val), 4),
+            "delta": deltas,
+            "zscore": zscores
+        }
+
+    # 1. Global Account Ratio (Focus on long_pct)
+    trends["account_long_ratio"] = build_type_analysis("globalLongShortAccountRatio", "long_pct")
+
+    # 2. Taker Buy/Sell Ratio (Focus on ls_ratio)
+    trends["taker_buy_sell_ratio"] = build_type_analysis("takerLongShortRatio", "ls_ratio")
+
+    # 3. Top Position Ratio (Focus on ls_ratio)
+    trends["top_position_ratio"] = build_type_analysis("topLongShortPositionRatio", "ls_ratio")
+
+    # 4. Top Account Ratio (Focus on ls_ratio)
+    trends["top_account_ratio"] = build_type_analysis("topLongShortAccountRatio", "ls_ratio")
+
+    # 5. Funding Rate (Special handling)
+    fr_raw = data.get("fundingRate", [])
+    if fr_raw:
+        # Re-calculate stats for funding rate to match structure
+        # Funding rate is a single series, no periods. 
+        # We can map 'last' change as delta, and window zscore.
+        fr_series = [float(x.get("fundingRate", 0.0)) for x in fr_raw[-30:]]
+        if fr_series:
+            fr_cur = fr_series[-1]
+            fr_mean = _mean(fr_series)
+            fr_vol = _stdev(fr_series)
+            fr_delta = fr_series[-1] - fr_series[-2] if len(fr_series) >= 2 else 0
+            fr_zscore = _zscore(fr_cur, fr_mean, fr_vol)
+            
+            trends["funding_rate"] = {
+                "value": round(fr_cur, 6),
+                "delta": {"last_step": round(fr_delta, 6)},
+                "zscore": {"window_30": round(fr_zscore, 2)}
+            }
+        else:
+             trends["funding_rate"] = None
+    else:
+        trends["funding_rate"] = None
+
+    out["trend_analysis"] = trends
 
     # ------------------------------
     # Add ticker
