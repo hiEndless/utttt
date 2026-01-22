@@ -115,30 +115,6 @@ def _trend(delta: float, eps: float = 1e-5) -> str:
     return "up" if delta > 0 else "down"
 
 
-def _strength(ratio: float) -> str:
-    if ratio >= 1.2 or ratio <= 1 / 1.2:
-        return "strong"
-    if ratio >= 1.05 or ratio <= 1 / 1.05:
-        return "medium"
-    return "weak"
-
-
-def _bias(ratio: float) -> str:
-    if ratio > 1.05:
-        return "long"
-    if ratio < 0.95:
-        return "short"
-    return "neutral"
-
-
-def _stability(vol: float) -> str:
-    if vol < 0.02:
-        return "stable"
-    if vol < 0.05:
-        return "medium"
-    return "volatile"
-
-
 def _zscore(val: float, mean: float, std: float) -> float:
     if std == 0:
         return 0.0
@@ -248,11 +224,6 @@ def _analyze_period(dtype: str, items: List[Dict[str, Any]]) -> Dict[str, Any]:
             "long_trend": _trend(cur.get("long_pct", 0) - prev_long),
             "short_trend": _trend(cur.get("short_pct", 0) - prev_short),
         },
-        "labels": {
-            "bias": _bias(cur.get("ls_ratio", 1.0)),
-            "strength": _strength(cur.get("ls_ratio", 1.0)),
-            "stability": _stability(vol_ls),
-        },
     }
 
 
@@ -309,8 +280,6 @@ def analyze_funding(fr_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         "delta": delta,
         "volatility": vol,
         "trend": _trend(delta),
-        "stability": _stability(vol),
-        "bias": "bullish" if cur > 0 else ("bearish" if cur < 0 else "neutral"),
     }
 
 
@@ -323,8 +292,6 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
         "generated_at": int(time.time() * 1000),
         "ticker": {},
         "funding_rate": {},
-        "participant_structure": {},
-        "summary": {},
     }
 
     ps = {}
@@ -336,8 +303,6 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
             items = data.get(dtype, {}).get(p, [])
             ps[dtype][p] = _analyze_period(dtype, items)
             latest_ts = max(latest_ts, _latest_ts(items))
-
-    out["participant_structure"] = ps
 
     # ------------------------------
     # Detailed Trend Analysis (For all 5 sources)
@@ -438,59 +403,7 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
         latest_ts = max(latest_ts, _latest_ts(fr_raw, key="fundingTime"))
     out["generated_at"] = latest_ts or int(time.time() * 1000)
 
-    # ------------------------------
-    # Build summary
-    # ------------------------------
-    biases = []
-    vols = []
-
-    for dtype in TYPES:
-        for p in PERIODS:
-            cur = ps[dtype][p]["current"]
-            stats = ps[dtype][p]["stats"]
-            if cur and stats:
-                biases.append(_bias(float(cur.get("ls_ratio", 1.0))))
-                vols.append(stats.get("vol_ls_ratio", 0.0))
-
-    long_cnt = biases.count("long")
-    short_cnt = biases.count("short")
-    total_cnt = len(biases) or 1
-
-    avg_vol = _mean(vols) if vols else 0.0
-    cross_bias = "long" if long_cnt > short_cnt else ("short" if short_cnt > long_cnt else "neutral")
-    cross_stability = _stability(avg_vol)
-    alignment_score = round(max(long_cnt, short_cnt) / total_cnt, 2)
-    notes = f"跨周期加权判断为 {cross_bias}，一致性评分 {alignment_score}，结构稳定性 {cross_stability}。"
-    notes += f" 平均波动 {round(avg_vol, 6)}。"
-
-    out["summary"] = {
-        "cross_period_bias": cross_bias,
-        "cross_period_stability": cross_stability,
-        "funding_bias": out["funding_rate"].get("bias", "neutral"),
-        "funding_stability": out["funding_rate"].get("stability", "unknown"),
-        "price_trend_24h": out["ticker"].get("trend_24h", "flat"),
-        "market_context": _market_context(out),
-        "alignment_score": alignment_score,
-        "notes": notes,
-    }
-
     return out
-
-
-def _market_context(out: Dict[str, Any]) -> str:
-    """Combine price trend + funding bias to infer general context."""
-    price_t = out["ticker"].get("trend_24h", "flat")
-    funding_b = out["funding_rate"].get("bias", "neutral")
-
-    if price_t == "up" and funding_b == "bullish":
-        return "strong_uptrend"
-    if price_t == "down" and funding_b == "bearish":
-        return "strong_downtrend"
-    if funding_b == "bullish":
-        return "bullish_sentiment"
-    if funding_b == "bearish":
-        return "bearish_sentiment"
-    return "neutral"
 
 
 # -------------------------------------------------------------------------
