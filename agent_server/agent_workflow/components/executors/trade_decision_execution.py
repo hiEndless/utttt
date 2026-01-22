@@ -58,8 +58,9 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         }
         self.trade_queue_name = 'TASK_ADD_TRADE'
 
-    async def _fetch_l1_event(self, exchange: str,
-                              symbol: str, 
+    async def _fetch_l1_event(self,
+                              exchange: str,
+                              symbol: str,
                               event_id: str = None) -> Optional[Dict]:
         """
         从 l1_events stream 读取 L1 事件
@@ -88,8 +89,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
             # 查找匹配的事件
             matched_by_event_id = None  # 精确匹配event_id的事件
-            matched_by_symbol = None    # 按symbol匹配的最新事件（fallback）
-            
+            matched_by_symbol = None  # 按symbol匹配的最新事件（fallback）
+
             for entry_id, fields in res:
                 event = {}
                 for k, v in fields.items():
@@ -99,12 +100,13 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
                 event_symbol = event.get("symbol", "")
                 event_event_id = event.get("event_id", "")
-                
+
                 # 如果提供了event_id，优先精确匹配
                 if event_id:
                     if event_event_id == event_id and event_symbol == symbol:
                         # 解析 payload 如果存在
-                        if "payload" in event and isinstance(event["payload"], str):
+                        if "payload" in event and isinstance(
+                                event["payload"], str):
                             try:
                                 event["payload"] = json.loads(event["payload"])
                             except:
@@ -113,7 +115,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                         break  # 找到精确匹配，直接返回
                     # 同时记录按symbol匹配的最新事件（作为fallback）
                     elif event_symbol == symbol and matched_by_symbol is None:
-                        if "payload" in event and isinstance(event["payload"], str):
+                        if "payload" in event and isinstance(
+                                event["payload"], str):
                             try:
                                 event["payload"] = json.loads(event["payload"])
                             except:
@@ -121,28 +124,29 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                         matched_by_symbol = event
                 # 如果没有提供event_id，按symbol匹配
                 elif event_symbol == symbol:
-                    if "payload" in event and isinstance(event["payload"], str):
+                    if "payload" in event and isinstance(
+                            event["payload"], str):
                         try:
                             event["payload"] = json.loads(event["payload"])
                         except:
                             pass
                     matched_by_symbol = event
                     break  # 找到第一个匹配的symbol事件即可
-            
+
             # 优先返回精确匹配的event_id事件
             if matched_by_event_id:
                 trade_logger.debug(
                     f"找到匹配event_id的L1事件 | {symbol} | event_id={event_id} | score={matched_by_event_id.get('total_score')}"
                 )
                 return matched_by_event_id
-            
+
             # 如果没有找到精确匹配，但有fallback事件，返回并记录警告
             if matched_by_symbol:
                 trade_logger.warning(
                     f"未找到匹配event_id的L1事件，使用最新匹配symbol的事件 | {symbol} | 期望event_id={event_id} | 实际event_id={matched_by_symbol.get('event_id')} | score={matched_by_symbol.get('total_score')}"
                 )
                 return matched_by_symbol
-            
+
             return None
         except Exception as e:
             trade_logger.debug(f"读取 L1 事件失败: {e}")
@@ -456,12 +460,12 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 tp_candidate2 = atr_15m_percent * 3.0 if atr_15m_percent > 0 else 0  # 3倍ATR
                 tp_min = 3.0  # 最小3%（能抗住波动）
                 tp_max = 10.0 if is_counter_trend else 8.0  # 逆势交易最多10%
-                
+
                 # 如果向上空间很小（<2%），限制最大TP为向上空间的80%，避免设置不合理的TP
                 if upward_space > 0 and upward_space < 2.0:
                     tp_max = min(tp_max, upward_space * 0.8)
                     tp_min = min(tp_min, upward_space * 0.5)  # 如果空间小，最小TP也相应降低
-                
+
                 tp_percent = max(tp_candidate1, tp_candidate2, tp_min)
                 tp_percent = min(tp_percent, tp_max)
 
@@ -493,12 +497,12 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 tp_candidate2 = atr_15m_percent * 3.0 if atr_15m_percent > 0 else 0
                 tp_min = 3.0
                 tp_max = 10.0 if is_counter_trend else 8.0
-                
+
                 # 如果向下空间很小（<2%），限制最大TP为向下空间的80%
                 if downward_space > 0 and downward_space < 2.0:
                     tp_max = min(tp_max, downward_space * 0.8)
                     tp_min = min(tp_min, downward_space * 0.5)
-                
+
                 tp_percent = max(tp_candidate1, tp_candidate2, tp_min)
                 tp_percent = min(tp_percent, tp_max)
 
@@ -517,20 +521,47 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                         tp_percent = min(tp_percent, tp_max)
                     else:
                         # 如果向下空间不足，使用实际向下空间的80%作为TP，但至少是SL的1.5倍
-                        tp_percent = max(downward_space * 0.8, sl_percent * 1.5)
+                        tp_percent = max(downward_space * 0.8,
+                                         sl_percent * 1.5)
                         tp_percent = min(tp_percent, tp_max)
 
+            # 计算实际的价格值（而不是百分比）
+            if direction == "LONG":
+                tp_price = current_price * (1 + tp_percent / 100.0)
+                sl_price = current_price * (1 - sl_percent / 100.0)
+            else:  # SHORT
+                tp_price = current_price * (1 - tp_percent / 100.0)
+                sl_price = current_price * (1 + sl_percent / 100.0)
+
             trade_logger.info(
-                f"止盈止损计算(15m周期) | {direction} | 向上空间={upward_space:.2f}% | 向下空间={downward_space:.2f}% | 15m_ATR={atr_15m_percent:.2f}% | TP={tp_percent:.2f}% | SL={sl_percent:.2f}%"
+                f"止盈止损计算(15m周期) | {direction} | 向上空间={upward_space:.2f}% | 向下空间={downward_space:.2f}% | 15m_ATR={atr_15m_percent:.2f}% | TP={tp_percent:.2f}%({tp_price:.2f}) | SL={sl_percent:.2f}%({sl_price:.2f})"
             )
 
             return {
                 "tp_percent": round(tp_percent, 2),
-                "sl_percent": round(sl_percent, 2)
+                "sl_percent": round(sl_percent, 2),
+                "tp_price": round(tp_price, 2),  # 止盈价格
+                "sl_price": round(sl_price, 2)  # 止损价格
             }
         except Exception as e:
             trade_logger.warning(f"计算止盈止损失败: {e}")
-            return {"tp_percent": 4.0, "sl_percent": 2.5}
+            # 默认值：计算价格值
+            if current_price > 0:
+                default_tp_price = current_price * 1.04  # 4%止盈
+                default_sl_price = current_price * 0.975  # 2.5%止损
+                return {
+                    "tp_percent": 4.0,
+                    "sl_percent": 2.5,
+                    "tp_price": round(default_tp_price, 2),
+                    "sl_price": round(default_sl_price, 2)
+                }
+            else:
+                return {
+                    "tp_percent": 4.0,
+                    "sl_percent": 2.5,
+                    "tp_price": 0.0,
+                    "sl_price": 0.0
+                }
 
     async def _push_to_trade_queue(self, trade_json: Dict) -> bool:
         """推送交易订单到 Redis 队列"""
@@ -673,27 +704,177 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             leverage = decision.get("leverage", 20.0)
             margin = decision.get("margin", 200.0)
             quantity = decision.get("quantity")
-            limit_price = decision.get("limit_price", 0.0)
-            # 优先使用计算出的止盈止损，如果LLM提供了合理的值则使用LLM的值
+            # 优先使用LLM基于技术分析计算的止盈止损价格值
             llm_tp = decision.get("tp_trigger_px", 0.0)
             llm_sl = decision.get("sl_trigger_px", 0.0)
 
-            # 如果提供了计算出的止盈止损，且LLM的值不合理（为0或默认值），则使用计算出的值
-            if calculated_tp_sl:
-                tp_trigger_px = calculated_tp_sl[
-                    "tp_percent"] if llm_tp <= 0 or llm_tp == 2.0 else llm_tp
-                sl_trigger_px = calculated_tp_sl[
-                    "sl_percent"] if llm_sl <= 0 or llm_sl == 1.0 else llm_sl
+            # LLM应该基于技术分析输出实际的止盈止损价格值（不是百分比）
+            # 判断LLM输出的是价格值还是百分比：
+            # - 如果值 > mark_price * 0.5，可能是价格值
+            # - 如果值 < mark_price * 0.1，可能是百分比（需要转换）
+            # - 如果值在 0.1-100 之间，可能是百分比（需要转换）
+
+            def is_price_value(value, current_price):
+                """判断值是否是价格值（而不是百分比）"""
+                if value <= 0:
+                    return False
+                # 如果值接近当前价格（在0.5倍到2倍之间），很可能是价格值
+                if current_price > 0 and 0.5 * current_price <= value <= 2.0 * current_price:
+                    return True
+                # 如果值很大（>1000），很可能是价格值
+                if value > 1000:
+                    return True
+                # 如果值很小（<100），很可能是百分比
+                if value < 100:
+                    return False
+                # 其他情况，根据与当前价格的接近程度判断
+                if current_price > 0:
+                    price_diff_pct = abs(value -
+                                         current_price) / current_price * 100
+                    # 如果差值在50%以内，很可能是价格值
+                    return price_diff_pct <= 50
+                return False
+
+            # 转换LLM输出：如果是百分比，转换为价格值
+            llm_tp_price = llm_tp
+            llm_sl_price = llm_sl
+
+            if llm_tp > 0 and not is_price_value(llm_tp, mark_price):
+                # 是百分比，转换为价格值
+                if decision.get("position_side") == "LONG":
+                    llm_tp_price = mark_price * (1 + llm_tp / 100.0)
+                else:  # SHORT
+                    llm_tp_price = mark_price * (1 - llm_tp / 100.0)
                 trade_logger.info(
-                    f"止盈止损设置 | {symbol} | 使用计算值: TP={tp_trigger_px}% SL={sl_trigger_px}% | LLM值: TP={llm_tp} SL={llm_sl}"
+                    f"LLM止盈值转换 | {symbol} | 百分比={llm_tp}% → 价格={llm_tp_price:.2f}"
                 )
+
+            if llm_sl > 0 and not is_price_value(llm_sl, mark_price):
+                # 是百分比，转换为价格值
+                if decision.get("position_side") == "LONG":
+                    llm_sl_price = mark_price * (1 - llm_sl / 100.0)
+                else:  # SHORT
+                    llm_sl_price = mark_price * (1 + llm_sl / 100.0)
+                trade_logger.info(
+                    f"LLM止损值转换 | {symbol} | 百分比={llm_sl}% → 价格={llm_sl_price:.2f}"
+                )
+
+            # 验证LLM价格值的合理性
+            position_side = decision.get("position_side", "LONG")
+            llm_tp_valid = False
+            llm_sl_valid = False
+
+            if llm_tp_price > 0 and llm_sl_price > 0:
+                if position_side == "LONG":
+                    # 做多：止盈价格应该高于当前价格，止损价格应该低于当前价格
+                    llm_tp_valid = llm_tp_price > mark_price
+                    llm_sl_valid = llm_sl_price < mark_price
+                else:  # SHORT
+                    # 做空：止盈价格应该低于当前价格，止损价格应该高于当前价格
+                    llm_tp_valid = llm_tp_price < mark_price
+                    llm_sl_valid = llm_sl_price > mark_price
+
+            # 选择使用LLM的值还是计算出的值
+            if calculated_tp_sl:
+                if llm_tp_valid and llm_sl_valid:
+                    # LLM输出了合理的价格值，优先使用
+                    tp_trigger_px = llm_tp_price
+                    sl_trigger_px = llm_sl_price
+                    trade_logger.info(
+                        f"止盈止损设置 | {symbol} | 使用LLM价格值(基于技术分析): TP={tp_trigger_px:.2f} SL={sl_trigger_px:.2f}"
+                    )
+                else:
+                    # LLM的值不合理，使用计算出的价格值作为后备
+                    tp_trigger_px = calculated_tp_sl.get(
+                        "tp_price", mark_price * 1.03)
+                    sl_trigger_px = calculated_tp_sl.get(
+                        "sl_price", mark_price * 0.98)
+                    trade_logger.info(
+                        f"止盈止损设置 | {symbol} | 使用计算价格值(LLM值不合理): TP={tp_trigger_px:.2f} SL={sl_trigger_px:.2f} | LLM值: TP={llm_tp_price:.2f} SL={llm_sl_price:.2f}"
+                    )
             else:
                 # 如果没有计算值，使用LLM的值或默认值
-                tp_trigger_px = llm_tp if llm_tp > 0 else 2.0
-                sl_trigger_px = llm_sl if llm_sl > 0 else 1.0
+                if llm_tp_valid and llm_sl_valid:
+                    tp_trigger_px = llm_tp_price
+                    sl_trigger_px = llm_sl_price
+                    trade_logger.info(
+                        f"止盈止损设置 | {symbol} | 使用LLM价格值: TP={tp_trigger_px:.2f} SL={sl_trigger_px:.2f}"
+                    )
+                else:
+                    # 使用默认值（不推荐，但作为最后的后备）
+                    if position_side == "LONG":
+                        tp_trigger_px = mark_price * 1.03  # 默认3%止盈
+                        sl_trigger_px = mark_price * 0.98  # 默认2%止损
+                    else:  # SHORT
+                        tp_trigger_px = mark_price * 0.97  # 默认3%止盈
+                        sl_trigger_px = mark_price * 1.02  # 默认2%止损
+                    trade_logger.warning(
+                        f"止盈止损设置 | {symbol} | 使用默认价格值(不推荐): TP={tp_trigger_px:.2f} SL={sl_trigger_px:.2f} | LLM值: TP={llm_tp_price:.2f} SL={llm_sl_price:.2f}"
+                    )
 
             trade_trigger_mode = decision.get("trade_trigger_mode", 1)
             order_type_binance = decision.get("order_type_binance", "MARKET")
+            limit_price = decision.get("limit_price", 0.0)
+
+            # 根据订单类型转换止盈止损格式
+            # 市价单：使用百分比（相对开仓价格 mark_price）
+            # 限价单：使用价格值（具体价格）
+            if order_type_binance == "LIMIT" and limit_price > 0:
+                # 限价单：直接使用价格值（不需要转换）
+                final_tp_trigger_px = tp_trigger_px
+                final_sl_trigger_px = sl_trigger_px
+                trade_logger.info(
+                    f"止盈止损格式 | {symbol} | 限价单模式，使用价格值: TP={final_tp_trigger_px:.2f} SL={final_sl_trigger_px:.2f} (限价={limit_price:.2f})"
+                )
+            else:
+                # 市价单：将价格值转换为百分比（相对开仓价格 mark_price）
+                # 根据API文档，市价单的 tp_trigger_px 和 sl_trigger_px 使用百分比
+                reference_price = mark_price  # 市价单使用 mark_price 作为参考价格
+
+                if position_side == "LONG":
+                    # 做多：止盈在价格上方，止损在价格下方
+                    # 百分比 = (目标价格 - 开仓价格) / 开仓价格 * 100
+                    if tp_trigger_px > reference_price:
+                        final_tp_trigger_px = (tp_trigger_px - reference_price
+                                               ) / reference_price * 100.0
+                    else:
+                        final_tp_trigger_px = 0.0
+                        trade_logger.warning(
+                            f"止盈价格异常 | {symbol} | 做多时止盈价格({tp_trigger_px:.2f})应高于开仓价格({reference_price:.2f})"
+                        )
+
+                    if sl_trigger_px < reference_price and sl_trigger_px > 0:
+                        final_sl_trigger_px = (reference_price - sl_trigger_px
+                                               ) / reference_price * 100.0
+                    else:
+                        final_sl_trigger_px = 0.0
+                        trade_logger.warning(
+                            f"止损价格异常 | {symbol} | 做多时止损价格({sl_trigger_px:.2f})应低于开仓价格({reference_price:.2f})"
+                        )
+                else:  # SHORT
+                    # 做空：止盈在价格下方，止损在价格上方
+                    # 百分比 = (开仓价格 - 目标价格) / 开仓价格 * 100
+                    if tp_trigger_px < reference_price and tp_trigger_px > 0:
+                        final_tp_trigger_px = (reference_price - tp_trigger_px
+                                               ) / reference_price * 100.0
+                    else:
+                        final_tp_trigger_px = 0.0
+                        trade_logger.warning(
+                            f"止盈价格异常 | {symbol} | 做空时止盈价格({tp_trigger_px:.2f})应低于开仓价格({reference_price:.2f})"
+                        )
+
+                    if sl_trigger_px > reference_price:
+                        final_sl_trigger_px = (sl_trigger_px - reference_price
+                                               ) / reference_price * 100.0
+                    else:
+                        final_sl_trigger_px = 0.0
+                        trade_logger.warning(
+                            f"止损价格异常 | {symbol} | 做空时止损价格({sl_trigger_px:.2f})应高于开仓价格({reference_price:.2f})"
+                        )
+
+                trade_logger.info(
+                    f"止盈止损格式 | {symbol} | 市价单模式，价格值转换为百分比: TP价格={tp_trigger_px:.2f}→{final_tp_trigger_px:.2f}% SL价格={sl_trigger_px:.2f}→{final_sl_trigger_px:.2f}% (参考价格={reference_price:.2f})"
+                )
 
             # 计算数量（如果未提供）
             raw_quantity = None
@@ -732,8 +913,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 "user_id": 2,  # 默认值，后续可从配置获取
                 "api_id": 0,  # 默认值，后续可从配置获取
                 "trade_trigger_mode": int(trade_trigger_mode),
-                "tp_trigger_px": float(tp_trigger_px),
-                "sl_trigger_px": float(sl_trigger_px),
+                "tp_trigger_px": float(final_tp_trigger_px),  # 市价单：百分比；限价单：价格值
+                "sl_trigger_px": float(final_sl_trigger_px),  # 市价单：百分比；限价单：价格值
                 "acc": {
                     "key": "",  # 需要从配置获取
                     "secret": "",  # 需要从配置获取
@@ -825,7 +1006,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         if l1_event:
             l1_event_id = l1_event.get("event_id", "")
             l1_score = l1_event.get("total_score", "")
-            
+
             # 验证event_id是否匹配（如果提供了event_id）
             if event_id:
                 if l1_event_id != event_id:
@@ -837,9 +1018,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                     )
                 else:
                     trade_logger.debug(
-                        f"L1事件event_id匹配成功 | {symbol} | event_id={event_id}"
-                    )
-            
+                        f"L1事件event_id匹配成功 | {symbol} | event_id={event_id}")
+
             trade_logger.info(
                 f"L1事件 | {symbol} | direction={l1_event.get('direction')} | score={l1_score}"
             )
@@ -955,6 +1135,30 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             f"K线数据统计 | {symbol} | 5m={len(klines_5m)}根 | 15m={len(klines_15m)}根 | 30m={len(klines_30m)}根"
         )
 
+        # 格式化15分钟K线数据（用于缠论和波浪理论分析）
+        # 只传递最近100根K线（约25小时），避免数据过多
+        klines_15m_formatted = []
+        if klines_15m:
+            recent_klines = klines_15m[-100:] if len(
+                klines_15m) > 100 else klines_15m
+            for k in recent_klines:
+                if len(k) >= 6:
+                    # 格式：[timestamp, open, high, low, close, volume]
+                    klines_15m_formatted.append({
+                        "t":
+                        int(k[0]),  # timestamp
+                        "o":
+                        float(k[1]),  # open
+                        "h":
+                        float(k[2]),  # high
+                        "l":
+                        float(k[3]),  # low
+                        "c":
+                        float(k[4]),  # close
+                        "v":
+                        float(k[5]) if len(k) > 5 else 0.0  # volume
+                    })
+
         query = {
             "symbol": symbol,
             "exchange": exchange,
@@ -980,6 +1184,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             "market_structure": market_structure or {},
             "trend_analysis": trend_analysis,  # 添加趋势分析结果
             "positions": positions,
+            "klines_15m": klines_15m_formatted,  # 添加15分钟K线数据，用于缠论和波浪理论分析
             "default_margin": 200.0,  # 默认保证金 200U
             "default_leverage": 20.0  # 默认杠杆 20倍
         }
@@ -1200,7 +1405,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                         f"交易订单已推送 | {symbol} | {decision} | quantity={trade_json.get('sums')} | price={trade_json.get('openAvgPx')}"
                     )
                     reasoning_logger.info(
-                        f"交易推送成功 | {symbol} | {decision} | quantity={trade_json.get('sums')} | price={trade_json.get('openAvgPx')} | TP={trade_json.get('tp_trigger_px')}% | SL={trade_json.get('sl_trigger_px')}%"
+                        f"交易推送成功 | {symbol} | {decision} | quantity={trade_json.get('sums')} | price={trade_json.get('openAvgPx')} | TP={trade_json.get('tp_trigger_px')} | SL={trade_json.get('sl_trigger_px')}"
                     )
                 else:
                     trade_logger.error(f"交易订单推送失败 | {symbol} | {decision}")
