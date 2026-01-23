@@ -24,14 +24,14 @@ TYPES = [
 ]
 
 EXTRA_SIMPLE = {
-    "ticker24hr": "ticker24hr",
+    "24hr": "24hr",
     "fundingRate": "fundingRate",
 }
 
 
 def _init_result() -> Dict[str, Any]:
     base = {t: {p: [] for p in PERIODS} for t in TYPES}
-    base["ticker24hr"] = {}
+    base["24hr"] = {}
     base["fundingRate"] = []
     return base
 
@@ -69,8 +69,8 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
 
             # ticker / fundingRate（无周期）
             if interval is None and dtype in EXTRA_SIMPLE:
-                if dtype == "ticker24hr" and isinstance(data, dict):
-                    res["ticker24hr"] = data
+                if dtype == "24hr" and isinstance(data, dict):
+                    res["24hr"] = data
                 elif dtype == "fundingRate":
                     if isinstance(data, list):
                         res["fundingRate"] = data
@@ -217,13 +217,11 @@ def analyze_ticker(tk: Dict[str, Any]) -> Dict[str, Any]:
     if not tk:
         return {}
 
-    price = float(tk.get("lastPrice", tk.get("close", 0)))
-    open_p = float(tk.get("openPrice", price))
-    high = float(tk.get("highPrice", price))
-    low = float(tk.get("lowPrice", price))
+    high = float(tk.get("highPrice"))
+    low = float(tk.get("lowPrice"))
 
     quote_volume = float(tk.get("quoteVolume", 0))
-    price_change_pct = (price - open_p) / open_p if open_p else 0
+    price_change_pct = float(tk.get("priceChangePercent"))
 
     trend = "up" if price_change_pct > 0 else ("down" if price_change_pct < 0 else "flat")
 
@@ -231,7 +229,6 @@ def analyze_ticker(tk: Dict[str, Any]) -> Dict[str, Any]:
     vol_label = "low" if vol_range < 0.01 else ("medium" if vol_range < 0.03 else "high")
 
     return {
-        "price": price,
         "price_change_pct_24h": round(price_change_pct, 4),
         "high_24h": high,
         "low_24h": low,
@@ -296,7 +293,7 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
     # ------------------------------
     # Add ticker
     # ------------------------------
-    ticker_raw = data.get("ticker24hr", {})
+    ticker_raw = data.get("24hr", {})
     out["ticker"] = analyze_ticker(ticker_raw)
 
     # ------------------------------
