@@ -15,7 +15,7 @@ class AgentOutputInterpreter:
             "reasoning_none": "无具体原因说明。",
             "reasoning_title": "详细原因：",
             "unknown": "未知",
-            
+
             # Signal Validation
             "sv_title": "【信号验证分析】",
             "sv_verdict": "📊 结论",
@@ -178,7 +178,7 @@ class AgentOutputInterpreter:
 
         # 尝试从 output 中推断语言（如果 output 包含 language 字段）
         # 但通常解释器的语言由调用者决定，这里保留参数控制优先
-        
+
         if agent_name == "signal_validation":
             return AgentOutputInterpreter.interpret_signal_validation(output, language)
         elif agent_name == "trade_event":
@@ -200,16 +200,16 @@ class AgentOutputInterpreter:
     def interpret_signal_validation(output: Dict[str, Any], language: str = "zh") -> str:
         """解析 SignalValidationExpert 的输出"""
         lt = lambda k: AgentOutputInterpreter._get_lang_text(language, k)
-        
+
         verdict_raw = output.get("verdict", "UNKNOWN")
         verdict = lt("sv_verdict_map").get(verdict_raw, verdict_raw)
-        
+
         alignment_raw = output.get("alignment", "UNKNOWN")
         alignment = lt("sv_alignment_map").get(alignment_raw, alignment_raw)
-        
+
         conf_adj_raw = output.get("confidence_adjustment", "UNKNOWN")
         conf_adj = lt("sv_conf_adj_map").get(conf_adj_raw, conf_adj_raw)
-        
+
         reasoning = output.get("reasoning", [])
 
         summary = (
@@ -224,16 +224,16 @@ class AgentOutputInterpreter:
     def interpret_trade_event(output: Dict[str, Any], language: str = "zh") -> str:
         """解析 TradeEventExpert 的输出"""
         lt = lambda k: AgentOutputInterpreter._get_lang_text(language, k)
-        
+
         verdict_raw = output.get("verdict", "UNKNOWN")
         verdict = lt("te_verdict_map").get(verdict_raw, verdict_raw)
-        
+
         alignment_raw = output.get("alignment", "UNKNOWN")
         alignment = lt("te_alignment_map").get(alignment_raw, alignment_raw)
-        
+
         conf_adj_raw = output.get("confidence_adjustment", "UNKNOWN")
         conf_adj = lt("te_conf_adj_map").get(conf_adj_raw, conf_adj_raw)
-        
+
         reasoning = output.get("reasoning", [])
 
         summary = (
@@ -248,7 +248,7 @@ class AgentOutputInterpreter:
     def interpret_position_risk(output: Dict[str, Any], language: str = "zh") -> str:
         """解析 PositionRiskExpert 的输出"""
         lt = lambda k: AgentOutputInterpreter._get_lang_text(language, k)
-        
+
         # 字段兼容处理
         risk_state_raw = output.get("risk_state") or output.get("verdict") or "UNKNOWN"
         action_raw = output.get("recommended_action") or output.get("suggestion") or "UNKNOWN"
@@ -256,18 +256,18 @@ class AgentOutputInterpreter:
 
         risk_state = lt("pr_risk_map").get(risk_state_raw, risk_state_raw)
         action = lt("pr_action_map").get(action_raw, action_raw)
-        
+
         max_exposure = output.get("max_allowed_exposure", 0.0) * 100
         tighten_stop = lt("pr_tighten_yes") if output.get("tighten_stop") else lt("pr_tighten_no")
         freeze_min = output.get("freeze_add_position_min", 0)
-        
+
         # 构建操作详情
         action_details = []
         if output.get("add_pct") and output.get("add_pct") > 0:
             action_details.append(f"{lt('pr_add')} {output['add_pct'] * 100:.1f}%")
         if output.get("reduce_pct") and output.get("reduce_pct") > 0:
             action_details.append(f"{lt('pr_reduce')} {output['reduce_pct'] * 100:.1f}%")
-        
+
         action_detail_str = f" ({', '.join(action_details)})" if action_details else ""
 
         summary = (
@@ -284,23 +284,15 @@ class AgentOutputInterpreter:
 if __name__ == "__main__":
     # 测试代码
     print("--- Testing Signal Validation (Chinese) ---")
-    sv_output = {
-        "verdict": "WEAK_VALID",
-        "alignment": "CONFLICT",
-        "confidence_adjustment": "down",
-        "reasoning": ["短期动能减弱", "长期趋势不明朗"]
-    }
+    sv_output = {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
+                 "reasoning": ["在中期趋势看跌、短期高风险的结构背景下扩大多头风险敞口，与市场方向和风险状态严重冲突。", "持仓处于亏损状态且风险偏好受挫时仍选择加仓，加剧了结构性风险暴露。",
+                               "人群趋势分析显示多个关键指标处于极端值域（如账户多头比例、大额持仓比例），结合人群解读为‘逆风且不稳定’，判定为拥挤型高脆弱结构，加仓行为构成高危聚集风险。"]}
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {
-        "risk_state": "HIGH",
-        "recommended_action": "REDUCE",
-        "max_allowed_exposure": 0.5,
-        "reduce_pct": 0.25,
-        "tighten_stop": True,
-        "freeze_add_position_min": 60,
-        "reason_tags": ["High Volatility", "Liquidation Risk"]
-    }
+    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "max_allowed_exposure": 0.0, "reduce_pct": 1.0,
+                 "add_pct": 0.0, "tighten_stop": True, "freeze_add_position_min": 60,
+                 "reason_tags": ["信号失效", "人群拥挤不稳定", "逆风且结构脆弱", "高波动环境", "持仓方向与市场趋势冲突"], "suggestion": "EXIT",
+                 "verdict": "CRITICAL", "reasoning": ["信号失效", "人群拥挤不稳定", "逆风且结构脆弱", "高波动环境", "持仓方向与市场趋势冲突"]}
     print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))

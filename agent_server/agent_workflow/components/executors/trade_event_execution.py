@@ -133,8 +133,8 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
             if not ctx or not ctx.get("market_state"):
                 return False
             ctx_ts = ctx.get("ts", 0)
-            # Context 必须足够新鲜（最近 2 分钟内生成的）
-            return (now_ts - ctx_ts) < 2 * 60 * 1000
+            # Context 必须足够新鲜（最近 3 分钟内生成的）
+            return (now_ts - ctx_ts) < 3 * 60 * 1000
 
         if _is_valid(full_context):
             return full_context
