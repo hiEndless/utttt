@@ -1,7 +1,7 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.signal_validation import prompt
+from agent_server.configs.prompts.trade_event import prompt
 from agno.models.message import Message
 import json
 import asyncio
@@ -14,33 +14,33 @@ from agent_server.agents.utils import (
 from agent_server.agent_context.output_store import save_agent_output
 
 
-class SignalValidationExpert:
-    name = "signal_validation"
+class TradeEventExpert:
+    name = "trade_event"
 
-    # Define Schema
+    # Define schema for LLM output validation
     SCHEMA = {
         "verdict": {
             "type": str,
             "required": True,
             "options": ["VALID", "WEAK_VALID", "INVALID"],
-            "description": "Validation verdict"
+            "description": "裁决结果：VALID(有效) | WEAK_VALID(弱有效) | INVALID(无效)"
         },
         "alignment": {
             "type": str,
             "required": True,
             "options": ["ALIGNED", "CONFLICT", "STRONGLY_CONFLICT"],
-            "description": "Structural alignment"
+            "description": "结构一致性：ALIGNED(一致) | CONFLICT(冲突) | STRONGLY_CONFLICT(严重冲突)"
         },
         "confidence_adjustment": {
             "type": str,
             "required": True,
             "options": ["none", "down"],
-            "description": "Confidence adjustment"
+            "description": "可信度调整：none(无) | down(下调)"
         },
         "reasoning": {
             "type": list,
             "required": True,
-            "description": "List of structural reasons"
+            "description": "结构性原因列表（通常包含3点）"
         }
     }
 
@@ -62,9 +62,25 @@ class SignalValidationExpert:
             instructions=prompt,
         )
 
+        # 预处理 query，分离 LLM 核心输入与系统元数据
+        try:
+            qobj = json.loads(query) if isinstance(query, str) else (query or {})
+        except Exception:
+            qobj = {}
+
+        # 构造 LLM 专用精简输入（去除 symbol, event_id 等元数据）
+        trade_core = qobj.get("trade_core", {})
+        context_data = qobj.get("context", {})
+        
+        # 展平结构: trade_core + context (包含 market_state, crowd_state 等)
+        llm_input = {
+            "trade_core": trade_core,
+            **context_data
+        }
+
         async def _run_llm():
             run_output = await agent.arun(
-                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
                 stream=False,
                 debug_mode=True,
             )
@@ -75,22 +91,14 @@ class SignalValidationExpert:
                 llm_runner=_run_llm,
                 validator=self.validator,
                 max_retries=3,
-                on_retry=lambda msg: print(f"[SignalValidationExpert] {msg}")
+                on_retry=lambda msg: print(f"[TradeEventExpert] {msg}")
             )
         except Exception as e:
-            print(f"[SignalValidationExpert] Validation failed after retries: {e}")
-            final_result = {
-                "verdict": "INVALID",
-                "alignment": "CONFLICT",
-                "confidence_adjustment": "down",
-                "reasoning": ["validation_failed", str(e)]
-            }
+            # Fallback to raw output or error if validation fails completely
+            print(f"[TradeEventExpert] Validation failed after retries: {e}")
+            final_result = {"error": str(e), "verdict": "INVALID", "alignment": "CONFLICT", "reasoning": ["Validation failed"]}
 
         # 构建产出物系统数据结构
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
         symbol = qobj.get("symbol") or "UNKNOWN"
         exchange = qobj.get("exchange") or "binance"
         event_id = qobj.get("event_id")
@@ -111,25 +119,29 @@ class SignalValidationExpert:
 
 
 if __name__ == "__main__":
-    from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
+    from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 
-    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
-                    "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
-                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
-                    "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
+    final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
+                    'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
+                    'timestamp': '1768803852754', 'market_state': None, 'direction': None, 'confidence': None,
+                    'confidence_numeric': None, 'priority_weight': None, 'l1_total_score': None, 'tf_hint': None,
+                    'analysis_context': {}, 'meta': {'source_event_id': 'binance.ETHUSDT.trade.open.1768803852754',
+                                                     'origin_source_hint': 'trade', 'is_short_term': False},
+                    'trade_details': {'trade_id': 'e95cbad77cde4d8e80d405d1ff9a6f5f', 'position_side': 'SHORT',
+                                      'current_size': '-0.007', 'entry_price': '3193.0', 'mark_price': '3193.00000000',
+                                      'pnl_ratio': '0.0', 'action': 'OPEN', 'change_amount': '-0.007'}}
 
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
     event_id = final_signal.get("event_id")
     direction = final_signal.get("direction")
-    tf_hint = final_signal.get("tf_hint")
-    tf_validation = compute_tf_validation(symbol, exchange, direction, tf_hint)
+    trade_details = final_signal.get("trade_details")
+    trade_core = abstract_trade_event(trade_details)
 
-    expert = SignalValidationExpert()
-
+    expert = TradeEventExpert()
 
     async def _read_market_state(ex: str, sym: str):
         rc = RedisClient()
@@ -140,32 +152,22 @@ if __name__ == "__main__":
         except Exception:
             return {}
 
-
     async def _demo():
         bg = await _read_market_state(exchange, symbol)
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
                                                                "crowd_state": {}}
         ctx = build_agent_context("signal_validation", full_context)
         
-        # Inject deterministic crowd interpretation (replaces raw crowd_positioning)
-        interpretation = build_crowd_interpretation(full_context, direction)
+        # Inject deterministic crowd interpretation
+        position_side = trade_details.get("position_side", "flat")
+        interpretation = build_crowd_interpretation(full_context, position_side)
         ctx["crowd_interpretation"] = interpretation
-        # print(ctx)
-
+        
         query = {
             "symbol": symbol,
             "exchange": exchange,
             "event_id": event_id,
-            "final_event": {
-                "event_type": final_signal.get("route"),
-                "direction": direction,
-                "final_priority": final_signal.get("final_priority"),
-                "confidence": final_signal.get("confidence"),
-                "confidence_numeric": final_signal.get("confidence_numeric"),
-                "tf_hint": tf_hint,
-                "analysis_context": final_signal.get("analysis_context"),
-            },
-            "tf_validation": tf_validation,
+            "trade_core": trade_core,
             "context": ctx,
         }
         await expert.run(query)

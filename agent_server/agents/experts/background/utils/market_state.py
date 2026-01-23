@@ -76,10 +76,10 @@ def detect_long_term_veto(
 
 
 def aggregate_structural_group(backgrounds: List[Dict], group: str) -> Dict:
-    trends = [b["trend"] for b in backgrounds]
-    structures = [b["structure"]["state"] for b in backgrounds]
-    momentums = [b["environment"]["momentum_state"] for b in backgrounds]
-    risks = [b["environment"]["risk_state"] for b in backgrounds]
+    trends = [b.get("trend", "unknown") for b in backgrounds]
+    structures = [b.get("structure", {}).get("state", "unknown") for b in backgrounds]
+    momentums = [b.get("environment", {}).get("momentum_state", "unknown") for b in backgrounds]
+    risks = [b.get("environment", {}).get("risk_state", "unknown") for b in backgrounds]
 
     agreement = _agreement(trends)
     weight = CONFIDENCE_WEIGHT.get(group, 1.0)
@@ -110,7 +110,7 @@ def aggregate_micro_term(backgrounds: List[Dict]) -> Dict:
     }
 
 
-def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_state: Dict | None = None) -> Dict:
+def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_state: Dict | None = None, crowd_positioning: Dict | None = None) -> Dict:
     grouped: Dict[str, List[Dict]] = {k: [] for k in INTERVAL_GROUPS}
     latest_ts = 0
 
@@ -173,6 +173,9 @@ def market_state_aggregator(symbol: str, kline_backgrounds: List[Dict], crowd_st
         # 添加压缩的人群背景信息
         market_state["crowd_state"] = crowd_state
 
+    if crowd_positioning:
+        market_state["crowd_positioning"] = crowd_positioning
+
     return market_state
 
 
@@ -182,6 +185,7 @@ async def save_market_state(exchange: str, symbol: str, market_state: Dict) -> N
     key = f"background:{exchange}:{symbol}:market_state"
     await client.set_json(key, market_state)
 
+
 def has_full_intervals(kline_backgrounds: List[Dict]) -> bool:
     present = set()
     for bg in kline_backgrounds:
@@ -190,17 +194,19 @@ def has_full_intervals(kline_backgrounds: List[Dict]) -> bool:
             present.add(itv)
     return REQUIRED_INTERVALS.issubset(present)
 
+
 if __name__ == "__main__":
     import json
     import asyncio
     import os
     import sys
-    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
-    from agent_server.agents.experts.background.crowd_state_compactor import crowd_state_compactor
+    from agent_server.agents.experts.background.utils.crowd_state_compactor import crowd_state_compactor
 
     API_KLINE_READ = "/kline/background/read_multi"
 
@@ -230,10 +236,14 @@ if __name__ == "__main__":
             crowd_raw = (crowd_res or {}).get("data") if isinstance(crowd_res, dict) else None
             crowd_compact = crowd_state_compactor(crowd_raw or {})
 
-            agg = market_state_aggregator("BTCUSDT", items, crowd_compact)
+            # 提取 crowd_positioning 字段
+            crowd_positioning = crowd_raw.pop("crowd_positioning", None)
+            agg = market_state_aggregator("BTCUSDT", items, crowd_compact, crowd_positioning)
+
             print(json.dumps(agg, ensure_ascii=False))
             await save_market_state("binance", "BTCUSDT", agg)
         finally:
             await http_client.close()
+
 
     asyncio.run(run())

@@ -1,22 +1,61 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-import os
 from agent_server.configs.prompts.market_structure import prompt
 from agno.models.message import Message
 import json
 import asyncio
 from agent_server.utils.redis_client import RedisClient
 import time
-from agent_server.agents.experts.utils import (
-    _extract_json_from_text,
+from agent_server.agents.utils import (
     _ensure_json_serializable,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 
 
 class MarketStructureExpert:
     name = "market_structure"
+
+    # Define Schema
+    SCHEMA = {
+        "symbol": {"type": str, "required": True},
+        "generated_at": {"type": int, "required": True},
+        "market_participant_summary": {
+            "type": dict,
+            "required": True,
+            "description": "Summary of participant structure"
+        },
+        "crowd_positioning": {
+            "type": dict,
+            "required": True,
+            "description": "Crowd sentiment and positioning"
+        },
+        "sentiment_by_timeframes": {
+            "type": dict,
+            "required": True,
+            "description": "Sentiment analysis by timeframe"
+        },
+        "funding_analysis": {
+            "type": dict,
+            "required": True,
+            "description": "Funding rate analysis"
+        },
+        "cross_timeframe_consistency": {
+            "type": dict,
+            "required": True,
+            "description": "Consistency check across timeframes"
+        },
+        "guidance_for_other_agents": {
+            "type": dict,
+            "required": True,
+            "description": "Guidance for downstream agents"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: dict, exchange: str, symbol: str) -> str:
 
@@ -33,30 +72,51 @@ class MarketStructureExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[MarketStructureExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[MarketStructureExpert] Validation failed after retries: {e}")
+            final_result = {
+                "symbol": symbol,
+                "generated_at": int(time.time() * 1000),
+                "error": str(e),
+                "market_participant_summary": {
+                    "overall_bias": "neutral",
+                    "overall_strength": "weak",
+                    "overall_stability": "medium",
+                    "dominant_timeframe": "1h neutral",
+                    "key_observations": ["validation_failed"],
+                    "structural_risks": []
+                },
+                "crowd_positioning": {
+                    "retail_sentiment": "neutral",
+                    "smart_money_sentiment": "neutral",
+                    "divergence": "low",
+                    "fragility": "low"
+                },
+                "sentiment_by_timeframes": {},
+                "funding_analysis": {"bias": "neutral", "volatility": "medium", "trend": "flat", "notes": []},
+                "cross_timeframe_consistency": {"sentiment_alignment": "mixed", "conflicts": [], "transitions": [], "cycle_notes": []},
+                "guidance_for_other_agents": {
+                    "macro_context": "ranging",
+                    "suitable_strategies": [],
+                    "unsuitable_strategies": [],
+                    "behavioral_features": []
+                }
+            }
 
         ts = int(time.time() * 1000)
         if isinstance(final_result, dict):

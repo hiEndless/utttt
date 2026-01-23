@@ -2,14 +2,17 @@
 # agent_context/registry.py
 from .contracts import AgentContextContract
 
-
 AGENT_REGISTRY: dict[str, AgentContextContract] = {
     "force_stats": {
-        "agent": "force_stats",
-        "role": "liquidation_structure",
+        "agent":
+        "force_stats",
+        "role":
+        "liquidation_structure",
         "scope": ["micro", "short"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
+        "uses_crowd_state":
+        True,
+        "allows_cross_timeframe_inference":
+        False,
         "forbidden_semantics": [
             "trend_forecast",
             "strategy_advice",
@@ -17,14 +20,11 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         ],
         "allowed_paths": [
             "market_state.micro_term.state",
-
             "market_state.short_term.direction",
             "market_state.short_term.risk",
             "market_state.short_term.confidence",
-
-            "market_state.mid_term.direction",     # reference-only
-            "market_state.long_term.veto",          # constraint-only
-
+            "market_state.mid_term.direction",  # reference-only
+            "market_state.long_term.veto",  # constraint-only
             "crowd_state.bias",
             "crowd_state.crowding_level",
             "crowd_state.fragility",
@@ -32,13 +32,16 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.funding_pressure",
         ],
     },
-
     "kline_expert": {
-        "agent": "kline_expert",
-        "role": "technical_signal",
+        "agent":
+        "kline_expert",
+        "role":
+        "technical_signal",
         "scope": ["micro", "short", "mid"],
-        "uses_crowd_state": False,
-        "allows_cross_timeframe_inference": True,
+        "uses_crowd_state":
+        False,
+        "allows_cross_timeframe_inference":
+        True,
         "forbidden_semantics": [
             "crowd_psychology",
         ],
@@ -48,7 +51,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "market_state.mid_term.direction",
         ],
     },
-
     "fusion": {
         "agent": "fusion",
         "role": "fusion_decision",
@@ -58,32 +60,33 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "forbidden_semantics": [],
         "allowed_paths": [],  # 特殊：full context
     },
-
     "signal_validation": {
-        "agent": "signal_validation",
-        "role": "technical_signal",
+        "agent":
+        "signal_validation",
+        "role":
+        "technical_signal",
         "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
+        "uses_crowd_state":
+        True,
+        "allows_cross_timeframe_inference":
+        False,
         "forbidden_semantics": [
             "trend_forecast",
             "strategy_advice",
             "generate_new_direction",
         ],
         "allowed_paths": [
+            # crowd_positioning REMOVED: Decision layer should not see raw game theory data
             "market_state.short_term.direction",
             "market_state.short_term.momentum",
             "market_state.short_term.risk",
             "market_state.short_term.confidence",
-
             "market_state.mid_term.direction",
             "market_state.mid_term.momentum",
             "market_state.mid_term.confidence",
-
             "market_state.long_term.direction",
             "market_state.long_term.conflict",
             "market_state.long_term.veto",
-
             "crowd_state.bias",
             "crowd_state.crowding_level",
             "crowd_state.fragility",
@@ -91,13 +94,16 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.consistency",
         ],
     },
-
     "position_risk": {
-        "agent": "position_risk",
-        "role": "risk_management",
+        "agent":
+        "position_risk",
+        "role":
+        "risk_management",
         "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
+        "uses_crowd_state":
+        True,
+        "allows_cross_timeframe_inference":
+        False,
         "forbidden_semantics": [
             "trend_forecast",
             "strategy_advice",
@@ -105,6 +111,7 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "override_signal_direction",
         ],
         "allowed_paths": [
+            # crowd_positioning REMOVED: Decision layer should not see raw game theory data
             # Market Structure & Trends
             "market_state.long_term.direction",
             "market_state.long_term.veto",
@@ -119,7 +126,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
             "crowd_state.bias",
         ],
     },
-
     "trade_decision": {
         "agent": "trade_decision",
         "role": "trade_execution",
@@ -128,5 +134,29 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "allows_cross_timeframe_inference": True,
         "forbidden_semantics": [],
         "allowed_paths": [],  # 特殊：full context
+    },
+    "trade_event": {
+        "agent":
+        "trade_event",
+        "role":
+        "trade_analysis",
+        "scope": ["micro", "short"],
+        "uses_crowd_state":
+        True,
+        "allows_cross_timeframe_inference":
+        False,
+        "forbidden_semantics": [
+            "strategy_advice",
+        ],
+        "allowed_paths": [
+            # crowd_positioning REMOVED
+            "market_state.micro_term.state",
+            "market_state.short_term.direction",
+            "market_state.short_term.risk",
+            "market_state.mid_term.direction",
+            "crowd_state.bias",
+            "crowd_state.crowding_level",
+            "crowd_state.funding_pressure",
+        ],
     },
 }

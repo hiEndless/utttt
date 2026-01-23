@@ -4,10 +4,11 @@ from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.position_risk import prompt
 from agno.models.message import Message
 import json
-from agent_server.agents.experts.utils import (
-    _extract_json_from_text,
-    _ensure_json_serializable,
+import time
+from agent_server.agents.utils import (
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.utils.account import get_available_exposure_pct
@@ -15,6 +16,59 @@ from agent_server.utils.account import get_available_exposure_pct
 
 class PositionRiskExpert:
     name = "position_risk"
+
+    # Define Schema
+    SCHEMA = {
+        "risk_state": {
+            "type": str,
+            "required": True,
+            "options": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+            "description": "Risk state level"
+        },
+        "recommended_action": {
+            "type": str,
+            "required": True,
+            "options": ["ADD_POSITION", "HOLD", "DEFENSIVE", "REDUCE", "EXIT"],
+            "description": "Recommended action"
+        },
+        "max_allowed_exposure": {
+            "type": float,
+            "required": True,
+            "range": (0.0, 1.0),
+            "description": "Maximum allowed exposure percentage"
+        },
+        "reduce_pct": {
+            "type": float,
+            "required": False,
+            "range": (0.0, 1.0),
+            "description": "Reduction percentage if action is REDUCE or EXIT"
+        },
+        "add_pct": {
+            "type": float,
+            "required": False,
+            "range": (0.0, 1.0),
+            "description": "Addition percentage if action is ADD_POSITION"
+        },
+        "tighten_stop": {
+            "type": bool,
+            "required": True,
+            "description": "Whether to tighten stop loss"
+        },
+        "freeze_add_position_min": {
+            "type": int,
+            "required": True,
+            "range": (0, 10000),
+            "description": "Minutes to freeze adding position"
+        },
+        "reason_tags": {
+            "type": list,
+            "required": True,
+            "description": "List of reasons for the decision"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: str) -> str:
 
@@ -31,30 +85,34 @@ class PositionRiskExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[PositionRiskExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[PositionRiskExpert] Validation failed after retries: {e}")
+            # Fallback for critical failure
+            final_result = {
+                "risk_state": "CRITICAL",
+                "recommended_action": "HOLD",  # Safe default
+                "max_allowed_exposure": 0.0,
+                "reduce_pct": 0.0,
+                "add_pct": 0.0,
+                "tighten_stop": True,
+                "freeze_add_position_min": 60,
+                "reason_tags": ["validation_failed_fallback", str(e)]
+            }
 
         # 构建产出物系统数据结构
         try:
@@ -69,7 +127,7 @@ class PositionRiskExpert:
 
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-            
+
             # 适配数据库字段映射
             if "recommended_action" in payload_obj:
                 payload_obj["suggestion"] = payload_obj["recommended_action"]
@@ -77,12 +135,13 @@ class PositionRiskExpert:
                 payload_obj["verdict"] = payload_obj["risk_state"]
             if "reason_tags" in payload_obj:
                 payload_obj["reasoning"] = payload_obj["reason_tags"]
-                
+
         except Exception:
             payload_obj = {"raw": final_result}
 
         try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id, model_id=model_id)
+            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id,
+                                    model_id=model_id)
         except Exception as e:
             print(f"Failed to save agent output: {e}")
 
@@ -93,20 +152,24 @@ class PositionRiskExpert:
 
 if __name__ == "__main__":
     from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
+    from agent_server.reducers.position_risk_decider import decide_position_action
     from agent_server.tools.get_position import get_position
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
+    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
     import asyncio
 
     sv_out = {
         "_context_meta": {"agent": "signal_validation", "role": "technical_signal", "scope": ["short", "mid", "long"],
-                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000, "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
-        "agent_output": {"verdict": "INVALID", "direction": "bearish", "confidence_adjustment": "down",
+                          "uses_crowd_state": True, "exchange": "binance", "symbol": "BTCUSDT", "ts": 1730000000,
+                          "event_id": "binance.BTCUSDT.trade.open.1768045518249"},
+        "agent_output": {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
                          "reasoning": ["所有关键周期（15m/30m/1h）tf_validation_conclusion均为conflict，构成硬性技术否决条件。",
                                        "市场短期虽为bearish，但动能持续减弱，且长期方向中性并具veto权，削弱方向环境支持。",
                                        "人群结构显示高拥挤度与高脆弱性，多头主导下易引发反向挤压，加剧方向失效风险。"]}}
 
     verdict = sv_out["agent_output"]["verdict"]
+    alignment = sv_out["agent_output"].get("alignment")
     ts = sv_out["_context_meta"]["ts"]
     exchange = sv_out["_context_meta"]["exchange"]
     symbol = sv_out["_context_meta"]["symbol"]
@@ -119,7 +182,8 @@ if __name__ == "__main__":
     initialMargin = position.pop("initialMargin")  # 占用保证金，用于计算仓位占比
 
 
-    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, entry_ts: int,
+    async def _reduce(exchange: str, trade_id: str, symbol: str, position_side: str, verdict: str, alignment: str,
+                      entry_ts: int,
                       ts: int):
         state = await reduce_temporal_state(
             exchange=exchange,
@@ -127,6 +191,7 @@ if __name__ == "__main__":
             symbol=symbol,
             position_side=position_side,
             verdict=verdict,
+            alignment=alignment,
             entry_ts=entry_ts,
             event_ts=ts,
         )
@@ -134,7 +199,7 @@ if __name__ == "__main__":
         return state
 
 
-    state = asyncio.run(_reduce(exchange, trade_id, symbol, position_side, verdict, entry_ts, ts))
+    state = asyncio.run(_reduce(exchange, trade_id, symbol, position_side, verdict, alignment, entry_ts, ts))
 
     expert = PositionRiskExpert()
 
@@ -149,9 +214,6 @@ if __name__ == "__main__":
             return {}
 
 
-    import time
-
-
     async def _demo():
         bg = await _read_market_state(exchange, symbol)
         full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
@@ -159,6 +221,11 @@ if __name__ == "__main__":
 
         # 1. 使用 position_risk 视角构建上下文 (自动过滤无关字段)
         ctx = build_agent_context("position_risk", full_context)
+
+        # Inject deterministic crowd interpretation
+        # Note: position["position_side"] is already available here
+        interpretation = build_crowd_interpretation(full_context, position_side)
+        ctx["crowd_interpretation"] = interpretation
 
         # 2. 提取 Market Context (扁平化)
         ms = ctx.get("market_state", {})
@@ -177,6 +244,8 @@ if __name__ == "__main__":
             "fragility": cs.get("fragility", "unknown"),
             "bias": cs.get("bias", "unknown")
         }
+
+        crowd_interpretation = ctx.get("crowd_interpretation", {})
 
         # 4. 模拟 Operational Context (建议模式适配)
         # 从 Redis 获取上一次的建议记录，用于填充 action_state
@@ -230,6 +299,14 @@ if __name__ == "__main__":
         }
 
         # 5. 组装最终 Query
+        decision_rules = decide_position_action(
+            holding_duration_min=state["holding_duration_min"],
+            time_since_last_event_min=(int(time.time() * 1000) - state["last_update_ts"]) // 60_000,
+            valid_streak=state["valid_streak"],
+            invalid_streak=state["invalid_streak"],
+            conflict_streak=state["conflict_streak"],
+        )
+
         query = {
             "symbol": symbol,
             "exchange": exchange,
@@ -239,8 +316,10 @@ if __name__ == "__main__":
             "position_snapshot": position,
             "signal_verdict": sv_out["agent_output"],
             "temporal_state": state,
+            "risk_rules_decision": decision_rules,
             "market_context": market_context,
             "crowd_context": crowd_context,
+            "crowd_interpretation": crowd_interpretation,
             "operational_context": operational_context  # 新增字段
         }
 

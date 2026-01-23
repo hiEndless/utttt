@@ -5,13 +5,15 @@ import json
 import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
+from agent_server.agent_workflow.trade_event_workflow import TradeEventWorkflow
 from agent_server.utils.trade_event_recorder import get_recorder
-from agent_server.utils.price_fetcher import get_mark_price
+from agent_server.utils.analysis_verifier import AnalysisVerifier
+from agent_server.tools.price_fetcher import get_mark_price
 
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
-    DEBUG = True
+    DEBUG = False
 
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
@@ -20,6 +22,11 @@ class RouterFinalListener:
         self.consumer = "agent_final_router"
         # 初始化事件记录器 (使用单例以共享连接池)
         self.event_recorder = get_recorder()
+        # 初始化分析验证器 (复用 recorder 的 DB 和 Executor)
+        self.analysis_verifier = AnalysisVerifier(
+            self.event_recorder.db,
+            self.event_recorder.executor
+        )
 
     @staticmethod
     def _j(s: str):
@@ -108,25 +115,31 @@ class RouterFinalListener:
                     # 6. 异步入库事件（不阻塞后续处理）
                     # 使用统一的 get_mark_price 组件获取价格
                     mark_price = await get_mark_price(info, exchange)
+
+                    if info.get("symbol") and info.get("route") == "trade":
+                        # 处理 trade 类型信号
+                        raw_is_short = meta.get("is_short_term", False)
+                        if isinstance(raw_is_short, str):
+                            is_short_term = raw_is_short.lower() == "true"
+                        else:
+                            is_short_term = bool(raw_is_short)
+                        info["is_short_term"] = is_short_term
                     
                     # 创建入库任务（不等待结果，避免阻塞）
                     asyncio.create_task(self.event_recorder.save_event(info, mark_price))
                     
+                    # 验证上一个事件的分析结果 (异步)
+                    asyncio.create_task(self.analysis_verifier.verify_previous_analyses(info, mark_price))
+                    
                     # 7. 根据路由分发任务
-                    # 目前仅处理 "indicators" 类型的信号，路由到 SignalValidationWorkflow
                     if not self.DEBUG:
                         if info.get("symbol") and info.get("route") == "indicators":
                             wf = SignalValidationWorkflow()
                             # 异步启动工作流
                             asyncio.create_task(wf.arun(info))
                         elif info.get("symbol") and info.get("route") == "trade":
-                            # 处理 trade 类型信号
-                            is_short_term = meta.get("is_short_term", "false").lower() == "true"
-                            
-                            # 触发 TradeReviewWorkflow (示例)
-                            # wf = TradeReviewWorkflow()
-                            # asyncio.create_task(wf.arun(info, is_short_term=is_short_term))
-                            pass
+                            wf = TradeEventWorkflow()
+                            asyncio.create_task(wf.arun(info))
                     
                     # 确认消息已处理
                     await self.redis.xack(self.final_stream, self.group, entry_id)

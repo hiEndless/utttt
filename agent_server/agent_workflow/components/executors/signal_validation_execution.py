@@ -1,8 +1,8 @@
 from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.signal_validation import SignalValidationExpert
-from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
-from agent_server.tools.tf_validation import compute_tf_validation
+from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
+from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
 import json
@@ -29,6 +29,10 @@ class SignalValidationComponent(BaseWorkflowComponent):
         full_context = await self._fetch_market_context(exchange, symbol)
         agent_ctx = build_agent_context("signal_validation", full_context)
         
+        # Inject deterministic crowd interpretation
+        interpretation = build_crowd_interpretation(full_context, direction)
+        agent_ctx["crowd_interpretation"] = interpretation
+
         ts_now = int(time.time() * 1000)
 
         query = {
@@ -70,6 +74,6 @@ class SignalValidationComponent(BaseWorkflowComponent):
 
         return self._safe_json_dumps({
             "event_data": event_data,
-            "sv_output": sv_output,
+            "output": sv_output,
             "full_context": full_context,
         })

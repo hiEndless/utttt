@@ -113,13 +113,18 @@ class BinanceAnalysisService:
                     results.append({
                         'symbol': j.get('symbol'),
                         'side': j.get('positionSide'),
+                        'positionSide': j.get('positionSide'),
                         'old_position_amt': old_amt,
                         'new_position_amt': new_amt,
+                        'positionAmt': j.get('positionAmt'),
                         'old_pnl_ratio': old_pnl_ratio,
                         'new_pnl_ratio': new_pnl_ratio,
+                        'pnl_ratio': j.get('pnl_ratio'),
                         'trade_id': j.get('trade_id'),
                         'change': change,
                         'price': j.get('markPrice'),
+                        'markPrice': j.get('markPrice'),
+                        'entryPrice': j.get('entryPrice'),
                         'updateTime': j.get('updateTime'),
                         'lastUpdateTime': i.get('updateTime')  # 增加上一次更新时间
                     })

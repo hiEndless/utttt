@@ -1,22 +1,61 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-import os
 from agent_server.configs.prompts.kline import prompt
 from agno.models.message import Message
 import json
 import asyncio
 from agent_server.utils.redis_client import RedisClient
 import time
-from agent_server.agents.experts.utils import (
-    _extract_json_from_text,
+from agent_server.agents.utils import (
     _ensure_json_serializable,
     _json_dumps_safe,
+    LLMOutputValidator,
+    validate_with_retry,
 )
 
 
 class KLineExpert:
     name = "kline"
+
+    # Define Schema
+    SCHEMA = {
+        "interval": {
+            "type": str,
+            "required": True,
+            "options": ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"],
+            "description": "Time interval"
+        },
+        "symbol": {
+            "type": str,
+            "required": True,
+            "description": "Trading symbol"
+        },
+        "trend": {
+            "type": str,
+            "required": True,
+            "options": ["strong_bullish", "bullish", "neutral", "bearish", "strong_bearish"],
+            "description": "Current trend direction"
+        },
+        "structure": {
+            "type": dict,
+            "required": True,
+            "description": "Market structure details"
+        },
+        "environment": {
+            "type": dict,
+            "required": True,
+            "description": "Market environment state"
+        },
+        "background_summary": {
+            "type": str,
+            "required": True,
+            "description": "Brief summary of the market background"
+        }
+    }
+
+    def __init__(self):
+        self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: dict, exchange: str, symbol: str) -> str:
 
@@ -33,30 +72,36 @@ class KLineExpert:
             instructions=prompt,
         )
 
-        run_output = await agent.arun(
-            Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-            stream=False,
-            debug_mode=True,
-        )
-        content = run_output.content
-        if isinstance(content, str):
-            try:
-                final_result = json.loads(content)
-            except json.JSONDecodeError:
-                extracted = _extract_json_from_text(content)
-                if extracted is not None:
-                    final_result = extracted
-                else:
-                    final_result = {"raw": content}
-        elif hasattr(content, "model_dump"):
-            final_result = content.model_dump(exclude_none=True)
-        else:
-            final_result = content
+        async def _run_llm():
+            run_output = await agent.arun(
+                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                stream=False,
+                debug_mode=True,
+            )
+            return run_output.content
 
-        if isinstance(final_result, dict) and isinstance(final_result.get("raw"), str):
-            extracted_raw = _extract_json_from_text(final_result["raw"])
-            if extracted_raw is not None:
-                final_result = extracted_raw
+        try:
+            final_result = await validate_with_retry(
+                llm_runner=_run_llm,
+                validator=self.validator,
+                max_retries=3,
+                on_retry=lambda msg: print(f"[KLineExpert] {msg}")
+            )
+        except Exception as e:
+            print(f"[KLineExpert] Validation failed after retries: {e}")
+            final_result = {
+                "interval": query.get("interval", "unknown"),
+                "symbol": symbol,
+                "trend": "neutral",
+                "structure": {"state": "consolidating", "key_level_proximity": "no_key_level"},
+                "environment": {
+                    "market_trend": "neutral",
+                    "volatility_state": "medium",
+                    "momentum_state": "neutral",
+                    "risk_state": "medium"
+                },
+                "background_summary": f"Analysis failed: {str(e)}"
+            }
 
         ts = int(time.time() * 1000)
         if isinstance(final_result, dict):

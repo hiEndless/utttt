@@ -5,8 +5,10 @@ from typing import Dict, Optional, List
 from agno.workflow import StepInput
 from agent_server.tools.get_position import get_position
 from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
+from agent_server.reducers.position_risk_decider import decide_position_action
 from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
+from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import get_available_exposure_pct
@@ -25,8 +27,12 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         prev_result = self._parse_step_content(ctx.previous_step_content)
 
         event_data = prev_result["event_data"]
-        sv_output = prev_result["sv_output"]
+        prev_output = prev_result["output"]
         full_context = prev_result["full_context"]
+        # 判断是否有skipped字段
+        if prev_output.get("skipped"):
+            print(f"--- 持仓风控跳过：{event_data.get('symbol')} (Previous Skipped) ---")
+            return self._safe_json_dumps(prev_output)
 
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")
@@ -35,10 +41,22 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         # 1. 获取持仓
         positions = get_position(exchange, symbol)
+
+        # 针对交易事件，只评估对应方向的持仓
+        if event_data.get("route") == "trade":
+            trade_details = event_data.get("trade_details", {})
+            target_side = trade_details.get("position_side")
+            if target_side:
+                positions = [
+                    p for p in positions
+                    if str(p.get("position_side")).upper() == str(target_side).upper()
+                ]
+                print(f"  -> [Trade Event] 仅评估 {target_side} 方向持仓")
         
         # 2. 准备上下文数据
-        agent_output = sv_output.get("agent_output", sv_output)
+        agent_output = prev_output.get("agent_output", prev_output)
         verdict = agent_output.get("verdict", "UNKNOWN")
+        alignment = agent_output.get("alignment")
         
         # 优先使用上游传递的 context，如果缺失则自行获取
         if full_context:
@@ -68,15 +86,34 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
             trade_id = position_snapshot.get("trade_id")
+            pos_side = position_snapshot.get("position_side", "LONG")
             
+            # Position-aware Context Injection
+            # 为当前处理的持仓方向生成专属的解释
+            interpretation = build_crowd_interpretation(context_to_use, pos_side)
+            pr_ctx["crowd_interpretation"] = interpretation
+
+            # Re-extract Crowd Context from injected interpretation
+            # 此时 crowd_context 已经是“顺风/逆风”等结论性描述
+            injected_crowd = pr_ctx.get("crowd_interpretation", {})
+
             state = await reduce_temporal_state(
                 exchange=exchange,
                 trade_id=trade_id or "sim",
                 symbol=symbol,
-                position_side=position_snapshot.get("position_side", "LONG"),
+                position_side=pos_side,
                 verdict=verdict,
+                alignment=alignment,
                 entry_ts=int(position_snapshot.get("entry_ts", 0)),
                 event_ts=ts_now,
+            )
+
+            decision_rules = decide_position_action(
+                holding_duration_min=state["holding_duration_min"],
+                time_since_last_event_min=(ts_now - state["last_update_ts"]) // 60_000,
+                valid_streak=state["valid_streak"],
+                invalid_streak=state["invalid_streak"],
+                conflict_streak=state["conflict_streak"],
             )
 
             rc = RedisClient()
@@ -130,8 +167,10 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "position_snapshot": position_snapshot,
                 "signal_verdict": agent_output,
                 "temporal_state": state,
+                "risk_rules_decision": decision_rules,
                 "market_context": market_context,
                 "crowd_context": crowd_context,
+                "crowd_interpretation": injected_crowd,
                 "operational_context": operational_context
             }
 

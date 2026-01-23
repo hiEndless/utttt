@@ -1,20 +1,20 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.kline import prompt
+from agent_server.configs.prompts.event_importance_scoring import prompt
 from agno.models.message import Message
 import json
+import time
 from agent_server.agents.utils import (
     _extract_json_from_text,
     _json_dumps_safe,
 )
-from agent_server.agent_context.output_store import save_agent_output
 
 
-class ForceStatsExpert:
-    name = "force_stats"
+class EventImportanceScoringExpert:
+    name = "event_importance_scoring"
 
-    async def run(self, query: str) -> str:
+    async def run(self, query: dict, exchange: str, symbol: str) -> str:
 
         cfg = get_agent_config(self.name)
 
@@ -54,30 +54,18 @@ class ForceStatsExpert:
             if extracted_raw is not None:
                 final_result = extracted_raw
 
-        # 构建产出物系统数据结构
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
-        symbol = qobj.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or "binance"
-        try:
-            ts = int(qobj.get("ts") or qobj.get("ts_now") or 0)
-        except Exception:
-            ts = 0
-        try:
-            payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-        except Exception:
-            payload_obj = {"raw": final_result}
-        try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj)
-        except Exception:
-            pass
+        ts = int(time.time() * 1000)
+        if isinstance(final_result, dict):
+            final_result["ts"] = ts
+        else:
+            final_result = {"data": final_result, "ts": ts}
+
+        # interval = str(query.get("interval") or "unknown")
+        # key = f"background:{exchange}:{symbol}:{interval}"
+        # value_to_store = _ensure_json_serializable(final_result)
+        # client = RedisClient()
+        # await client.set_json(key, value_to_store)
 
         output = _json_dumps_safe(final_result)
         print(output)
         return output
-
-
-if __name__ == "__main__":
-    expert = ForceStatsExpert()

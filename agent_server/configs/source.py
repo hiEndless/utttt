@@ -107,6 +107,27 @@ def query_db_env():
             # "llm_api_key": "sk-6d60ccdfae2041db8df70ec3d50fe36e",
             # "a2a_url": "http://localhost:10008/",
         },
+        "event_summary": {
+            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key":
+            "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
+            "a2a_url": "http://localhost:10007/",
+        },
+        "trade_summary": {
+            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key":
+            "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
+            "a2a_url": "http://localhost:10007/",
+        },
+        "trade_event": {
+            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key":
+            "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
+            "a2a_url": "http://localhost:10007/",
+        },
     }
 
 

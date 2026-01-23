@@ -9,7 +9,9 @@ Role = Literal[
     "orderbook_microstructure",
     "technical_signal",
     "market_regime",
-    "fusion_decision"
+    "fusion_decision",
+    "risk_management",
+    "trade_analysis",
 ]
 
 

@@ -8,6 +8,7 @@ __pycache__/
 /build/*
 /dist/*
 /reference-project/*
+/FinGenius-main/*
 *.egg-info/
 
 # pytest
