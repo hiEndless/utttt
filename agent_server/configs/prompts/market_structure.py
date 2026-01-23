@@ -166,7 +166,7 @@ structural_risks 枚举与生成规则（严格遵守）：
 - 严禁输出任何具体数值；只使用输入提供的标签（bias/strength/stability/trend/stability 等）。
 - 不能脱离输入数据臆造不存在的内容。
 - 不得从 ticker.volume 推断趋势或情绪；禁止以价格或成交量变化作为判断依据。
- - 若某周期缺失 participant_structure.globalLongShortAccountRatio（无该周期数据），则在该周期的 sentiment_by_timeframes 设置：bias="neutral"，strength="weak"，stability="medium"，并在 notes 添加 "missing account"。
+- 若某周期缺失 participant_structure.globalLongShortAccountRatio（无该周期数据），则在该周期的 sentiment_by_timeframes 设置：bias="neutral"，strength="weak"，stability="medium"，并在 notes 添加 "missing account"。
 
 工作流程（必须遵守）：
 1) 读取输入 JSON → 提取 funding_rate、participant_structure、ticker、summary。
