@@ -133,7 +133,7 @@ class RouterFinalListener:
                     
                     # 7. 根据路由分发任务
                     if not self.DEBUG:
-                        if info.get("symbol") and info.get("route") == "indicators":
+                        if info.get("symbol") and info.get("route") in ["indicators", "mixed"]:
                             wf = SignalValidationWorkflow()
                             # 异步启动工作流
                             asyncio.create_task(wf.arun(info))
