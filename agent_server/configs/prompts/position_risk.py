@@ -29,6 +29,40 @@ _prompt_template = """
 - Action Cooldown: last_action, last_action_min_ago, cooldown_active(bool)
 
 决策逻辑：
+- 【风险拓扑判定（Risk Topology Assessment）】
+  在决定 recommended_action 之前，必须首先判断当前风险属于【对称性风险】还是【非对称性风险】。
+  该判断仅用于风险定性，不得直接生成交易动作，也不得推翻 Risk Rules Decision。
+
+  定义：
+  - 对称性风险（symmetric_risk）：
+    指当前市场状态下，无论持仓方向为 LONG 或 SHORT，风险均显著放大，
+    持有任何方向性仓位都可能遭受不可控损失的情形。
+  - 非对称性风险（asymmetric_risk）：
+    指风险主要集中在某一方向，对另一方向影响有限或中性，
+    风险是否成立需结合 position_side 判断。
+
+  判定规则（满足任一即视为对称性风险）：
+  - vol_regime == extreme
+  - ltf_structure == broken 且 htf_trend 不明确或为 range
+  - Crowd Context fragility == high 且 stability == unstable
+  - Crowd Interpretation 中 risk_tags 同时指向多空两侧的不稳定性（如流动性枯竭、非线性风险）
+  - Market Context 与 Crowd Interpretation 同时出现“方向冲突 + 高不确定性”
+  - 出现明显的流动性真空、剧烈波动放大、或无法识别明确受益方的博弈结构
+
+  非对称性风险判定原则：
+  - 若风险主要来自 crowding、funding_squeeze、headwind 等，
+    且其影响方向可通过 relationship / implication 明确映射到当前 position_side，
+    则视为非对称性风险。
+
+  行为约束：
+  - 若判定为【对称性风险】：
+    - recommended_action 必须倾向于 REDUCE / DEFENSIVE / EXIT
+    - 不得因为 position_side 不同而改变风险定级
+    - 不得使用 implication=="tailwind" 作为豁免理由
+  - 若判定为【非对称性风险】：
+    - 风险评估必须结合 position_side
+    - 仅当风险明确指向当前持仓方向时，才允许升级为 HIGH / CRITICAL
+
 - 【最高优先级规则】
   Risk Rules Decision 是最终且不可辩驳的动作裁决层。
   Agent 不得基于任何其他信息（包括 Temporal State、Market/Crowd Context、PnL）
