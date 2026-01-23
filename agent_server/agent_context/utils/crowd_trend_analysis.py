@@ -1,4 +1,5 @@
 import time
+import json
 from typing import Any, Dict, List, Optional
 try:
     from ...utils.redis_client import get_redis_client
@@ -325,9 +326,29 @@ async def run_trend_analysis_pipeline(exchange: str, symbol: str) -> Dict[str, A
     }
 
 
+async def enrich_and_clean_crowd_context(
+        exchange: str,
+        symbol: str,
+        crowd_context: Dict[str, Any]
+) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    运行趋势分析管道，并清理 crowd_context 中的冗余字段。
+
+    Returns:
+        Tuple[cleaned_crowd_context, crowd_trend_analysis]
+    """
+    crowd_trend_analysis_result = await run_trend_analysis_pipeline(exchange, symbol)
+    trend_analysis = crowd_trend_analysis_result.get("trend_analysis") or {}
+
+    cleaned_context = crowd_context.copy()
+    for k in ["bias", "crowding_level", "funding_pressure"]:
+        cleaned_context.pop(k, None)
+
+    return cleaned_context, trend_analysis
+
+
 if __name__ == "__main__":
     import asyncio
-    import json
     import os
     import sys
 

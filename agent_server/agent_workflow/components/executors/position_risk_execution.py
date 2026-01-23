@@ -9,6 +9,7 @@ from agent_server.reducers.position_risk_decider import decide_position_action
 from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
+from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import get_available_exposure_pct
@@ -82,6 +83,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         }
 
         ts_now = int(time.time() * 1000)
+
+        crowd_context, crowd_trend_analysis = await enrich_and_clean_crowd_context(exchange, symbol, crowd_context)
 
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
@@ -171,6 +174,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "market_context": market_context,
                 "crowd_context": crowd_context,
                 "crowd_interpretation": injected_crowd,
+                "crowd_trend_analysis": crowd_trend_analysis,
                 "operational_context": operational_context
             }
 

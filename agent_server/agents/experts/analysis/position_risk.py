@@ -157,6 +157,7 @@ if __name__ == "__main__":
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
+    from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
     import asyncio
 
     sv_out = {
@@ -247,6 +248,8 @@ if __name__ == "__main__":
 
         crowd_interpretation = ctx.get("crowd_interpretation", {})
 
+        crowd_context, crowd_trend_analysis = await enrich_and_clean_crowd_context(exchange, symbol, crowd_context)
+
         # 4. 模拟 Operational Context (建议模式适配)
         # 从 Redis 获取上一次的建议记录，用于填充 action_state
         rc = RedisClient()
@@ -320,6 +323,7 @@ if __name__ == "__main__":
             "market_context": market_context,
             "crowd_context": crowd_context,
             "crowd_interpretation": crowd_interpretation,
+            "crowd_trend_analysis": crowd_trend_analysis,
             "operational_context": operational_context  # 新增字段
         }
 

@@ -2,6 +2,7 @@ from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.trade_event import TradeEventExpert
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
+from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
@@ -63,6 +64,10 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         position_side = trade_details.get("position_side", "flat")
         interpretation = build_crowd_interpretation(full_context, position_side)
         agent_ctx["crowd_interpretation"] = interpretation
+
+        agent_ctx["crowd_state"], agent_ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
+            exchange, symbol, agent_ctx.get("crowd_state", {})
+        )
 
         query = {
             "symbol": symbol,

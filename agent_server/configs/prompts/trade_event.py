@@ -14,8 +14,9 @@ prompt = """
 2. position_effect: 仓位影响 (exposure_change, post_action_state)
 3. position_context: 盈亏背景 (pnl_state, pnl_bias)
 4. market_state: 市场状态 (short/mid/long_term direction, momentum, risk, veto)
-5. crowd_state: 人群状态 (bias, crowding_level, fragility, funding_pressure)
-6. crowd_interpretation: 博弈解释 (relationship, implication, stability, risk_tags)
+5. crowd_state: 人群状态 (fragility, consistency)
+6. crowd_trend_analysis: 人群趋势分析 (account_long_ratio, taker_buy_sell_ratio, top_position_ratio, funding_rate) - 包含 value, delta, zscore
+7. crowd_interpretation: 博弈解释 (relationship, implication, stability, risk_tags)
 
 ---
 裁决目标：
@@ -47,8 +48,10 @@ prompt = """
    - LOSS / BREAKEVEN 状态下逆势扩大风险 → 冲突更严重
    - pnl_state 仅作为风险放大或缓冲因子
 
-5) 人群结构为风险修正因子：
-   - 高拥挤 + 高脆弱性 + 风险扩张 → 必须触发 confidence_adjustment=down
+5) 人群结构为风险修正因子（重点关注 crowd_trend_analysis）：
+   - 拥挤度判定：若 crowd_trend_analysis 中关键指标（如 account_long_ratio, top_position_ratio）的 zscore > 1.5 或 < -1.5，视为拥挤风险。
+   - 趋势背离：若 taker_buy_sell_ratio 的 delta 与交易方向显著背离，需降低可信度。
+   - 高脆弱性 (fragility=high) + 风险扩张 → 必须触发 confidence_adjustment=down
    - 一致性冲突（crowd consistency conflicted）→ 提升结构不确定性
    - Crowd Interpretation 裁决（强制）：
      - implication=="headwind" 且 stability=="unstable" → 若 exposure_change="INCREASE"，必须视为 STRUCTURAL CONFLICT (逆势拥挤加仓)

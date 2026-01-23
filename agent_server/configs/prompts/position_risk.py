@@ -20,7 +20,8 @@ prompt = """
 - Temporal State: holding_duration_min, last_verdict, invalid_streak, conflict_streak, valid_streak
 - Risk Rules Decision (硬性规则): allowed_actions, veto_reasons, time_bucket
 - Market Context (市场结构): htf_trend(up|down|range), ltf_structure(healthy|weakening|broken), distance_to_key_level_pct
-- Crowd Context (人群状态): crowding_level(low/medium/high), funding_pressure(none/potential_squeeze/active_squeeze), fragility(low/high)
+- Crowd Context (人群状态): fragility(low/high), consistency(aligned/conflicted)
+- Crowd Trend Analysis: account_long_ratio, taker_buy_sell_ratio, top_position_ratio, funding_rate (含 value, delta, zscore)
 - Crowd Interpretation (博弈解释): position_direction(long/short), crowd_bias(long/short), relationship(same/opposite), implication(headwind/tailwind/neutral), execution_confirmation(confirmed/unconfirmed), stability(stable/unstable), risk_tags(crowding_instability/fragility_non_linear_risk/funding_squeeze_risk)
 - Volatility Regime: vol_regime(normal/high/extreme)
 - Risk Limits (硬性边界): max_loss_pct, max_holding_min, max_exposure_pct, cooldown_after_invalid_min
@@ -52,11 +53,11 @@ prompt = """
 - 风险优先于方向判断：满足任一条件必须优先降风险（即使 verdict 不是 INVALID）：invalid_streak>=2；ltf_structure==broken；vol_regime==extreme；长时间持仓且 verdict 持续为 CONFLICT
 - 人群信息裁决顺序（强制）：
   当 Crowd Interpretation 存在时：
-  - Interpretation 的 relationship / implication 对“博弈方向性风险”的解释优先级高于 Crowd Context 的 crowding_level / fragility。
+  - Interpretation 的 relationship / implication 对“博弈方向性风险”的解释优先级高于 Crowd Context 的 fragility 或 Trend Analysis 的 zscore。
   - Crowd Context 仅用于调整风险幅度（exposure / stop），不得推翻 Interpretation 对顺风/逆风关系的定性。
-- 人群拥挤与轧空风险（Crowd Context）：
-  - 若 crowding_level==high 且持仓方向与人群偏差一致（同向拥挤）：必须收紧止损或降低最大仓位限制（防止踩踏）。
-  - 若 funding_pressure!=none 且持仓为 SHORT：必须视为 CRITICAL 风险，建议大幅减仓或直接 EXIT（防止轧空）。
+- 人群拥挤与轧空风险（Crowd Trend & Risk Tags）：
+  - 若 crowd_trend_analysis 中关键指标（如 top_position_ratio）zscore > 2.0 且持仓方向与人群一致：视为极度拥挤，必须收紧止损或降低最大仓位限制（防止踩踏）。
+  - 若 risk_tags 包含 "funding_squeeze_risk" 或 funding_rate zscore > 2.0 且持仓为 SHORT：必须视为 CRITICAL 风险，建议大幅减仓或直接 EXIT（防止轧空）。
   - 若 fragility==high：降低 max_allowed_exposure，避免流动性枯竭时的滑点冲击。
 - 人群博弈风险（Crowd Interpretation）：
   - 若 implication=="headwind" 且 stability=="unstable"：表明当前持仓正面临拥挤的逆风，必须收紧止损或降低 max_allowed_exposure（防止踩踏）。
@@ -95,6 +96,8 @@ prompt = """
 - risk_state 与 recommended_action 映射原则：
   risk_state 用于指导在 allowed_actions 中选择最保守且一致的动作，
   不得生成超出 allowed_actions 的动作。
+- max_allowed_exposure 语义说明：
+  表示“相对于账户净值的最大允许敞口比例”，取值范围 0.0 ~ 1.0。
 - reduce_pct 取值规则：
   - EXIT     → 必须为 1.0
   - REDUCE   → 0.1 < reduce_pct <= 0.5

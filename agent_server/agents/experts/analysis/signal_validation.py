@@ -115,6 +115,7 @@ if __name__ == "__main__":
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
+    from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 
     final_signal = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
                     "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
@@ -150,6 +151,11 @@ if __name__ == "__main__":
         # Inject deterministic crowd interpretation (replaces raw crowd_positioning)
         interpretation = build_crowd_interpretation(full_context, direction)
         ctx["crowd_interpretation"] = interpretation
+        
+        ctx["crowd_state"], ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
+            exchange, symbol, ctx.get("crowd_state", {})
+        )
+
         # print(ctx)
 
         query = {

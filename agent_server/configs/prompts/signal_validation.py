@@ -7,6 +7,7 @@ prompt = """
 - tf_validation：各周期的 trend_alignment, momentum_alignment, structure_alignment, key_level_conflict, reversal_risk, validation_conclusion
 - Market Background：趋势环境、结构状态、波动与风险
 - Crowd / Positioning Background：多空力量分布、拥挤度、脆弱性
+- Crowd Trend Analysis: account_long_ratio, taker_buy_sell_ratio, top_position_ratio, funding_rate (含 value, delta, zscore)
 - Crowd Interpretation (博弈解释): position_direction(long/short), crowd_bias(long/short), relationship(same/opposite), implication(headwind/tailwind/neutral), execution_confirmation(confirmed/unconfirmed), stability(stable/unstable), risk_tags(crowding_instability/fragility_non_linear_risk/funding_squeeze_risk)
 
 裁决目标：
@@ -30,7 +31,8 @@ prompt = """
    - 中性或震荡环境 → 不直接否定，但可能削弱置信度
 
 4) 人群结构为风险修正因子：
-   - 单边拥挤、高脆弱性 → 不直接导致 CONFLICT，但触发 confidence_adjustment=down
+   - 动态一致性验证：若 crowd_trend_analysis (如 taker_buy_sell_ratio delta) 与信号方向显著背离，需降低可信度。
+   - 单边拥挤 (关键指标 zscore > 1.5)、高脆弱性 → 不直接导致 CONFLICT，但触发 confidence_adjustment=down
    - 分歧或去拥挤 → 风险中性
    - Crowd Interpretation 裁决顺序（强制）：
      - implication=="headwind" 且 stability=="unstable" → 必须触发 confidence_adjustment=down (crowding risk)
