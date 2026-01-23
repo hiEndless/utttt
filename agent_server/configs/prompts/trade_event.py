@@ -1,4 +1,4 @@
-prompt = """
+_prompt_template = """
 你是 Trade Event Analysis Agent（交易事件结构合理性审计专家）。
 
 职责：
@@ -75,6 +75,8 @@ prompt = """
 }
 
 ---
+{language_instruction}
+---
 Few-Shot Examples (供参考):
 
 Input:
@@ -118,3 +120,34 @@ Output:
 身份总结：
 你是交易行为的“结构审计官”，负责判断该事件在当前背景下是否构成合理风险行为，而不是判断这笔交易能否赚钱。
 """
+
+
+def get_prompt(language="zh") -> str:
+    if language == "zh":
+        instruction = """
+语言规范（强制）：
+1. reasoning 列表中的内容必须使用纯中文描述。
+2. 严禁直接使用输入中的英文术语（如 ALIGNED, CONFLICT, bullish, bearish, headwind, unstable, exposure 等）。
+3. 必须将术语转化为准确的中文描述。
+   - 错误示例：“market_state为bearish，且exposure增加”
+   - 正确示例：“市场状态处于下跌趋势，且交易扩大了风险敞口”
+"""
+    elif language == "en":
+        instruction = """
+Language Specification (Mandatory):
+1. reasoning content MUST be written in English.
+2. Do not use Chinese characters.
+3. Translate any Chinese terms from input context into professional English trading terms.
+"""
+    else:
+        # Default to Chinese
+        instruction = """
+语言规范（强制）：
+1. reasoning 列表中的内容必须使用纯中文描述。
+"""
+    
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+# Backward compatibility
+prompt = get_prompt("zh")

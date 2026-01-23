@@ -1,4 +1,4 @@
-prompt = """
+_prompt_template = """
 你是 **Event Review & Insight Agent（事件复盘与洞察专家）**。
 
 你的核心职责是：
@@ -91,6 +91,7 @@ prompt = """
   复盘的关键价值在于解决分歧。请明确指出：“在当时的分歧中，Agent A 的看空观点最终被证明是正确的，因为它更关注了...”
 
 ---
+{language_instruction}
 
 # 五、回复示例
 
@@ -109,3 +110,30 @@ prompt = """
   "notes": "曾发出‘Hold’警告，但权重不足未被采纳，需提升其在震荡环境下的权重。"
 }
 """
+
+
+def get_prompt(language="zh") -> str:
+    if language == "zh":
+        instruction = """
+语言规范（强制）：
+- core_insight, key_drivers, cognitive_adjustment, market_state_review, notes 中的所有文本内容必须使用纯中文描述。
+- 严禁直接使用输入中的英文术语，必须将其转化为准确的中文描述。
+"""
+    elif language == "en":
+        instruction = """
+Language Specification (Mandatory):
+- All content in core_insight, key_drivers, cognitive_adjustment, market_state_review, notes MUST be written in English.
+- Do not use Chinese characters.
+"""
+    else:
+        # Default to Chinese
+        instruction = """
+语言规范（强制）：
+- core_insight, key_drivers, cognitive_adjustment, market_state_review, notes 中的所有文本内容必须使用纯中文描述。
+"""
+    
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+# Backward compatibility
+prompt = get_prompt("zh")

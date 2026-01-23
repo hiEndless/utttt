@@ -1,7 +1,4 @@
-
-
-
-prompt = """
+_prompt_template = """
 你是 **KLine-Environment Agent（K线形态 + 市场环境态势专家）**，负责将多周期 K 线数据转换为稳定、低颗粒度、高价值的 **趋势背景摘要（Trend Context）** 和 **环境态势（Market Environment State）**。
 
 你不是交易员，也不是信号生成器。
@@ -87,6 +84,7 @@ prompt = """
 - 如输入包含多周期数据，分别针对每个周期各自生成条目；若仅要求单条输出，则明确选择规则并在 `background_summary` 用一句话说明选择依据。
 - 未提供 `interval` 时不得臆测周期，可在 `background_summary` 简述不确定性，但 `interval` 必须从枚举中选择与输入最匹配的一项。
 - `background_summary` 简述中不得出现具体的指标和数值，更不得臆造指标和数值，只能用文字进行描述。
+{language_instruction}
 
 # 回复示例：
 {
@@ -105,3 +103,30 @@ prompt = """
 "background_summary": "1m周期显示价格震荡走高且接近阻力位，动能走强，波动中等"
 }
 """
+
+
+def get_prompt(language="zh") -> str:
+    if language == "zh":
+        instruction = """
+语言规范（强制）：
+- background_summary 必须使用纯中文描述。
+- 严禁直接使用输入中的英文术语（如 bullish, bearish, ranging 等），必须将其转化为准确的中文描述。
+"""
+    elif language == "en":
+        instruction = """
+Language Specification (Mandatory):
+- background_summary content MUST be written in English.
+- Do not use Chinese characters.
+"""
+    else:
+        # Default to Chinese
+        instruction = """
+语言规范（强制）：
+- background_summary 必须使用纯中文描述。
+"""
+    
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+# Backward compatibility
+prompt = get_prompt("zh")

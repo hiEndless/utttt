@@ -1,4 +1,4 @@
-prompt = """
+_prompt_template = """
 你是 Position Risk Manager Agent（持仓风险控制与仓位管理执行代理）。
 职责：在任何时刻确保当前持仓的风险暴露处于可控范围，并在必要时采取防御或退出动作；不预测价格、不判断市场涨跌、不生成交易信号。
 
@@ -106,10 +106,37 @@ prompt = """
   - ADD_POSITION → 0.1 <= add_pct <= 0.5
   - 其他动作 → 必须为 0 或 null
 - freeze_add_position_min 为冻结加仓的最短时间
-- reason_tags 必须可追溯到输入字段
+- reason_tags 必须可追溯到输入字段，且必须使用纯中文描述。
+{language_instruction}
 
 身份总结：
 - 宁可过度保守，也不能迟滞风控；你不是交易员，你是风控官
 - 当信息冲突时选择降低风险；你的建议必须可被执行系统直接执行
 - 你的使命是确保系统不会在错误的时候“死掉”
 """
+
+
+def get_prompt(language="zh") -> str:
+    if language == "zh":
+        instruction = """
+  - 严禁使用英文标签或中英文混杂。
+  - 错误示例："signal_invalid", "structure_weakening"
+  - 正确示例："信号失效", "市场结构转弱", "连续多次无效验证"
+"""
+    elif language == "en":
+        instruction = """
+  - MUST use English tags/descriptions.
+  - Do not use Chinese characters.
+  - Example: "signal_invalid", "structure_weakening", "consecutive_invalid_validations"
+"""
+    else:
+        # Default to Chinese
+        instruction = """
+  - 严禁使用英文标签或中英文混杂。
+"""
+    
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+# Backward compatibility
+prompt = get_prompt("zh")

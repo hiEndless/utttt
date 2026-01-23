@@ -1,7 +1,7 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.position_risk import prompt
+from agent_server.configs.prompts.position_risk import get_prompt
 from agno.models.message import Message
 import json
 import time
@@ -67,12 +67,16 @@ class PositionRiskExpert:
         }
     }
 
-    def __init__(self):
+    def __init__(self, language: str = "zh"):
         self.validator = LLMOutputValidator(self.SCHEMA)
+        self.language = language
 
     async def run(self, query: str) -> str:
 
         cfg = get_agent_config(self.name)
+        
+        # 优先从环境变量/配置获取，其次使用实例属性
+        target_lang = cfg.get("language", self.language)
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
@@ -82,7 +86,7 @@ class PositionRiskExpert:
 
         agent = Agent(
             model=model,
-            instructions=prompt,
+            instructions=get_prompt(target_lang),
         )
 
         async def _run_llm():

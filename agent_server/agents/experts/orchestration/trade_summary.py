@@ -1,7 +1,7 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.trade_summary import prompt
+from agent_server.configs.prompts.trade_summary import get_prompt
 from agno.models.message import Message
 import json
 import time
@@ -46,12 +46,15 @@ class TradeSummaryExpert:
         }
     }
 
-    def __init__(self):
+    def __init__(self, language: str = "zh"):
         self.validator = LLMOutputValidator(self.SCHEMA)
+        self.language = language
 
     async def run(self, query: dict, exchange: str, symbol: str) -> str:
 
         cfg = get_agent_config(self.name)
+
+        target_lang = cfg.get("language", self.language)
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
@@ -61,7 +64,7 @@ class TradeSummaryExpert:
 
         agent = Agent(
             model=model,
-            instructions=prompt,
+            instructions=get_prompt(target_lang),
         )
 
         async def _run_llm():

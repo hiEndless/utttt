@@ -1,4 +1,4 @@
-prompt = """
+_prompt_template = """
 你是 **Trade Summary Agent（交易复盘总结专家）**。
 
 你的职责是：
@@ -109,12 +109,13 @@ prompt = """
 **关于字段用途的特别说明：**
 - `reasoning`: 仅用于 **调试与审计**，请详细记录推理过程（High Context）。禁止给出任何“未来改进建议”或“操作建议”，仅允许描述 事实 → 认知 → 执行 → 结果 的因果链。
 - `summary`: 用于 **长期记忆与检索**，必须精炼、客观、结论导向（Low Context）。必须做到：可脱离 reasoning 单独阅读；不依赖上下文隐含信息；不包含推理细节。
+{language_instruction}
 
 ```json
 {
   "symbol": "string",
   "position_side": "LONG | SHORT",
-  "reasoning": "【调试/审计层】详细推理过程：1. 初始开仓逻辑是否成立？ 2. 过程中遇到的事件是否被正确处理？ 3. 平仓决策是否符合预期？ 4. 最终盈亏是能力还是运气？",
+  "reasoning": "【调试/审计层】详细推理过程...",
   "trade_verdict": "GOOD_TRADE | BAD_TRADE | GOOD_LOSS | BAD_WIN",
   "summary": {
     "trade_overview": "【长期记忆层】简要回顾交易全过程（精炼）",
@@ -129,3 +130,30 @@ prompt = """
 }
 ```
 """
+
+
+def get_prompt(language="zh") -> str:
+    if language == "zh":
+        instruction = """
+语言规范（强制）：
+- reasoning 和 summary 中的所有文本内容必须使用纯中文描述。
+- 严禁直接使用输入中的英文术语，必须将其转化为准确的中文描述。
+"""
+    elif language == "en":
+        instruction = """
+Language Specification (Mandatory):
+- reasoning and summary content MUST be written in English.
+- Do not use Chinese characters.
+"""
+    else:
+        # Default to Chinese
+        instruction = """
+语言规范（强制）：
+- reasoning 和 summary 中的所有文本内容必须使用纯中文描述。
+"""
+    
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+# Backward compatibility
+prompt = get_prompt("zh")
