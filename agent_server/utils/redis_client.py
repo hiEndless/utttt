@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 try:
     from ..config import settings
 except ImportError:
-    from config import settings
+    from agent_server.config import settings
 
 
 def get_redis_client(db: int | None = None, decode_responses: bool = True) -> Redis:

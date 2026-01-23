@@ -1,5 +1,10 @@
 import time
 from typing import Any, Dict, List, Optional
+try:
+    from ...utils.redis_client import get_redis_client
+except ImportError:
+    from agent_server.utils.redis_client import get_redis_client
+
 
 PERIODS = ["5m", "15m", "30m", "1h", "2h", "4h", "1d"]
 TYPES = [
@@ -8,6 +13,10 @@ TYPES = [
     "topLongShortPositionRatio",
     "topLongShortAccountRatio",
 ]
+EXTRA_SIMPLE = {
+    "24hr": "24hr",
+    "fundingRate": "fundingRate",
+}
 
 # -------------------------------------------------------------------------
 # Utility
@@ -40,6 +49,13 @@ def _latest_ts(items: List[Dict[str, Any]], key: str = "timestamp") -> int:
     if not items:
         return 0
     return int(items[-1].get(key, 0))
+
+
+def _init_result() -> Dict[str, Any]:
+    base = {t: {p: [] for p in PERIODS} for t in TYPES}
+    base["24hr"] = {}
+    base["fundingRate"] = []
+    return base
 
 
 # -------------------------------------------------------------------------
@@ -122,7 +138,8 @@ def analyze_period(dtype: str, items: List[Dict[str, Any]]) -> Dict[str, Any]:
 # -------------------------------------------------------------------------
 # Trend Analysis Generation
 # -------------------------------------------------------------------------
-def build_trend_analysis(ps: Dict[str, Any], funding_rate_data: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def build_trend_analysis(ps: Dict[str, Any], funding_rate_data: Optional[List[Dict[str, Any]]] = None) -> Dict[
+    str, Any]:
     """
     Generate detailed trend analysis based on participant structure (ps) and funding rate.
     """
@@ -161,7 +178,7 @@ def build_trend_analysis(ps: Dict[str, Any], funding_rate_data: Optional[List[Di
         for p in PERIODS:
             period_data = ps[type_name].get(p, {})
             # period_data structure: { 'current': {...}, 'ls_ratio_stats': {...}, 'long_pct_stats': {...} }
-            
+
             stat_obj = period_data.get(stats_key, {})
             if stat_obj:
                 deltas[p] = round(stat_obj.get("delta", 0), 4)
@@ -211,22 +228,80 @@ def build_trend_analysis(ps: Dict[str, Any], funding_rate_data: Optional[List[Di
     return trends
 
 
+# -------------------------------------------------------------------------
+# Redis Raw Reader
+# -------------------------------------------------------------------------
+async def read_market_raw(exchange: str, symbol: str) -> Dict[str, Any]:
+    cli = get_redis_client()
+    res = _init_result()
+
+    cursor = 0
+    pattern = f"market_raw:{exchange}:{symbol}:*"
+
+    while True:
+        cursor, keys = await cli.scan(cursor=cursor, match=pattern, count=1000)
+        for key in keys:
+            parts = key.split(":")
+
+            if len(parts) == 5:
+                interval, dtype = parts[3], parts[4]
+            elif len(parts) == 4:
+                interval, dtype = None, parts[3]
+            else:
+                continue
+
+            raw = await cli.get(key)
+            if not raw:
+                continue
+
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
+
+            # ticker / fundingRate（无周期）
+            if interval is None and dtype in EXTRA_SIMPLE:
+                if dtype == "24hr" and isinstance(data, dict):
+                    res["24hr"] = data
+                elif dtype == "fundingRate":
+                    if isinstance(data, list):
+                        res["fundingRate"] = data
+                    else:
+                        res["fundingRate"] = [data]
+                continue
+
+            # 多空比类
+            if dtype not in TYPES:
+                continue
+
+            mapped = "5m" if interval == "1m" else interval
+            if mapped not in PERIODS:
+                continue
+
+            res[dtype][mapped] = data if isinstance(data, list) else [data]
+
+        if cursor == 0:
+            break
+
+    return res
+
+
 async def run_trend_analysis_pipeline(exchange: str, symbol: str) -> Dict[str, Any]:
     """
     Independent pipeline to fetch data and generate trend analysis.
     """
-    # Import here to avoid circular dependency
-    try:
-        from api.application.apps.background.market_raw_analysis import read_market_raw
-    except ImportError:
-        # Fallback for running as script from different context
-        import sys
-        import os
-        _d = os.path.dirname(os.path.abspath(__file__))
-        _root = os.path.abspath(os.path.join(_d, "..", "..", "..", ".."))
-        if _root not in sys.path:
-            sys.path.insert(0, _root)
-        from api.application.apps.background.market_raw_analysis import read_market_raw
+    # # Import here to avoid circular dependency
+    # try:
+    #     from api.application.apps.background.market_raw_analysis import read_market_raw
+    # except ImportError:
+    #     # Fallback for running as script from different context
+    #     import sys
+    #     import os
+    #     _d = os.path.dirname(os.path.abspath(__file__))
+    #     _root = os.path.abspath(os.path.join(_d, "..", "..", "..", ".."))
+    #     if _root not in sys.path:
+    #         sys.path.insert(0, _root)
+    #     from api.application.apps.background.market_raw_analysis import read_market_raw
 
     # 1. Fetch Raw Data
     raw_data = await read_market_raw(exchange, symbol)
@@ -242,7 +317,7 @@ async def run_trend_analysis_pipeline(exchange: str, symbol: str) -> Dict[str, A
     # 3. Generate Trends
     funding_data = raw_data.get("fundingRate", [])
     trends = build_trend_analysis(ps, funding_data)
-    
+
     return {
         "symbol": symbol,
         "timestamp": int(time.time() * 1000),
@@ -255,7 +330,7 @@ if __name__ == "__main__":
     import json
     import os
     import sys
-    
+
     # Path setup for direct execution
     _d = os.path.dirname(os.path.abspath(__file__))
     _root = os.path.abspath(os.path.join(_d, "..", "..", "..", ".."))
