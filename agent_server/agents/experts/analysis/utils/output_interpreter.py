@@ -293,10 +293,6 @@ if __name__ == "__main__":
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
-    print("--- Testing Signal Validation (English) ---")
-    print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "en"))
-    print("\n")
-
     print("--- Testing Position Risk (English) ---")
     pr_output = {
         "risk_state": "HIGH",
@@ -307,4 +303,4 @@ if __name__ == "__main__":
         "freeze_add_position_min": 60,
         "reason_tags": ["High Volatility", "Liquidation Risk"]
     }
-    print(AgentOutputInterpreter.interpret("position_risk", pr_output, "en"))
+    print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))
