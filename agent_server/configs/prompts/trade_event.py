@@ -49,7 +49,9 @@ _prompt_template = """
    - pnl_state 仅作为风险放大或缓冲因子
 
 5) 人群结构为风险修正因子（重点关注 crowd_trend_analysis）：
-   - 拥挤度判定：若 crowd_trend_analysis 中关键指标（如 account_long_ratio, top_position_ratio）的 zscore > 1.5 或 < -1.5，视为拥挤风险。
+   - 拥挤度判定：若 crowd_trend_analysis 中关键指标（如 account_long_ratio, top_position_ratio）的 zscore > 1.5 或 < -1.5，且交易方向与人群一致（relationship=="same"），视为拥挤风险。
+   - 顺风豁免（Tailwind Exemption）：若 relationship=="opposite"（如做空拥挤的多头），高 Z-Score 视为有利的加速燃料，不构成冲突，允许扩大风险暴露。
+   - 动态趋势（Trend Delta）：若 delta 显示拥挤正在显著缓解（符号相反且数值大），可降低对高 Z-Score 的担忧。
    - 趋势背离：若 taker_buy_sell_ratio 的 delta 与交易方向显著背离，需降低可信度。
    - 高脆弱性 (fragility=high) + 风险扩张 → 必须触发 confidence_adjustment=down
    - 一致性冲突（crowd consistency conflicted）→ 提升结构不确定性

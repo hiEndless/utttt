@@ -32,7 +32,8 @@ _prompt_template = """
 
 4) 人群结构为风险修正因子：
    - 动态一致性验证：若 crowd_trend_analysis (如 taker_buy_sell_ratio delta) 与信号方向显著背离，需降低可信度。
-   - 单边拥挤 (关键指标 zscore > 1.5)、高脆弱性 → 不直接导致 CONFLICT，但触发 confidence_adjustment=down
+   - 对手盘拥挤支持（Contrarian Support）：若信号方向与人群拥挤方向相反（relationship=="opposite" 且 Z-Score 高），视为强一致性支持（ALIGNED），不应降权。
+   - 顺势拥挤风险：若信号方向与人群一致且 Z-Score > 1.5，需警惕拥挤风险，触发 confidence_adjustment=down。
    - 分歧或去拥挤 → 风险中性
    - Crowd Interpretation 裁决顺序（强制）：
      - implication=="headwind" 且 stability=="unstable" → 必须触发 confidence_adjustment=down (crowding risk)

@@ -284,15 +284,18 @@ class AgentOutputInterpreter:
 if __name__ == "__main__":
     # 测试代码
     print("--- Testing Signal Validation (Chinese) ---")
-    sv_output = {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
-                 "reasoning": ["在中期趋势看跌、短期高风险的结构背景下扩大多头风险敞口，与市场方向和风险状态严重冲突。", "持仓处于亏损状态且风险偏好受挫时仍选择加仓，加剧了结构性风险暴露。",
-                               "人群趋势分析显示多个关键指标处于极端值域（如账户多头比例、大额持仓比例），结合人群解读为‘逆风且不稳定’，判定为拥挤型高脆弱结构，加仓行为构成高危聚集风险。"]}
+    sv_output = {"verdict": "WEAK_VALID", "alignment": "CONFLICT", "confidence_adjustment": "down",
+                 "reasoning": ["交易行为为做空并扩大仓位，虽然人群结构显示多头拥挤且方向相反，构成顺风条件，但市场中期趋势为下跌，短期风险高且处于盘整区间，结构上未提供明确趋势支撑。",
+                               "人群状态显示极度不稳定，且伴随‘拥挤不稳定’与‘资金费率挤压风险’等标签，虽为逆向操作，但在高脆弱环境下扩大风险敞口需谨慎。",
+                               "尽管盈利状态下扩大仓位，但市场结构与人群动态未提供足够稳定性支撑，实际风险被高估，需降低该操作的可信度。"]}
+
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "max_allowed_exposure": 0.0, "reduce_pct": 1.0,
-                 "add_pct": 0.0, "tighten_stop": True, "freeze_add_position_min": 60,
-                 "reason_tags": ["信号失效", "人群拥挤不稳定", "逆风且结构脆弱", "高波动环境", "持仓方向与市场趋势冲突"], "suggestion": "EXIT",
-                 "verdict": "CRITICAL", "reasoning": ["信号失效", "人群拥挤不稳定", "逆风且结构脆弱", "高波动环境", "持仓方向与市场趋势冲突"]}
+    pr_output = {"risk_state": "HIGH", "recommended_action": "REDUCE", "max_allowed_exposure": 0.25, "reduce_pct": 0.3,
+                 "add_pct": 0.0, "tighten_stop": True, "freeze_add_position_min": 15,
+                 "reason_tags": ["连续多次冲突验证", "人群状态极度脆弱", "存在资金费率挤压风险", "市场结构盘整无明确趋势支撑", "波动率处于高位", "持仓方向虽为逆风但执行未确认"],
+                 "suggestion": "REDUCE", "verdict": "HIGH",
+                 "reasoning": ["连续多次冲突验证", "人群状态极度脆弱", "存在资金费率挤压风险", "市场结构盘整无明确趋势支撑", "波动率处于高位", "持仓方向虽为逆风但执行未确认"]}
     print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))
