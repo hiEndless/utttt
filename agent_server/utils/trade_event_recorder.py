@@ -311,7 +311,7 @@ class TradeEventRecorder:
             # 通过 (event_id, trade_id) 联合唯一来区分不同持仓的事件
 
             with PostgresDB() as db:
-                check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
+                check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade = %s LIMIT 1"
                 existing = db.fetch_one(check_sql, [event_id, trade_id])
 
                 if existing:
@@ -348,7 +348,7 @@ class TradeEventRecorder:
                         update_sql += ", event_summary = %s"
                         update_params.append(event_summary)
 
-                    update_sql += " WHERE event_id = %s AND trade_id = %s"
+                    update_sql += " WHERE event_id = %s AND trade = %s"
                     update_params.extend([event_id, trade_id])
 
                     db.execute(update_sql, update_params)

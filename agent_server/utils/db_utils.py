@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extras import execute_batch
 from psycopg2 import pool
+from psycopg2 import extensions
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 import os
@@ -20,8 +21,12 @@ class PostgresDB:
     _pool = None
     _pool_lock = False
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 1.0,
-                 min_conn: int = 1, max_conn: int = 20, lazy_init: bool = True):
+    def __init__(self,
+                 max_retries: int = 3,
+                 retry_delay: float = 1.0,
+                 min_conn: int = 1,
+                 max_conn: int = 20,
+                 lazy_init: bool = True):
         self.conn_params = {
             'dbname': os.getenv('DB_DATABASE'),
             'user': os.getenv('DB_USER'),
@@ -47,17 +52,21 @@ class PostgresDB:
             PostgresDB._pool_lock = True
             try:
                 # 检查必要的连接参数
-                if not all([self.conn_params.get('host'), self.conn_params.get('dbname')]):
-                    logger.debug("数据库连接参数不完整，跳过连接池初始化。请设置 DB_HOST, DB_DATABASE 等环境变量。")
+                if not all([
+                        self.conn_params.get('host'),
+                        self.conn_params.get('dbname')
+                ]):
+                    logger.debug(
+                        "数据库连接参数不完整，跳过连接池初始化。请设置 DB_HOST, DB_DATABASE 等环境变量。")
                     PostgresDB._pool_lock = False
                     return
-                
+
                 PostgresDB._pool = pool.ThreadedConnectionPool(
                     minconn=self.min_conn,
                     maxconn=self.max_conn,
-                    **self.conn_params
-                )
-                logger.info(f"连接池初始化成功，最小连接数: {self.min_conn}, 最大连接数: {self.max_conn}")
+                    **self.conn_params)
+                logger.info(
+                    f"连接池初始化成功，最小连接数: {self.min_conn}, 最大连接数: {self.max_conn}")
             except Exception as e:
                 logger.debug(f"连接池初始化失败: {e}")
                 logger.debug("服务将继续运行，但数据库相关功能将不可用。请检查数据库配置和环境变量。")
@@ -73,17 +82,52 @@ class PostgresDB:
         logger.error(f"数据库连接失败 - 主机: {db_host}:{db_port}, 错误: {str(error)}")
         print(f"数据库连接失败 - 主机: {db_host}:{db_port}, 错误: {str(error)}")
 
+    def _reset_connection_if_needed(self):
+        """如果连接处于错误状态，重置连接"""
+        if self.conn and not self.conn.closed:
+            try:
+                # 尝试回滚，清除可能的错误状态
+                self.conn.rollback()
+            except (psycopg2.InterfaceError, psycopg2.OperationalError):
+                # 连接已关闭或无效，需要重新连接
+                try:
+                    self.disconnect()
+                except Exception:
+                    pass
+                self.connect()
+            except Exception:
+                # 其他错误，尝试重新连接
+                try:
+                    self.disconnect()
+                except Exception:
+                    pass
+                self.connect()
+
     def _retry_operation(self, operation, *args, **kwargs):
         """重试机制装饰器"""
         last_exception = None
 
         for attempt in range(self.max_retries + 1):
             try:
+                # 在重试前重置连接状态（除了第一次尝试）
+                if attempt > 0:
+                    self._reset_connection_if_needed()
                 return operation(*args, **kwargs)
             except Exception as e:
                 last_exception = e
+                # 如果是事务错误，尝试回滚
+                if self.conn and not self.conn.closed:
+                    try:
+                        if "current transaction is aborted" in str(
+                                e) or isinstance(e, psycopg2.InternalError):
+                            self.conn.rollback()
+                    except Exception:
+                        pass
+
                 if attempt < self.max_retries:
-                    logger.warning(f"操作失败，第 {attempt + 1} 次重试，{self.retry_delay}秒后重试: {str(e)}")
+                    logger.warning(
+                        f"操作失败，第 {attempt + 1} 次重试，{self.retry_delay}秒后重试: {str(e)}"
+                    )
                     time.sleep(self.retry_delay)
                 else:
                     logger.error(f"操作失败，已达到最大重试次数 {self.max_retries}")
@@ -98,7 +142,7 @@ class PostgresDB:
         try:
             if PostgresDB._pool is None:
                 self._init_connection_pool()
-            
+
             if PostgresDB._pool is None:
                 raise RuntimeError("数据库连接池未初始化，请检查数据库配置")
 
@@ -117,7 +161,7 @@ class PostgresDB:
         try:
             if PostgresDB._pool is None:
                 self._init_connection_pool()
-            
+
             if PostgresDB._pool is None:
                 raise RuntimeError("数据库连接池未初始化，请检查数据库配置")
 
@@ -153,7 +197,7 @@ class PostgresDB:
         """执行批量SQL操作"""
         if not params_list:
             return
-        
+
         if PostgresDB._pool is None:
             logger.debug("数据库连接池未初始化，跳过批量操作")
             return
@@ -162,6 +206,9 @@ class PostgresDB:
             # 确保连接是打开的
             if not self.conn or self.conn.closed:
                 self.connect()
+            else:
+                # 检查连接状态，如果处于错误状态则重置
+                self._reset_connection_if_needed()
 
             # 执行批量操作
             execute_batch(self.cursor, sql, params_list)
@@ -188,6 +235,9 @@ class PostgresDB:
             # 确保连接是打开的
             if not self.conn or self.conn.closed:
                 self.connect()
+            else:
+                # 检查连接状态，如果处于错误状态则重置
+                self._reset_connection_if_needed()
 
             # 执行SQL操作
             self.cursor.execute(sql, params)
@@ -203,7 +253,9 @@ class PostgresDB:
             print(f"SQL执行失败: {e}")
             raise
 
-    def fetch_all(self, sql: str, params: Dict[str, Any] = None) -> List[tuple]:
+    def fetch_all(self,
+                  sql: str,
+                  params: Dict[str, Any] = None) -> List[tuple]:
         """执行查询并返回所有结果"""
         if PostgresDB._pool is None:
             logger.debug("数据库连接池未初始化，返回空结果")
@@ -213,6 +265,9 @@ class PostgresDB:
             # 确保连接是打开的
             if not self.conn or self.conn.closed:
                 self.connect()
+            else:
+                # 检查连接状态，如果处于错误状态则重置
+                self._reset_connection_if_needed()
 
             # 执行查询
             self.cursor.execute(sql, params)
@@ -221,11 +276,19 @@ class PostgresDB:
         try:
             return self._retry_operation(_fetch_all_operation)
         except Exception as e:
+            # 查询失败时回滚事务
+            if self.conn and not self.conn.closed:
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
             logger.error(f"查询执行失败: {e}")
             print(f"查询执行失败: {e}")
             raise
 
-    def fetch_one(self, sql: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    def fetch_one(self,
+                  sql: str,
+                  params: Dict[str, Any] = None) -> Dict[str, Any]:
         """执行查询并返回单条结果（字典格式）"""
         if PostgresDB._pool is None:
             logger.debug("数据库连接池未初始化，返回None")
@@ -235,6 +298,9 @@ class PostgresDB:
             # 确保连接是打开的
             if not self.conn or self.conn.closed:
                 self.connect()
+            else:
+                # 检查连接状态，如果处于错误状态则重置
+                self._reset_connection_if_needed()
 
             # 执行查询
             self.cursor.execute(sql, params)
@@ -251,6 +317,12 @@ class PostgresDB:
         try:
             return self._retry_operation(_fetch_one_operation)
         except Exception as e:
+            # 查询失败时回滚事务
+            if self.conn and not self.conn.closed:
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
             logger.error(f"查询执行失败: {e}")
             print(f"查询执行失败: {e}")
             raise

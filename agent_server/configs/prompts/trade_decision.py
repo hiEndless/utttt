@@ -55,7 +55,11 @@ prompt = """
          * L1信号 < 20 → NO_ACTION，等待更好的机会
      
      * **趋势不明确时**：15分钟以上趋势不明确(neutral或weak)
-       - L1信号 >= 20 → 完全基于L1信号决策，正常开仓，正常仓位
+       - **首先检查K线实际趋势**：
+         * 如果K线显示明确的下降趋势（最近10-20根K线连续下降）→ **禁止做多**（NO_ACTION），即使L1信号看多
+         * 如果K线显示明确的上升趋势（最近10-20根K线连续上升）→ **禁止做空**（NO_ACTION），即使L1信号看空
+         * 如果K线显示震荡趋势 → 可以基于L1信号决策
+       - L1信号 >= 20 且 K线趋势不冲突 → 完全基于L1信号决策，正常开仓，正常仓位
        - L1信号 < 20 → NO_ACTION，等待更好的机会
 
 3) 市场结构验证（关键决策因素）：
@@ -117,6 +121,22 @@ prompt = """
    
    - **技术分析（核心）**：作为专业的短、中线交易大师，你必须使用多种技术分析方法来分析15分钟K线数据，验证开仓位置并设置合理的止盈止损
      * **输入数据**：系统会提供 klines_15m 字段，包含最近100根15分钟K线数据，格式为：[{"t": timestamp, "o": open, "h": high, "l": low, "c": close, "v": volume}, ...]
+     * **K线实际趋势验证（关键，必须首先执行）**：
+       - **必须首先分析K线数据的实际价格走势**，识别真实的趋势方向，不能只看区间或指标
+       - **下降趋势识别**：
+         * 如果最近10-20根K线的收盘价（close）呈现明显的连续下降趋势（高点逐步降低，低点逐步降低）
+         * 或者最近5-10根K线中有超过60%的K线收盘价低于前一根K线
+         * 或者价格从近期高点下跌超过2-3%
+         * → **识别为下降趋势**，此时**禁止做多**（NO_ACTION），即使L1信号看多且total_score>=20
+       - **上升趋势识别**：
+         * 如果最近10-20根K线的收盘价呈现明显的连续上升趋势（高点逐步升高，低点逐步升高）
+         * 或者最近5-10根K线中有超过60%的K线收盘价高于前一根K线
+         * 或者价格从近期低点上涨超过2-3%
+         * → **识别为上升趋势**，此时**禁止做空**（NO_ACTION），即使L1信号看空且total_score绝对值>=20
+       - **震荡趋势识别**：
+         * 如果价格在区间内波动，没有明确的上升或下降趋势
+         * → **识别为震荡趋势**，此时可以基于L1信号决策，但要降低仓位
+       - **关键原则**：**K线实际价格走势优先于L1信号**，如果K线显示明确的下降趋势，即使L1信号看多，也应该NO_ACTION，避免逆势交易
      * **技术分析方法库（根据市场情况灵活选择）**：
        - **缠论**：
          * 识别分型（顶分型/底分型）、笔、线段、中枢
@@ -151,7 +171,14 @@ prompt = """
          * 如：箱体理论、道氏理论、江恩理论、量价分析等
      
      * **开仓位置验证（必须执行）**：
-       - **综合分析**：结合多种技术分析方法，确定当前价格位置是否适合开仓
+       - **第一步：K线实际趋势验证（最关键）**：
+         * **做多验证**：
+           - 如果K线显示明确的下降趋势（最近10-20根K线连续下降，价格从高点下跌超过2-3%）→ **禁止做多**（NO_ACTION），无论L1信号多强
+           - 如果K线显示上升趋势或震荡趋势 → 继续后续验证
+         * **做空验证**：
+           - 如果K线显示明确的上升趋势（最近10-20根K线连续上升，价格从低点上涨超过2-3%）→ **禁止做空**（NO_ACTION），无论L1信号多强
+           - 如果K线显示下降趋势或震荡趋势 → 继续后续验证
+       - **第二步：综合分析**：结合多种技术分析方法，确定当前价格位置是否适合开仓
        - **做多验证**：
          * 应该在相对低点、支撑位附近、回调结束位置、形态突破后的回踩位置开仓
          * 避免在相对高点、阻力位附近、趋势末期、形态顶部开仓
@@ -263,25 +290,37 @@ prompt = """
   - **如果无法基于技术分析识别关键点位，可以设置为0.0，系统会使用计算值作为后备**
 - should_execute（关键规则）：
   - **基本规则**：L1 total_score 绝对值 >= 20 时，should_execute=true
-  - **特殊情况**：
-    - **如果所有15分钟以上周期都显示相同的bias和strong强度，且该bias与L1方向冲突** → should_execute=false（NO_ACTION），无论L1信号多强
-    - **如果 market_structure.overall_bias 与 L1 方向冲突 且 overall_strength=strong** → should_execute=false（NO_ACTION），这是非常强烈的反向信号
-    - 如果L1信号与大周期趋势冲突且L1信号在20-30之间，**必须评估市场结构强度**：
-      * 如果 market_structure.overall_bias 与 L1 方向一致 且 overall_strength=strong → should_execute=true（降低仓位到70%）**这是成功交易的关键模式**
-      * 如果 market_structure.overall_bias 与 L1 方向冲突 或 overall_strength=weak/moderate → should_execute=false（NO_ACTION）
-    - 如果L1信号 < 20 → should_execute=false（信号太弱）
-  - 即使其他数据缺失，只要 L1 信号 >= 20，should_execute=true（但必须检查市场结构是否强烈冲突）
+  - **特殊情况（按优先级检查）**：
+    - **第一优先级：K线实际趋势验证（最关键）**：
+      * **如果K线显示明确的下降趋势**（最近10-20根K线连续下降，价格从高点下跌超过2-3%）：
+        - 且L1信号看多（direction=bullish）→ **should_execute=false（NO_ACTION）**，禁止做多，无论L1信号多强
+        - 且L1信号看空（direction=bearish）→ 可以继续评估，但需要其他条件支持
+      * **如果K线显示明确的上升趋势**（最近10-20根K线连续上升，价格从低点上涨超过2-3%）：
+        - 且L1信号看空（direction=bearish）→ **should_execute=false（NO_ACTION）**，禁止做空，无论L1信号多强
+        - 且L1信号看多（direction=bullish）→ 可以继续评估，但需要其他条件支持
+      * **K线实际趋势优先于L1信号**，这是避免逆势交易的关键
+    - **第二优先级：大周期趋势验证**：
+      * **如果所有15分钟以上周期都显示相同的bias和strong强度，且该bias与L1方向冲突** → should_execute=false（NO_ACTION），无论L1信号多强
+      * **如果 market_structure.overall_bias 与 L1 方向冲突 且 overall_strength=strong** → should_execute=false（NO_ACTION），这是非常强烈的反向信号
+    - **第三优先级：L1信号强度评估**：
+      * 如果L1信号与大周期趋势冲突且L1信号在20-30之间，**必须评估市场结构强度**：
+        - 如果 market_structure.overall_bias 与 L1 方向一致 且 overall_strength=strong → should_execute=true（降低仓位到70%）**这是成功交易的关键模式**
+        - 如果 market_structure.overall_bias 与 L1 方向冲突 或 overall_strength=weak/moderate → should_execute=false（NO_ACTION）
+      * 如果L1信号 < 20 → should_execute=false（信号太弱）
+  - 即使其他数据缺失，只要 L1 信号 >= 20 且 K线趋势不冲突，should_execute=true（但必须检查市场结构是否强烈冲突）
 
 决策示例：
-- L1 direction=bullish, total_score=45, 15m趋势=bullish(strong), overall_bias=long → OPEN_LONG, should_execute=true（趋势一致，正常仓位，基于15m计算止盈止损）
+- L1 direction=bullish, total_score=45, 15m趋势=bullish(strong), K线显示上升趋势, overall_bias=long → OPEN_LONG, should_execute=true（趋势一致，正常仓位，基于15m计算止盈止损）
+- L1 direction=bullish, total_score=45, K线显示下降趋势（最近15根K线连续下降）→ NO_ACTION（K线显示明确下降趋势，禁止做多，无论L1信号多强）**这是避免逆势交易的关键**
 - L1 direction=bullish, total_score=45, 15m趋势=bearish(strong), overall_bias=short, overall_strength=strong → NO_ACTION（L1信号强烈但与大周期和市场结构都强烈冲突，禁止做多）
-- L1 direction=bullish, total_score=55, 15m趋势=bearish(moderate), overall_bias=long, overall_strength=strong → OPEN_LONG, should_execute=true（L1信号极强>50，虽然与大周期冲突，但市场结构强烈支持L1方向，降低仓位到70%，止损3-4%）
-- L1 direction=bearish, total_score=-35, 15m趋势=bearish(strong), overall_bias=short → OPEN_SHORT, should_execute=true（趋势一致，正常仓位，基于15m计算止盈止损）
-- L1 direction=bullish, total_score=45, 15m趋势=neutral → OPEN_LONG, should_execute=true（趋势不明确，完全基于L1信号，正常仓位）
+- L1 direction=bullish, total_score=55, 15m趋势=bearish(moderate), K线显示震荡, overall_bias=long, overall_strength=strong → OPEN_LONG, should_execute=true（L1信号极强>50，虽然与大周期冲突，但市场结构强烈支持L1方向且K线不冲突，降低仓位到70%，止损3-4%）
+- L1 direction=bearish, total_score=-35, 15m趋势=bearish(strong), K线显示下降趋势, overall_bias=short → OPEN_SHORT, should_execute=true（趋势一致，正常仓位，基于15m计算止盈止损）
+- L1 direction=bullish, total_score=45, 15m趋势=neutral, K线显示震荡 → OPEN_LONG, should_execute=true（趋势不明确，K线不冲突，完全基于L1信号，正常仓位）
+- L1 direction=bullish, total_score=25, K线显示下降趋势（最近12根K线连续下降，价格从90000跌到89000）→ NO_ACTION（K线显示明确下降趋势，禁止做多，即使L1信号看多）**这是避免逆势交易的关键**
 - L1 direction=bullish, total_score=25, 15m趋势=bearish(strong), overall_bias=short, overall_strength=strong → NO_ACTION（L1信号20-30且与大周期和市场结构都强烈冲突，所有15分钟以上周期都看空，禁止做多）
-- L1 direction=bullish, total_score=25, 15m趋势=bearish(strong), overall_bias=long, overall_strength=strong → OPEN_LONG, should_execute=true（L1信号20-30，虽然与大周期冲突，但市场结构强烈支持L1方向，降低仓位到70%，止损3-4%）
-- L1 direction=bearish, total_score=-26, 15m趋势=bullish(moderate), overall_bias=short, overall_strength=strong → OPEN_SHORT, should_execute=true（L1信号20-30，虽然与大周期冲突，但市场结构强烈看空，降低仓位到70%，止损3-4%）**这是成功交易的关键模式**
-- L1 direction=bullish, total_score=55, 15m趋势=bearish(strong), 所有15m以上周期bias=short且strength=strong → NO_ACTION（即使L1信号极强，但所有大周期都强烈看空，禁止做多）
+- L1 direction=bullish, total_score=25, 15m趋势=bearish(strong), K线显示震荡, overall_bias=long, overall_strength=strong → OPEN_LONG, should_execute=true（L1信号20-30，虽然与大周期冲突，但市场结构强烈支持L1方向且K线不冲突，降低仓位到70%，止损3-4%）
+- L1 direction=bearish, total_score=-26, 15m趋势=bullish(moderate), K线显示震荡, overall_bias=short, overall_strength=strong → OPEN_SHORT, should_execute=true（L1信号20-30，虽然与大周期冲突，但市场结构强烈看空且K线不冲突，降低仓位到70%，止损3-4%）**这是成功交易的关键模式**
+- L1 direction=bullish, total_score=55, 15m趋势=bearish(strong), K线显示下降趋势, 所有15m以上周期bias=short且strength=strong → NO_ACTION（即使L1信号极强，但K线显示下降趋势且所有大周期都强烈看空，禁止做多）
 - L1 total_score=15 → NO_ACTION, should_execute=false（信号太弱，不满足最小阈值20）
 
 止盈止损示例（基于技术分析，输出实际价格值）：
@@ -315,10 +354,12 @@ prompt = """
 - **止盈止损必须基于技术分析**，结合15分钟K线数据识别的关键点位，不能使用固定比例
 - 止盈止损要足够大，能够抗住正常市场波动，最小止损2-3%，最小止盈3-5%
 - **关键原则**：
+  * **K线实际趋势优先于L1信号**：如果K线显示明确的下降趋势，禁止做多；如果K线显示明确的上升趋势，禁止做空
   * 在相对低点/支撑位开多，在相对高点/阻力位开空
   * 止损设置在关键点位之外，能够抗住正常波动
   * 止盈设置在下一个关键点位附近，能够抓住主要趋势
   * 根据市场情况灵活选择最合适的技术分析方法，不局限于某一种方法
+  * **必须首先分析K线实际价格走势**，识别真实的趋势方向，不能只看指标或区间
 - **关键：正确理解市场结构**
   * overall_bias=short 且 overall_strength=strong → **市场强烈看空**，**禁止做多**
   * overall_bias=long 且 overall_strength=strong → **市场强烈看多**，**禁止做空**

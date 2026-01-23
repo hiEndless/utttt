@@ -101,9 +101,9 @@ class AnalysisVerifier:
         trade_ids = []
         try:
             with PostgresDB() as db:
-                # 直接查询 trade_events 表中符合条件的 trade_id
+                # 直接查询 trade_events 表中符合条件的 trade (外键字段名是 trade，不是 trade_id)
                 sql = """
-                    SELECT DISTINCT trade_id
+                    SELECT DISTINCT trade
                     FROM trade_events
                     WHERE exchange = %s 
                       AND symbol = %s
@@ -115,7 +115,7 @@ class AnalysisVerifier:
                 
                 if results:
                     for row in results:
-                        tid = row[0] if isinstance(row, tuple) else row.get("trade_id")
+                        tid = row[0] if isinstance(row, tuple) else row.get("trade")
                         if tid:
                             trade_ids.append(tid)
             
@@ -153,7 +153,7 @@ class AnalysisVerifier:
                     sql_events = f"""
                         SELECT te.id, te.mark_price, te.event_at
                         FROM trade_events te
-                        WHERE te.trade_id = %s 
+                        WHERE te.trade = %s 
                           AND te.is_verified = FALSE
                           AND EXISTS (
                               SELECT 1 FROM agent_analyses aa 

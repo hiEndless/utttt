@@ -5,7 +5,7 @@ from agent_server.configs.prompts.trade_decision import prompt
 from agno.models.message import Message
 import json
 import time
-from agent_server.agents.experts.utils import (
+from agent_server.agents.utils import (
     _extract_json_from_text,
     _ensure_json_serializable,
     _json_dumps_safe,

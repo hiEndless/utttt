@@ -9,7 +9,7 @@ from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.trade_decision import TradeDecisionExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.redis_client import RedisClient
-from agent_server.utils.price_fetcher import get_mark_price_from_redis
+from agent_server.tools.price_fetcher import get_mark_price_from_redis
 import redis
 
 # 配置 trade 决策日志
@@ -1236,7 +1236,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 if isinstance(td_output,
                               dict) and "raw" in td_output and isinstance(
                                   td_output["raw"], str):
-                    from agent_server.agents.experts.utils import _extract_json_from_text
+                    from agent_server.agents.utils import _extract_json_from_text
                     extracted = _extract_json_from_text(td_output["raw"])
                     if extracted:
                         td_output = extracted
