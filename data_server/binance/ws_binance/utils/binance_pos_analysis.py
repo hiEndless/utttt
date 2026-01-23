@@ -162,8 +162,13 @@ class BinanceAnalysisService:
                      if t:
                          current_time_ms = t
                          
+                # 提前计算当前存在的 symbol 集合
+                current_symbols = set(item.get('symbol') for item in new_data)
+                
                 for item in removed_items:
-                    self.redis_client.conn.srem("symbol:binance", f"{item.get('symbol')}")
+                    # 只有当该 symbol 不在当前的 symbol 集合中时，才从 redis 中删除
+                    if item.get('symbol') not in current_symbols:
+                        self.redis_client.conn.srem("symbol:binance", f"{item.get('symbol')}")
                     print("存入数据库：", item)
                     self.trade_recorder.close_trade(item, current_time_ms)
 
