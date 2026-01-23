@@ -284,18 +284,17 @@ class AgentOutputInterpreter:
 if __name__ == "__main__":
     # 测试代码
     print("--- Testing Signal Validation (Chinese) ---")
-    sv_output = {"verdict": "WEAK_VALID", "alignment": "CONFLICT", "confidence_adjustment": "down",
-                 "reasoning": ["交易方向为做空，虽与市场短期趋势一致，但市场处于高风险状态，且临近关键支撑位，结构上存在反向突破风险。",
-                               "人群结构显示多数人持多头立场，交易与人群方向相反，形成逆向博弈，虽被标记为顺风因素，但人群稳定性差、存在非线性脆弱风险，不能完全抵消结构不确定性。",
-                               "风险敞口扩大行为发生在人群拥挤度较高（多个指标Z-Score显著负值）、资金费率微正但波动剧烈的阶段，叠加执行确认未明确，需降低可信度。"]}
+    sv_output = {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
+                 "reasoning": ["多个关键周期（15m、30m）的技术验证结论为冲突，构成结构性不支持。", "市场背景中长期趋势为下跌且具有否决权，与信号隐含前提形成根本性冲突。",
+                               "人群博弈呈现与信号方向一致的拥挤状态，且稳定性不足，存在非线性风险与资金挤压风险。"]}
 
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "HIGH", "recommended_action": "REDUCE", "max_allowed_exposure": 0.2, "reduce_pct": 0.3,
-                 "add_pct": 0.0, "tighten_stop": True, "freeze_add_position_min": 30,
-                 "reason_tags": ["连续三次方向冲突", "人群结构脆弱", "资金费率挤压风险", "市场结构临近支撑位", "信号可信度下调"], "suggestion": "REDUCE",
-                 "verdict": "HIGH", "reasoning": ["连续三次方向冲突", "人群结构脆弱", "资金费率挤压风险", "市场结构临近支撑位", "信号可信度下调"]}
+    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "max_allowed_exposure": 0.0, "reduce_pct": 1.0,
+                 "add_pct": 0.0, "tighten_stop": False, "freeze_add_position_min": 0,
+                 "reason_tags": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"], "suggestion": "EXIT",
+                 "verdict": "CRITICAL", "reasoning": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"]}
 
     print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))
