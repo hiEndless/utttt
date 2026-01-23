@@ -86,7 +86,7 @@ class TradeEventExpert:
             run_output = await agent.arun(
                 Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
                 stream=False,
-                debug_mode=True,
+                debug_mode=False,
             )
             return run_output.content
 
