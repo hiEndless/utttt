@@ -87,23 +87,34 @@ def _trend_alignment(ind, direction: str):
     e50 = _safe_num(ema.get("ema50"))
     p5 = _safe_num(prev.get("ema5"))
     p20 = _safe_num(prev.get("ema20"))
-    p50 = _safe_num(prev.get("ema50"))
+    # p50 = _safe_num(prev.get("ema50")) # Unused in simplified logic
+
     if direction == "bullish":
+        # 强多头: 5 > 20 > 50 且均线向上
         if _gt(e5, e20) and _gt(e20, e50) and _nondec(e5, p5) and _nondec(e20, p20):
             return "strong_support"
-        if _gt(e5, e20) and not _gt(e20, e50) and _nondec(e50, p50):
+        # 弱多头: 短期均线金叉
+        if _gt(e5, e20):
             return "weak_support"
-        if not _gt(e5, e20):
-            return "conflict"
-        return "neutral"
+        # 回调: 短期死叉，但长期趋势向上 (20 > 50)
+        if not _gt(e5, e20) and _gt(e20, e50):
+            return "neutral"
+        # 冲突: 完全空头排列或长期趋势未理顺
+        return "conflict"
+
     if direction == "bearish":
+        # 强空头: 5 < 20 < 50 且均线向下
         if _lt(e5, e20) and _lt(e20, e50) and _noninc(e5, p5) and _noninc(e20, p20):
             return "strong_support"
-        if _lt(e5, e20) and not _lt(e20, e50) and _noninc(e50, p50):
+        # 弱空头: 短期均线死叉
+        if _lt(e5, e20):
             return "weak_support"
-        if not _lt(e5, e20):
-            return "conflict"
-        return "neutral"
+        # 反弹: 短期金叉，但长期趋势向下 (20 < 50)
+        if not _lt(e5, e20) and _lt(e20, e50):
+            return "neutral"
+        # 冲突
+        return "conflict"
+    
     return "neutral"
 
 
@@ -136,7 +147,7 @@ def _momentum_alignment(ind, direction: str):
             return "neutral"
         if (r14 is not None and r14 > 75) or (j is not None and j > 100):
             return "exhaustion"
-        if _macd_dead_cross(dif, dea, pdif, pdea) or ((r14 is not None and r14 < 45) or (r6 is not None and r6 < 45)):
+        if _macd_dead_cross(dif, dea, pdif, pdea) or ((r14 is not None and r14 < 40) or (r6 is not None and r6 < 40)):
             return "conflict"
         return "neutral"
     if direction == "bearish":
@@ -146,7 +157,7 @@ def _momentum_alignment(ind, direction: str):
             return "neutral"
         if (r14 is not None and r14 < 25) or (j is not None and j < 0):
             return "exhaustion"
-        if _macd_golden_cross(dif, dea, pdif, pdea) or ((r14 is not None and r14 > 55) or (r6 is not None and r6 > 55)):
+        if _macd_golden_cross(dif, dea, pdif, pdea) or ((r14 is not None and r14 > 60) or (r6 is not None and r6 > 60)):
             return "conflict"
         return "neutral"
     return "neutral"
@@ -159,13 +170,13 @@ def _structure_alignment(ind, direction: str):
         if direction == "bullish":
             if percent_b >= 0.6:
                 return "support"
-            if _in_range(percent_b, 0.4, 0.6):
+            if _in_range(percent_b, 0.35, 0.6):
                 return "neutral"
             return "conflict"
         if direction == "bearish":
             if percent_b <= 0.4:
                 return "support"
-            if _in_range(percent_b, 0.4, 0.6):
+            if _in_range(percent_b, 0.4, 0.65):
                 return "neutral"
             return "conflict"
     return "neutral"
