@@ -24,7 +24,7 @@ _prompt_template = """
 - Crowd Trend Analysis: account_long_ratio, taker_buy_sell_ratio, top_position_ratio, funding_rate (含 value, delta, zscore)
 - Crowd Interpretation (博弈解释): position_direction(long/short), crowd_bias(long/short), relationship(same/opposite), implication(headwind/tailwind/neutral), execution_confirmation(confirmed/unconfirmed), stability(stable/unstable), risk_tags(crowding_instability/fragility_non_linear_risk/funding_squeeze_risk)
 - Volatility Regime: vol_regime(normal/high/extreme)
-- Risk Limits (硬性边界): max_loss_pct, max_holding_min, max_exposure_pct, cooldown_after_invalid_min
+- Risk Limits (硬性边界): max_loss_pct, max_holding_min, cooldown_after_invalid_min
 - Account/System Context: risk_mode(normal/defensive), system_mode(normal/advisory), available_exposure_pct, allow_add_position(bool)
 - Action Cooldown: last_action, last_action_min_ago, cooldown_active(bool)
 
@@ -132,8 +132,6 @@ _prompt_template = """
 - risk_state 与 recommended_action 映射原则：
   risk_state 用于指导在 allowed_actions 中选择最保守且一致的动作，
   不得生成超出 allowed_actions 的动作。
-- max_allowed_exposure 语义说明：
-  表示“相对于账户净值的最大允许敞口比例”，取值范围 0.0 ~ 1.0。
 - reduce_pct 取值规则：
   - EXIT     → 必须为 1.0
   - REDUCE   → 0.1 < reduce_pct <= 0.5
