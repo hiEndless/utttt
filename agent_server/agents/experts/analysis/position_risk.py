@@ -11,7 +11,7 @@ from agent_server.agents.utils import (
     validate_with_retry,
 )
 from agent_server.agent_context.output_store import save_agent_output
-from agent_server.utils.account import get_available_exposure_pct
+from agent_server.utils.account import get_available_exposure_pct, get_account_info
 
 
 class PositionRiskExpert:
@@ -30,12 +30,6 @@ class PositionRiskExpert:
             "required": True,
             "options": ["ADD_POSITION", "HOLD", "DEFENSIVE", "REDUCE", "EXIT"],
             "description": "Recommended action"
-        },
-        "max_allowed_exposure": {
-            "type": float,
-            "required": True,
-            "range": (0.0, 1.0),
-            "description": "Maximum allowed exposure percentage"
         },
         "reduce_pct": {
             "type": float,
@@ -110,7 +104,6 @@ class PositionRiskExpert:
             final_result = {
                 "risk_state": "CRITICAL",
                 "recommended_action": "HOLD",  # Safe default
-                "max_allowed_exposure": 0.0,
                 "reduce_pct": 0.0,
                 "add_pct": 0.0,
                 "tighten_stop": True,
@@ -262,6 +255,7 @@ if __name__ == "__main__":
 
         # 获取账户余额计算可用仓位比例
         calculated_available_pct = await get_available_exposure_pct(exchange)
+        account_info = await get_account_info(exchange)
 
         # 默认初始化：应对首次运行或 Redis 无数据的情况
         # 使用 "HOLD" + 极长的时间间隔，表示“无近期操作历史”，让 Agent 从零开始评估
@@ -282,6 +276,10 @@ if __name__ == "__main__":
         minutes_since_last = (now_ms - last_action_ts) / 1000 / 60 if last_action_ts > 0 else 9999
 
         operational_context = {
+            "account_info": {
+                "total_equity": float(account_info.get("balance", 0)),
+                "available_balance": float(account_info.get("availableBalance", 0))
+            },
             "risk_limits": {
                 "max_loss_pct": -0.06,  # 最大亏损百分比 (建议参考值) 用户设置
                 "max_holding_min": 0,  # 最长持仓时间 (0 表示不限制，由上游策略决定)

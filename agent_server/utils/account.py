@@ -31,6 +31,21 @@ async def get_available_exposure_pct(exchange: str) -> float:
     return calculated_available_pct
 
 
+async def get_account_info(exchange: str) -> dict:
+    """
+    获取账户详细资金信息
+    """
+    rc = RedisClient()
+    balance_key = f"balance:{exchange}"
+    balance_str = await rc.get(balance_key)
+    if balance_str:
+        try:
+            return json.loads(balance_str)
+        except Exception as e:
+            print(f"Error parsing balance info: {e}")
+    return {}
+
+
 if __name__ == "__main__":
     import asyncio
     available_pct = asyncio.run(get_available_exposure_pct("binance"))

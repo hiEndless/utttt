@@ -136,8 +136,13 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             minutes_since_last = (ts_now - last_action_ts) / 1000 / 60 if last_action_ts > 0 else 9999
 
             calculated_available_pct = await get_available_exposure_pct(exchange)
+            account_info = await get_account_info(exchange)
 
             operational_context = {
+                "account_info": {
+                    "total_equity": float(account_info.get("balance", 0)),
+                    "available_balance": float(account_info.get("availableBalance", 0))
+                },
                 "risk_limits": {
                     "max_loss_pct": -0.06,  # 最大亏损百分比 (建议参考值) 用户设置
                     "max_holding_min": 0,  # 最长持仓时间 (0 表示不限制，由上游策略决定)

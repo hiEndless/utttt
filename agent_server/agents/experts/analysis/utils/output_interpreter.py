@@ -257,7 +257,6 @@ class AgentOutputInterpreter:
         risk_state = lt("pr_risk_map").get(risk_state_raw, risk_state_raw)
         action = lt("pr_action_map").get(action_raw, action_raw)
 
-        max_exposure = output.get("max_allowed_exposure", 0.0) * 100
         tighten_stop = lt("pr_tighten_yes") if output.get("tighten_stop") else lt("pr_tighten_no")
         freeze_min = output.get("freeze_add_position_min", 0)
 
@@ -274,7 +273,6 @@ class AgentOutputInterpreter:
             f"{lt('pr_title')}\n"
             f"{lt('pr_risk_state')}：{risk_state}\n"
             f"{lt('pr_action')}：{action}{action_detail_str}\n"
-            f"{lt('pr_max_exposure')}：{max_exposure:.1f}%\n"
             f"{lt('pr_tighten_stop')}：{tighten_stop}\n"
             f"{lt('pr_freeze')}：{freeze_min} {lt('min_suffix')}"
         )
@@ -292,7 +290,7 @@ if __name__ == "__main__":
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "max_allowed_exposure": 0.0, "reduce_pct": 1.0,
+    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "reduce_pct": 1.0,
                  "add_pct": 0.0, "tighten_stop": False, "freeze_add_position_min": 0,
                  "reason_tags": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"], "suggestion": "EXIT",
                  "verdict": "CRITICAL", "reasoning": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"]}

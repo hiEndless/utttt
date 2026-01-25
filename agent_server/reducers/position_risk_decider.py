@@ -98,18 +98,26 @@ def decide_position_action(
     # Step 4: ADD（加仓）
     # -------------------------
     if not veto_reasons:
-        if eff_valid >= 2:
+        # 放宽：只要是有效验证，无论 streak 多少，都允许加仓尝试
+        # 由 Agent 结合市场结构最终决定是否真的加
+        if eff_valid >= 1:
             allowed_actions.append("ADD")
-        elif eff_valid == 1 and permission == "FULL":
+        
+        # 即使没有 streak，如果是刚开始 (FULL/LIMITED) 且无坏账，也允许加仓
+        elif permission in ["FULL", "LIMITED"] and eff_invalid == 0 and eff_conflict == 0:
             allowed_actions.append("ADD_CAUTIOUS")
 
     # -------------------------
     # Step 5: REDUCE（减仓）
     # -------------------------
+    # 只有明确风险才强制减仓
     if eff_invalid >= 2:
         allowed_actions.append("REDUCE")
     elif eff_conflict >= 2:
         allowed_actions.append("REDUCE_OPTIONAL")
+    
+    # 默认允许 HOLD
+    allowed_actions.append("HOLD")
 
     # -------------------------
     # Step 6: CLOSE（平仓）
