@@ -306,11 +306,22 @@ class TradeEventRecorder:
                     event_summary = "系统策略：短线高频交易不进行分析"
 
             # 插入 trade_events 表
-            # 注意：外键字段名是 trade_id (对应 Trade 模型的 trade 字段)
-            # 多空双开场景：同一 event_id 可能对应多个 trade_id
-            # 通过 (event_id, trade_id) 联合唯一来区分不同持仓的事件
+            # 注意：外键字段名是 trade (对应 Trade 模型的 trade 字段)
+            # 多空双开场景：同一 event_id 可能对应多个 trade
+            # 通过 (event_id, trade) 联合唯一来区分不同持仓的事件
 
             with PostgresDB() as db:
+                # 先验证 trade 是否存在于 trades 表中（外键约束检查）
+                check_trade_sql = "SELECT 1 FROM trades WHERE trade = %s LIMIT 1"
+                trade_exists = db.fetch_one(check_trade_sql, [trade_id])
+                
+                if not trade_exists:
+                    logger.warning(
+                        f"跳过事件入库: trade_id={trade_id} 在 trades 表中不存在，"
+                        f"可能交易已平仓或未创建。event_id={event_id}, symbol={symbol}"
+                    )
+                    return
+                
                 check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade = %s LIMIT 1"
                 existing = db.fetch_one(check_sql, [event_id, trade_id])
 
@@ -359,7 +370,7 @@ class TradeEventRecorder:
                     # 不存在，插入新记录
                     sql = """
                         INSERT INTO trade_events (
-                            trade_id, event_id, event_type, event_at,
+                            trade, event_id, event_type, event_at,
                             direction, mark_price,
                             market_context, event_data, indicators_snapshot,
                             is_verified, verification_at,
@@ -487,7 +498,7 @@ class TradeEventRecorder:
         """
         更新事件的市场背景快照（由 Agent 分析后调用）
         
-        注意：如果是多空双开场景，同一个 event_id 可能对应多条 trade_events 记录（不同的 trade_id）。
+        注意：如果是多空双开场景，同一个 event_id 可能对应多条 trade_events 记录（不同的 trade）。
         此方法会更新所有匹配 event_id 的记录。
         
         :param event_id: 事件ID
@@ -564,7 +575,7 @@ class TradeEventRecorder:
                     params = [event_id]
 
                     if trade_id:
-                        sql += " AND trade_id = %s"
+                        sql += " AND trade = %s"
                         params.append(trade_id)
 
                     event_rows = db.fetch_all(sql, params)

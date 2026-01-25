@@ -1,0 +1,18 @@
+by_plugin:
+  ema_macd_combo: trend
+  single_signal: oscillators
+  boll_vol_combo: volatility
+  boll_kdj_combo: reversion
+  macd_rsi_combo: momentum
+  macd_ema_rsi_combo: trend_momentum
+  rsi_kdj_vol_combo: mean_reversion
+
+by_indicator:
+  rsi: momentum
+  macd: trend
+  boll: volatility
+  williams_r: momentum
+  mfi: volume
+  ma: trend
+
+

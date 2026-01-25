@@ -1,5 +1,7 @@
 import asyncio
+from re import T
 import traceback
+import os
 
 import websockets
 import json
@@ -153,10 +155,28 @@ async def user_callback(data):
 
 
 if __name__ == "__main__":
-    api_key = "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0"
-    api_secret = "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B"
+    api_key = os.getenv("BINANCE_API_KEY")
+    api_secret = os.getenv("BINANCE_API_SECRET")
+    
+    if not api_key or not api_secret:
+        print("❌ 错误: 请设置环境变量 BINANCE_API_KEY 和 BINANCE_API_SECRET")
+        print("设置方式: export BINANCE_API_KEY=xxx BINANCE_API_SECRET=xxx")
+        exit(1)
 
-    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
+    # 检查是否使用测试网
+    use_testnet = True
+
+    
+    if use_testnet:
+        # Binance测试网WebSocket地址
+        ws_url = "wss://testnet.binancefuture.com/ws-fapi/v1"
+        print("🔶 使用测试网模式")
+    else:
+        # Binance实盘WebSocket地址
+        ws_url = "wss://ws-fapi.binance.com/ws-fapi/v1"
+        print("🔴 使用实盘模式")
+
+    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret, ws_url=ws_url)
     ws_client.register_callback(user_callback)
 
     asyncio.run(ws_client.run())

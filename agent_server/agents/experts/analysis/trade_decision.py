@@ -1,7 +1,9 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.trade_decision import prompt
+# from agent_server.configs.prompts.trade_decision import prompt as default_prompt
+from agent_server.configs.prompts.trade_decision_general import prompt as default_prompt
+from agent_server.configs.prompts.core_philosophy import CORE_TRADING_PHILOSOPHY
 from agno.models.message import Message
 import json
 import time
@@ -11,6 +13,18 @@ from agent_server.agents.utils import (
     _json_dumps_safe,
 )
 from agent_server.agent_context.output_store import save_agent_output
+
+
+def get_prompt_by_theory(theory_type: str = None):
+    """根据理论类型获取对应的prompt"""
+    if theory_type == "wave":
+        from agent_server.configs.prompts.trade_decision_wave import prompt
+        return prompt
+    elif theory_type == "chan":
+        from agent_server.configs.prompts.trade_decision_chan import prompt
+        return prompt
+    else:
+        return default_prompt
 
 
 class TradeDecisionExpert:
@@ -23,12 +37,20 @@ class TradeDecisionExpert:
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
         api_key = cfg.get("llm_api_key")
+        theory_type = cfg.get("theory_type", None)  # 支持 "wave" 或 "chan"
+
+        # 根据理论类型选择对应的prompt
+        base_prompt = get_prompt_by_theory(theory_type)
+        
+        # 核心逻辑：将核心交易哲学融合到具体的 Prompt 中
+        # 这样无论选择哪种理论（Wave/Chan/General），Agent 都会遵循这套经过实战验证的原则
+        instructions = f"{CORE_TRADING_PHILOSOPHY}\n\n{base_prompt}"
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
 
         agent = Agent(
             model=model,
-            instructions=prompt,
+            instructions=instructions,
         )
 
         run_output = await agent.arun(

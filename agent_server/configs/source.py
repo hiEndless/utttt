@@ -54,9 +54,9 @@ def query_db_env():
             # "llm_base_url": "https://api.siliconflow.cn/v1",
             # "llm_api_key":
             # "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "model_id": "deepseek-chat",
-            "llm_base_url": "https://api.deepseek.com",
-            "llm_api_key": "sk-e0b6c0c0fc1946bc9c8737900612b193",
+            "model_id": "deepseek-v3",
+            "llm_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "llm_api_key": "sk-6d60ccdfae2041db8df70ec3d50fe36e",
             "a2a_url": "http://localhost:10006/",
         },
         "market_structure": {
@@ -65,9 +65,9 @@ def query_db_env():
             # "llm_api_key":
             # "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             # deepseek
-            "model_id": "deepseek-chat",
-            "llm_base_url": "https://api.deepseek.com",
-            "llm_api_key": "sk-e0b6c0c0fc1946bc9c8737900612b193",
+            "model_id": "deepseek-v3",
+            "llm_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "llm_api_key": "sk-6d60ccdfae2041db8df70ec3d50fe36e",
             "a2a_url": "http://localhost:10007/",
         },
         "signal_validation": {
@@ -91,10 +91,12 @@ def query_db_env():
             # "llm_api_key":
             # "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             # deepseek
-            "model_id": "deepseek-chat",
-            "llm_base_url": "https://api.deepseek.com",
-            "llm_api_key": "sk-e0b6c0c0fc1946bc9c8737900612b193",
+            "model_id": "deepseek-v3",
+            "llm_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "llm_api_key": "sk-6d60ccdfae2041db8df70ec3d50fe36e",
             "a2a_url": "http://localhost:10008/",
+            # 理论类型选择: "wave" (波浪理论) 或 "chan" (缠论) 或 None (默认)
+            "theory_type": "wave",  # 设置为 "wave" 使用波浪理论, "chan" 使用缠论, None 使用默认理论
             # ModelScope  阿里云推出的模型服务平台
             # "model_id": "deepseek-ai/DeepSeek-V3.2",
             # "llm_base_url": "https://api-inference.modelscope.cn/v1",
