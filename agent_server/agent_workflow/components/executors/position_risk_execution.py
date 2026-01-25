@@ -12,7 +12,8 @@ from agent_server.agent_context.utils.crowd_interpreter import build_crowd_inter
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.account import get_available_exposure_pct
+from agent_server.utils.account import get_available_exposure_pct, get_account_info
+from agent_server.config import settings
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
@@ -138,20 +139,24 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             calculated_available_pct = await get_available_exposure_pct(exchange)
             account_info = await get_account_info(exchange)
 
+            # Load user specific config from DB here (TODO)
+            user_config = {}
+            risk_cfg = {**settings.risk_defaults, **user_config}
+
             operational_context = {
                 "account_info": {
                     "total_equity": float(account_info.get("balance", 0)),
                     "available_balance": float(account_info.get("availableBalance", 0))
                 },
                 "risk_limits": {
-                    "max_loss_pct": -0.06,  # 最大亏损百分比 (建议参考值) 用户设置
-                    "max_holding_min": 0,  # 最长持仓时间 (0 表示不限制，由上游策略决定)
-                    "cooldown_after_invalid_min": 0  # 建议模式下设为 0，保持对风险的实时敏感度
+                    "max_loss_pct": risk_cfg["max_loss_pct"],  # 最大亏损百分比 (建议参考值) 用户设置
+                    "max_holding_min": risk_cfg["max_holding_min"],  # 最长持仓时间 (0 表示不限制，由上游策略决定)
+                    "cooldown_after_invalid_min": risk_cfg["cooldown_after_invalid_min"]  # 建议模式下设为 0，保持对风险的实时敏感度
                 },
                 "portfolio_context": {
-                    "risk_mode": "normal",  # 账户风险模式: normal | conservative | aggressive
+                    "risk_mode": risk_cfg["risk_mode"],  # 账户风险模式: normal | conservative | aggressive
                     "available_exposure_pct": calculated_available_pct,  # 剩余可用仓位
-                    "allow_add_position": True  # 是否允许加仓 (根据资金情况)
+                    "allow_add_position": risk_cfg["allow_add_position"]  # 是否允许加仓 (根据资金情况)
                 },
                 "action_state": {
                     "last_action": last_action,  # 使用上一次的“建议”作为 last_action
@@ -160,8 +165,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                     "cooldown_active": False  # 建议模式下关闭冷却，允许随时输出最新建议
                 },
                 "system_mode": {
-                    "mode": "advisory",  # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
-                    "allow_reverse": True  # 允许灵活调整观点
+                    "mode": risk_cfg["system_mode"],  # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
+                    "allow_reverse": risk_cfg["allow_reverse"]  # 允许灵活调整观点
                 }
             }
 

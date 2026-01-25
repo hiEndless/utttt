@@ -20,6 +20,17 @@ class Settings:
     http_timeout_s: int = 10
     log_level: str = "INFO"
 
+    # Position Risk User Config Defaults
+    risk_defaults: dict = {
+        "max_loss_pct": float(os.environ.get('RISK_MAX_LOSS_PCT', -0.06)),
+        "max_holding_min": int(os.environ.get('RISK_MAX_HOLDING_MIN', 0)),
+        "cooldown_after_invalid_min": int(os.environ.get('RISK_COOLDOWN_MIN', 0)),
+        "risk_mode": os.environ.get('RISK_MODE', 'normal'),  # normal | conservative | aggressive
+        "system_mode": os.environ.get('SYSTEM_MODE', 'advisory'),  # advisory | normal | defensive | recovery
+        "allow_reverse": os.environ.get('RISK_ALLOW_REVERSE', 'True').lower() == 'true',
+        "allow_add_position": os.environ.get('RISK_ALLOW_ADD_POSITION', 'True').lower() == 'true',
+    }
+
 
 settings = Settings()
 
