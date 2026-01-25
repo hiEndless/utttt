@@ -48,7 +48,7 @@ class SignalValidationExpert:
         self.validator = LLMOutputValidator(self.SCHEMA)
         self.language = language
 
-    async def run(self, query: str) -> str:
+    async def run(self, query: str, risk_mode: str = "normal") -> str:
 
         cfg = get_agent_config(self.name)
         
@@ -63,7 +63,7 @@ class SignalValidationExpert:
 
         agent = Agent(
             model=model,
-            instructions=get_prompt(target_lang),
+            instructions=get_prompt(target_lang, risk_mode),
         )
 
         async def _run_llm():

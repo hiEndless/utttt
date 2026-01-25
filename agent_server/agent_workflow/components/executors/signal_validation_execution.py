@@ -6,6 +6,7 @@ from agent_server.agent_context.utils.crowd_interpreter import build_crowd_inter
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
+from agent_server.config import settings
 import json
 import asyncio
 import time
@@ -58,7 +59,12 @@ class SignalValidationComponent(BaseWorkflowComponent):
             "context": agent_ctx,
         }
 
-        sv_output_str = await self.expert.run(json.dumps(query, ensure_ascii=False))
+        # Load user specific config (TODO: DB)
+        user_config = {}
+        risk_cfg = {**settings.risk_defaults, **user_config}
+        risk_mode = risk_cfg.get("risk_mode", "normal")
+
+        sv_output_str = await self.expert.run(json.dumps(query, ensure_ascii=False), risk_mode=risk_mode)
 
         try:
             sv_output = json.loads(sv_output_str)
