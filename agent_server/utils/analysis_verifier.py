@@ -9,6 +9,7 @@ from agent_server.utils.db_utils import PostgresDB
 
 logger = logging.getLogger(__name__)
 
+
 class AnalysisVerifier:
     """
     Agent 分析结果验证组件
@@ -17,8 +18,9 @@ class AnalysisVerifier:
 
     # 需要验证方向性决策的 Agent 列表
     TARGET_AGENTS = ("position_risk",)
-    
-    def __init__(self, db: Optional[PostgresDB] = None, executor: Optional[ThreadPoolExecutor] = None, max_workers: int = 3):
+
+    def __init__(self, db: Optional[PostgresDB] = None, executor: Optional[ThreadPoolExecutor] = None,
+                 max_workers: int = 3):
         """
         初始化验证器
         :param db: 数据库连接实例 (可选，传入则复用)
@@ -57,7 +59,7 @@ class AnalysisVerifier:
         try:
             exchange = current_event_info.get("exchange", "").lower()
             symbol = current_event_info.get("symbol", "")
-            
+
             # 过滤开平仓事件
             event_type = current_event_info.get("event_type", "").lower()
             if "trade.open" in event_type:
@@ -76,7 +78,7 @@ class AnalysisVerifier:
                 exchange,
                 symbol
             )
-            
+
             if not trade_ids:
                 return
 
@@ -87,7 +89,7 @@ class AnalysisVerifier:
                 trade_ids,
                 current_mark_price
             )
-            
+
         except Exception as e:
             logger.error(f"验证分析结果失败: {e}", exc_info=True)
 
@@ -110,17 +112,17 @@ class AnalysisVerifier:
                       AND is_verified = FALSE
                       AND EXISTS (SELECT 1 FROM agent_analyses aa WHERE aa.event_id = trade_events.id)
                 """
-                
+
                 results = db.fetch_all(sql, [exchange, symbol])
-                
+
                 if results:
                     for row in results:
                         tid = row[0] if isinstance(row, tuple) else row.get("trade_id")
                         if tid:
                             trade_ids.append(tid)
-            
+
             return trade_ids
-            
+
         except Exception as e:
             logger.error(f"查询待验证 trade_id 失败: {e}")
             return []
@@ -138,7 +140,7 @@ class AnalysisVerifier:
                     trade_row = db.fetch_one(sql_trade, [tid])
                     if not trade_row:
                         continue
-                    
+
                     # db 可能返回 tuple，避免直接 .get 报错
                     position_side = str(self._row_get(trade_row, "position_side", 0, "")).upper()  # LONG / SHORT
                     if position_side not in ("LONG", "SHORT"):
@@ -147,9 +149,9 @@ class AnalysisVerifier:
                     # 2. 查找该交易下所有未验证且有目标 Agent 分析记录的事件
                     # 不再限制 LIMIT 1，而是获取所有待验证事件
                     # 只有当事件包含指定 agent (如 position_risk) 的分析时才需要验证
-                    
+
                     placeholders = ','.join(['%s'] * len(self.TARGET_AGENTS))
-                    
+
                     sql_events = f"""
                         SELECT te.id, te.mark_price, te.event_at
                         FROM trade_events te
@@ -162,13 +164,13 @@ class AnalysisVerifier:
                           )
                         ORDER BY te.event_at ASC
                     """
-                    
+
                     params = [tid] + list(self.TARGET_AGENTS)
                     event_rows = db.fetch_all(sql_events, params)
-                    
+
                     if not event_rows:
                         continue
-                    
+
                     verification_time = int(time.time() * 1000)
 
                     for event_row in event_rows:
@@ -182,15 +184,15 @@ class AnalysisVerifier:
                             ana_row = db.fetch_one(sql_analysis_price, [event_pk])
                             if ana_row:
                                 prev_price = self._row_get(ana_row, "mark_price", 0)
-                        
+
                         if prev_price is None or float(prev_price) == 0:
                             continue
-                        
+
                         prev_price = float(prev_price)
-                        
+
                         # 3. 计算涨跌幅
                         pct_change = (current_price - prev_price) / prev_price
-                        
+
                         # 4. 获取该事件的所有分析记录（仅限目标 agent）
                         sql_analyses = f"""
                             SELECT id, suggestion, mark_price, agent_name 
@@ -199,20 +201,21 @@ class AnalysisVerifier:
                         """
                         ana_params = [event_pk] + list(self.TARGET_AGENTS)
                         analyses = db.fetch_all(sql_analyses, ana_params)
-                        
+
                         # 5. 逐个验证
                         has_verification = False
                         for ana in analyses:
                             # db 可能返回 tuple，避免直接 .get 报错
                             ana_id = self._row_get(ana, "id", 0)
                             suggestion = self._row_get(ana, "suggestion", 1)
-                            
+
                             if not suggestion:
                                 continue
-                                
+
                             # 判断逻辑
-                            market_accuracy, decision_quality = self._judge_accuracy(position_side, pct_change, suggestion)
-                            
+                            market_accuracy, decision_quality = self._judge_accuracy(position_side, pct_change,
+                                                                                     suggestion)
+
                             # 更新 analysis，同时落库验证时价格，避免后续按时间回拉价格导致不一致
                             update_ana_sql = """
                                 UPDATE agent_analyses
@@ -221,7 +224,7 @@ class AnalysisVerifier:
                             """
                             db.execute(update_ana_sql, [market_accuracy, decision_quality, current_price, ana_id])
                             has_verification = True
-                        
+
                         # 6. 标记事件为已验证 (只有当确实进行了验证操作后)
                         if has_verification:
                             # 记录事件验证时间与验证时价格，保证复盘可重复
@@ -231,9 +234,10 @@ class AnalysisVerifier:
                                 WHERE id = %s
                             """
                             db.execute(update_event_sql, [verification_time, current_price, event_pk])
-                            
-                            logger.info(f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
-                    
+
+                            logger.info(
+                                f"已验证事件分析: trade_id={tid}, event_pk={event_pk}, change={pct_change:.4%}, side={position_side}")
+
                 except Exception as e:
                     logger.error(f"验证单个交易失败: trade_id={tid}, {e}, {traceback.print_exc()}")
 
@@ -243,65 +247,72 @@ class AnalysisVerifier:
         返回: (market_accuracy, decision_quality)
         """
         # 阈值
-        THRESHOLD = 0.005 # 0.5%
-        
+        THRESHOLD = 0.005  # 0.5%
+
         suggestion = suggestion.upper()
-        
+
         is_favorable = False
         is_unfavorable = False
         is_sideways = abs(pct_change) < THRESHOLD
-        
+
         if not is_sideways:
             if position_side == "LONG":
-                if pct_change > 0: is_favorable = True
-                else: is_unfavorable = True
-            else: # SHORT
-                if pct_change < 0: is_favorable = True
-                else: is_unfavorable = True
-        
+                if pct_change > 0:
+                    is_favorable = True
+                else:
+                    is_unfavorable = True
+            else:  # SHORT
+                if pct_change < 0:
+                    is_favorable = True
+                else:
+                    is_unfavorable = True
+
         # 判定
         # market_accuracy: CORRECT, WRONG, NEUTRAL
         # decision_quality: GOOD, BAD, DEFENSIVE, OVERAGGRESSIVE
-        
+
         if is_favorable:
             if suggestion in ("ADD_POSITION", "HOLD"):
                 return "CORRECT", "GOOD"
             elif suggestion == "DEFENSIVE":
                 return "CORRECT", "DEFENSIVE"
             elif suggestion in ("REDUCE", "EXIT"):
-                return "WRONG", "BAD" # 卖飞
-                
+                return "WRONG", "BAD"  # 卖飞
+
         elif is_unfavorable:
             if suggestion in ("REDUCE", "EXIT", "DEFENSIVE"):
                 return "CORRECT", "GOOD"
             elif suggestion in ("ADD_POSITION", "HOLD"):
-                return "WRONG", "BAD" # 死扛
-                
-        else: # is_sideways
+                return "WRONG", "BAD"  # 死扛
+
+        else:  # is_sideways
             if suggestion in ("HOLD", "DEFENSIVE"):
                 return "NEUTRAL", "GOOD"
             elif suggestion == "ADD_POSITION":
-                return "WRONG", "OVERAGGRESSIVE" # 震荡期加仓，容易磨损
+                return "WRONG", "OVERAGGRESSIVE"  # 震荡期加仓，容易磨损
             elif suggestion in ("REDUCE", "EXIT"):
-                return "NEUTRAL", "DEFENSIVE" # 反应过度但规避风险
-        
+                return "NEUTRAL", "DEFENSIVE"  # 反应过度但规避风险
+
         return "NEUTRAL", "DEFENSIVE"
 
 
 if __name__ == "__main__":
     import asyncio
+
     # 创建一个实例
     verifier = AnalysisVerifier()
-    
+
     # 验证所有交易
     info = {"route": "indicators", "exchange": "binance", "symbol": "BTCUSDT", "final_priority": "low",
-                    "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
-                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
-                    "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
-    
+            "event_id": "binance.BTCUSDT.trade.open.1768045518249", "market_state": "momentum", "direction": "bearish",
+            "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
+            "l1_total_score": -56.91888, "tf_hint": ["15m", "30m", "1h"]}
+
     mark_price = 43000.0
+
 
     async def demo():
         await verifier.verify_previous_analyses(info, mark_price)
+
 
     asyncio.run(demo())

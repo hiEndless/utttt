@@ -328,7 +328,7 @@ if __name__ == "__main__":
             "crowd_context": crowd_context,
             "crowd_interpretation": crowd_interpretation,
             "crowd_trend_analysis": crowd_trend_analysis,
-            "operational_context": operational_context  # 新增字段
+            "operational_context": operational_context  
         }
 
         print("\n=== Agent Input Query ===")
