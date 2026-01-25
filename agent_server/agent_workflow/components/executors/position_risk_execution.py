@@ -112,12 +112,21 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 event_ts=ts_now,
             )
 
+            # Load user specific config from DB here (TODO)
+            user_config = {}
+            risk_cfg = {**settings.risk_defaults, **user_config}
+
+            # Load user specific config from DB here (TODO)
+            user_config = {}
+            risk_cfg = {**settings.risk_defaults, **user_config}
+
             decision_rules = decide_position_action(
                 holding_duration_min=state["holding_duration_min"],
                 time_since_last_event_min=(ts_now - state["last_update_ts"]) // 60_000,
                 valid_streak=state["valid_streak"],
                 invalid_streak=state["invalid_streak"],
                 conflict_streak=state["conflict_streak"],
+                risk_mode=risk_cfg["risk_mode"]  # 动态传入 risk_mode
             )
 
             rc = RedisClient()
@@ -138,10 +147,6 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
             calculated_available_pct = await get_available_exposure_pct(exchange)
             account_info = await get_account_info(exchange)
-
-            # Load user specific config from DB here (TODO)
-            user_config = {}
-            risk_cfg = {**settings.risk_defaults, **user_config}
 
             operational_context = {
                 "account_info": {

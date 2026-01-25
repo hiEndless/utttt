@@ -315,6 +315,7 @@ if __name__ == "__main__":
             valid_streak=state["valid_streak"],
             invalid_streak=state["invalid_streak"],
             conflict_streak=state["conflict_streak"],
+            risk_mode=risk_cfg["risk_mode"]  # 动态传入 risk_mode
         )
 
         query = {
@@ -338,7 +339,7 @@ if __name__ == "__main__":
         # print(json.dumps(query, indent=2, ensure_ascii=False))
         # print("=========================\n")
 
-        # await expert.run(query)
+        await expert.run(query)
 
 
     asyncio.run(_demo())

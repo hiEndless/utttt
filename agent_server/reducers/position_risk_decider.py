@@ -55,6 +55,7 @@ def decide_position_action(
     valid_streak: int,
     invalid_streak: int,
     conflict_streak: int,
+    risk_mode: str = "normal",  # normal | conservative | aggressive
 ) -> Dict[str, Any]:
     """
     Deterministic Position Risk Decision
@@ -69,10 +70,33 @@ def decide_position_action(
     """
 
     # -------------------------
+    # Step 0: 设定模式阈值
+    # -------------------------
+    # 默认 normal 模式
+    streak_threshold_invalid = 2
+    streak_threshold_conflict = 2
+    streak_threshold_close = 3
+    allow_expired_streak = False
+
+    if risk_mode == "conservative":
+        streak_threshold_invalid = 1  # 只要一次无效就 veto
+        streak_threshold_conflict = 1
+        streak_threshold_close = 2    # 两次无效就平仓
+    elif risk_mode == "aggressive":
+        streak_threshold_invalid = 3  # 允许连续两次无效
+        streak_threshold_conflict = 3
+        streak_threshold_close = 4
+        allow_expired_streak = True   # 允许过期保留部分 streak
+
+    # -------------------------
     # Step 1: 时间周期
     # -------------------------
     bucket = time_bucket(time_since_last_event_min)
     permission = STREAK_PERMISSION[bucket]
+
+    # Aggressive 模式下，T_24H_PLUS 即使过期也给予 LIMITED 权限，防止被动平仓
+    if allow_expired_streak and bucket == "T_24H_PLUS":
+        permission = "LIMITED"
 
     # -------------------------
     # Step 2: streak 裁剪
@@ -87,11 +111,11 @@ def decide_position_action(
     # -------------------------
     # Step 3: 强否决规则
     # -------------------------
-    if eff_invalid >= 2:
+    if eff_invalid >= streak_threshold_invalid:
         veto_reasons.append("invalid_streak_high")
-    if eff_conflict >= 2:
+    if eff_conflict >= streak_threshold_conflict:
         veto_reasons.append("conflict_streak_high")
-    if bucket == "T_24H_PLUS":
+    if bucket == "T_24H_PLUS" and not allow_expired_streak:
         veto_reasons.append("temporal_memory_expired")
 
     # -------------------------
@@ -111,9 +135,9 @@ def decide_position_action(
     # Step 5: REDUCE（减仓）
     # -------------------------
     # 只有明确风险才强制减仓
-    if eff_invalid >= 2:
+    if eff_invalid >= streak_threshold_invalid:
         allowed_actions.append("REDUCE")
-    elif eff_conflict >= 2:
+    elif eff_conflict >= streak_threshold_conflict:
         allowed_actions.append("REDUCE_OPTIONAL")
     
     # 默认允许 HOLD
@@ -122,15 +146,15 @@ def decide_position_action(
     # -------------------------
     # Step 6: CLOSE（平仓）
     # -------------------------
-    if invalid_streak >= 3:
+    if invalid_streak >= streak_threshold_close:
         allowed_actions.append("CLOSE")
-    elif invalid_streak >= 2 and holding_duration_min > 240:
+    elif invalid_streak >= (streak_threshold_close - 1) and holding_duration_min > 240:
         allowed_actions.append("CLOSE_OPTIONAL")
 
     # -------------------------
     # Step 7: HOLD（冻结）
     # -------------------------
-    if eff_conflict >= 2:
+    if eff_conflict >= streak_threshold_conflict:
         allowed_actions.append("HOLD_REDUCE_ONLY")
     elif bucket == "T_12H":
         allowed_actions.append("HOLD_NO_ADD")
