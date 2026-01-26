@@ -29,7 +29,7 @@ class TradeSummaryExpert:
             "description": "Position side"
         },
         "reasoning": {
-            "type": str,
+            "type": list,
             "required": True,
             "description": "Detailed reasoning process (Audit Log)"
         },
@@ -87,7 +87,7 @@ class TradeSummaryExpert:
             final_result = {
                 "symbol": symbol,
                 "position_side": "LONG",  # Default, hard to guess
-                "reasoning": f"Validation failed: {str(e)}",
+                "reasoning": ["输出校验失败，已触发安全回退", str(e)],
                 "trade_verdict": "BAD_TRADE", # Fail-safe verdict
                 "summary": {
                     "trade_overview": "Analysis failed due to validation errors.",

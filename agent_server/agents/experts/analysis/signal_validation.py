@@ -1,20 +1,12 @@
-from agno.agent import Agent
-from agno.models.openai import OpenAILike
-from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.signal_validation import get_prompt
-from agno.models.message import Message
 import json
 import asyncio
-import time
-from agent_server.agents.utils import (
-    _json_dumps_safe,
-    LLMOutputValidator,
-    validate_with_retry,
-)
-from agent_server.agent_context.output_store import save_agent_output
+from typing import Any, Dict
+
+from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 
 
-class SignalValidationExpert:
+class SignalValidationExpert(BaseLLMExpert):
     name = "signal_validation"
 
     # Define Schema
@@ -44,74 +36,20 @@ class SignalValidationExpert:
         }
     }
 
-    def __init__(self, language: str = "zh"):
-        self.validator = LLMOutputValidator(self.SCHEMA)
-        self.language = language
+    def build_instructions(self, target_lang: str, **kwargs: Any) -> str:
+        risk_mode = str(kwargs.get("risk_mode") or "normal")
+        return get_prompt(target_lang, risk_mode)
 
-    async def run(self, query: str, risk_mode: str = "normal") -> str:
+    def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        return {
+            "verdict": "INVALID",
+            "alignment": "CONFLICT",
+            "confidence_adjustment": "down",
+            "reasoning": ["输出校验失败，已触发安全回退", str(error)],
+        }
 
-        cfg = get_agent_config(self.name)
-        
-        # 优先从环境变量/配置获取，其次使用实例属性
-        target_lang = cfg.get("language", self.language)
-
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
-
-        model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-
-        agent = Agent(
-            model=model,
-            instructions=get_prompt(target_lang, risk_mode),
-        )
-
-        async def _run_llm():
-            run_output = await agent.arun(
-                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-                stream=False,
-                debug_mode=False,
-            )
-            return run_output.content
-
-        try:
-            final_result = await validate_with_retry(
-                llm_runner=_run_llm,
-                validator=self.validator,
-                max_retries=3,
-                on_retry=lambda msg: print(f"[SignalValidationExpert] {msg}")
-            )
-        except Exception as e:
-            print(f"[SignalValidationExpert] Validation failed after retries: {e}")
-            final_result = {
-                "verdict": "INVALID",
-                "alignment": "CONFLICT",
-                "confidence_adjustment": "down",
-                "reasoning": ["validation_failed", str(e)]
-            }
-
-        # 构建产出物系统数据结构
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
-        symbol = qobj.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or "binance"
-        event_id = qobj.get("event_id")
-        ts = int(time.time() * 1000)
-
-        try:
-            payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-        except Exception:
-            payload_obj = {"raw": final_result}
-        try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, model_id=model_id)
-        except Exception:
-            pass
-
-        output = _json_dumps_safe(final_result)
-        print(output)
-        return output
+    async def run(self, query: QueryInput, risk_mode: str = "normal") -> str:
+        return await super().run(query, risk_mode=risk_mode)
 
 
 if __name__ == "__main__":

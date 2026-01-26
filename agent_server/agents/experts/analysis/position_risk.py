@@ -1,33 +1,26 @@
-from agno.agent import Agent
-from agno.models.openai import OpenAILike
-from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.position_risk import get_prompt
-from agno.models.message import Message
 import json
 import time
-from agent_server.agents.utils import (
-    _json_dumps_safe,
-    LLMOutputValidator,
-    validate_with_retry,
-)
-from agent_server.agent_context.output_store import save_agent_output
+from typing import Any, Dict
+
+from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 from agent_server.utils.account import get_available_exposure_pct
 from agent_server.config import settings
 from agent_server.risk.action_policy import enforce_position_risk_action
 
 
-class PositionRiskExpert:
+class PositionRiskExpert(BaseLLMExpert):
     name = "position_risk"
 
     # Define Schema
     SCHEMA = {
-        "risk_state": {
+        "verdict": {
             "type": str,
             "required": True,
             "options": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
             "description": "Risk state level"
         },
-        "recommended_action": {
+        "suggestion": {
             "type": str,
             "required": True,
             "options": ["ADD_POSITION", "HOLD", "DEFENSIVE", "REDUCE", "EXIT"],
@@ -63,104 +56,36 @@ class PositionRiskExpert:
         }
     }
 
-    def __init__(self, language: str = "zh"):
-        self.validator = LLMOutputValidator(self.SCHEMA)
-        self.language = language
+    def build_instructions(self, target_lang: str, **kwargs: Any) -> str:
+        return get_prompt(target_lang)
 
-    async def run(self, query: str) -> str:
+    def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        return {
+            "verdict": "CRITICAL",
+            "suggestion": "HOLD",
+            "reduce_pct": 0.0,
+            "add_pct": 0.0,
+            "tighten_stop": True,
+            "freeze_add_position_min": 60,
+            "reasoning": ["输出校验失败，已触发安全回退", str(error)],
+        }
 
-        cfg = get_agent_config(self.name)
-        
-        # 优先从环境变量/配置获取，其次使用实例属性
-        target_lang = cfg.get("language", self.language)
-
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
-
-        model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-
-        agent = Agent(
-            model=model,
-            instructions=get_prompt(target_lang),
+    def postprocess_result(self, result: Dict[str, Any], query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        risk_rules_decision = query_obj.get("risk_rules_decision") or {}
+        available_pct = (
+            (query_obj.get("operational_context") or {})
+            .get("portfolio_context", {})
+            .get("available_exposure_pct")
         )
+        final_result, _ = enforce_position_risk_action(
+            llm_output=result if isinstance(result, dict) else {},
+            risk_rules_decision=risk_rules_decision,
+            available_exposure_pct=available_pct,
+        )
+        return final_result
 
-        async def _run_llm():
-            run_output = await agent.arun(
-                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
-                stream=False,
-                debug_mode=False,
-            )
-            return run_output.content
-
-        try:
-            final_result = await validate_with_retry(
-                llm_runner=_run_llm,
-                validator=self.validator,
-                max_retries=3,
-                on_retry=lambda msg: print(f"[PositionRiskExpert] {msg}")
-            )
-        except Exception as e:
-            print(f"[PositionRiskExpert] Validation failed after retries: {e}")
-            # Fallback for critical failure
-            final_result = {
-                "risk_state": "CRITICAL",
-                "recommended_action": "HOLD",  # Safe default
-                "reduce_pct": 0.0,
-                "add_pct": 0.0,
-                "tighten_stop": True,
-                "freeze_add_position_min": 60,
-                "reasoning": ["输出校验失败，已触发安全回退"]
-            }
-
-        # 构建产出物系统数据结构
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
-        symbol = qobj.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or "binance"
-        event_id = qobj.get("event_id")
-        trade_id = qobj.get("trade_id")
-        ts = int(time.time() * 1000)
-
-        # 动作策略层：确保 recommended_action 与硬规则 allowed_actions 语义一致（不一致则强制降级到可执行动作）
-        try:
-            risk_rules_decision = qobj.get("risk_rules_decision") or {}
-            available_pct = (
-                (qobj.get("operational_context") or {})
-                .get("portfolio_context", {})
-                .get("available_exposure_pct")
-            )
-            final_result, _ = enforce_position_risk_action(
-                llm_output=final_result if isinstance(final_result, dict) else {},
-                risk_rules_decision=risk_rules_decision,
-                available_exposure_pct=available_pct,
-            )
-        except Exception:
-            pass
-
-        try:
-            payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-
-            # 适配数据库字段映射
-            if "recommended_action" in payload_obj:
-                payload_obj["suggestion"] = payload_obj["recommended_action"]
-            if "risk_state" in payload_obj:
-                payload_obj["verdict"] = payload_obj["risk_state"]
-
-        except Exception:
-            payload_obj = {"raw": final_result}
-
-        try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, trade_id=trade_id,
-                                    model_id=model_id)
-        except Exception as e:
-            print(f"Failed to save agent output: {e}")
-
-        output = _json_dumps_safe(final_result)
-        print(output)
-        return output
+    async def run(self, query: QueryInput) -> str:
+        return await super().run(query)
 
 
 if __name__ == "__main__":
@@ -283,7 +208,7 @@ if __name__ == "__main__":
                 # 兼容不同的存储结构，假设 payload 在最外层或 payload 字段
                 meta = ls.get("_context_meta", ls)
                 agent_output = ls.get("agent_output", ls)
-                last_action = agent_output.get("recommended_action", "HOLD")
+                last_action = agent_output.get("suggestion", "HOLD")
                 last_action_ts = int(meta.get("ts", 0))
             except Exception:
                 pass

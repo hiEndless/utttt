@@ -1,20 +1,12 @@
-from agno.agent import Agent
-from agno.models.openai import OpenAILike
-from agent_server.configs.source import get_agent_config
 from agent_server.configs.prompts.trade_event import get_prompt
-from agno.models.message import Message
 import json
 import asyncio
-import time
-from agent_server.agents.utils import (
-    _json_dumps_safe,
-    LLMOutputValidator,
-    validate_with_retry,
-)
-from agent_server.agent_context.output_store import save_agent_output
+from typing import Any, Dict
+
+from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 
 
-class TradeEventExpert:
+class TradeEventExpert(BaseLLMExpert):
     name = "trade_event"
 
     # Define schema for LLM output validation
@@ -44,86 +36,32 @@ class TradeEventExpert:
         }
     }
 
-    def __init__(self, language: str = "zh"):
-        self.validator = LLMOutputValidator(self.SCHEMA)
-        self.language = language
+    def build_instructions(self, target_lang: str, **kwargs: Any) -> str:
+        return get_prompt(target_lang)
 
-    async def run(self, query: str) -> str:
-
-        cfg = get_agent_config(self.name)
-        
-        # 优先从环境变量/配置获取，其次使用实例属性
-        target_lang = cfg.get("language", self.language)
-
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
-
-        model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-
-        agent = Agent(
-            model=model,
-            instructions=get_prompt(target_lang),
-        )
-
-        # 预处理 query，分离 LLM 核心输入与系统元数据
-        try:
-            qobj = json.loads(query) if isinstance(query, str) else (query or {})
-        except Exception:
-            qobj = {}
-
-        # 构造 LLM 专用精简输入（去除 symbol, event_id 等元数据）
-        trade_core = qobj.get("trade_core", {})
-        position_effect = qobj.get("position_effect", {})
-        position_context = qobj.get("position_context", {})
-        context_data = qobj.get("context", {})
-        
-        # 展平结构: trade_core + position_effect + position_context + context (包含 market_state, crowd_state 等)
-        llm_input = {
+    def build_llm_input(self, query_obj: Dict[str, Any], **kwargs: Any) -> Any:
+        trade_core = query_obj.get("trade_core", {})
+        position_effect = query_obj.get("position_effect", {})
+        position_context = query_obj.get("position_context", {})
+        context_data = query_obj.get("context", {})
+        return {
             "trade_core": trade_core,
             "position_effect": position_effect,
             "position_context": position_context,
-            **context_data
+            **(context_data or {}),
         }
 
-        async def _run_llm():
-            run_output = await agent.arun(
-                Message(role="user", content=json.dumps(llm_input, ensure_ascii=False)),
-                stream=False,
-                debug_mode=False,
-            )
-            return run_output.content
+    def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        return {
+            "error": str(error),
+            "verdict": "INVALID",
+            "alignment": "CONFLICT",
+            "confidence_adjustment": "down",
+            "reasoning": ["输出校验失败，已触发安全回退"],
+        }
 
-        try:
-            final_result = await validate_with_retry(
-                llm_runner=_run_llm,
-                validator=self.validator,
-                max_retries=3,
-                on_retry=lambda msg: print(f"[TradeEventExpert] {msg}")
-            )
-        except Exception as e:
-            # Fallback to raw output or error if validation fails completely
-            print(f"[TradeEventExpert] Validation failed after retries: {e}")
-            final_result = {"error": str(e), "verdict": "INVALID", "alignment": "CONFLICT", "reasoning": ["Validation failed"]}
-
-        # 构建产出物系统数据结构
-        symbol = qobj.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or "binance"
-        event_id = qobj.get("event_id")
-        ts = int(time.time() * 1000)
-
-        try:
-            payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
-        except Exception:
-            payload_obj = {"raw": final_result}
-        try:
-            await save_agent_output(self.name, exchange, symbol, ts, payload_obj, event_id=event_id, model_id=model_id)
-        except Exception:
-            pass
-
-        output = _json_dumps_safe(final_result)
-        print(output)
-        return output
+    async def run(self, query: QueryInput) -> str:
+        return await super().run(query)
 
 
 if __name__ == "__main__":

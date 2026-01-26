@@ -249,10 +249,9 @@ class AgentOutputInterpreter:
         """解析 PositionRiskExpert 的输出"""
         lt = lambda k: AgentOutputInterpreter._get_lang_text(language, k)
 
-        # 字段兼容处理
-        risk_state_raw = output.get("risk_state") or output.get("verdict") or "UNKNOWN"
-        action_raw = output.get("recommended_action") or output.get("suggestion") or "UNKNOWN"
-        reasoning = output.get("reason_tags") or output.get("reasoning") or []
+        risk_state_raw = output.get("verdict") or "UNKNOWN"
+        action_raw = output.get("suggestion") or "UNKNOWN"
+        reasoning = output.get("reasoning") or []
 
         risk_state = lt("pr_risk_map").get(risk_state_raw, risk_state_raw)
         action = lt("pr_action_map").get(action_raw, action_raw)
@@ -291,7 +290,7 @@ if __name__ == "__main__":
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "HIGH", "recommended_action": "DEFENSIVE", "reduce_pct": 0.0, "add_pct": 0.0,
+    pr_output = {"verdict": "HIGH", "suggestion": "DEFENSIVE", "reduce_pct": 0.0, "add_pct": 0.0,
                  "tighten_stop": True, "freeze_add_position_min": 0,
                  "reasoning": ["信号可信度衰减：原判决为WEAK_VALID，因confidence_adjustment=down，实际风险等级等效于CONFLICT，风险评级上调",
                                "人群结构不稳定：crowd_interpretation显示stability=unstable，且存在crowding_instability与fragility_non_linear_risk标签，表明市场存在非线性脆弱风险",

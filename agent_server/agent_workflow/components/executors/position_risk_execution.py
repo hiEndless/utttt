@@ -136,16 +136,17 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 decision_rules["forbid_add"] = True
 
             rc = RedisClient()
-            last_suggestion_key = f"agent_output:position_risk:{exchange}:{symbol}:latest"
+            last_suggestion_key = f"agent_output:{exchange}:{symbol}:position_risk:latest"
             last_suggestion_str = await rc.get(last_suggestion_key)
             last_action = "HOLD"
             last_action_ts = 0
             if last_suggestion_str:
                 try:
                     ls = json.loads(last_suggestion_str)
-                    payload = ls.get("payload", ls)
-                    last_action = payload.get("recommended_action", "HOLD")
-                    last_action_ts = int(ls.get("ts", 0))
+                    meta = ls.get("_context_meta", ls)
+                    agent_output = ls.get("agent_output", ls)
+                    last_action = agent_output.get("suggestion", "HOLD")
+                    last_action_ts = int(meta.get("ts", 0))
                 except:
                     pass
 
@@ -231,7 +232,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             trade_id = pos_snapshot.get("trade_id")
 
             payload = r.get("payload", r)
-            decision = payload.get("recommended_action", "HOLD")
+            decision = payload.get("suggestion") or "HOLD"
 
             decisions.append({
                 "trade_id": trade_id,

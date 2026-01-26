@@ -56,16 +56,18 @@ def enforce_position_risk_action(
     adjusted = dict(llm_output or {})
     reasons: List[str] = []
 
-    action = str(adjusted.get("recommended_action") or "HOLD").upper()
+    action = str(adjusted.get("suggestion") or "HOLD").upper()
     if action not in LLM_ACTIONS:
         action = "HOLD"
         reasons.append("输出动作不在系统枚举内，已自动降级为可执行动作")
 
     if action not in allowed:
         fallback = _choose_fallback_action(action, allowed)
-        adjusted["recommended_action"] = fallback
+        adjusted["suggestion"] = fallback
         action = fallback
         reasons.append("输出动作不在硬规则允许范围内，已自动降级为可执行动作")
+    else:
+        adjusted["suggestion"] = action
 
     _normalize_fields(adjusted, action)
 
@@ -85,7 +87,7 @@ def enforce_position_risk_action(
             if avail is not None and avail >= 0.0 and adjusted.get("add_pct") is not None:
                 if float(adjusted["add_pct"]) > avail:
                     if avail <= 0.0:
-                        adjusted["recommended_action"] = "HOLD"
+                        adjusted["suggestion"] = "HOLD"
                         adjusted["add_pct"] = 0.0
                         adjusted["tighten_stop"] = True
                         reasons.append("可用敞口不足，已自动禁止加仓并降级为持有")

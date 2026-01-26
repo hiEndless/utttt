@@ -115,7 +115,10 @@ _prompt_template = """
 {
   "symbol": "string",
   "position_side": "LONG | SHORT",
-  "reasoning": "【调试/审计层】详细推理过程...",
+  "reasoning": [
+    "【调试/审计层】事实 → 认知 → 执行 → 结果 的因果链 1",
+    "【调试/审计层】事实 → 认知 → 执行 → 结果 的因果链 2"
+  ],
   "trade_verdict": "GOOD_TRADE | BAD_TRADE | GOOD_LOSS | BAD_WIN",
   "summary": {
     "trade_overview": "【长期记忆层】简要回顾交易全过程（精炼）",

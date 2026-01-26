@@ -13,7 +13,17 @@ def _read_json(client, key: str):
         return {}
 
 
-def load_all_indicators(symbol: str, exchange: str, intervals: list[str]) -> dict:
+def _build_redis_client():
+    return redis.Redis(
+        host=cfg.redis_host,
+        port=cfg.redis_port,
+        db=cfg.redis_db,
+        password=(cfg.redis_password or None),
+        decode_responses=True,
+    )
+
+
+def load_all_indicators(symbol: str, exchange: str, intervals: list[str], client=None) -> dict:
     """
     从 Redis 读取全周期、全指标（当前与上一时刻），结构：
     {
@@ -25,13 +35,7 @@ def load_all_indicators(symbol: str, exchange: str, intervals: list[str]) -> dic
       ...
     }
     """
-    client = redis.Redis(
-        host=cfg.redis_host,
-        port=cfg.redis_port,
-        db=cfg.redis_db,
-        password=(cfg.redis_password or None),
-        decode_responses=True,
-    )
+    client = client or _build_redis_client()
     out = {}
     ex = exchange
     for iv in intervals or []:
@@ -268,12 +272,22 @@ def compute_tf_validation_for_interval(interval: str, ind: dict, direction: str)
     }
 
 
-def compute_tf_validation(symbol: str, exchange: str, direction: str, intervals: list[str]) -> dict:
-    all_inds = load_all_indicators(symbol, exchange, intervals)
+def compute_tf_validation_from_indicators(all_indicators: dict, direction: str) -> dict:
     out = {}
-    for iv, ind in (all_inds or {}).items():
+    for iv, ind in (all_indicators or {}).items():
         out[iv] = compute_tf_validation_for_interval(iv, ind or {}, direction)
     return out
+
+
+def compute_tf_validation(
+    symbol: str,
+    exchange: str,
+    direction: str,
+    intervals: list[str],
+    all_indicators: dict | None = None,
+) -> dict:
+    inds = all_indicators if all_indicators is not None else load_all_indicators(symbol, exchange, intervals)
+    return compute_tf_validation_from_indicators(inds, direction)
 
 
 if __name__ == "__main__":
