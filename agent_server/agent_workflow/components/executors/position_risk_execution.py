@@ -118,7 +118,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
             decision_rules = decide_position_action(
                 holding_duration_min=state["holding_duration_min"],
-                time_since_last_event_min=(ts_now - state["last_update_ts"]) // 60_000,
+                # 使用 reducer 计算的“距上一次事件时间”，避免 last_update_ts 刚覆盖导致恒为 0
+                time_since_last_event_min=int(state.get("time_since_last_event_min", 0) or 0),
                 valid_streak=state["valid_streak"],
                 invalid_streak=state["invalid_streak"],
                 conflict_streak=state["conflict_streak"],

@@ -70,6 +70,14 @@ async def reduce_temporal_state(
     except Exception:
         prev = {}
 
+    # 关键修复：在覆盖 last_update_ts 之前先捕获“上一次事件时间”，否则 time_since_last_event_min 会被错误算成 0
+    prev_last_update_ts = int(prev.get("last_update_ts", 0) or 0)
+    time_since_last_event_min = (
+        max(0, int((now_ts - prev_last_update_ts) / TIME_MS_IN_MIN))
+        if prev_last_update_ts > 0
+        else 0
+    )
+
     invalid_streak = int(prev.get("invalid_streak", 0))
     conflict_streak = int(prev.get("conflict_streak", 0))
     valid_streak = int(prev.get("valid_streak", 0))
@@ -123,6 +131,9 @@ async def reduce_temporal_state(
     state = {
         "entry_ts": int(entry_ts),
         "holding_duration_min": holding_duration_min,
+
+        "prev_update_ts": prev_last_update_ts,
+        "time_since_last_event_min": time_since_last_event_min,
 
         "last_verdict": verdict,
         "last_alignment": alignment,  # 新增字段记录

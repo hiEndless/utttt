@@ -304,7 +304,7 @@ if __name__ == "__main__":
         # 5. 组装最终 Query
         decision_rules = decide_position_action(
             holding_duration_min=state["holding_duration_min"],
-            time_since_last_event_min=(int(time.time() * 1000) - state["last_update_ts"]) // 60_000,
+            time_since_last_event_min=int(state.get("time_since_last_event_min", 0) or 0),
             valid_streak=state["valid_streak"],
             invalid_streak=state["invalid_streak"],
             conflict_streak=state["conflict_streak"],
