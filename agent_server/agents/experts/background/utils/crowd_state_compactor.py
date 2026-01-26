@@ -19,13 +19,7 @@ def crowd_state_compactor(crowd: Dict) -> Dict:
     if bias not in {"long", "short"}:
         bias = "neutral"
 
-    # ---------- crowding_level ----------
-    crowding_level = "low"
-    if summary.get("overall_strength") == "strong":
-        if "crowded long" in summary.get("structural_risks", []):
-            crowding_level = "high"
-        else:
-            crowding_level = "medium"
+    risks = summary.get("structural_risks", []) or []
 
     # ---------- fragility ----------
     fragility = "low"
@@ -47,6 +41,18 @@ def crowd_state_compactor(crowd: Dict) -> Dict:
 
     if funding.get("volatility") == "high" and funding.get("trend") in {"up", "spiking"}:
         funding_pressure = "active_squeeze"
+
+    # ---------- crowding_level ----------
+    crowding_level = "low"
+    if summary.get("overall_strength") == "strong":
+        has_crowded = ("crowded long" in risks) or ("crowded short" in risks)
+        if has_crowded:
+            if fragility == "high" or behavioral_divergence or funding_pressure in {"potential_squeeze", "active_squeeze"}:
+                crowding_level = "high"
+            else:
+                crowding_level = "medium"
+        else:
+            crowding_level = "medium"
 
     # ---------- consistency ----------
     alignment = consistency.get("sentiment_alignment", "")

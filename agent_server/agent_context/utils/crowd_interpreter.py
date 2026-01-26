@@ -1,5 +1,4 @@
 from typing import Dict, Literal, Optional, Any
-import copy
 
 PositionDirection = Literal["long", "short", "flat"]
 
@@ -59,6 +58,53 @@ def build_crowd_interpretation(
 
     short_term_direction = short_term.get("direction", "neutral")
 
+    crowd_trend = market_snapshot.get("crowd_trend_analysis") or {}
+
+    def _max_abs_zscore(periods: list[str]) -> float:
+        metrics = [
+            "account_long_ratio",
+            "taker_buy_sell_ratio",
+            "top_position_ratio",
+            "top_account_ratio",
+            "funding_rate",
+        ]
+        max_abs = 0.0
+        for m in metrics:
+            obj = crowd_trend.get(m) or {}
+            z = obj.get("zscore") or {}
+            for p in periods:
+                try:
+                    val = float(z.get(p, 0.0))
+                except Exception:
+                    val = 0.0
+                if abs(val) > max_abs:
+                    max_abs = abs(val)
+        return max_abs
+
+    def _has_building_crowding(periods: list[str]) -> bool:
+        metrics = [
+            "account_long_ratio",
+            "taker_buy_sell_ratio",
+            "top_position_ratio",
+            "top_account_ratio",
+        ]
+        for m in metrics:
+            obj = crowd_trend.get(m) or {}
+            z = obj.get("zscore") or {}
+            d = obj.get("delta") or {}
+            for p in periods:
+                try:
+                    zval = float(z.get(p, 0.0))
+                    dval = float(d.get(p, 0.0))
+                except Exception:
+                    continue
+                if abs(zval) >= 1.5 and abs(dval) >= 0.01:
+                    return True
+        return False
+
+    crowd_extreme = _max_abs_zscore(["15m", "30m", "1h", "4h"]) >= 2.0
+    crowd_building = _has_building_crowding(["15m", "30m", "1h", "4h"])
+
     # -------- Rule Group 1: Direction Relationship --------
     relationship = "neutral"
     if crowd_bias == pos_dir:
@@ -69,16 +115,16 @@ def build_crowd_interpretation(
     # -------- Rule Group 2: Base Implication --------
     implication = "neutral"
     if relationship == "same":
-        if crowding_level == "high" or fragility == "high":
+        if (crowding_level == "high" and (crowd_extreme or crowd_building)) or fragility == "high":
             implication = "headwind"
     elif relationship == "opposite":
-        if crowding_level == "high":
+        if crowding_level == "high" and (crowd_extreme or crowd_building):
             implication = "tailwind"
 
     # -------- Rule Group 3: Stability (Crowding) --------
     stability = "stable"
     if crowding_level == "high":
-        stability = "unstable"
+        stability = "unstable" if (crowd_extreme or crowd_building) else "stable"
 
     # -------- Rule Group 4: Non-linear Risk (Fragility) --------
     nonlinear_risk = "normal"

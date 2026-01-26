@@ -107,6 +107,7 @@ _prompt_template = """
   - 若 crowd_trend_analysis 中关键指标（如 top_position_ratio）zscore > 2.0 且持仓方向与人群一致（relationship=="same"）：视为极度拥挤，必须收紧止损（防止踩踏）。
   - 若 relationship=="opposite" 且 implication=="tailwind"：对手盘的拥挤（crowding_instability）视为有利的加速动能，不应触发减仓或退出建议，除非出现轧空（squeeze）信号。
   - **动态拥挤变化（Trend Delta）：** 若 crowd_trend_analysis 中关键指标的 delta 显示拥挤度正在显著缓解（如 1h/4h delta 与 zscore 符号相反且数值较大），即使当前 zscore 较高，也可适度放宽风控要求。
+  - 基线拥挤中性：主流币长期存在结构性偏多/偏空属于常态，不得仅凭“绝对比例偏高”触发拥挤风险；必须以 zscore/delta/风险标签为依据。
   - 若 risk_tags 包含 "funding_squeeze_risk" 或 funding_rate zscore > 2.0 且持仓为 SHORT：必须视为 CRITICAL 风险，建议大幅减仓或直接 EXIT（防止轧空）。
   - 若 fragility==high：避免流动性枯竭时的滑点冲击。
 - 人群博弈风险（Crowd Interpretation）：
