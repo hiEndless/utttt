@@ -329,7 +329,10 @@ async def run_trend_analysis_pipeline(exchange: str, symbol: str) -> Dict[str, A
 async def enrich_and_clean_crowd_context(
         exchange: str,
         symbol: str,
-        crowd_context: Dict[str, Any]
+        crowd_context: Dict[str, Any],
+        *,
+        clean_fields: bool = False,
+        fields_to_clean: list[str] | None = None,
 ) -> tuple[Dict[str, Any], Dict[str, Any]]:
     """
     运行趋势分析管道，并清理 crowd_context 中的冗余字段。
@@ -341,8 +344,9 @@ async def enrich_and_clean_crowd_context(
     trend_analysis = crowd_trend_analysis_result.get("trend_analysis") or {}
 
     cleaned_context = crowd_context.copy()
-    for k in ["bias", "crowding_level", "funding_pressure"]:
-        cleaned_context.pop(k, None)
+    if clean_fields:
+        for k in (fields_to_clean or ["bias", "crowding_level", "funding_pressure"]):
+            cleaned_context.pop(k, None)
 
     return cleaned_context, trend_analysis
 

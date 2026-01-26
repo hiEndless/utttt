@@ -31,6 +31,13 @@ class Settings:
         "allow_add_position": os.environ.get('RISK_ALLOW_ADD_POSITION', 'True').lower() == 'true',
     }
 
+    crowd_thresholds: dict = {
+        "extreme_zscore": float(os.environ.get("CROWD_EXTREME_ZSCORE", 2.2)),
+        "building_zscore": float(os.environ.get("CROWD_BUILDING_ZSCORE", 1.8)),
+        "building_delta": float(os.environ.get("CROWD_BUILDING_DELTA", 0.02)),
+        "fragility_requires_crowding": os.environ.get("CROWD_FRAGILITY_REQUIRES_CROWDING", "True").lower() == "true",
+    }
+
 
 settings = Settings()
 

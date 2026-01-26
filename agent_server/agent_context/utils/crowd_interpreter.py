@@ -1,4 +1,5 @@
 from typing import Dict, Literal, Optional, Any
+from agent_server.config import settings
 
 PositionDirection = Literal["long", "short", "flat"]
 
@@ -59,6 +60,11 @@ def build_crowd_interpretation(
     short_term_direction = short_term.get("direction", "neutral")
 
     crowd_trend = market_snapshot.get("crowd_trend_analysis") or {}
+    thresholds = market_snapshot.get("crowd_thresholds") or settings.crowd_thresholds
+    extreme_zscore_threshold = float(thresholds.get("extreme_zscore", 2.0))
+    building_zscore_threshold = float(thresholds.get("building_zscore", 1.5))
+    building_delta_threshold = float(thresholds.get("building_delta", 0.01))
+    fragility_requires_crowding = bool(thresholds.get("fragility_requires_crowding", True))
 
     def _max_abs_zscore(periods: list[str]) -> float:
         metrics = [
@@ -98,11 +104,11 @@ def build_crowd_interpretation(
                     dval = float(d.get(p, 0.0))
                 except Exception:
                     continue
-                if abs(zval) >= 1.5 and abs(dval) >= 0.01:
+                if abs(zval) >= building_zscore_threshold and abs(dval) >= building_delta_threshold:
                     return True
         return False
 
-    crowd_extreme = _max_abs_zscore(["15m", "30m", "1h", "4h"]) >= 2.0
+    crowd_extreme = _max_abs_zscore(["15m", "30m", "1h", "4h"]) >= extreme_zscore_threshold
     crowd_building = _has_building_crowding(["15m", "30m", "1h", "4h"])
 
     # -------- Rule Group 1: Direction Relationship --------
@@ -115,8 +121,11 @@ def build_crowd_interpretation(
     # -------- Rule Group 2: Base Implication --------
     implication = "neutral"
     if relationship == "same":
-        if (crowding_level == "high" and (crowd_extreme or crowd_building)) or fragility == "high":
+        if crowding_level == "high" and (crowd_extreme or crowd_building):
             implication = "headwind"
+        elif fragility == "high":
+            if not fragility_requires_crowding or crowding_level in ["medium", "high"]:
+                implication = "headwind"
     elif relationship == "opposite":
         if crowding_level == "high" and (crowd_extreme or crowd_building):
             implication = "tailwind"

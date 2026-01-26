@@ -59,15 +59,17 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         trade_details = event_data.get("trade_details", {})
         trade_abstract = abstract_trade_event(trade_details)
         agent_ctx = build_agent_context("trade_event", full_context)
-        
-        # Inject deterministic crowd interpretation
-        position_side = trade_details.get("position_side", "flat")
-        interpretation = build_crowd_interpretation(full_context, position_side)
-        agent_ctx["crowd_interpretation"] = interpretation
 
         agent_ctx["crowd_state"], agent_ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
             exchange, symbol, agent_ctx.get("crowd_state", {})
         )
+
+        market_snapshot = dict(full_context or {})
+        market_snapshot["crowd_trend_analysis"] = agent_ctx.get("crowd_trend_analysis") or {}
+
+        position_side = trade_details.get("position_side", "flat")
+        interpretation = build_crowd_interpretation(market_snapshot, position_side)
+        agent_ctx["crowd_interpretation"] = interpretation
 
         query = {
             "symbol": symbol,

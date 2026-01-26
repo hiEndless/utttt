@@ -14,7 +14,7 @@ _prompt_template = """
 2. position_effect: 仓位影响 (exposure_change, post_action_state)
 3. position_context: 盈亏背景 (pnl_state, pnl_bias)
 4. market_state: 市场状态 (short/mid/long_term direction, momentum, risk, veto)
-5. crowd_state: 人群状态 (fragility, consistency)
+5. crowd_state: 人群状态 (bias, crowding_level, funding_pressure, fragility, consistency)
 6. crowd_trend_analysis: 人群趋势分析 (account_long_ratio, taker_buy_sell_ratio, top_position_ratio, funding_rate) - 包含 value, delta, zscore
 7. crowd_interpretation: 博弈解释 (relationship, implication, stability, risk_tags)
 
@@ -49,7 +49,9 @@ _prompt_template = """
    - pnl_state 仅作为风险放大或缓冲因子
 
 5) 人群结构为风险修正因子（重点关注 crowd_trend_analysis）：
-   - 拥挤度判定：若 crowd_trend_analysis 中关键指标（如 account_long_ratio, top_position_ratio）的 zscore > 1.5 或 < -1.5，且交易方向与人群一致（relationship=="same"），视为拥挤风险。
+   - 说明：crowd_state 的 bias/crowding_level/funding_pressure 为描述性字段，不得单独作为“方向正确性”或“立即否决”的依据；拥挤风险必须以 zscore/delta/风险标签的显著性为依据。
+   - 拥挤度判定（显著性优先）：若 crowd_trend_analysis 中关键指标（如 account_long_ratio, top_position_ratio）的 zscore ≥ 2.2 或 ≤ -2.2，且交易方向与人群一致（relationship=="same"），视为拥挤风险显著。
+   - 拥挤加速判定（动态变化优先）：若 zscore ≥ 1.8 且 delta ≥ 0.02，且 relationship=="same"，视为拥挤正在升温；当 exposure_change="INCREASE" 时冲突权重上升。
    - 顺风豁免（Tailwind Exemption）：若 relationship=="opposite"（如做空拥挤的多头），高 Z-Score 视为有利的加速燃料，不构成冲突，允许扩大风险暴露。
    - 动态趋势（Trend Delta）：若 delta 显示拥挤正在显著缓解（符号相反且数值大），可降低对高 Z-Score 的担忧。
    - 趋势背离：若 taker_buy_sell_ratio 的 delta 与交易方向显著背离，需降低可信度。

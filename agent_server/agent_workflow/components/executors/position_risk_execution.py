@@ -87,6 +87,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         ts_now = int(time.time() * 1000)
 
         crowd_context, crowd_trend_analysis = await enrich_and_clean_crowd_context(exchange, symbol, crowd_context)
+        market_snapshot_base = dict(context_to_use or {})
+        market_snapshot_base["crowd_trend_analysis"] = crowd_trend_analysis or {}
 
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
@@ -95,7 +97,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             
             # Position-aware Context Injection
             # 为当前处理的持仓方向生成专属的解释
-            interpretation = build_crowd_interpretation(context_to_use, pos_side)
+            interpretation = build_crowd_interpretation(market_snapshot_base, pos_side)
             pr_ctx["crowd_interpretation"] = interpretation
 
             # Re-extract Crowd Context from injected interpretation
