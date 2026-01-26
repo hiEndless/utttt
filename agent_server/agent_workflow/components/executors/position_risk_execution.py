@@ -12,7 +12,7 @@ from agent_server.agent_context.utils.crowd_interpreter import build_crowd_inter
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.account import get_available_exposure_pct, get_account_info
+from agent_server.utils.account import get_available_exposure_pct
 from agent_server.config import settings
 
 
@@ -116,10 +116,6 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             user_config = {}
             risk_cfg = {**settings.risk_defaults, **user_config}
 
-            # Load user specific config from DB here (TODO)
-            user_config = {}
-            risk_cfg = {**settings.risk_defaults, **user_config}
-
             decision_rules = decide_position_action(
                 holding_duration_min=state["holding_duration_min"],
                 time_since_last_event_min=(ts_now - state["last_update_ts"]) // 60_000,
@@ -146,13 +142,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             minutes_since_last = (ts_now - last_action_ts) / 1000 / 60 if last_action_ts > 0 else 9999
 
             calculated_available_pct = await get_available_exposure_pct(exchange)
-            account_info = await get_account_info(exchange)
 
             operational_context = {
-                "account_info": {
-                    "total_equity": float(account_info.get("balance", 0)),
-                    "available_balance": float(account_info.get("availableBalance", 0))
-                },
                 "risk_limits": {
                     "max_loss_pct": risk_cfg["max_loss_pct"],  # 最大亏损百分比 (建议参考值) 用户设置
                     "max_holding_min": risk_cfg["max_holding_min"],  # 最长持仓时间 (0 表示不限制，由上游策略决定)

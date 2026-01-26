@@ -25,7 +25,7 @@ _prompt_template = """
 - Crowd Interpretation (博弈解释): position_direction(long/short), crowd_bias(long/short), relationship(same/opposite), implication(headwind/tailwind/neutral), execution_confirmation(confirmed/unconfirmed), stability(stable/unstable), risk_tags(crowding_instability/fragility_non_linear_risk/funding_squeeze_risk)
 - Volatility Regime: vol_regime(normal/high/extreme)
 - Risk Limits (硬性边界): max_loss_pct, max_holding_min, cooldown_after_invalid_min
-- Account/System Context: account_info(total_equity, available_balance), risk_mode(normal/defensive), system_mode(normal/advisory), available_exposure_pct, allow_add_position(bool)
+- Account/System Context: risk_mode(normal/defensive), system_mode(normal/advisory), available_exposure_pct (float, 0.0~1.0, e.g. 0.6=60% available), allow_add_position(bool)
 - Action Cooldown: last_action, last_action_min_ago, cooldown_active(bool)
 
 决策逻辑：
