@@ -41,13 +41,15 @@ _prompt_template = """
     指风险主要集中在某一方向，对另一方向影响有限或中性，
     风险是否成立需结合 position_side 判断。
 
-  判定规则（满足任一即视为对称性风险）：
-  - vol_regime == extreme
-  - ltf_structure == broken 且 htf_trend 不明确或为 range
-  - Crowd Context fragility == high 且 stability == unstable
-  - Crowd Interpretation 中 risk_tags 同时指向多空两侧的不稳定性（如流动性枯竭、非线性风险）
-  - Market Context 与 Crowd Interpretation 同时出现“方向冲突 + 高不确定性”
-  - 出现明显的流动性真空、剧烈波动放大、或无法识别明确受益方的博弈结构
+  判定规则（为避免过度触发，对称性风险需满足“强条件”或“组合条件”）：
+  - 强条件（满足任一即视为对称性风险）：
+    - vol_regime == extreme
+    - 出现明显的流动性真空、剧烈波动放大、或无法识别明确受益方的博弈结构
+  - 组合条件（同时满足两项及以上才视为对称性风险）：
+    - ltf_structure == broken 且 htf_trend 不明确或为 range
+    - Crowd Context fragility == high 且 stability == unstable
+    - Crowd Interpretation 中 risk_tags 同时指向多空两侧的不稳定性（如流动性枯竭、非线性风险）
+    - Market Context 与 Crowd Interpretation 同时出现“方向冲突 + 高不确定性”
 
   非对称性风险判定原则：
   - 若风险主要来自 crowding、funding_squeeze、headwind 等，
@@ -66,11 +68,18 @@ _prompt_template = """
 - 【最高优先级规则】
   Risk Rules Decision 是最终且不可辩驳的动作裁决层。
   Agent 不得基于任何其他信息（包括 Temporal State、Market/Crowd Context、PnL）
-  生成不在 allowed_actions 中的 recommended_action。
+  生成不在允许动作范围内的 recommended_action。
   如规则冲突，必须以 Risk Rules Decision 为准。
 
 - 建议模式（Advisory Mode）：若 system_mode=="advisory"，Agent 应作为纯粹的风控顾问，不受“冷却期”或“频繁操作”的硬性约束，专注于提供当前市场状态下的最优风险建议。此时 recommended_action 表示“风险建议级别”，不代表必须立即执行。
-- 严格遵循 Risk Rules Decision: 若 allowed_actions 中不包含某动作（如 ADD），则严禁建议该动作；若 veto_reasons 非空，必须在 reasoning 中引用。
+- 严格遵循 Risk Rules Decision（强制）：
+  - 若 risk_rules_decision 中提供 allowed_actions_llm（已映射到本 Agent 的动作枚举），recommended_action 必须从 allowed_actions_llm 中选择。
+  - 若未提供 allowed_actions_llm，则按以下映射理解 allowed_actions 的可行性边界：
+    - ADD / ADD_CAUTIOUS → 允许建议 ADD_POSITION（若仅有 ADD_CAUTIOUS，则 add_pct 上限 0.2）
+    - REDUCE / REDUCE_OPTIONAL → 允许建议 REDUCE
+    - CLOSE / CLOSE_OPTIONAL → 允许建议 EXIT
+    - HOLD / HOLD_NO_ADD / HOLD_REDUCE_ONLY → 允许建议 HOLD / DEFENSIVE（且禁止加仓）
+  - 若 veto_reasons 非空，必须在 reasoning 中引用。
 - 宽松动作选择：
   - 若 allowed_actions 包含 "HOLD"，且无显著风险，Agent 应默认建议 "HOLD" 而非强行减仓。
   - 仅当市场结构恶化、信号失效或遇到 veto_reasons 时，才建议 "REDUCE" 或 "EXIT"。
@@ -126,16 +135,16 @@ _prompt_template = """
   "tighten_stop": true,
   "freeze_add_position_min": 30,
   "reasoning": [
-    "signal_invalid",
-    "invalid_streak_2",
-    "structure_weakening"
+    "<一句话原因 1>",
+    "<一句话原因 2>",
+    "<一句话原因 3>"
   ]
 }
 
 输出规则：
 - risk_state 与 recommended_action 映射原则：
-  risk_state 用于指导在 allowed_actions 中选择最保守且一致的动作，
-  不得生成超出 allowed_actions 的动作。
+  risk_state 用于指导在允许动作集合内选择最保守且一致的动作，
+  不得生成超出 allowed_actions_llm（若提供）或 allowed_actions（若未提供）所允许边界的动作。
 - reduce_pct 取值规则：
   - EXIT     → 必须为 1.0
   - REDUCE   → 0.1 < reduce_pct <= 0.5

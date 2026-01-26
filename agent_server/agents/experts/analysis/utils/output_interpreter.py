@@ -282,18 +282,22 @@ class AgentOutputInterpreter:
 if __name__ == "__main__":
     # 测试代码
     print("--- Testing Signal Validation (Chinese) ---")
-    sv_output = {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
-                 "reasoning": ["市场短期趋势虽为上涨，但风险等级高，且当前价格处于关键阻力位附近震荡，结构上不适合扩大风险暴露。",
-                               "人群结构显示多头高度拥挤，多个关键指标（如账户多头比率、大账户持仓比例）的Z-Score显著偏离正常区间，且交易方向与人群一致，构成拥挤风险叠加。",
-                               "人群博弈解释指出当前结构存在逆风与不稳定性，且标注了多重非线性风险与资金费率挤压风险，在此背景下扩大做多仓位构成严重结构性冲突。"]}
+    sv_output = {"verdict": "WEAK_VALID", "alignment": "CONFLICT", "confidence_adjustment": "down",
+                 "reasoning": ["市场短期与中期趋势均呈下跌，且短期风险等级为高，此时扩大空头仓位构成方向性风险叠加。",
+                               "虽然人群结构显示市场多头拥挤，空头行为属于逆势对冲，具备顺风效应，但人群稳定性处于不稳定状态，且存在非线性脆弱风险标签，削弱了该顺风的可靠性。",
+                               "关键人群指标如账户多头比例与大户持仓比例在多个时间窗口Z-Score显著偏离，表明结构存在剧烈博弈，进一步降低交易行为的结构稳定性。"]}
 
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "CRITICAL", "recommended_action": "REDUCE", "reduce_pct": 0.5, "add_pct": 0.0,
-                 "tighten_stop": True, "freeze_add_position_min": 60,
-                 "reasoning": ["信号失效", "连续两次无效验证", "市场结构转弱", "人群拥挤且博弈逆风", "资金费率挤压风险极高", "流动性脆弱非线性风险"],
-                 "suggestion": "REDUCE", "verdict": "CRITICAL"}
+    pr_output = {"risk_state": "HIGH", "recommended_action": "DEFENSIVE", "reduce_pct": 0.0, "add_pct": 0.0,
+                 "tighten_stop": True, "freeze_add_position_min": 0,
+                 "reasoning": ["信号可信度衰减：原判决为WEAK_VALID，因confidence_adjustment=down，实际风险等级等效于CONFLICT，风险评级上调",
+                               "人群结构不稳定：crowd_interpretation显示stability=unstable，且存在crowding_instability与fragility_non_linear_risk标签，表明市场存在非线性脆弱风险",
+                               "市场波动偏高：vol_regime=high，叠加ltf_structure=consolidating，表明短期方向不明，持仓风险边际放大",
+                               "人群博弈存在矛盾：虽implication=tailwind，但execution_confirmation=unconfirmed，顺风效应未被确认，不可作为风险对冲依据",
+                               "风险规则限制：allowed_actions仅允许HOLD或DEFENSIVE，不得加仓或减仓，DEFENSIVE为当前最适配动作"],
+                 "suggestion": "DEFENSIVE", "verdict": "HIGH"}
 
     print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))

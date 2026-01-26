@@ -7,7 +7,7 @@ def abstract_trade_event(raw: Dict[str, Any]) -> Dict[str, Any]:
     Trade Event Analysis Agent compatible abstract representation.
     """
 
-    action = raw.get("action")
+    action = str(raw.get("action")).upper()
     position_side = raw.get("position_side")
 
     # ---- 1. Trade Core ----

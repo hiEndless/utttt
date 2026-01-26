@@ -69,9 +69,11 @@ def build_crowd_interpretation(
     # -------- Rule Group 2: Base Implication --------
     implication = "neutral"
     if relationship == "same":
-        implication = "headwind"
+        if crowding_level == "high" or fragility == "high":
+            implication = "headwind"
     elif relationship == "opposite":
-        implication = "tailwind"
+        if crowding_level == "high":
+            implication = "tailwind"
 
     # -------- Rule Group 3: Stability (Crowding) --------
     stability = "stable"
@@ -100,7 +102,7 @@ def build_crowd_interpretation(
     if nonlinear_risk == "elevated":
         risk_tags.append("fragility_non_linear_risk")
 
-    if funding_pressure == "potential_squeeze":
+    if funding_pressure == "active_squeeze":
         risk_tags.append("funding_squeeze_risk")
 
     # -------- Final Interpretation --------

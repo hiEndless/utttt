@@ -57,7 +57,7 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
 
         # 提取 trade_details 并抽象化
         trade_details = event_data.get("trade_details", {})
-        trade_core = abstract_trade_event(trade_details)
+        trade_abstract = abstract_trade_event(trade_details)
         agent_ctx = build_agent_context("trade_event", full_context)
         
         # Inject deterministic crowd interpretation
@@ -73,7 +73,9 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
             "symbol": symbol,
             "exchange": exchange,
             "event_id": event_id,
-            "trade_core": trade_core,
+            "trade_core": trade_abstract.get("trade_core", {}),
+            "position_effect": trade_abstract.get("position_effect", {}),
+            "position_context": trade_abstract.get("position_context", {}),
             "context": agent_ctx,
         }
 

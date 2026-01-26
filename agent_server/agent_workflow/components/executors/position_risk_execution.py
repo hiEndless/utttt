@@ -14,6 +14,7 @@ from agent_server.agents.experts.analysis.position_risk import PositionRiskExper
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import get_available_exposure_pct
 from agent_server.config import settings
+from agent_server.risk.action_policy import derive_allowed_llm_policy
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
@@ -125,6 +126,14 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 conflict_streak=state["conflict_streak"],
                 risk_mode=risk_cfg["risk_mode"]  # 动态传入 risk_mode
             )
+
+            # 将硬规则动作集合投影到 LLM 输出动作集合，降低 LLM 选错动作的概率
+            llm_policy = derive_allowed_llm_policy(decision_rules)
+            decision_rules["allowed_actions_llm"] = sorted(llm_policy.allowed_llm_actions)
+            if llm_policy.max_add_pct is not None:
+                decision_rules["max_add_pct"] = llm_policy.max_add_pct
+            if llm_policy.forbid_add:
+                decision_rules["forbid_add"] = True
 
             rc = RedisClient()
             last_suggestion_key = f"agent_output:position_risk:{exchange}:{symbol}:latest"

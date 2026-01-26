@@ -86,15 +86,15 @@ async def reduce_temporal_state(
     # Streak 状态机（核心逻辑）
     # -------------------------
     
-    # 1. 致命风险 (INVALID / STRONGLY_CONFLICT)
-    if verdict == "INVALID" or alignment == "STRONGLY_CONFLICT":
+    # 1. 致命风险：仅以 verdict=INVALID 作为硬性“无效验证”累计条件，降低 STRONGLY_CONFLICT 的误触发扩散
+    if verdict == "INVALID":
         invalid_streak = min(invalid_streak + 1, STREAK_CAP)
         conflict_streak = 0
         valid_streak = 0
 
     # 2. 结构冲突 (WEAK_VALID / CONFLICT)
     # 注意：旧代码中的 verdict="CONFLICT" 映射到此处
-    elif verdict == "WEAK_VALID" or verdict == "CONFLICT" or alignment == "CONFLICT":
+    elif verdict == "WEAK_VALID" or verdict == "CONFLICT" or alignment in ("CONFLICT", "STRONGLY_CONFLICT"):
         conflict_streak = min(conflict_streak + 1, STREAK_CAP)
         invalid_streak = 0
         valid_streak = 0

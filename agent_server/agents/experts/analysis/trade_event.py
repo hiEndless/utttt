@@ -74,11 +74,15 @@ class TradeEventExpert:
 
         # 构造 LLM 专用精简输入（去除 symbol, event_id 等元数据）
         trade_core = qobj.get("trade_core", {})
+        position_effect = qobj.get("position_effect", {})
+        position_context = qobj.get("position_context", {})
         context_data = qobj.get("context", {})
         
-        # 展平结构: trade_core + context (包含 market_state, crowd_state 等)
+        # 展平结构: trade_core + position_effect + position_context + context (包含 market_state, crowd_state 等)
         llm_input = {
             "trade_core": trade_core,
+            "position_effect": position_effect,
+            "position_context": position_context,
             **context_data
         }
 

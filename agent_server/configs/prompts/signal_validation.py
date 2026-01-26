@@ -84,6 +84,11 @@ def get_prompt(language="zh", risk_mode="normal") -> str:
 3) 市场背景与人群结构（Aggressive Mode）：
    - 鼓励博弈：只要不是极端轧空，允许逆势博弈（headwind）。
    - 顺势拥挤豁免：完全忽略 Z-Score 拥挤风险，除非 > 3.0。
+   - 降低“信号失效”触发频率：仅当满足“硬性致命冲突”才允许判定为 INVALID：
+     - 关键周期几乎全部为 conflict（结构全面不一致），或
+     - 长期结构存在明确否决（long_term veto=true 且信号与其相反），或
+     - 出现明确的流动性真空/极端波动导致无法建立方向前提
+   - 对于“短期风险偏高、拥挤/不稳定、人群分歧”等情况：默认使用 WEAK_VALID + confidence_adjustment=down，而不是 INVALID。
 """
     elif risk_mode == "conservative":
         validation_logic = """

@@ -13,6 +13,7 @@ from agent_server.agents.utils import (
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.utils.account import get_available_exposure_pct
 from agent_server.config import settings
+from agent_server.risk.action_policy import enforce_position_risk_action
 
 
 class PositionRiskExpert:
@@ -109,7 +110,7 @@ class PositionRiskExpert:
                 "add_pct": 0.0,
                 "tighten_stop": True,
                 "freeze_add_position_min": 60,
-                "reasoning": ["validation_failed_fallback", str(e)]
+                "reasoning": ["输出校验失败，已触发安全回退"]
             }
 
         # 构建产出物系统数据结构
@@ -122,6 +123,22 @@ class PositionRiskExpert:
         event_id = qobj.get("event_id")
         trade_id = qobj.get("trade_id")
         ts = int(time.time() * 1000)
+
+        # 动作策略层：确保 recommended_action 与硬规则 allowed_actions 语义一致（不一致则强制降级到可执行动作）
+        try:
+            risk_rules_decision = qobj.get("risk_rules_decision") or {}
+            available_pct = (
+                (qobj.get("operational_context") or {})
+                .get("portfolio_context", {})
+                .get("available_exposure_pct")
+            )
+            final_result, _ = enforce_position_risk_action(
+                llm_output=final_result if isinstance(final_result, dict) else {},
+                risk_rules_decision=risk_rules_decision,
+                available_exposure_pct=available_pct,
+            )
+        except Exception:
+            pass
 
         try:
             payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))

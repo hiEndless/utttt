@@ -22,7 +22,7 @@ class Settings:
 
     # Position Risk User Config Defaults
     risk_defaults: dict = {
-        "max_loss_pct": float(os.environ.get('RISK_MAX_LOSS_PCT', -0.06)),
+        "max_loss_pct": float(os.environ.get('RISK_MAX_LOSS_PCT', -0.3)),
         "max_holding_min": int(os.environ.get('RISK_MAX_HOLDING_MIN', 0)),
         "cooldown_after_invalid_min": int(os.environ.get('RISK_COOLDOWN_MIN', 0)),
         "risk_mode": os.environ.get('RISK_MODE', 'aggressive'),  # normal | conservative | aggressive
