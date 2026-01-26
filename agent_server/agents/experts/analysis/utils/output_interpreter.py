@@ -283,16 +283,17 @@ if __name__ == "__main__":
     # 测试代码
     print("--- Testing Signal Validation (Chinese) ---")
     sv_output = {"verdict": "INVALID", "alignment": "STRONGLY_CONFLICT", "confidence_adjustment": "down",
-                 "reasoning": ["多个关键周期（15m、30m）的技术验证结论为冲突，构成结构性不支持。", "市场背景中长期趋势为下跌且具有否决权，与信号隐含前提形成根本性冲突。",
-                               "人群博弈呈现与信号方向一致的拥挤状态，且稳定性不足，存在非线性风险与资金挤压风险。"]}
+                 "reasoning": ["市场短期趋势虽为上涨，但风险等级高，且当前价格处于关键阻力位附近震荡，结构上不适合扩大风险暴露。",
+                               "人群结构显示多头高度拥挤，多个关键指标（如账户多头比率、大账户持仓比例）的Z-Score显著偏离正常区间，且交易方向与人群一致，构成拥挤风险叠加。",
+                               "人群博弈解释指出当前结构存在逆风与不稳定性，且标注了多重非线性风险与资金费率挤压风险，在此背景下扩大做多仓位构成严重结构性冲突。"]}
 
     print(AgentOutputInterpreter.interpret("signal_validation", sv_output, "zh"))
     print("\n")
 
     print("--- Testing Position Risk (English) ---")
-    pr_output = {"risk_state": "CRITICAL", "recommended_action": "EXIT", "reduce_pct": 1.0,
-                 "add_pct": 0.0, "tighten_stop": False, "freeze_add_position_min": 0,
-                 "reason_tags": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"], "suggestion": "EXIT",
-                 "verdict": "CRITICAL", "reasoning": ["信号失效", "人群博弈风险", "资金挤压风险", "市场脆弱性高", "结构不支持", "连续验证失败"]}
+    pr_output = {"risk_state": "CRITICAL", "recommended_action": "REDUCE", "reduce_pct": 0.5, "add_pct": 0.0,
+                 "tighten_stop": True, "freeze_add_position_min": 60,
+                 "reasoning": ["信号失效", "连续两次无效验证", "市场结构转弱", "人群拥挤且博弈逆风", "资金费率挤压风险极高", "流动性脆弱非线性风险"],
+                 "suggestion": "REDUCE", "verdict": "CRITICAL"}
 
     print(AgentOutputInterpreter.interpret("position_risk", pr_output, "zh"))

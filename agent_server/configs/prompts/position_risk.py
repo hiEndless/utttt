@@ -70,7 +70,7 @@ _prompt_template = """
   如规则冲突，必须以 Risk Rules Decision 为准。
 
 - 建议模式（Advisory Mode）：若 system_mode=="advisory"，Agent 应作为纯粹的风控顾问，不受“冷却期”或“频繁操作”的硬性约束，专注于提供当前市场状态下的最优风险建议。此时 recommended_action 表示“风险建议级别”，不代表必须立即执行。
-- 严格遵循 Risk Rules Decision: 若 allowed_actions 中不包含某动作（如 ADD），则严禁建议该动作；若 veto_reasons 非空，必须在 reason_tags 中引用。
+- 严格遵循 Risk Rules Decision: 若 allowed_actions 中不包含某动作（如 ADD），则严禁建议该动作；若 veto_reasons 非空，必须在 reasoning 中引用。
 - 宽松动作选择：
   - 若 allowed_actions 包含 "HOLD"，且无显著风险，Agent 应默认建议 "HOLD" 而非强行减仓。
   - 仅当市场结构恶化、信号失效或遇到 veto_reasons 时，才建议 "REDUCE" 或 "EXIT"。
@@ -125,7 +125,7 @@ _prompt_template = """
   "add_pct": 0.2,
   "tighten_stop": true,
   "freeze_add_position_min": 30,
-  "reason_tags": [
+  "reasoning": [
     "signal_invalid",
     "invalid_streak_2",
     "structure_weakening"
@@ -144,7 +144,7 @@ _prompt_template = """
   - ADD_POSITION → 0.1 <= add_pct <= 0.5
   - 其他动作 → 必须为 0 或 null
 - freeze_add_position_min 为冻结加仓的最短时间
-- reason_tags 必须可追溯到输入字段，且必须使用纯中文描述。
+- reasoning 必须可追溯到输入字段，且必须使用纯中文描述。
 {language_instruction}
 
 身份总结：

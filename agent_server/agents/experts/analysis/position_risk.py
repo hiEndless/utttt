@@ -55,7 +55,7 @@ class PositionRiskExpert:
             "range": (0, 10000),
             "description": "Minutes to freeze adding position"
         },
-        "reason_tags": {
+        "reasoning": {
             "type": list,
             "required": True,
             "description": "List of reasons for the decision"
@@ -109,7 +109,7 @@ class PositionRiskExpert:
                 "add_pct": 0.0,
                 "tighten_stop": True,
                 "freeze_add_position_min": 60,
-                "reason_tags": ["validation_failed_fallback", str(e)]
+                "reasoning": ["validation_failed_fallback", str(e)]
             }
 
         # 构建产出物系统数据结构
@@ -131,8 +131,6 @@ class PositionRiskExpert:
                 payload_obj["suggestion"] = payload_obj["recommended_action"]
             if "risk_state" in payload_obj:
                 payload_obj["verdict"] = payload_obj["risk_state"]
-            if "reason_tags" in payload_obj:
-                payload_obj["reasoning"] = payload_obj["reason_tags"]
 
         except Exception:
             payload_obj = {"raw": final_result}
