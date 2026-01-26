@@ -94,8 +94,9 @@ def get_prompt(language="zh", risk_mode="normal") -> str:
     elif risk_mode == "conservative":
         validation_logic = """
 2) tf_validation 为硬性技术约束（Conservative Mode）：
-   - 任一关键周期 validation_conclusion == conflict → 必须视为 STRONGLY_CONFLICT (INVALID)。
-   - 必须所有关键周期均为 support 或 partial_support 才可视为 ALIGNED。
+   - 允许多数周期支持：若2/3以上关键周期支持，即使有少数conflict也可接受
+   - 人群逆风豁免：若人群implication为"headwind"但技术结构强支撑，可酌情接受
+   - 主流币特殊处理：对BTC/ETH等主流币放宽人群结构约束
 
 3) 市场背景与人群结构（Conservative Mode）：
    - 严禁逆风：若 crowd implication 为 "headwind"，必须视为 CONFLICT 或降权。
@@ -109,8 +110,10 @@ def get_prompt(language="zh", risk_mode="normal") -> str:
    - 若所有关键周期均为 conflict → 仍需视为 STRONGLY_CONFLICT。
 
 3) 市场背景与人群结构（Normal Mode）：
-   - 允许适度逆风：若 crowd implication 为 "headwind"，但技术结构良好（ALIGNED），可不降权。
+   - 允许适度逆风：若 crowd implication 为 "headwind"，但技术结构良好（ALIGNED），可不降权。仅当implication=="headwind"且stability=="unstable"且Z-Score≥2.5时才强制降权。
    - 顺势拥挤豁免：若信号方向与人群一致且 Z-Score 较高，只要未出现极端轧空信号，可不降权。
+   - 主流币拥挤容忍：对BTC/ETH等主流币，Z-Score阈值提高至2.8，避免正常多头倾向被误判
+   - 技术优先原则：若tf_validation多数周期支持，即使人群结构略有逆风也可接受
 """
 
     if language == "zh":

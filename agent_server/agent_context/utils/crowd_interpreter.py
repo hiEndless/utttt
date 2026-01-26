@@ -1,7 +1,14 @@
 from typing import Dict, Literal, Optional, Any
 from agent_server.config import settings
+from agent_server.agent_context.utils.market_context_utils import adjust_risk_by_market_context
 
 PositionDirection = Literal["long", "short", "flat"]
+
+
+def is_mainstream_symbol(symbol: str) -> bool:
+    """识别主流币，用于调整人群结构分析阈值"""
+    mainstream_coins = ['BTC', 'ETH', 'BNB', 'XRP', 'SOL']
+    return any(coin in symbol.upper() for coin in mainstream_coins)
 
 
 def opposite(direction: str) -> Optional[str]:
@@ -61,10 +68,33 @@ def build_crowd_interpretation(
 
     crowd_trend = market_snapshot.get("crowd_trend_analysis") or {}
     thresholds = market_snapshot.get("crowd_thresholds") or settings.crowd_thresholds
+    
+    # 获取基础阈值
     extreme_zscore_threshold = float(thresholds.get("extreme_zscore", 2.0))
     building_zscore_threshold = float(thresholds.get("building_zscore", 1.5))
     building_delta_threshold = float(thresholds.get("building_delta", 0.01))
     fragility_requires_crowding = bool(thresholds.get("fragility_requires_crowding", True))
+    
+    # 获取symbol用于主流币判断
+    symbol = market_snapshot.get("symbol", "")
+    market_state = market_snapshot.get("market_state", {})
+    
+    # 市场环境感知调整
+    market_adjustments = adjust_risk_by_market_context(market_state)
+    crowd_risk_multiplier = market_adjustments["crowd_risk_multiplier"]
+    zscore_relaxation = market_adjustments["zscore_relaxation"]
+    
+    # 主流币阈值调整：提高阈值以避免正常多头倾向被误判为拥挤风险
+    if is_mainstream_symbol(symbol):
+        mainstream_adjustment = float(thresholds.get("mainstream_bias_adjustment", 0.5))
+        extreme_zscore_threshold += mainstream_adjustment  # 提高极端拥挤阈值 (2.0 -> 2.5)
+        building_zscore_threshold += mainstream_adjustment * 0.6  # 适度提高建设期阈值 (1.5 -> 1.8)
+        building_delta_threshold += mainstream_adjustment * 0.05  # 适度提高delta阈值
+    
+    # 应用市场环境调整
+    extreme_zscore_threshold += zscore_relaxation
+    building_zscore_threshold += zscore_relaxation * 0.7
+    building_delta_threshold += abs(zscore_relaxation) * 0.01
 
     def _max_abs_zscore(periods: list[str]) -> float:
         metrics = [

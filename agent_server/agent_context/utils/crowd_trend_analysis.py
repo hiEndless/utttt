@@ -41,9 +41,9 @@ def _trend(delta: float, eps: float = 1e-5) -> str:
 
 
 def _zscore(val: float, mean: float, std: float) -> float:
-    if std == 0:
-        return 0.0
-    return (val - mean) / std
+    # Avoid division by zero and extreme sensitivity to low volatility
+    effective_std = max(std, 1e-4)
+    return (val - mean) / effective_std
 
 
 def _latest_ts(items: List[Dict[str, Any]], key: str = "timestamp") -> int:
