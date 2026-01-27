@@ -146,8 +146,9 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 try:
                     ls = json.loads(last_suggestion_str)
                     meta = ls.get("_context_meta", ls)
-                    agent_output = ls.get("agent_output", ls)
-                    last_action = agent_output.get("suggestion", "HOLD")
+                    # 避免与外部变量 agent_output 冲突
+                    last_risk_output = ls.get("agent_output", ls)
+                    last_action = last_risk_output.get("suggestion", "HOLD")
                     last_action_ts = int(meta.get("ts", 0))
                 except:
                     pass
