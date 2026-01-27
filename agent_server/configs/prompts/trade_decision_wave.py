@@ -65,9 +65,12 @@ prompt = """
      * 30分钟K线显示下降趋势，且处于1-3浪阶段（1浪、2浪、3浪）
      * **关键规则（优先判断趋势强度）**：
        - **如果趋势强度为strong（trend_analysis.strength=strong）**：
-         * **优先遵循趋势方向**，即使L1信号看多，只要趋势分析显示bearish且strength=strong，也应该考虑做空
-         * 如果L1信号看空（direction=bearish）且 total_score 绝对值 >= 20 → **正常做空**，高置信度
-         * 如果L1信号看多（direction=bullish）但趋势强度为strong → **仍然可以做空**，但降低仓位到70%，提高止损到3-4%（这是趋势优先原则）
+         * **核心规则（基于4个成功案例验证）**：
+           * **L1分数 > 50**：**优先遵循趋势方向**，L1方向可忽略，正常做空（双强共振模式）
+           * **L1分数 20-50，方向一致**：L1信号看空（direction=bearish）→ **正常做空**，高置信度（趋势主导模式）
+           * **L1分数 20-50，方向相反**：L1信号看多（direction=bullish）→ **仍然做空**，遵循趋势方向（Strong趋势优先模式，实战验证：VVVUSDT 26.523分、BTCUSDT 49.535分均成功）
+           * **L1分数 <= 20**：**禁止做空**（NO_ACTION，信号太弱）
+         * **关键洞察**：Strong趋势时，只要L1>20，无论L1方向如何，都必须遵循趋势方向做空
        - **如果趋势强度为moderate或weak**：
          * L1信号看空（direction=bearish）且 total_score 绝对值 >= 20 → 可以做空
          * L1信号看多（direction=bullish）→ NO_ACTION（等待L1信号转向或趋势加强）
@@ -134,10 +137,17 @@ prompt = """
 
 6) **L1信号评估（趋势强度优先原则）**：
    - **如果趋势强度为strong（trend_analysis.strength=strong）**：
-     * **趋势方向优先于L1信号**，这是最高优先级
-     * 如果趋势分析显示bearish且strength=strong，即使L1信号看多，也应该考虑做空（降低仓位到70%）
-     * 如果趋势分析显示bullish且strength=strong，即使L1信号看空，也应该考虑做多（降低仓位到70%）
-     * 如果L1信号与趋势方向一致 → 正常开仓，正常仓位
+     * **核心规则（基于4个成功案例验证）**：
+       * **L1分数 > 50**：**趋势方向优先于L1信号**，L1方向可忽略，正常开仓（双强共振模式）
+       * **L1分数 20-50，方向一致**：L1信号与趋势方向一致 → 正常开仓，正常仓位（趋势主导模式）
+       * **L1分数 20-50，方向相反**：即使L1信号与趋势方向相反，仍然开仓，遵循趋势方向（Strong趋势优先模式）
+       * **L1分数 <= 20**：NO_ACTION（信号太弱）
+     * **关键洞察**：Strong趋势时，只要L1>20，无论L1方向如何，都必须遵循趋势方向开仓
+     * **实战验证**：
+       - Strong(bullish) + L1 63.86(bearish) → OPEN_LONG ✅
+       - Strong(bearish) + L1 34.74(bearish) → OPEN_SHORT ✅
+       - Strong(bearish) + L1 26.523(bullish) → OPEN_SHORT ✅
+       - Strong(bearish) + L1 49.535(bullish) → OPEN_SHORT ✅
    - **如果趋势强度为moderate或weak**：
      * L1信号作为主要触发条件
      * total_score 绝对值 >= 20 且趋势方向一致 → 可以开仓
@@ -197,8 +207,11 @@ prompt = """
 - should_execute（关键规则）：
   - **基本规则**：
     * 如果趋势强度为strong（trend_analysis.strength=strong）：
-      - 趋势方向与波浪方向一致 → should_execute=true（即使L1信号冲突，也允许开仓，但降低仓位）
-      - 如果L1信号与趋势方向一致且total_score 绝对值 >= 20 → should_execute=true（正常开仓）
+      - **L1分数 > 50**：should_execute=true（方向可忽略，双强共振模式）
+      - **L1分数 20-50，方向一致**：should_execute=true（趋势主导模式）
+      - **L1分数 20-50，方向相反**：should_execute=true（Strong趋势优先，遵循趋势方向）
+      - **L1分数 <= 20**：should_execute=false（信号太弱）
+      - **关键原则**：Strong趋势时，只要L1>20，无论L1方向如何，都必须遵循趋势方向开仓
     * 如果趋势强度为moderate或weak：
       - L1 total_score 绝对值 >= 20 且趋势方向一致 → should_execute=true
       - L1信号与趋势方向冲突 → should_execute=false（禁止逆势交易）
