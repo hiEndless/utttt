@@ -33,6 +33,7 @@ def _init_result() -> Dict[str, Any]:
     base = {t: {p: [] for p in PERIODS} for t in TYPES}
     base["24hr"] = {}
     base["fundingRate"] = []
+    base["klines"] = {p: [] for p in PERIODS}
     return base
 
 
@@ -91,6 +92,17 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
         if cursor == 0:
             break
 
+    for p in PERIODS:
+        key = f"klines:{exchange}:{symbol}:{p}"
+        raw = await cli.get(key)
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except Exception:
+            continue
+        res["klines"][p] = data if isinstance(data, list) else [data]
+
     return res
 
 
@@ -113,6 +125,33 @@ def _trend(delta: float, eps: float = 1e-5) -> str:
     if abs(delta) < eps:
         return "flat"
     return "up" if delta > 0 else "down"
+
+
+def _trend_pct(pct: float, eps_pct: float = 0.01) -> str:
+    """基于百分比变化的趋势判断（默认 0.01% 内视为震荡）。"""
+    if abs(pct) < eps_pct:
+        return "flat"
+    return "up" if pct > 0 else "down"
+
+
+def _safe_float(x: Any, default: float = 0.0) -> float:
+    try:
+        return float(x)
+    except Exception:
+        return default
+
+
+def _kline_close(k: Any) -> Optional[float]:
+    """兼容 Binance K 线数组结构与少量变体，提取 close。"""
+    if isinstance(k, (list, tuple)) and len(k) >= 5:
+        c = _safe_float(k[4], default=0.0)
+        return None if c == 0.0 else c
+    if isinstance(k, dict):
+        for key in ("close", "c", "closePrice", "close_price"):
+            if key in k:
+                c = _safe_float(k.get(key), default=0.0)
+                return None if c == 0.0 else c
+    return None
 
 
 def _strength(ratio: float) -> str:
@@ -238,6 +277,36 @@ def analyze_ticker(tk: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def analyze_price_trends_from_klines(klines_by_interval: Dict[str, Any]) -> Dict[str, Any]:
+    """从多周期 K 线计算多周期的价格变化与趋势（用于给 Agent 更直观的短中长周期价格方向）。"""
+    if not klines_by_interval:
+        return {}
+
+    changes: Dict[str, float] = {}
+    trends: Dict[str, str] = {}
+    latest_close: Dict[str, float] = {}
+
+    for interval in PERIODS:
+        klines = klines_by_interval.get(interval) or []
+        if not isinstance(klines, list) or len(klines) < 2:
+            continue
+
+        prev = _kline_close(klines[-2])
+        last = _kline_close(klines[-1])
+        if prev is None or last is None or prev == 0:
+            continue
+
+        pct = (last - prev) / prev * 100.0
+        changes[interval] = round(pct, 4)
+        trends[interval] = _trend_pct(pct)
+        latest_close[interval] = last
+
+    return {
+        "price_change_pct": changes,
+        "trends": trends
+    }
+
+
 # -------------------------------------------------------------------------
 # Funding Rate Analysis
 # -------------------------------------------------------------------------
@@ -275,7 +344,7 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
         "ticker": {},
         "funding_rate": {},
         "participant_structure": {},
-        "summary": {},
+        # "summary": {},
     }
 
     ps = {}
@@ -295,6 +364,7 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
     # ------------------------------
     ticker_raw = data.get("24hr", {})
     out["ticker"] = analyze_ticker(ticker_raw)
+    out["ticker"].update(analyze_price_trends_from_klines(data.get("klines", {})))
 
     # ------------------------------
     # Add funding rate
@@ -337,7 +407,6 @@ def build_participant_structure(data: Dict[str, Any], symbol: str) -> Dict[str, 
         "cross_period_stability": cross_stability,
         "funding_bias": out["funding_rate"].get("bias", "neutral"),
         "funding_stability": out["funding_rate"].get("stability", "unknown"),
-        "price_trend_24h": out["ticker"].get("trend_24h", "flat"),
         "market_context": _market_context(out),
         "alignment_score": alignment_score,
         "notes": notes,
@@ -368,6 +437,6 @@ def _market_context(out: Dict[str, Any]) -> str:
 if __name__ == "__main__":
     import asyncio
 
-    raw = asyncio.run(read_market_raw("binance", "BTCUSDT"))
-    result = build_participant_structure(raw, "BTCUSDT")
+    raw = asyncio.run(read_market_raw("binance", "RIVERUSDT"))
+    result = build_participant_structure(raw, "RIVERUSDT")
     print(json.dumps(result, ensure_ascii=False, indent=2))
