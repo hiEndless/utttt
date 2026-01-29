@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from .horizon_aggregate import (
     aggregate_participant_by_horizon,
@@ -8,6 +8,7 @@ from .horizon_aggregate import (
 )
 from .horizon_schema import HORIZONS
 from .interval_analysis import _analyze_period
+from .kline_fusion import aggregate_kline_background_by_horizon
 from .price_funding_analysis import analyze_funding, analyze_price_trends_from_klines
 from .raw_reader import PERIODS, TYPES
 
@@ -178,3 +179,120 @@ def build_horizon_context(data: Dict[str, Any], symbol: str) -> Dict[str, Any]:
         out["by_horizon"][hz] = block
 
     return out
+
+
+def build_fused_horizons(
+    data: Dict[str, Any],
+    symbol: str,
+    kline_backgrounds: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """
+    输出面向 agent 的融合版 horizons 结构：
+    - market_background：由 KLineExpert 的多周期解读融合而来
+    - participant_background：由 market_raw 的人群结构统计融合而来
+    - confidence：两者融合后的综合置信度
+    """
+    base = build_horizon_context(data, symbol)
+    horizons: Dict[str, Any] = {}
+
+    for hz, meta in HORIZONS.items():
+        block = (base.get("by_horizon") or {}).get(hz) or {}
+        ps = block.get("participant_structure") or {}
+        price_s = block.get("price_structure") or {}
+        tension = block.get("market_tension") or {}
+
+        participant_background = {
+            "crowding": "high" if "crowded" in _safe_text(ps.get("participant_state")) else ("low" if ps.get("has_evidence") else "unknown"),
+            "dominant_side": ps.get("bias", "neutral"),
+            "stability": "fragile" if ps.get("stability") == "volatile" else ("stable" if ps.get("stability") == "stable" else ps.get("stability", "unknown")),
+            "participant_state": ps.get("participant_state"),
+            "risk_profile": ps.get("risk_profile"),
+            "trade_permission": block.get("trade_permission"),
+        }
+
+        market_background = aggregate_kline_background_by_horizon(
+            kline_backgrounds or [],
+            meta.get("intervals", []),
+            weights=meta.get("weights"),
+        )
+
+        market_background["trend_memory"] = {
+            "price_direction": price_s.get("direction", "unknown"),
+            "price_strength": price_s.get("strength", "unknown"),
+            "price_consistency": price_s.get("consistency", 0.0),
+        }
+        market_background["trend_context"] = _derive_trend_context(
+            hz,
+            market_background,
+            price_s,
+            ps,
+            tension,
+        )
+
+        conf = round(
+            (float(market_background.get("confidence", 0.0)) + float(ps.get("confidence", 0.0))) / 2,
+            2,
+        )
+
+        horizons[hz] = {
+            "holding_window": meta.get("holding_window"),
+            "market_background": market_background,
+            "participant_background": participant_background,
+            "confidence": conf,
+        }
+
+    return {
+        "symbol": symbol,
+        "generated_at": base.get("generated_at"),
+        "horizons": horizons,
+        "agent_guidance": base.get("agent_guidance"),
+    }
+
+
+def _derive_trend_context(
+    horizon: str,
+    market_background: Dict[str, Any],
+    price_structure: Dict[str, Any],
+    participant_structure: Dict[str, Any],
+    market_tension: Dict[str, Any],
+) -> str:
+    direction = price_structure.get("direction")
+    strength = price_structure.get("strength")
+    p_state = participant_structure.get("participant_state")
+    risk_profile = participant_structure.get("risk_profile")
+    mb_struct = _safe_text(market_background.get("structure_state"))
+    tension_level = market_tension.get("level")
+
+    if tension_level == "high":
+        return "price_strong_participants_unstable"
+
+    if strength == "strong":
+        if p_state in ("crowded_but_unstable", "divergent_and_unstable", "unstable"):
+            return "price_strong_but_participants_unstable"
+        if p_state == "aligned_and_stable":
+            return "trend_continuation_friendly"
+        return "price_strong_mixed_participants"
+
+    if mb_struct.startswith("range_consolidation") or mb_struct.startswith("range_conflict"):
+        if direction in ("up", "down") and strength in ("medium", "strong"):
+            return "post_trend_consolidation"
+        if risk_profile in ("high_volatility_tradeable", "high_risk_breakdown_zone"):
+            return "high_volatility_gameable_range"
+        return "range_chop"
+
+    if strength == "weak" and direction == "flat":
+        if p_state in ("divergent", "mixed"):
+            return "non_trend_trade_only"
+        return "low_signal"
+
+    if horizon == "long_term" and direction in ("up", "down") and strength in ("medium", "strong"):
+        return "macro_trend_in_progress"
+
+    return "unknown"
+
+
+def _safe_text(x: Any) -> str:
+    try:
+        return str(x or "")
+    except Exception:
+        return ""
