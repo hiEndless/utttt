@@ -14,7 +14,9 @@ class Settings:
         '1h': 900,
         '2h': 1800,
         '4h': 3600,
-        '1d': 43200,
+        '6h': 7200,
+        '12h': 10800,
+        '1d': 21600,
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"

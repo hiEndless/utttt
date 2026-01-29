@@ -206,6 +206,8 @@ async def _main():
             asyncio.create_task(spider_poller("BTCUSDT", "1h", 200)),
             asyncio.create_task(spider_poller("BTCUSDT", "2h", 200)),
             asyncio.create_task(spider_poller("BTCUSDT", "4h", 200)),
+            asyncio.create_task(spider_poller("BTCUSDT", "6h", 200)),
+            asyncio.create_task(spider_poller("BTCUSDT", "12h", 200)),
             asyncio.create_task(spider_poller("BTCUSDT", "1d", 200)),
             asyncio.create_task(ticker24hr_poller("BTCUSDT")),
             asyncio.create_task(fundingRate_poller("BTCUSDT")),
