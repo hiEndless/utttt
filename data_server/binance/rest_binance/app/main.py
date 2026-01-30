@@ -12,6 +12,8 @@ from fetchers import (
     fetch_topLongShortAccountRatio,
     fetch_topLongShortPositionRatio,
     fetch_globalLongShortAccountRatio,
+    fetch_openInterestHist,
+    fetch_openInterest,
     fetch_ticker24hr,
     fetch_fundingRate,
 )
@@ -29,6 +31,7 @@ def make_spider(interval: str, limit: int = 300):
             await fetch_topLongShortAccountRatio(symbol, interval)
             await fetch_topLongShortPositionRatio(symbol, interval)
             await fetch_globalLongShortAccountRatio(symbol, interval)
+            await fetch_openInterestHist(symbol, interval)
 
     return run
 
@@ -41,6 +44,11 @@ async def ticker24hr_task(symbol: str):
 async def fundingRate_task(symbol: str):
     logger.info("task_trigger name=%s interval=%s time=%s", "fundingRate", "4h", time.strftime("%Y-%m-%d %H:%M:%S"))
     await fetch_fundingRate(symbol)
+
+
+async def openInterest_task(symbol: str):
+    logger.info("task_trigger name=%s interval=%s time=%s", "openInterest", "5m", time.strftime("%Y-%m-%d %H:%M:%S"))
+    await fetch_openInterest(symbol)
 
 
 FETCH_PLAN = [
@@ -56,6 +64,7 @@ FETCH_PLAN = [
     {"name": "spider_1d", "fn": make_spider("1d"), "interval": settings.rate_limits_seconds["1d"]},
     {"name": "ticker24hr", "fn": ticker24hr_task, "interval": settings.rate_limits_seconds["1h"]},
     {"name": "fundingRate", "fn": fundingRate_task, "interval": settings.rate_limits_seconds["4h"]},
+    {"name": "openInterest", "fn": openInterest_task, "interval": settings.rate_limits_seconds["5m"]},
 ]
 
 

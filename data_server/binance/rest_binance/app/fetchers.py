@@ -125,6 +125,25 @@ async def fetch_takerLongShortRatio(symbol: str, period: str):
             logger.error("store_market_raw_error %s %s %s", symbol, period, e)
 
 
+async def fetch_openInterestHist(symbol: str, period: str):
+    """ 合约持仓量历史 """
+    url = BASE_URL + '/futures/data/openInterestHist'
+    _p = '5m' if period == '1m' else period
+    params = {
+        'symbol': symbol,
+        'period': _p,
+        'limit': 30
+    }
+    _sec = settings.rate_limits_seconds.get(_p, 60)
+    _limiter = get_limiter(("openInterestHist", symbol, _p), _sec)
+    async with _limiter:
+        res = await http_client.request("GET", url, params=params)
+        try:
+            await store_market_raw(symbol, period, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s %s", symbol, period, e)
+
+
 async def fetch_ticker24hr(symbol: str):
     """24h价格变动情况"""
     url = BASE_URL + '/fapi/v1/ticker/24hr'
@@ -162,6 +181,23 @@ async def fetch_fundingRate(symbol: str):
     }
     _sec = settings.rate_limits_seconds.get('4h', 14400)
     _limiter = get_limiter(("fundingRate", symbol, '4h'), _sec)
+    async with _limiter:
+        res = await http_client.request("GET", url, params=params)
+        try:
+            await store_market_raw_simple(symbol, url, res)
+        except Exception as e:
+            logger.error("store_market_raw_error %s %s", symbol, e)
+
+
+async def fetch_openInterest(symbol: str):
+    """获取未平仓合约数"""
+    url = BASE_URL + '/fapi/v1/openInterest'
+    params = {
+        'symbol': symbol,
+        'limit': 200
+    }
+    _sec = settings.rate_limits_seconds.get('5m', 150)
+    _limiter = get_limiter(("fundingRate", symbol, '5m'), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
         try:
@@ -220,7 +256,7 @@ async def _main():
 if __name__ == "__main__":
     async def _run_once():
         try:
-            await fetch_fundingRate("BTCUSDT")
+            await fetch_openInterest("BTCUSDT")
         finally:
             await http_client.close()
     # asyncio.run(_main())
