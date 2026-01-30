@@ -7,7 +7,8 @@ def _safe_str(x: Any) -> str:
 
 
 def _normalize_trend(x: Any) -> str:
-    v = _safe_str(x).lower()
+    """将上游趋势标签归一化为 bullish/bearish/neutral/unknown。"""
+    v = _safe_str(x).lower().strip()
     if v in {"bullish", "bearish", "neutral"}:
         return v
     if v in {"up", "uptrend"}:
@@ -15,6 +16,12 @@ def _normalize_trend(x: Any) -> str:
     if v in {"down", "downtrend"}:
         return "bearish"
     if v in {"sideways", "range", "flat"}:
+        return "neutral"
+    if "bullish" in v:
+        return "bullish"
+    if "bearish" in v:
+        return "bearish"
+    if "neutral" in v:
         return "neutral"
     return "unknown"
 
@@ -112,11 +119,11 @@ def aggregate_kline_background_by_horizon(
     used_intervals = [itv for itv in intervals if itv in latest_by_interval]
     if not used_intervals:
         return {
-            "directional_bias": "unknown",
+            "directional_bias": "insufficient_evidence",
             "trend_permission": False,
-            "structure_state": "unknown",
-            "momentum_state": "unknown",
-            "risk_level": "unknown",
+            "structure_state": "insufficient_evidence",
+            "momentum_state": "insufficient_evidence",
+            "risk_level": "insufficient_evidence",
             "confidence": 0.0,
             "evidence_count": 0,
         }
@@ -159,7 +166,7 @@ def aggregate_kline_background_by_horizon(
     risk_level = _merge_level(risk_levels)
 
     if direction in {"unknown"}:
-        directional_bias = "unknown"
+        directional_bias = "neutral"
     elif agreement < 0.6:
         directional_bias = "mixed"
     else:
@@ -175,7 +182,7 @@ def aggregate_kline_background_by_horizon(
         else:
             structure_state = "range_consolidation"
     else:
-        structure_state = structure if structure != "unknown" else "unknown"
+        structure_state = structure if structure != "unknown" else "unclassified_structure"
 
     if proximity != "unknown" and structure_state in {"range_consolidation", "range_conflict"}:
         structure_state = f"{structure_state}_near_{proximity}"
@@ -195,9 +202,9 @@ def aggregate_kline_background_by_horizon(
     elif directional_bias in {"bullish", "bearish"}:
         directional_risk_skew = "balanced"
     elif directional_bias == "mixed":
-        directional_risk_skew = "unknown"
+        directional_risk_skew = "balanced"
     else:
-        directional_risk_skew = "unknown"
+        directional_risk_skew = "balanced"
 
     if directional_bias == "neutral" and directional_risk_skew == "balanced":
         if direction == "bearish" and agreement >= 0.6:
@@ -236,4 +243,3 @@ def aggregate_kline_background_by_horizon(
         "evidence_count": len(used_intervals),
         "used_intervals": used_intervals,
     }
-

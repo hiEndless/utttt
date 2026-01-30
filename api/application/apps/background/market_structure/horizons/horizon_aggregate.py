@@ -21,7 +21,7 @@ def _participant_state(
 ) -> str:
     """将描述态的人群信号压缩成可直接使用的“状态标签”（避免下游自行猜测语义）。"""
     if not has_evidence:
-        return "unknown"
+        return "insufficient_evidence"
 
     crowded = alignment_score >= 0.65 and bias in ("long", "short")
     divergent = alignment_score < 0.55
@@ -42,8 +42,8 @@ def _participant_state(
 
 def _risk_profile(participant_state: str) -> str:
     """将 participant_state 映射为“可交易风险画像”（避免 LLM 默认风险厌恶导致全盘否决）。"""
-    if participant_state == "unknown":
-        return "unknown"
+    if participant_state == "insufficient_evidence":
+        return "insufficient_evidence"
 
     if participant_state in ("divergent_and_unstable", "unstable"):
         return "high_volatility_tradeable"
@@ -60,7 +60,7 @@ def _risk_profile(participant_state: str) -> str:
     if participant_state == "aligned_and_stable":
         return "trend_tradeable"
 
-    return "unknown"
+    return "non_trend_trade_only"
 
 
 def aggregate_price_by_horizon(
@@ -91,7 +91,7 @@ def aggregate_price_by_horizon(
             flat_w += wt
 
     if total_w == 0:
-        return {"direction": "flat", "consistency": 0.0, "strength": "unknown"}
+        return {"direction": "flat", "consistency": 0.0, "strength": "weak"}
 
     if up_w > down_w and up_w > flat_w:
         direction = "up"
@@ -168,9 +168,9 @@ def aggregate_participant_by_horizon(
             "bias": "neutral",
             "bias_kind": "descriptive",
             "alignment_score": 0.0,
-            "stability": "unknown",
-            "participant_state": "unknown",
-            "risk_profile": "unknown",
+            "stability": "insufficient_evidence",
+            "participant_state": "insufficient_evidence",
+            "risk_profile": "insufficient_evidence",
             "avg_vol": 0.0,
             "confidence": 0.0,
             "has_evidence": False,
@@ -226,4 +226,3 @@ def funding_for_horizon(horizon: str, funding: Dict[str, Any]) -> Dict[str, Any]
         "trend": funding.get("trend"),
         "use_for_decision": horizon != "short_term",
     }
-

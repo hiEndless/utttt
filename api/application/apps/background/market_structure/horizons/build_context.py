@@ -185,11 +185,11 @@ def build_fused_horizons(
         participant_background = {
             "crowding": "high"
             if "crowded" in _safe_text(ps.get("participant_state"))
-            else ("low" if ps.get("has_evidence") else "unknown"),
+            else ("low" if ps.get("has_evidence") else "insufficient_evidence"),
             "dominant_side": ps.get("bias", "neutral"),
             "stability": "fragile"
             if ps.get("stability") == "volatile"
-            else ("stable" if ps.get("stability") == "stable" else ps.get("stability", "unknown")),
+            else ("stable" if ps.get("stability") == "stable" else ps.get("stability", "insufficient_evidence")),
             "participant_state": ps.get("participant_state"),
             "risk_profile": ps.get("risk_profile"),
             "trade_permission": block.get("trade_permission"),
@@ -198,8 +198,8 @@ def build_fused_horizons(
         market_background = aggregate_kline_background_by_horizon(kline_backgrounds or [], meta.get("intervals", []), weights=meta.get("weights"))
 
         market_background["trend_memory"] = {
-            "price_direction": price_s.get("direction", "unknown"),
-            "price_strength": price_s.get("strength", "unknown"),
+            "price_direction": price_s.get("direction", "flat"),
+            "price_strength": price_s.get("strength", "weak"),
             "price_consistency": price_s.get("consistency", 0.0),
         }
         market_background["trend_context"] = _derive_trend_context(hz, market_background, price_s, ps, tension)
@@ -228,6 +228,12 @@ def _derive_trend_context(
     participant_structure: Dict[str, Any],
     market_tension: Dict[str, Any],
 ) -> str:
+    """基于价格/参与者/结构/张力组合，输出可消费的趋势语境标签。
+
+    说明：
+    - 该字段用于“语境分类”，不是交易信号本身。
+    - 为了便于上层消费，默认不返回 unknown；当未命中细分分支时返回更宽泛的标签。
+    """
     direction = price_structure.get("direction")
     strength = price_structure.get("strength")
     p_state = participant_structure.get("participant_state")
@@ -238,19 +244,29 @@ def _derive_trend_context(
     if tension_level == "high":
         return "price_strong_participants_unstable"
 
-    if strength == "strong":
-        if p_state in ("crowded_but_unstable", "divergent_and_unstable", "unstable"):
-            return "price_strong_but_participants_unstable"
-        if p_state == "aligned_and_stable":
-            return "trend_continuation_friendly"
-        return "price_strong_mixed_participants"
-
     if mb_struct.startswith("range_consolidation") or mb_struct.startswith("range_conflict"):
         if direction in ("up", "down") and strength in ("medium", "strong"):
             return "post_trend_consolidation"
         if risk_profile in ("high_volatility_tradeable", "high_risk_breakdown_zone"):
             return "high_volatility_gameable_range"
         return "range_chop"
+
+    mb_struct_l = mb_struct.lower().strip()
+    if "break" in mb_struct_l:
+        if risk_profile in ("high_risk_breakdown_zone", "high_volatility_tradeable"):
+            return "breakdown_high_risk"
+        if direction == "down" and strength in ("medium", "strong"):
+            return "trend_breakdown_in_progress"
+        return "breakdown_watch"
+
+    if strength in ("strong", "medium") and direction in ("up", "down"):
+        if p_state in ("crowded_but_unstable", "divergent_and_unstable", "unstable"):
+            return "trend_present_but_participants_unstable"
+        if p_state == "aligned_and_stable":
+            return "trend_continuation_friendly" if strength == "strong" else "trend_continuation_possible"
+        if p_state in ("divergent", "mixed"):
+            return "trend_present_multi_signal_divergence"
+        return "directional_trend_present"
 
     if strength == "weak" and direction == "flat":
         if p_state in ("divergent", "mixed"):
@@ -260,7 +276,13 @@ def _derive_trend_context(
     if horizon == "long_term" and direction in ("up", "down") and strength in ("medium", "strong"):
         return "macro_trend_in_progress"
 
-    return "unknown"
+    if mb_struct_l and mb_struct_l != "unknown":
+        return "structural_state_driven"
+
+    if strength in ("strong", "medium"):
+        return "momentum_watch"
+
+    return "general_context"
 
 
 def _safe_text(x: Any) -> str:
