@@ -6,23 +6,20 @@ import time
 from typing import Any, Dict, List, Optional
 
 if __package__:
-    from .behavior_aggregate import (
-        build_behavioral_structure_from_aggtrades,
-        parse_window_to_ms,
-    )
-    from .horizon_schema import HORIZONS
-    from ....common.redis_client import redis_client
+    from api.application.common.redis_client import redis_client
+    from api.application.apps.background.market_structure.horizon_schema import HORIZONS
+    from .behavior_aggregate import build_behavioral_structure_from_aggtrades, parse_window_to_ms
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", ".."))
+    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from api.application.apps.background.market_structure.behavior_aggregate import (
+    from api.application.common.redis_client import redis_client
+    from api.application.apps.background.market_structure.horizon_schema import HORIZONS
+    from api.application.apps.background.market_structure.behavioral.behavior_aggregate import (
         build_behavioral_structure_from_aggtrades,
         parse_window_to_ms,
     )
-    from api.application.apps.background.market_structure.horizon_schema import HORIZONS
-    from api.application.common.redis_client import redis_client
 
 
 def _max_behavior_window_ms() -> int:
@@ -41,7 +38,6 @@ async def read_recent_aggtrades(
     limit: int = 50000,
     client: Optional[object] = None,
 ) -> List[Dict[str, Any]]:
-    """从 Redis Stream 读取近 max_window_ms 的 aggTrade 行为字段。"""
     cli = client or redis_client
     key = f"aggtrades:{exchange}:{symbol}"
 
@@ -72,7 +68,6 @@ async def read_aggtrade_stream_available_since_ms(
     symbol: str,
     client: Optional[object] = None,
 ) -> Optional[int]:
-    """读取 aggTrade Stream 的最早可用时间戳（用于数据成熟度判定）。"""
     cli = client or redis_client
     key = f"aggtrades:{exchange}:{symbol}"
     try:
@@ -94,7 +89,6 @@ async def read_aggtrade_stream_available_since_ms(
 
 
 async def build_behavior_output(exchange: str, symbol: str) -> Dict[str, Any]:
-    """从 Redis 读取 aggTrade stream，并生成按 behavior_windows 聚合的行为结构。"""
     max_ms = _max_behavior_window_ms()
     now_ms = int(time.time() * 1000)
     available_since_ms = await read_aggtrade_stream_available_since_ms(exchange, symbol, redis_client)
@@ -109,7 +103,6 @@ async def build_behavior_output(exchange: str, symbol: str) -> Dict[str, Any]:
 
 
 def main(exchange: str = "binance", symbol: str = "ETHUSDT") -> None:
-    """本地快速预览 aggTrade 行为结构输出。"""
     out = asyncio.run(build_behavior_output(exchange, symbol))
     print(json.dumps(out, ensure_ascii=False, indent=2))
 

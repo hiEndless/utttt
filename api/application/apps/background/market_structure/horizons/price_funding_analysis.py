@@ -10,7 +10,7 @@ def _stdev(xs: List[float]) -> float:
         return 0.0
     m = _mean(xs)
     var = sum((x - m) ** 2 for x in xs) / (len(xs) - 1)
-    return var ** 0.5
+    return var**0.5
 
 
 def _trend(delta: float, eps: float = 1e-5) -> str:

@@ -226,3 +226,4 @@ def funding_for_horizon(horizon: str, funding: Dict[str, Any]) -> Dict[str, Any]
         "trend": funding.get("trend"),
         "use_for_decision": horizon != "short_term",
     }
+

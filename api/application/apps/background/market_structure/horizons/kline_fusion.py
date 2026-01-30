@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple
 from collections import Counter
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def _safe_str(x: Any) -> str:
@@ -98,10 +98,6 @@ def aggregate_kline_background_by_horizon(
     intervals: List[str],
     weights: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
-    """
-    将由 KLineExpert 生成的多周期背景信息，按 horizon 合并为决策友好的 market_background。
-    目标：既保留灵敏度（短周期），又避免噪音（用权重与语义层级约束）。
-    """
     w = weights or {}
     latest_by_interval: Dict[str, Dict[str, Any]] = {}
     for bg in kline_backgrounds or []:
@@ -170,7 +166,11 @@ def aggregate_kline_background_by_horizon(
         directional_bias = direction
 
     if structure in {"consolidating", "range"}:
-        if directional_bias in {"bullish", "bearish"} and agreement >= 0.7 and momentum in {"strengthening", "stable"}:
+        if (
+            directional_bias in {"bullish", "bearish"}
+            and agreement >= 0.7
+            and momentum in {"strengthening", "stable"}
+        ):
             structure_state = "range_conflict"
         else:
             structure_state = "range_consolidation"
@@ -205,7 +205,11 @@ def aggregate_kline_background_by_horizon(
         elif direction == "bullish" and agreement >= 0.6:
             directional_risk_skew = "upside"
 
-    if directional_bias == "neutral" and momentum_state in {"weakening", "exhausted"} and directional_risk_skew == "balanced":
+    if (
+        directional_bias == "neutral"
+        and momentum_state in {"weakening", "exhausted"}
+        and directional_risk_skew == "balanced"
+    ):
         directional_risk_skew = "downside"
 
     if directional_bias == "neutral" and risk_level in {"medium_high", "high"} and directional_risk_skew == "balanced":
@@ -232,3 +236,4 @@ def aggregate_kline_background_by_horizon(
         "evidence_count": len(used_intervals),
         "used_intervals": used_intervals,
     }
+

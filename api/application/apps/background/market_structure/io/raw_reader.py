@@ -1,13 +1,8 @@
-# -------------------------------------------------------------------------
-# Redis Raw Reader
-# -------------------------------------------------------------------------
 from typing import Any, Dict, List, Optional
 import json
 
-try:
-    from ....common.redis_client import redis_client
-except ImportError:
-    from api.application.common.redis_client import redis_client
+from api.application.common.redis_client import redis_client
+
 
 PERIODS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 TYPES = [
@@ -59,7 +54,6 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
             except Exception:
                 continue
 
-            # ticker / fundingRate（无周期）
             if interval is None and dtype in EXTRA_SIMPLE:
                 if dtype == "24hr" and isinstance(data, dict):
                     res["24hr"] = data
@@ -70,7 +64,6 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
                         res["fundingRate"] = [data]
                 continue
 
-            # 多空比类
             if dtype not in TYPES:
                 continue
 
@@ -95,3 +88,4 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
         res["klines"][p] = data if isinstance(data, list) else [data]
 
     return res
+

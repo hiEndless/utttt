@@ -1,16 +1,16 @@
 import time
 from typing import Any, Dict, List, Optional
 
+from ..io.raw_reader import PERIODS, TYPES
 from .horizon_aggregate import (
     aggregate_participant_by_horizon,
     aggregate_price_by_horizon,
     funding_for_horizon,
 )
-from .horizon_schema import HORIZONS
+from api.application.apps.background.market_structure.horizon_schema import HORIZONS
 from .interval_analysis import _analyze_period
 from .kline_fusion import aggregate_kline_background_by_horizon
 from .price_funding_analysis import analyze_funding, analyze_price_trends_from_klines
-from .raw_reader import PERIODS, TYPES
 
 
 def _init_horizon_block(horizon: str, meta: Dict[str, Any]) -> Dict[str, Any]:
@@ -55,7 +55,6 @@ def _derive_trade_permission(horizon: str, block: Dict[str, Any]) -> Dict[str, A
     counter_trend_allowed = False
     scalp_only = horizon == "short_term"
 
-    # 高张力：默认只允许小仓位快进快出或反转型（不是“不能交易”，是“不能按趋势交易”）
     if tension_level == "high":
         cap = min(cap, 0.2)
         trend_follow_allowed = False
@@ -70,7 +69,6 @@ def _derive_trade_permission(horizon: str, block: Dict[str, Any]) -> Dict[str, A
             "notes": "高张力区：禁止趋势跟随；仅允许小仓位、短持有、反转/对冲类策略。",
         }
 
-    # 波动/分歧：允许交易但限制风格（避免 LLM 风险厌恶直接否决）
     if state in ("divergent_and_unstable", "unstable", "crowded_but_unstable", "divergent", "mixed"):
         trend_follow_allowed = False
         counter_trend_allowed = True
@@ -85,7 +83,6 @@ def _derive_trade_permission(horizon: str, block: Dict[str, Any]) -> Dict[str, A
             "notes": "非趋势友好：允许博弈但不建议按趋势追单；以回撤/均值回归/对冲为主。",
         }
 
-    # 结构稳定且一致：允许趋势交易（仓位仍做上限，避免“强行放大”）
     if state == "aligned_and_stable":
         trend_follow_allowed = True
         counter_trend_allowed = strength == "weak"
@@ -109,12 +106,13 @@ def _derive_trade_permission(horizon: str, block: Dict[str, Any]) -> Dict[str, A
         "notes": "默认保护：允许低仓位非趋势策略，避免跨周期信息误用。",
     }
 
+
 def build_horizon_context(data: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     out = {
         "symbol": symbol,
         "generated_at": int(time.time() * 1000),
         "by_horizon": {},
-        "evidence": {},  # interval 级证据，默认仅用于调试
+        "evidence": {},
         "agent_guidance": {
             "verdict_scope": "short_term",
             "avoid_cross_horizon_veto": True,
@@ -122,7 +120,6 @@ def build_horizon_context(data: Dict[str, Any], symbol: str) -> Dict[str, Any]:
         },
     }
 
-    # ---------- interval-level ----------
     ps_interval = {}
     for dtype in TYPES:
         ps_interval[dtype] = {}
@@ -136,16 +133,11 @@ def build_horizon_context(data: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     out["evidence"]["price"] = price_interval
     out["evidence"]["funding"] = funding_ctx
 
-    # ---------- horizon-level ----------
     for hz, meta in HORIZONS.items():
         block = _init_horizon_block(hz, meta)
 
-        block["participant_structure"] = aggregate_participant_by_horizon(
-            ps_interval, meta["intervals"], weights=meta.get("weights")
-        )
-        block["price_structure"] = aggregate_price_by_horizon(
-            price_interval, meta["intervals"], weights=meta.get("weights")
-        )
+        block["participant_structure"] = aggregate_participant_by_horizon(ps_interval, meta["intervals"], weights=meta.get("weights"))
+        block["price_structure"] = aggregate_price_by_horizon(price_interval, meta["intervals"], weights=meta.get("weights"))
         block["funding_context"] = funding_for_horizon(hz, funding_ctx)
 
         price_s = block["price_structure"]
@@ -164,15 +156,10 @@ def build_horizon_context(data: Dict[str, Any], symbol: str) -> Dict[str, Any]:
             tension_type = "multi_signal_divergence"
 
         block["market_tension"] = {"level": tension_level, "type": tension_type}
-
         block["trade_permission"] = _derive_trade_permission(hz, block)
 
-        # horizon confidence（可简单，也可后续升级）
         block["confidence"] = round(
-            (
-                block["participant_structure"].get("confidence", 0)
-                + block["price_structure"].get("consistency", 0)
-            ) / 2,
+            (block["participant_structure"].get("confidence", 0) + block["price_structure"].get("consistency", 0)) / 2,
             2,
         )
 
@@ -186,12 +173,6 @@ def build_fused_horizons(
     symbol: str,
     kline_backgrounds: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    """
-    输出面向 agent 的融合版 horizons 结构：
-    - market_background：由 KLineExpert 的多周期解读融合而来
-    - participant_background：由 market_raw 的人群结构统计融合而来
-    - confidence：两者融合后的综合置信度
-    """
     base = build_horizon_context(data, symbol)
     horizons: Dict[str, Any] = {}
 
@@ -202,37 +183,28 @@ def build_fused_horizons(
         tension = block.get("market_tension") or {}
 
         participant_background = {
-            "crowding": "high" if "crowded" in _safe_text(ps.get("participant_state")) else ("low" if ps.get("has_evidence") else "unknown"),
+            "crowding": "high"
+            if "crowded" in _safe_text(ps.get("participant_state"))
+            else ("low" if ps.get("has_evidence") else "unknown"),
             "dominant_side": ps.get("bias", "neutral"),
-            "stability": "fragile" if ps.get("stability") == "volatile" else ("stable" if ps.get("stability") == "stable" else ps.get("stability", "unknown")),
+            "stability": "fragile"
+            if ps.get("stability") == "volatile"
+            else ("stable" if ps.get("stability") == "stable" else ps.get("stability", "unknown")),
             "participant_state": ps.get("participant_state"),
             "risk_profile": ps.get("risk_profile"),
             "trade_permission": block.get("trade_permission"),
         }
 
-        market_background = aggregate_kline_background_by_horizon(
-            kline_backgrounds or [],
-            meta.get("intervals", []),
-            weights=meta.get("weights"),
-        )
+        market_background = aggregate_kline_background_by_horizon(kline_backgrounds or [], meta.get("intervals", []), weights=meta.get("weights"))
 
         market_background["trend_memory"] = {
             "price_direction": price_s.get("direction", "unknown"),
             "price_strength": price_s.get("strength", "unknown"),
             "price_consistency": price_s.get("consistency", 0.0),
         }
-        market_background["trend_context"] = _derive_trend_context(
-            hz,
-            market_background,
-            price_s,
-            ps,
-            tension,
-        )
+        market_background["trend_context"] = _derive_trend_context(hz, market_background, price_s, ps, tension)
 
-        conf = round(
-            (float(market_background.get("confidence", 0.0)) + float(ps.get("confidence", 0.0))) / 2,
-            2,
-        )
+        conf = round((float(market_background.get("confidence", 0.0)) + float(ps.get("confidence", 0.0))) / 2, 2)
 
         horizons[hz] = {
             "holding_window": meta.get("holding_window"),

@@ -3,22 +3,21 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional, Set
+from typing import Optional, Set
 
 if __package__:
+    from api.application.common.redis_client import redis_client
     from .behavior_output import build_behavior_output
-    from ....common.redis_client import redis_client
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", ".."))
+    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from api.application.apps.background.market_structure.behavior_output import build_behavior_output
     from api.application.common.redis_client import redis_client
+    from api.application.apps.background.market_structure.behavioral.behavior_output import build_behavior_output
 
 
 async def _scan_symbols(exchange: str, client: Optional[object] = None) -> Set[str]:
-    """读取 data_server 使用的 symbol set，便于在后台聚合保持一致。"""
     cli = client or redis_client
     key = f"symbol:{exchange}"
     try:
@@ -40,7 +39,6 @@ async def run_behavior_aggregator(
     output_key_prefix: str = "behavior:aggTrade",
     ttl_s: int = 300,
 ) -> None:
-    """后台守护：周期读取 aggTrade stream，生成行为结构，并落到 Redis JSON key。"""
     while True:
         symbols = await _scan_symbols(exchange, redis_client)
         now = int(time.time() * 1000)
@@ -60,10 +58,8 @@ async def run_behavior_aggregator(
 
 
 def main() -> None:
-    """本地运行：python -m api.application.apps.background.market_structure.behavior_daemon"""
     asyncio.run(run_behavior_aggregator())
 
 
 if __name__ == "__main__":
     main()
-

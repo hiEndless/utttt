@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from .horizon_schema import HORIZONS
+from api.application.apps.background.market_structure.horizon_schema import HORIZONS
 
 
 @dataclass(frozen=True)
@@ -127,7 +127,6 @@ def _risk_flags(window_ms: int, trade_count: int, aggression_ratio: float, liqui
         flags.append("overreaction_possible")
     if liquidity_taking == "high" and aggression_ratio >= 0.6:
         flags.append("liquidity_sweep_risk")
-    # 攻击性很强但流动性拿取并未跟上：更像噪音/试探，不应放大仓位
     if aggression_ratio >= 0.5 and liquidity_taking in ("very_low", "low"):
         flags.append("liquidity_not_following_aggression")
     return flags
@@ -144,7 +143,6 @@ def _state_tags(
         return ["no_activity"]
 
     tags: List[str] = []
-    # micro 窗口（<30s）标签降级：避免把“试探/噪音”误读成“有效推动”
     is_micro = window_ms < 30_000
     if buy_ratio >= 0.6:
         if is_micro and liquidity_taking in ("very_low", "low"):
@@ -166,7 +164,6 @@ def _state_tags(
     else:
         tags.append("no_clear_leader")
 
-    # <30s 只标记 micro_aggression，不直接上升为 short_term_aggression
     if window_ms < 30_000 and aggression_ratio >= 0.5:
         tags.append("micro_aggression")
     elif window_ms <= 60_000 and aggression_ratio >= 0.5:
@@ -181,7 +178,7 @@ def _state_tags(
 def _normalize_trade(obj: Mapping[str, Any]) -> Optional[AggTrade]:
     """将任意字典/Redis 字段映射为 AggTrade；缺字段则丢弃。"""
     try:
-        ts = int(float(obj.get("ts")))  # 兼容 str/int/float
+        ts = int(float(obj.get("ts")))
         price = float(obj.get("price"))
         qty = float(obj.get("qty"))
         is_buyer_maker_raw = obj.get("is_buyer_maker")
@@ -283,7 +280,6 @@ def compute_window_metrics(trades_sorted: List[AggTrade], now_ms: int, window_ms
 
 
 def _pick_primary_window(behavior_windows: List[str]) -> Tuple[str, int]:
-    """选择该 horizon 的主窗口：默认取时长最大的窗口。"""
     best_w = ""
     best_ms = -1
     for w in behavior_windows:
@@ -295,7 +291,6 @@ def _pick_primary_window(behavior_windows: List[str]) -> Tuple[str, int]:
 
 
 def _maturity_status(horizon: str, coverage_ms: int) -> str:
-    """判定数据成熟度：用于 Hard Gate，避免用短期数据伪造中长期结论。"""
     required = int(MIN_EFFECTIVE_WINDOW_MS.get(horizon, 0))
     if required <= 0:
         return "unknown"
@@ -307,7 +302,6 @@ def _maturity_status(horizon: str, coverage_ms: int) -> str:
 
 
 def _summary_from_votes(windows: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """summary 只能来源于“多数窗口一致”，且仅使用足够成熟的窗口。"""
     votes: List[str] = []
     liq_votes: List[str] = []
     risk_flags: set[str] = set()
@@ -332,7 +326,6 @@ def _summary_from_votes(windows: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         aggressions.append(float(aggression_ratio))
         for f in list(cell.get("risk_flags") or []):
             risk_flags.add(str(f))
-        # 记录 micro(<30s) 的强信号，用于识别“无跟随”风险
         if window_ms < 30_000 and flow in ("active_buy", "active_sell") and aggression_ratio >= 0.6:
             micro_strong_flows.append(flow)
 
@@ -347,7 +340,6 @@ def _summary_from_votes(windows: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     dominant_ratio = dominant_cnt / max(1, total)
     dominant_flow = dominant if dominant_ratio >= 0.6 else "mixed"
 
-    # flow_confidence：告诉 agent “结论强弱”，避免把弱平衡当强一致
     if total >= 3 and dominant_ratio >= 0.75:
         flow_confidence = "high"
     elif dominant_ratio >= 0.6:
@@ -355,7 +347,6 @@ def _summary_from_votes(windows: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     else:
         flow_confidence = "low"
 
-    # range_stability：平衡/区间的稳定性（越低越容易被打破）
     avg_aggr = sum(aggressions) / len(aggressions) if aggressions else 0.0
     if avg_aggr < 0.25:
         range_stability = "high"
@@ -373,7 +364,6 @@ def _summary_from_votes(windows: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     else:
         market_mode = "range_flow" if dominant_flow in ("mixed", "balanced") else "trend_driven"
 
-    # “无跟随”风险：micro 强信号但更大的窗口没有形成多数一致
     if micro_strong_flows and dominant_flow in ("balanced", "mixed"):
         risk_flags.add("no_follow_through")
 
@@ -393,7 +383,6 @@ def build_behavioral_structure_from_aggtrades(
     source: str = "aggTrade",
     available_since_ms: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """按 HORIZONS.behavior_windows 聚合 aggTrade，产出行为结构。"""
     import time
 
     ts_now = int(now_ms if now_ms is not None else time.time() * 1000)
@@ -406,7 +395,6 @@ def build_behavioral_structure_from_aggtrades(
     for horizon, cfg in (HORIZONS or {}).items():
         behavior_windows = list(cfg.get("behavior_windows") or [])
         holding_window = cfg.get("holding_window")
-        required_ms = int(MIN_EFFECTIVE_WINDOW_MS.get(horizon, 0))
         status = _maturity_status(horizon, coverage_ms)
         data_maturity[horizon] = status
 
@@ -457,7 +445,9 @@ def build_behavioral_structure_from_aggtrades(
             "holding_window": holding_window,
             "status": status,
             "available_since": _ms_to_iso(first_ts),
-            "required_min_window": "≥1m" if horizon == "short_term" else ("≥2h" if horizon == "mid_term" else "≥12h"),
+            "required_min_window": "≥1m"
+            if horizon == "short_term"
+            else ("≥2h" if horizon == "mid_term" else "≥12h"),
             "aggregation_windows": aggregation_windows,
             "summary": summary,
         }
