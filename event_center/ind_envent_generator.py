@@ -140,7 +140,7 @@ def _extract_plugin_evidence(res: dict):
 
 async def _run_one(symbol: str, exchange: str, client: redis.Redis):
     try:
-        res = await asyncio.to_thread(run_event_engine, symbol, exchange)
+        res = await asyncio.to_thread(run_event_engine, symbol, exchange, client)
 
         print(
             f"[指标事件] 交易所={exchange} 交易对={symbol} "

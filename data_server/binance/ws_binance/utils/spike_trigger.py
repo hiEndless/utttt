@@ -159,7 +159,11 @@ class SpikeDetector:
     async def stop(self):
         self._running = False
         try:
-            await self.redis.close()
+            # redis.asyncio 在不同版本里关闭接口不一致，优先使用 aclose() 回收连接池
+            if hasattr(self.redis, "aclose"):
+                await self.redis.aclose()
+            else:
+                await self.redis.close()
         except Exception:
             pass
 

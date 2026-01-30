@@ -4,6 +4,22 @@ from event_center.config import cfg
 
 INTERVALS = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
 
+_REDIS_CLIENT = None
+
+
+def get_redis_client() -> redis.Redis:
+    global _REDIS_CLIENT
+    if _REDIS_CLIENT is None:
+        # 复用单例客户端/连接池，避免高频创建导致 Redis 连接数暴涨
+        _REDIS_CLIENT = redis.Redis(
+            host=cfg.redis_host,
+            port=cfg.redis_port,
+            db=cfg.redis_db,
+            password=(cfg.redis_password or None),
+            decode_responses=True,
+        )
+    return _REDIS_CLIENT
+
 
 def _read_json(client, key: str):
     try:
@@ -13,7 +29,7 @@ def _read_json(client, key: str):
         return {}
 
 
-def load_all_indicators(symbol: str, exchange: str) -> dict:
+def load_all_indicators(symbol: str, exchange: str = "binance", client: redis.Redis | None = None) -> dict:
     """
     从 Redis 读取全周期、全指标（当前与上一时刻），结构：
     {
@@ -25,13 +41,7 @@ def load_all_indicators(symbol: str, exchange: str) -> dict:
       ...
     }
     """
-    client = redis.Redis(
-        host=cfg.redis_host,
-        port=cfg.redis_port,
-        db=cfg.redis_db,
-        password=(cfg.redis_password or None),
-        decode_responses=True,
-    )
+    client = client or get_redis_client()
     out = {}
     ex = exchange
     for iv in INTERVALS:

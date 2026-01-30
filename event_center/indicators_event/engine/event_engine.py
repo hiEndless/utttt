@@ -16,8 +16,9 @@ def _load_yaml(path):
         return {}
 
 
-def run_event_engine(symbol: str, exchange: str):
-    all_indicators = load_all_indicators(symbol, exchange)
+def run_event_engine(symbol: str, exchange: str, redis_client=None):
+    # 支持外部传入 Redis client（复用连接池），避免每次运行引擎都新建连接
+    all_indicators = load_all_indicators(symbol, exchange, client=redis_client)
     plugins = load_plugins()
 
     base_dir = os.path.dirname(os.path.dirname(__file__))
