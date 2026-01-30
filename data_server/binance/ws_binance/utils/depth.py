@@ -8,15 +8,29 @@ from data_server.binance.ws_binance.utils.redis_client import (
 )
 
 conn = get_sync_redis()
+DEPTH_STREAM_MAXLEN = int(os.getenv("DEPTH_STREAM_MAXLEN", 300))
 
 
 def update_depth(symbol, depth_data, ts=None):
-    # 当前20档深度
+    # 当前20档深度（WS depth20@500ms），用 Stream 形式保留近 1-2 分钟用于短周期结构统计
     key = f"depth:binance:{symbol}"
     # print(depth_data)
-    conn.set(key, json.dumps(depth_data))
+    # conn.set(key, json.dumps(depth_data))
     if ts is None:
         ts = int(time.time() * 1000)
+    try:
+        ktype = conn.type(key)
+        if ktype and ktype != "stream":
+            if ktype != "none":
+                conn.delete(key)
+        conn.xadd(
+            key,
+            {"ts": int(ts), "payload": json.dumps(depth_data, ensure_ascii=False)},
+            maxlen=DEPTH_STREAM_MAXLEN,
+            approximate=True,
+        )
+    except Exception:
+        pass
     _update_top_depth(symbol, depth_data, ts)
 
 
@@ -104,7 +118,32 @@ def _update_top_depth(symbol, depth_data, ts=None, top_n=20):
 
 def get_depth(symbol):
     key = f"depth:binance:{symbol}"
+    try:
+        ktype = conn.type(key)
+    except Exception:
+        ktype = None
+
+    if ktype == "stream":
+        try:
+            res = conn.xrevrange(key, max="+", min="-", count=1)
+            if not res:
+                return None
+            _, fields = res[0]
+            payload = fields.get("payload")
+            if payload:
+                return json.loads(payload)
+            bids = fields.get("bids")
+            asks = fields.get("asks")
+            if bids and asks:
+                return {"bids": json.loads(bids), "asks": json.loads(asks)}
+        except Exception:
+            return None
+        return None
+
     data = conn.get(key)
     if not data:
         return None
-    return json.loads(data)
+    try:
+        return json.loads(data)
+    except Exception:
+        return None
