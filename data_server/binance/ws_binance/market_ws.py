@@ -61,6 +61,7 @@ def _cleanup_symbol_keys(symbol: str, max_retries: int = 3):
             f"price:binance:{sym}",
             f"depth:binance:{sym}",
             f"ticks:binance:{sym}",
+            f"aggtrades:binance:{sym}",
             f"alerts:binance:{sym}",
             f"force_stream:binance:{sym}",
             f"stats:binance:{sym}",
@@ -319,12 +320,18 @@ async def on_msg(msg):
         symbol = msg["s"]
         # Consolidate price/ts extraction, then write hash and feed detector
         key = f"price:binance:{symbol}"
+        stream_key = f"aggtrades:binance:{symbol}"
         ts_raw = msg.get("T")
         ts_ms = int(float(ts_raw)) if isinstance(ts_raw, (int, float)) else int(time.time()*1000)
         try:
             price_val = float(msg["p"]) if msg.get("p") is not None else None
         except Exception:
             price_val = None
+        try:
+            qty_val = float(msg["q"]) if msg.get("q") is not None else None
+        except Exception:
+            qty_val = None
+        is_buyer_maker = bool(msg.get("m"))  # Binance 字段：买方是否为 maker
 
         if price_val is not None:
             # Update price in Redis as hash via RedisClient
@@ -332,6 +339,19 @@ async def on_msg(msg):
                 redis_client.set_hash(key, {"ts": ts_ms, "price": price_val}, check_type=True)
             except Exception as e:
                 logging.warning(f"redis write error on HSET key={key}: {e}")
+
+            # 将成交行为所需字段落入 Stream，供行为窗口聚合使用
+            try:
+                if qty_val is not None:
+                    redis_client.xadd_stream(
+                        stream_key,
+                        {"ts": ts_ms, "price": price_val, "qty": qty_val, "is_buyer_maker": int(is_buyer_maker)},
+                        maxlen=50000,
+                        approximate=True,
+                        check_type=True,
+                    )
+            except Exception as e:
+                logging.warning(f"redis write error on XADD key={stream_key}: {e}")
 
             # Cache price and feed detector with latest depth liquidity
             try:
