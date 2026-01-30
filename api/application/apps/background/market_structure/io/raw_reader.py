@@ -12,9 +12,14 @@ TYPES = [
     "topLongShortAccountRatio",
 ]
 
+INTERVAL_SERIES_TYPES = [
+    "openInterestHist",
+]
+
 EXTRA_SIMPLE = {
     "24hr": "24hr",
     "fundingRate": "fundingRate",
+    "openInterest": "openInterest",
 }
 
 
@@ -22,7 +27,9 @@ def _init_result() -> Dict[str, Any]:
     base = {t: {p: [] for p in PERIODS} for t in TYPES}
     base["24hr"] = {}
     base["fundingRate"] = []
+    base["openInterest"] = {}
     base["klines"] = {p: [] for p in PERIODS}
+    base["openInterestHist"] = {p: [] for p in PERIODS}
     return base
 
 
@@ -62,16 +69,21 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
                         res["fundingRate"] = data
                     else:
                         res["fundingRate"] = [data]
-                continue
-
-            if dtype not in TYPES:
+                elif dtype == "openInterest" and isinstance(data, dict):
+                    res["openInterest"] = data
                 continue
 
             mapped = "5m" if interval == "1m" else interval
             if mapped not in PERIODS:
                 continue
 
-            res[dtype][mapped] = data if isinstance(data, list) else [data]
+            if dtype in TYPES:
+                res[dtype][mapped] = data if isinstance(data, list) else [data]
+                continue
+
+            if dtype in INTERVAL_SERIES_TYPES:
+                res[dtype][mapped] = data if isinstance(data, list) else [data]
+                continue
 
         if cursor == 0:
             break
@@ -88,4 +100,3 @@ async def read_market_raw(exchange: str, symbol: str, client: Optional[object] =
         res["klines"][p] = data if isinstance(data, list) else [data]
 
     return res
-
