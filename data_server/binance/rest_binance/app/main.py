@@ -47,7 +47,7 @@ async def fundingRate_task(symbol: str):
 
 
 async def openInterest_task(symbol: str):
-    logger.info("task_trigger name=%s interval=%s time=%s", "openInterest", "5m", time.strftime("%Y-%m-%d %H:%M:%S"))
+    logger.info("task_trigger name=%s interval=%s time=%s", "openInterest", "1m", time.strftime("%Y-%m-%d %H:%M:%S"))
     await fetch_openInterest(symbol)
 
 
@@ -64,7 +64,7 @@ FETCH_PLAN = [
     {"name": "spider_1d", "fn": make_spider("1d"), "interval": settings.rate_limits_seconds["1d"]},
     {"name": "ticker24hr", "fn": ticker24hr_task, "interval": settings.rate_limits_seconds["1h"]},
     {"name": "fundingRate", "fn": fundingRate_task, "interval": settings.rate_limits_seconds["4h"]},
-    {"name": "openInterest", "fn": openInterest_task, "interval": settings.rate_limits_seconds["5m"]},
+    {"name": "openInterest", "fn": openInterest_task, "interval": settings.rate_limits_seconds["1m"]},
 ]
 
 

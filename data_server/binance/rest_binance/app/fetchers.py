@@ -197,7 +197,7 @@ async def fetch_openInterest(symbol: str):
         'limit': 200
     }
     _sec = settings.rate_limits_seconds.get('5m', 150)
-    _limiter = get_limiter(("fundingRate", symbol, '5m'), _sec)
+    _limiter = get_limiter(("fundingRate", symbol, '1m'), _sec)
     async with _limiter:
         res = await http_client.request("GET", url, params=params)
         try:
