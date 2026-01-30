@@ -1,15 +1,21 @@
 """
 Price Fetcher 组件
 用于统一获取 mark_price，支持从不同来源提取价格
+借鉴NOFX多级缓存机制：优先使用内存缓存，然后Redis，最后WebSocket
 """
 
 import json
 import logging
+import time
 from typing import Optional, Dict, Any
 from agent_server.utils.redis_client import RedisClient
+from agent_server.utils.realtime_price_cache import get_price_cache
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)  # 减少噪音，只显示错误
+
+# 获取全局价格缓存实例
+price_cache = get_price_cache()
 
 
 async def get_mark_price(
@@ -111,6 +117,7 @@ async def get_mark_price_from_redis(
 ) -> Optional[float]:
     """
     直接从 Redis 读取 mark_price（工具方法）
+    借鉴NOFX多级缓存：优先使用内存缓存，然后Redis，最后WebSocket
     
     :param exchange: 交易所名称
     :param symbol: 交易对
@@ -131,6 +138,13 @@ async def get_mark_price_from_redis(
     ```
     """
     try:
+        # 第一优先级：内存缓存（最快）
+        cached_price = price_cache.get_price(exchange, symbol)
+        if cached_price is not None:
+            logger.debug(f"从内存缓存读取价格: {exchange}:{symbol} = {cached_price}")
+            return cached_price
+        
+        # 第二优先级：Redis
         # 如果指定了 db，使用指定的 DB；否则使用默认配置
         from agent_server.config import settings
         current_db = db if db is not None else settings.redis_db
@@ -205,6 +219,8 @@ async def get_mark_price_from_redis(
                 mark_price = float(price_data_str)
 
             if mark_price > 0:
+                # 更新内存缓存
+                price_cache.set_price(exchange, symbol, mark_price)
                 logger.debug(f"从 Redis 读取 mark_price: {mark_price} ({symbol}) | DB={current_db}")
                 return mark_price
             else:

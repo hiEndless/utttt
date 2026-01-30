@@ -6,8 +6,11 @@ from data_server.binance.ws_binance.utils.redis_client import (
     key_ticks,
     key_latest_price,
 )
+from data_server.binance.ws_binance.utils.redis_batch_writer import get_batch_writer
 
 conn = get_sync_redis()
+# 使用批量写入器（减少连接使用）
+batch_writer = get_batch_writer()
 
 
 def update_depth(symbol, depth_data, ts=None):
@@ -95,11 +98,33 @@ def _update_top_depth(symbol, depth_data, ts=None, top_n=10):
 
     stream_key = key_ticks(symbol)
     payload = {k: (str(int(v)) if k == "ts" else str(v)) for k, v in top_depth_summary.items()}
+    
+    # 使用批量写入队列（解决Too many connections问题）
+    # 注意：update_depth是同步函数，但它在异步上下文中被调用
+    # 使用线程安全的同步批量写入器
     try:
-        conn.xadd(stream_key, payload, maxlen=1000, approximate=True)
-        print(f"[TOP_DEPTH] {symbol} 写入 {stream_key}: {payload}")
+        # 同步批量写入器使用线程安全的队列
+        batch_writer.add_xadd(stream_key, payload, maxlen=1000, approximate=True)
+        # 打印日志（可选，减少日志量）
+        # print(f"[TOP_DEPTH] {symbol} 添加到批量队列: {payload}")
     except Exception as e:
-        print(f"[TOP_DEPTH] {symbol} Redis XADD 失败: {e}. payload={payload}")
+        # 如果批量写入失败，降级到直接写入（带重试）
+        max_retries = 3
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            try:
+                conn.xadd(stream_key, payload, maxlen=1000, approximate=True)
+                print(f"[TOP_DEPTH] {symbol} 直接写入 {stream_key}: {payload}")
+                return
+            except Exception as e2:
+                error_str = str(e2)
+                if ("Too many connections" in error_str or "Connection" in error_str) and attempt < max_retries - 1:
+                    time.sleep(retry_delay * (attempt + 1))
+                    continue
+                if attempt == max_retries - 1:
+                    print(f"[TOP_DEPTH] {symbol} Redis XADD 失败: {e2} (retried {max_retries} times)")
+                return
 
 
 def get_depth(symbol):

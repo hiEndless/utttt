@@ -3,6 +3,7 @@ import json
 import time
 import os
 import logging
+import hashlib
 from datetime import datetime
 from typing import Dict, Optional, List
 from agno.workflow import StepInput
@@ -10,6 +11,8 @@ from agent_server.agents.experts.analysis.trade_decision import TradeDecisionExp
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.redis_client import RedisClient
 from agent_server.tools.price_fetcher import get_mark_price_from_redis
+from agent_server.utils.risk_control import RiskController
+from agent_server.utils.position_builder import PositionBuilder
 import redis
 
 # 配置 trade 决策日志
@@ -57,6 +60,10 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             'decode_responses': False
         }
         self.trade_queue_name = 'TASK_ADD_TRADE'
+        # 风控控制器（借鉴NOFX）
+        self.risk_controller = RiskController()
+        # 仓位构建器（借鉴NOFX）
+        self.position_builder = PositionBuilder(RedisClient())
 
     async def _fetch_l1_event(self,
                               exchange: str,
@@ -563,9 +570,183 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                     "sl_price": 0.0
                 }
 
-    async def _push_to_trade_queue(self, trade_json: Dict) -> bool:
-        """推送交易订单到 Redis 队列"""
+    async def _validate_entry_point(
+        self,
+        symbol: str,
+        action: str,
+        current_price: float,
+        klines_15m: List,
+        trend_strength: str = 'weak'
+    ) -> tuple[bool, str]:
+        """
+        验证开仓点是否合理（借鉴NOFX大周期K线范围验证）
+        
+        Args:
+            symbol: 交易对符号
+            action: 交易动作（OPEN_LONG/OPEN_SHORT）
+            current_price: 当前价格
+            klines_15m: 15分钟K线数据列表
+            trend_strength: 趋势强度（strong/moderate/weak）
+        
+        Returns:
+            Tuple[bool, str]: (是否有效, 原因)
+        """
         try:
+            if len(klines_15m) < 48:
+                return False, f"K线数据不足（需要至少48根15m K线，当前{len(klines_15m)}根）"
+            
+            # 计算大周期范围（最近48-100根K线，借鉴NOFX）
+            kline_count = min(100, len(klines_15m))
+            recent_klines = klines_15m[-kline_count:]
+            
+            highs = []
+            lows = []
+            for k in recent_klines:
+                if isinstance(k, (list, tuple)) and len(k) >= 5:
+                    # K线格式：[timestamp, open, high, low, close, volume]
+                    highs.append(float(k[2]))
+                    lows.append(float(k[3]))
+                elif isinstance(k, dict):
+                    highs.append(float(k.get('h', k.get('high', 0))))
+                    lows.append(float(k.get('l', k.get('low', 0))))
+            
+            if not highs or not lows:
+                return False, "无法解析K线数据"
+            
+            max_high = max(highs)
+            min_low = min(lows)
+            price_range = max_high - min_low
+            
+            if price_range <= 0:
+                return False, "价格区间无效（最高价<=最低价）"
+            
+            # 计算当前价格在区间中的位置（0-1）
+            price_position = (current_price - min_low) / price_range
+            
+            # 做多验证：避免在最高点开仓（借鉴NOFX）
+            if action == 'OPEN_LONG':
+                # 根据趋势强度调整阈值
+                if trend_strength == 'strong':
+                    threshold = 0.95  # Strong趋势：允许在区间上5%开仓
+                elif trend_strength == 'moderate':
+                    threshold = 0.85  # Moderate趋势：禁止在区间上15%开仓
+                else:
+                    threshold = 0.80  # Weak/Neutral趋势：禁止在区间上20%开仓
+                
+                if price_position > threshold:
+                    return False, (
+                        f"价格在区间高位: {price_position:.2%} > {threshold:.2%}，"
+                        f"禁止做多（最高: {max_high:.2f}, 最低: {min_low:.2f}, 当前: {current_price:.2f}）"
+                    )
+            
+            # 做空验证：避免在最低点开仓（借鉴NOFX）
+            elif action == 'OPEN_SHORT':
+                # 根据趋势强度调整阈值
+                if trend_strength == 'strong':
+                    threshold = 0.05  # Strong趋势：允许在区间下5%开仓
+                elif trend_strength == 'moderate':
+                    threshold = 0.15  # Moderate趋势：禁止在区间下15%开仓
+                else:
+                    threshold = 0.20  # Weak/Neutral趋势：禁止在区间下20%开仓
+                
+                if price_position < threshold:
+                    return False, (
+                        f"价格在区间低位: {price_position:.2%} < {threshold:.2%}，"
+                        f"禁止做空（最高: {max_high:.2f}, 最低: {min_low:.2f}, 当前: {current_price:.2f}）"
+                    )
+            
+            return True, f"开仓点合理（位置: {price_position:.2%}, 区间: {min_low:.2f}-{max_high:.2f}）"
+        except Exception as e:
+            trade_logger.error(f"开仓点验证异常: {e}", exc_info=True)
+            return False, f"开仓点验证异常: {str(e)}"
+    
+    async def _validate_risk_reward_ratio(
+        self,
+        entry_price: float,
+        tp_price: float,
+        sl_price: float,
+        action: str
+    ) -> tuple[bool, str]:
+        """
+        验证风险回报比（借鉴NOFX，最小3:1）
+        
+        Args:
+            entry_price: 入场价格
+            tp_price: 止盈价格
+            sl_price: 止损价格
+            action: 交易动作（OPEN_LONG/OPEN_SHORT）
+        
+        Returns:
+            Tuple[bool, str]: (是否有效, 原因)
+        """
+        try:
+            if entry_price <= 0 or tp_price <= 0 or sl_price <= 0:
+                return False, "价格无效（entry/tp/sl必须>0）"
+            
+            if action == 'OPEN_LONG':
+                risk = abs(entry_price - sl_price)
+                reward = abs(tp_price - entry_price)
+            elif action == 'OPEN_SHORT':
+                risk = abs(sl_price - entry_price)
+                reward = abs(entry_price - tp_price)
+            else:
+                return False, f"未知的交易动作: {action}"
+            
+            if risk <= 0:
+                return False, "风险为0，无法计算风险回报比"
+            
+            risk_reward_ratio = reward / risk
+            min_ratio = 3.0  # 最小风险回报比（借鉴NOFX）
+            
+            if risk_reward_ratio < min_ratio:
+                return False, (
+                    f"风险回报比过低: {risk_reward_ratio:.2f}:1 < {min_ratio:.2f}:1 "
+                    f"(风险: {risk:.2f}, 回报: {reward:.2f})"
+                )
+            
+            return True, f"风险回报比: {risk_reward_ratio:.2f}:1 (风险: {risk:.2f}, 回报: {reward:.2f})"
+        except Exception as e:
+            trade_logger.error(f"风险回报比验证异常: {e}", exc_info=True)
+            return False, f"风险回报比验证异常: {str(e)}"
+
+    async def _push_to_trade_queue(self, trade_json: Dict) -> bool:
+        """
+        推送交易订单到 Redis 队列（借鉴NOFX订单去重机制）
+        
+        实现多级去重：
+        1. 订单ID去重（防止同一订单重复推送）
+        2. 交易对去重（防止同一交易对重复开仓）
+        """
+        try:
+            symbol = trade_json.get('symbol', '')
+            order_type = trade_json.get('order_type', 'open')
+            exchange = 'binance'  # 默认交易所
+            
+            # 生成订单ID（借鉴NOFX）
+            timestamp = int(time.time() * 1000)
+            action = order_type
+            # 使用交易JSON的哈希值作为唯一标识的一部分
+            trade_str = json.dumps(trade_json, sort_keys=True, ensure_ascii=False)
+            trade_hash = hashlib.md5(trade_str.encode()).hexdigest()[:8]
+            order_id = f"{symbol}_{timestamp}_{action}_{trade_hash}"
+            
+            # 使用主Redis连接（用于去重检查）
+            rc = RedisClient()
+            
+            # 第一层检查：订单ID去重
+            order_key = f"trading:orders:{exchange}"
+            if await rc.sismember(order_key, order_id):
+                trade_logger.warning(f"订单已存在，跳过: {order_id} | {symbol}")
+                return False
+            
+            # 第二层检查：交易对去重（仅对开仓操作）
+            if order_type == 'open':
+                position_key = f"trading:open_positions:{exchange}"
+                if await rc.sismember(position_key, symbol):
+                    trade_logger.warning(f"交易对已开仓，跳过: {symbol}")
+                    return False
+            
+            # 推送到交易队列
             r = redis.Redis(
                 host=self.trade_redis_config['host'],
                 port=self.trade_redis_config['port'],
@@ -578,8 +759,29 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             json_str = json.dumps(trade_json, ensure_ascii=False)
             result = r.lpush(self.trade_queue_name, json_str)
             r.close()
-            # 成功信息由调用方记录
-            return True
+            
+            # 推送成功后，记录订单ID和交易对
+            if result:
+                # 记录订单ID
+                await rc.sadd(order_key, order_id)
+                # 设置订单ID过期时间（24小时）
+                await rc.expire(f"trading:order:{exchange}:{order_id}", 86400)
+                
+                # 如果是开仓操作，记录交易对
+                if order_type == 'open':
+                    await rc.sadd(position_key, symbol)
+                    trade_logger.info(f"记录开仓交易对: {symbol} | order_id={order_id}")
+                # 如果是平仓操作，清理交易对记录（允许再次开仓）
+                elif order_type == 'close':
+                    await rc.srem(position_key, symbol)
+                    trade_logger.info(f"清理平仓交易对: {symbol} | order_id={order_id}")
+                
+                trade_logger.info(f"订单去重检查通过: {order_id} | {symbol}")
+                return True
+            else:
+                trade_logger.error(f"推送交易队列失败: {symbol}")
+                return False
+                
         except Exception as e:
             trade_logger.error(f"推送交易订单失败: {e}")
             return False
@@ -1388,6 +1590,94 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             reasoning_logger.info(
                 f"止盈止损计算 | {symbol} | {json.dumps(calculated_tp_sl, ensure_ascii=False)}"
             )
+
+            # 开仓点验证和风控检查（仅对开仓操作，借鉴NOFX）
+            if decision in ["OPEN_LONG", "OPEN_SHORT"]:
+                # 1. 开仓点验证（大周期K线范围验证）
+                trend_strength = trend_analysis.get('strength', 'weak') if trend_analysis else 'weak'
+                entry_valid, entry_reason = await self._validate_entry_point(
+                    symbol, decision, mark_price, klines_15m, trend_strength
+                )
+                if not entry_valid:
+                    trade_logger.warning(f"开仓点验证失败: {symbol} - {entry_reason}")
+                    reasoning_logger.warning(f"开仓点验证失败: {symbol} - {entry_reason}")
+                    td_output['should_execute'] = False
+                    td_output['entry_point_reject_reason'] = entry_reason
+                    should_execute = False
+                
+                # 2. 风险回报比验证
+                if entry_valid and calculated_tp_sl:
+                    tp_price = calculated_tp_sl.get('tp_price', 0)
+                    sl_price = calculated_tp_sl.get('sl_price', 0)
+                    if tp_price > 0 and sl_price > 0:
+                        rr_valid, rr_reason = await self._validate_risk_reward_ratio(
+                            mark_price, tp_price, sl_price, decision
+                        )
+                        if not rr_valid:
+                            trade_logger.warning(f"风险回报比验证失败: {symbol} - {rr_reason}")
+                            reasoning_logger.warning(f"风险回报比验证失败: {symbol} - {rr_reason}")
+                            td_output['should_execute'] = False
+                            td_output['risk_reward_reject_reason'] = rr_reason
+                            should_execute = False
+                
+                # 3. 代码级风控检查（借鉴NOFX）
+                if entry_valid and should_execute:
+                    # 获取当前仓位和账户信息
+                    rc = RedisClient()
+                    current_positions = await self.position_builder.get_all_positions()
+                    current_positions_list = list(current_positions.values())
+                    
+                    # 获取账户余额（从Redis或默认值）
+                    try:
+                        balance_data = await rc.get("balance:binance")
+                        if balance_data:
+                            import json
+                            balance_info = json.loads(balance_data) if isinstance(balance_data, str) else balance_data
+                            equity = float(balance_info.get('balance', 1000.0))  # 默认1000
+                        else:
+                            equity = 1000.0  # 默认权益
+                    except Exception as e:
+                        trade_logger.warning(f"获取账户余额失败: {e}，使用默认值1000")
+                        equity = 1000.0
+                    
+                    # 计算仓位大小（USD）- 从td_output获取quantity或使用默认值
+                    # 注意：此时trade_json还未构建，需要从td_output或使用估算值
+                    quantity = td_output.get('quantity', 0) or td_output.get('sums', 0)
+                    if quantity == 0:
+                        # 如果没有quantity，使用默认值（可以根据symbol调整）
+                        quantity = 0.01  # 默认数量
+                    position_size_usd = mark_price * float(quantity)
+                    
+                    # 风控检查
+                    direction = "LONG" if decision == "OPEN_LONG" else "SHORT"
+                    tp_price = calculated_tp_sl.get('tp_price', 0) if calculated_tp_sl else 0
+                    sl_price = calculated_tp_sl.get('sl_price', 0) if calculated_tp_sl else 0
+                    
+                    can_open, risk_reason = await self.risk_controller.check_open_position(
+                        symbol=symbol,
+                        position_size_usd=position_size_usd,
+                        equity=equity,
+                        current_positions=current_positions_list,
+                        tp_price=tp_price,
+                        sl_price=sl_price,
+                        entry_price=mark_price,
+                        direction=direction
+                    )
+                    
+                    if not can_open:
+                        trade_logger.warning(f"风控拦截: {symbol} - {risk_reason}")
+                        reasoning_logger.warning(f"风控拦截: {symbol} - {risk_reason}")
+                        td_output['should_execute'] = False
+                        td_output['risk_reject_reason'] = risk_reason
+                        should_execute = False
+
+            # 如果验证失败，不构建交易JSON
+            if not should_execute:
+                trade_logger.info(f"交易验证失败，跳过推送 | {symbol} | {decision}")
+                reasoning_logger.info(f"交易验证失败，跳过推送 | {symbol} | {decision}")
+                td_output["trade_pushed"] = False
+                await self._save_decision_to_redis(symbol, event_id, td_output, query)
+                return self._safe_json_dumps(td_output)
 
             trade_json = self._build_trade_json(td_output, event_data,
                                                 mark_price, calculated_tp_sl)

@@ -8,8 +8,8 @@ class RedisClient:
                  port=None,
                  password=None,
                  db=None,):
-
-        self.conn = get_sync_redis(host=host, port=port, password=password, db=db)
+        # 使用连接池，避免Too many connections错误
+        self.conn = get_sync_redis(host=host, port=port, password=password, db=db, max_connections=100)
 
     # ========== 通用 set/get ==========
     def set_json(self, key: str, value):
@@ -32,24 +32,42 @@ class RedisClient:
 
     def set_hash(self, key: str, mapping_dict: dict, check_type: bool = True):
         """存储哈希类型。默认检查现有键类型，非 hash 则删除避免 WRONGTYPE。
+        优化：使用重试机制，避免连接错误
+        
         Args:
             key: Redis 键名
             mapping_dict: 要写入的字段字典
             check_type: 是否检查并处理现有键类型
         """
-        try:
-            if check_type:
-                ktype = self.conn.type(key)
-                if ktype and ktype != "hash":
-                    if ktype != "none":
-                        self.conn.delete(key)
-            self.conn.hset(key, mapping=mapping_dict)
-        except Exception as e:
+        import time
+        max_retries = 3
+        retry_delay = 0.1  # 100ms
+        
+        for attempt in range(max_retries):
             try:
-                ktype = self.conn.type(key)
-            except Exception:
-                ktype = "unknown"
-            print(f"Redis HSET error on key={key} type={ktype}: {e}")
+                if check_type:
+                    ktype = self.conn.type(key)
+                    if ktype and ktype != "hash":
+                        if ktype != "none":
+                            self.conn.delete(key)
+                self.conn.hset(key, mapping=mapping_dict)
+                return  # 成功则返回
+            except Exception as e:
+                error_str = str(e)
+                # 如果是连接错误，重试
+                if "Too many connections" in error_str or "Connection" in error_str:
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (attempt + 1))  # 指数退避
+                        continue
+                # 其他错误或重试失败，记录并抛出
+                try:
+                    ktype = self.conn.type(key)
+                except Exception:
+                    ktype = "unknown"
+                # 只记录错误，不抛出异常，避免阻塞主流程
+                if attempt == max_retries - 1:  # 最后一次重试失败才记录
+                    print(f"Redis HSET error on key={key} type={ktype}: {e} (retried {max_retries} times)")
+                return
 
     def get_hash(self, key: str):
         """读取整个哈希。若键不是 hash 或不存在，则返回 None。"""

@@ -2,6 +2,7 @@ import asyncio
 from re import T
 import traceback
 import os
+import logging
 
 import websockets
 import json
@@ -14,6 +15,7 @@ from data_server.binance.ws_binance.utils.redis_client import get_async_redis
 from data_server.binance.ws_binance.utils.binance_pos_analysis import BinanceAnalysisService
 
 redis_client = get_async_redis()
+logger = logging.getLogger(__name__)
 
 
 class BinanceUserWS:
@@ -31,15 +33,18 @@ class BinanceUserWS:
             ws_url: str = "wss://ws-fapi.binance.com/ws-fapi/v1",
             ping_interval: int = 20,
             reconnect_delay: int = 5,
+            snapshot_interval: int = 300,  # 仓位快照间隔（秒），默认5分钟
     ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.ws_url = ws_url
         self.ping_interval = ping_interval
         self.reconnect_delay = reconnect_delay
+        self.snapshot_interval = snapshot_interval
         self._ws = None
         self._running = False
         self._callback = None
+        self._snapshot_task = None
 
         # SSL context（可解决 self-signed 证书问题）
         self.ssl_context = ssl.create_default_context()
@@ -108,8 +113,70 @@ class BinanceUserWS:
                 except Exception as e:
                     print(f"❌ 消息处理错误: {e}")
 
+    async def create_position_snapshot(self):
+        """
+        定期创建仓位快照，确保与交易所一致（借鉴NOFX）
+        - 从WebSocket获取真实仓位
+        - 对比Redis记录的仓位
+        - 自动清理已平仓的仓位记录
+        """
+        try:
+            # 获取当前仓位数据（从Redis，因为WebSocket已经在更新）
+            from data_server.binance.ws_binance.utils.reids_connect import RedisClient
+            redis_sync = RedisClient()
+            positions_data = redis_sync.get_json("positions:binance")
+            
+            if not positions_data:
+                logger.debug("仓位数据为空，跳过快照")
+                return
+            
+            # 获取真实仓位（过滤掉数量为0的仓位）
+            real_positions = positions_data if isinstance(positions_data, list) else []
+            real_symbols = {
+                p['symbol'] for p in real_positions 
+                if float(p.get('positionAmt', 0)) != 0
+            }
+            
+            # 从Redis获取记录的仓位
+            recorded_symbols = redis_sync.conn.smembers("trading:open_positions:binance")
+            recorded_symbols = {s.decode() if isinstance(s, bytes) else s for s in recorded_symbols}
+            
+            # 对比差异，清理已平仓的仓位
+            for symbol in recorded_symbols:
+                if symbol not in real_symbols:
+                    redis_sync.conn.srem("trading:open_positions:binance", symbol)
+                    logger.info(f"仓位快照：仓位已平仓，清理记录: {symbol}")
+            
+            # 更新Redis集合（确保所有真实仓位都在集合中）
+            for symbol in real_symbols:
+                redis_sync.conn.sadd("trading:open_positions:binance", symbol)
+            
+            logger.info(
+                f"仓位快照完成: 真实仓位={len(real_symbols)}, "
+                f"记录仓位={len(recorded_symbols)}, "
+                f"清理={len(recorded_symbols - real_symbols)}"
+            )
+        except Exception as e:
+            logger.error(f"仓位快照失败: {e}", exc_info=True)
+    
+    async def _snapshot_loop(self):
+        """仓位快照循环任务"""
+        while self._running:
+            try:
+                await asyncio.sleep(self.snapshot_interval)
+                if self._running:
+                    await self.create_position_snapshot()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"仓位快照循环错误: {e}", exc_info=True)
+                await asyncio.sleep(60)  # 出错后等待1分钟再重试
+    
     async def run(self):
         self._running = True
+        # 启动仓位快照任务
+        self._snapshot_task = asyncio.create_task(self._snapshot_loop())
+        
         while self._running:
             try:
                 await self._connect()
@@ -119,6 +186,15 @@ class BinanceUserWS:
 
     async def stop(self):
         self._running = False
+        
+        # 停止仓位快照任务
+        if self._snapshot_task:
+            self._snapshot_task.cancel()
+            try:
+                await self._snapshot_task
+            except asyncio.CancelledError:
+                pass
+        
         if self._ws:
             try:
                 await self._ws.close()

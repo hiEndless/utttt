@@ -12,6 +12,14 @@ from data_server.binance.ws_binance.utils.depth import update_depth
 
 redis_client = RedisClient()
 
+# 导入价格缓存（借鉴NOFX）
+try:
+    from agent_server.utils.realtime_price_cache import get_price_cache
+    price_cache = get_price_cache()
+except ImportError:
+    # 如果导入失败（可能在不同进程），创建一个简单的占位符
+    price_cache = None
+
 # ---- SpikeDetector integration state ----
 # 使用更稳健的触发器参数，降低高频误报：
 # - 1% 百分比阈值、zscore >= 5
@@ -327,11 +335,16 @@ async def on_msg(msg):
             price_val = None
 
         if price_val is not None:
-            # Update price in Redis as hash via RedisClient
-            try:
-                redis_client.set_hash(key, {"ts": ts_ms, "price": price_val}, check_type=True)
-            except Exception as e:
-                logging.warning(f"redis write error on HSET key={key}: {e}")
+            # Update price in Redis as hash via RedisClient（已优化：使用重试机制）
+            # 注意：set_hash内部已有重试机制，这里不需要额外处理
+            redis_client.set_hash(key, {"ts": ts_ms, "price": price_val}, check_type=True)
+
+            # 更新价格缓存（借鉴NOFX多级缓存机制）
+            if price_cache is not None:
+                try:
+                    price_cache.set_price("binance", symbol, price_val)
+                except Exception as e:
+                    logging.debug(f"[WS] price cache update error: {e}")
 
             # Cache price and feed detector with latest depth liquidity
             try:
@@ -347,6 +360,17 @@ async def on_msg(msg):
 
 async def main():
     """主程序"""
+    # 启动批量写入服务（解决Too many connections问题）
+    from data_server.binance.ws_binance.utils.redis_batch_writer import get_batch_writer, get_async_batch_writer
+    
+    # 启动同步批量写入器（用于depth.py）
+    sync_batch_writer = get_batch_writer()
+    await sync_batch_writer.start()
+    
+    # 启动异步批量写入器（用于spike_trigger.py）
+    async_batch_writer = get_async_batch_writer()
+    await async_batch_writer.start()
+    
     ws = BinanceMarketWS(
         streams=[],
         on_message=on_msg
@@ -370,6 +394,13 @@ async def main():
         try:
             if detector is not None:
                 await detector.stop()
+        except Exception:
+            pass
+        # 停止批量写入服务
+        try:
+            from data_server.binance.ws_binance.utils.redis_batch_writer import get_batch_writer, get_async_batch_writer
+            await get_batch_writer().stop()
+            await get_async_batch_writer().stop()
         except Exception:
             pass
 

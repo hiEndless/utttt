@@ -147,6 +147,9 @@ class SpikeDetector:
 
         # redis client
         self.redis = get_async_redis(self.redis_url)
+        
+        # 批量写入器（延迟初始化，避免在导入时就创建）
+        self._batch_writer = None
 
         # control
         self._running = False
@@ -208,36 +211,84 @@ class SpikeDetector:
         buf["asks"].append(float(ask_liq))
         buf["times"].append(float(ts_s))
 
-        # persist to redis stream（XADD）
+        # persist to redis stream（XADD）- 优化：使用批量写入队列
         stream_key = self.stream_key_template.format(symbol=symbol)
         latest_key = self.latest_key_template.format(symbol=symbol)
-        # 分开捕获，便于定位具体错误键
-        try:
-            # XADD: 支持 capped stream（字段统一：ts,bid,ask,price；ts 为毫秒整数）
-            await self.redis.xadd(stream_key, {
-                "ts": ts_ms,
-                "price": float(price),
-                "bid": float(bid_liq),
-                "ask": float(ask_liq)
-            }, maxlen=self.max_stream_len, approximate=True)
-        except Exception as e:
-            # 打印出错的键与其当前类型
+        
+        # 使用批量写入队列（解决Too many connections问题）
+        # 延迟初始化批量写入器
+        if self._batch_writer is None:
             try:
-                ktype = await self.redis.type(stream_key)
-            except Exception:
-                ktype = "unknown"
-            print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+                from data_server.binance.ws_binance.utils.redis_batch_writer import get_async_batch_writer
+                self._batch_writer = get_async_batch_writer()
+            except (ImportError, Exception) as e:
+                self._batch_writer = None  # 标记为不可用
+        
+        # 尝试使用批量写入器
+        if self._batch_writer is not None:
+            try:
+                # 添加到批量队列（注意：add_xadd是同步方法，不需要await）
+                self._batch_writer.add_xadd(stream_key, {
+                    "ts": ts_ms,
+                    "price": float(price),
+                    "bid": float(bid_liq),
+                    "ask": float(ask_liq)
+                }, maxlen=self.max_stream_len, approximate=True)
+                
+                self._batch_writer.add_hset(latest_key, {
+                    "ts": ts_ms,
+                    "price": price,
+                    "bid": bid_liq,
+                    "ask": ask_liq
+                })
+                return  # 成功使用批量写入，直接返回
+            except Exception as e:
+                # 批量写入失败，降级到直接写入
+                pass
+        
+        # 降级到直接写入（带重试机制）
+            # 如果批量写入器不可用，降级到直接写入（带重试）
+            max_retries = 3
+            retry_delay = 0.1
+            
+            # XADD写入（带重试机制）
+            for attempt in range(max_retries):
+                try:
+                    await self.redis.xadd(stream_key, {
+                        "ts": ts_ms,
+                        "price": float(price),
+                        "bid": float(bid_liq),
+                        "ask": float(ask_liq)
+                    }, maxlen=self.max_stream_len, approximate=True)
+                    break
+                except Exception as e:
+                    error_str = str(e)
+                    if ("Too many connections" in error_str or "Connection" in error_str) and attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay * (attempt + 1))
+                        continue
+                    if attempt == max_retries - 1:
+                        try:
+                            ktype = await self.redis.type(stream_key)
+                        except Exception:
+                            ktype = "unknown"
+                        print(f"redis write error on XADD key={stream_key} type={ktype}: {e} (retried {max_retries} times)")
 
-        try:
-            # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
-            await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
-        except Exception as e:
-            # 打印出错的键与其当前类型
-            try:
-                ktype = await self.redis.type(latest_key)
-            except Exception:
-                ktype = "unknown"
-            print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
+            # HSET写入（带重试机制）
+            for attempt in range(max_retries):
+                try:
+                    await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
+                    break
+                except Exception as e:
+                    error_str = str(e)
+                    if ("Too many connections" in error_str or "Connection" in error_str) and attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay * (attempt + 1))
+                        continue
+                    if attempt == max_retries - 1:
+                        try:
+                            ktype = await self.redis.type(latest_key)
+                        except Exception:
+                            ktype = "unknown"
+                        print(f"redis write error on HSET key={latest_key} type={ktype}: {e} (retried {max_retries} times)")
 
         # 非阻塞触发检测
         asyncio.create_task(self._evaluate(symbol))

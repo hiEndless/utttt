@@ -52,7 +52,9 @@ class TradeL1Listener:
         
         # 去重和冷却期配置
         self.dedup_ttl = 300  # 5分钟内不重复处理相同 event_id
-        self.cooldown_ttl = 10  # 10秒内不重复处理相同 symbol 的事件
+        self.cooldown_ttl = 10  # 10秒内不重复处理相同 symbol 的事件（用于防止短时间内重复处理事件）
+        # 注意：交易对去重机制（_is_position_open）已经实现了"一次交易完成前不能第二次交易"的需求
+        # 冷却期主要用于防止短时间内重复处理L1事件，不是用于交易去重
         self.max_concurrent_workflows = 3  # 最大并发工作流数
         self.running_workflows = set()  # 正在运行的工作流 event_id
         
@@ -121,6 +123,25 @@ class TradeL1Listener:
             trade_logger.debug(f"去重检查失败: {e}")
             return True  # 出错时允许处理，避免阻塞
 
+    async def _is_position_open(self, exchange: str, symbol: str) -> bool:
+        """
+        检查交易对是否已开仓（借鉴NOFX交易去重机制）
+        
+        Args:
+            exchange: 交易所名称
+            symbol: 交易对符号
+        
+        Returns:
+            True 如果已开仓，False 如果未开仓
+        """
+        try:
+            position_key = f"trading:open_positions:{exchange}"
+            is_open = await self.redis.sismember(position_key, symbol)
+            return bool(is_open)
+        except Exception as e:
+            trade_logger.debug(f"检查开仓状态失败: {e}")
+            return False  # 出错时允许处理，避免阻塞
+    
     async def _passes_cooldown(self, symbol: str) -> bool:
         """检查是否在冷却期内（防止短时间内重复处理）"""
         if not symbol:
@@ -187,6 +208,12 @@ class TradeL1Listener:
                         # 冷却期检查：如果 symbol 在冷却期内，跳过
                         if not await self._passes_cooldown(symbol):
                             trade_logger.debug(f"跳过冷却期内事件 | {symbol} | event_id={event_id}")
+                            await self.redis.xack(self.l1_stream, self.group, entry_id)
+                            continue
+                        
+                        # 交易对去重检查：如果该交易对已开仓，跳过（借鉴NOFX）
+                        if await self._is_position_open(exchange, symbol):
+                            trade_logger.debug(f"交易对已开仓，跳过 | {symbol} | event_id={event_id}")
                             await self.redis.xack(self.l1_stream, self.group, entry_id)
                             continue
                         

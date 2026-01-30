@@ -163,13 +163,28 @@ class BinanceAnalysisService:
                          current_time_ms = t
                          
                 for item in removed_items:
-                    self.redis_client.conn.srem("symbol:binance", f"{item.get('symbol')}")
+                    symbol = item.get('symbol')
+                    # 清理监控币种列表（原有逻辑）
+                    self.redis_client.conn.srem("symbol:binance", f"{symbol}")
+                    # 清理交易对去重记录（借鉴NOFX，新增逻辑）
+                    # 当仓位被完全平仓时，从 trading:open_positions:binance 中移除，允许再次开仓
+                    self.redis_client.conn.srem("trading:open_positions:binance", symbol)
+                    print(f"仓位已平仓，清理交易对记录: {symbol}")
                     print("存入数据库：", item)
                     self.trade_recorder.close_trade(item, current_time_ms)
 
             changed_items = self.find_changed_items(old_data, new_data)
             if changed_items:
                 for item in changed_items:
+                    symbol = item.get('symbol')
+                    new_amt = float(item.get('new_position_amt', 0))
+                    old_amt = float(item.get('old_position_amt', 0))
+                    
+                    # 如果仓位从非0变为0，说明已完全平仓，清理交易对记录（借鉴NOFX）
+                    if old_amt != 0 and new_amt == 0:
+                        self.redis_client.conn.srem("trading:open_positions:binance", symbol)
+                        print(f"仓位变为0，清理交易对记录: {symbol} (old: {old_amt}, new: {new_amt})")
+                    
                     print("变化的数据：", item)
                     self.trade_recorder.update_trade(item)
         return
