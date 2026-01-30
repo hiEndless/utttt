@@ -266,7 +266,7 @@ async def monitor_symbols(ws, poll_interval=1.0):
             for sym in symbols - active_symbols:
                 print("新增订阅:", symbols)
                 await ws.add_stream(f"{sym.lower()}@aggTrade")
-                await ws.add_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.add_stream(f"{sym.lower()}@depth20@500ms")
                 await ws.add_stream(f"{sym.lower()}@forceOrder")
                 active_symbols.add(sym)
 
@@ -274,7 +274,7 @@ async def monitor_symbols(ws, poll_interval=1.0):
             for sym in active_symbols - symbols:
                 print("移除订阅:", symbols)
                 await ws.remove_stream(f"{sym.lower()}@aggTrade")
-                await ws.remove_stream(f"{sym.lower()}@depth10@100ms")
+                await ws.remove_stream(f"{sym.lower()}@depth20@500ms")
                 await ws.remove_stream(f"{sym.lower()}@forceOrder")
                 # 清理对应的 Redis 键
                 _cleanup_symbol_keys(sym.upper())
