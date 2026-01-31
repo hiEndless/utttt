@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 if __package__:
@@ -10,9 +11,13 @@ if __package__:
     from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
     from .behavior_aggregate import build_behavioral_structure_from_aggtrades, parse_window_to_ms
 else:
-    _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", "..", ".."))
-    if _root not in sys.path:
+    # 兼容“直接 python 运行脚本”的场景：向上查找包含 agent_server/agent_context 的仓库根目录并加入 sys.path
+    _root = None
+    for p in Path(__file__).resolve().parents:
+        if (p / "agent_server" / "agent_context").is_dir():
+            _root = str(p)
+            break
+    if _root and _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.redis_client import get_redis_client
     from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
@@ -21,7 +26,7 @@ else:
         parse_window_to_ms,
     )
 
-# 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
+# 统一从 agent_server 层获取 Redis 连接，避免跨模块重复初始化导致的不一致
 redis_client = get_redis_client()
 
 

@@ -42,38 +42,3 @@ class Settings:
 
 settings = Settings()
 
-
-EVENT_TEAM_MAP: Dict[str, Dict[str, str]] = {
-    "market_spike": {
-        "low": "default",
-        "medium": "delphi",
-        "high": "debate",
-    },
-    "news_break": {
-        "low": "default",
-        "medium": "n_variant",
-        "high": "debate",
-    },
-}
-
-TEAM_TEMPLATES: Dict[str, List[str]] = {
-    "default": ["technical", "risk"],
-    "delphi": ["technical", "news", "risk"],
-    "debate": ["technical", "news", "risk", "portfolio"],
-    "n_variant": ["technical", "news", "risk"],
-}
-
-SCORING_WEIGHTS: Dict[str, float] = {
-    "technical": 0.35,
-    "news": 0.25,
-    "risk": 0.25,
-    "portfolio": 0.15,
-}
-
-# Control optional stages per mode
-PIPELINE_OPTIONS: Dict[str, Dict[str, bool]] = {
-    "default": {"reflection": False, "fusion": True},
-    "delphi": {"reflection": True, "fusion": True},
-    "debate": {"reflection": True, "fusion": True},
-    "n_variant": {"reflection": True, "fusion": True},
-}

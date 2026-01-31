@@ -1,32 +1,14 @@
 import json
-import os
-import sys
 from typing import Any, Dict, List, Optional
 
-_d = os.path.dirname(os.path.abspath(__file__))
-_root = os.path.abspath(os.path.join(_d, "..", "..", "..", ".."))
-if _root not in sys.path:
-    sys.path.insert(0, _root)
+from agent_server.utils.redis_client import get_redis_client
 
-try:
-    from ...common.redis_client import redis_client
-except ImportError:
-    from api.application.common.redis_client import redis_client
+# 说明：该模块从 agent_server 侧读取 background kline（Redis key: background:{exchange}:{symbol}:{interval}）
+# 目的：让 market_structure 的背景读取能力在 agent_server 内部自洽，便于独立运行
+redis_client = get_redis_client()
+
 
 DEFAULT_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
-
-
-async def read_background_kline(
-    exchange: str,
-    symbol: str,
-    interval: str,
-    client: Optional[object] = None,
-) -> Dict[str, Any]:
-    cli = client or redis_client
-    k_bg = f"background:{exchange}:{symbol}:{interval}"
-    raw = await cli.get(k_bg)
-    data = json.loads(raw) if raw else {}
-    return data
 
 
 async def read_background(
@@ -35,9 +17,10 @@ async def read_background(
     interval: str,
     client: Optional[object] = None,
 ) -> Dict[str, Any]:
+    # 从 Redis 读取单周期背景数据
     cli = client or redis_client
-    k_bg = f"background:{exchange}:{symbol}:{interval}"
-    raw = await cli.get(k_bg)
+    key = f"background:{exchange}:{symbol}:{interval}"
+    raw = await cli.get(key)
     return json.loads(raw) if raw else {}
 
 
@@ -47,6 +30,7 @@ async def read_multi_period(
     intervals: List[str],
     client: Optional[object] = None,
 ) -> Dict[str, Any]:
+    # 批量读取多周期背景数据
     cli = client or redis_client
     out: Dict[str, Any] = {}
     for itv in intervals:
@@ -54,10 +38,8 @@ async def read_multi_period(
     return out
 
 
-async def scan_symbols(
-    exchange: str,
-    client: Optional[object] = None,
-) -> List[str]:
+async def scan_symbols(exchange: str, client: Optional[object] = None) -> List[str]:
+    # 扫描 background:{exchange}:*:* 中出现过的 symbol
     cli = client or redis_client
     cursor = 0
     pattern = f"background:{exchange}:*:*"
@@ -66,7 +48,7 @@ async def scan_symbols(
     while True:
         cursor, keys = await cli.scan(cursor=cursor, match=pattern, count=1000)
         for k in keys:
-            parts = k.split(":")
+            parts = str(k).split(":")
             if len(parts) == 4:
                 sym = parts[2]
                 if sym not in seen:
@@ -77,11 +59,8 @@ async def scan_symbols(
     return res
 
 
-async def scan_intervals(
-    exchange: str,
-    symbol: str,
-    client: Optional[object] = None,
-) -> List[str]:
+async def scan_intervals(exchange: str, symbol: str, client: Optional[object] = None) -> List[str]:
+    # 扫描 background:{exchange}:{symbol}:* 中出现过的 interval
     cli = client or redis_client
     cursor = 0
     pattern = f"background:{exchange}:{symbol}:*"
@@ -90,7 +69,7 @@ async def scan_intervals(
     while True:
         cursor, keys = await cli.scan(cursor=cursor, match=pattern, count=1000)
         for k in keys:
-            parts = k.split(":")
+            parts = str(k).split(":")
             if len(parts) == 4:
                 itv = parts[3]
                 if itv not in seen:
@@ -99,11 +78,3 @@ async def scan_intervals(
         if cursor == 0:
             break
     return res
-
-
-if __name__ == "__main__":
-    import asyncio
-    data_single = asyncio.run(read_background_kline("binance", "BTCUSDT", "15m"))
-    print(json.dumps(data_single, ensure_ascii=False))
-    data_multi = asyncio.run(read_multi_period("binance", "BTCUSDT", DEFAULT_INTERVALS))
-    print(json.dumps(data_multi, ensure_ascii=False))

@@ -3,7 +3,7 @@ import json
 
 from agent_server.utils.redis_client import get_redis_client
 
-# 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
+# 统一从 agent_server 层获取 Redis 连接，避免跨模块重复初始化导致的不一致
 redis_client = get_redis_client()
 
 

@@ -1,5 +1,6 @@
 import json
 from redis.asyncio import Redis
+from redis.exceptions import AuthenticationError
 try:
     from ..config import settings
 except ImportError:
@@ -12,9 +13,43 @@ def get_redis_client(db: int | None = None, decode_responses: bool = True) -> Re
     password = settings.redis_password
     use_db = db if db is not None else settings.redis_db
     kwargs = {"host": host, "port": port, "db": use_db, "decode_responses": decode_responses}
+    # 兼容 .env 里常见的占位写法（例如 REDIS_PASSWORD=None），避免误触发 AUTH 导致连接失败
+    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+        password = None
     if password:
         kwargs["password"] = password
     return Redis(**kwargs)
+
+
+async def get_verified_redis_client(db: int | None = None, decode_responses: bool = True) -> Redis:
+    """
+    获取可用的 Redis 客户端：
+    - 若服务端未配置密码但环境变量误带了密码，会触发 AUTH 报错；此处自动降级为无密码连接，避免脚本直跑失败
+    """
+    client = get_redis_client(db=db, decode_responses=decode_responses)
+    try:
+        await client.ping()
+        return client
+    except AuthenticationError as e:
+        msg = str(e)
+        if "called without any password configured" not in msg:
+            raise
+        try:
+            if hasattr(client, "aclose"):
+                await client.aclose()
+            else:
+                await client.close()
+        except Exception:
+            pass
+        kwargs = {
+            "host": settings.redis_host,
+            "port": settings.redis_port,
+            "db": db if db is not None else settings.redis_db,
+            "decode_responses": decode_responses,
+        }
+        client2 = Redis(**kwargs)
+        await client2.ping()
+        return client2
 
 
 class RedisClient:

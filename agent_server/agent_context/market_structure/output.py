@@ -12,22 +12,28 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Tuple
 
-from agent_server.agents.utils import _ensure_json_serializable
-from agent_server.utils.redis_client import RedisClient
-
 if __package__:
+    from agent_server.agents.utils import _ensure_json_serializable
+    from agent_server.utils.redis_client import RedisClient
     from .behavioral.behavior_output import build_behavior_output
     from .horizon_schema import HORIZONS
     from .horizons.output import build_output as build_horizons_output
     from .open_interest.output import build_output as build_open_interest_output
     from .orderbook.output import build_output as build_orderbook_output
 else:
-    _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "../../../api/application/apps/background", "..", "..", "..", ".."))
-    if _root not in sys.path:
+    # 兼容“直接 python 运行脚本”的场景：向上查找包含 agent_server/agent_context 的仓库根目录并加入 sys.path
+    _root = None
+    for p in Path(__file__).resolve().parents:
+        if (p / "agent_server" / "agent_context").is_dir():
+            _root = str(p)
+            break
+    if _root and _root not in sys.path:
         sys.path.insert(0, _root)
+    from agent_server.agents.utils import _ensure_json_serializable
+    from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.market_structure.behavioral.behavior_output import build_behavior_output
     from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
     from agent_server.agent_context.market_structure.horizons.output import build_output as build_horizons_output

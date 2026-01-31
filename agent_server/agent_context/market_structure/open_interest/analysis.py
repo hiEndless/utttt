@@ -306,7 +306,10 @@ def analyze_open_interest_hist(
             taker_bias=str(taker_bias),
         )
 
-        allow_tags = abs(float(delta_oi_pct)) >= float(TAG_DELTA_PCT_THRESHOLD) and str(velocity) in ("medium", "high")
+        abs_delta_oi_pct = abs(float(delta_oi_pct))
+        allow_tags = abs_delta_oi_pct >= float(TAG_DELTA_PCT_THRESHOLD) and (
+            str(velocity) in ("medium", "high") or (str(interval) in ("5m", "15m", "30m", "1h") and abs_delta_oi_pct >= 0.01)
+        )
         human_tags = _humanize_tags(str(interval), base_tags) if allow_tags else []
         risk_flags = sorted(set([r for r in (base_risks if allow_tags else []) if r]))
         participant_inference = _participant_inference(str(interval), human_tags, float(delta_oi_pct), str(velocity)) if allow_tags else None
