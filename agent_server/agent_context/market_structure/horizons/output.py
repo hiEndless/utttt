@@ -14,8 +14,8 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from api.application.apps.background.background_kline import read_multi_period
-    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
-    from agent_server.agents.experts.background.market_structure.horizons.build_context import (
+    from agent_server.agent_context.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agent_context.market_structure.horizons.build_context import (
         build_fused_horizons,
         build_horizon_context,
     )

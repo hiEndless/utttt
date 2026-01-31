@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 if __package__:
     from agent_server.utils.redis_client import get_redis_client
-    from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
+    from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
     from .behavior_aggregate import build_behavioral_structure_from_aggtrades, parse_window_to_ms
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +15,8 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.redis_client import get_redis_client
-    from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
-    from agent_server.agents.experts.background.market_structure.behavioral.behavior_aggregate import (
+    from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
+    from agent_server.agent_context.market_structure.behavioral.behavior_aggregate import (
         build_behavioral_structure_from_aggtrades,
         parse_window_to_ms,
     )

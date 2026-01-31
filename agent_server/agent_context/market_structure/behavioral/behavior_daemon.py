@@ -14,7 +14,7 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.redis_client import get_redis_client
-    from agent_server.agents.experts.background.market_structure.behavioral.behavior_output import build_behavior_output
+    from agent_server.agent_context.market_structure.behavioral.behavior_output import build_behavior_output
 
 # 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
 redis_client = get_redis_client()

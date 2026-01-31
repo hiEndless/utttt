@@ -2,7 +2,7 @@ import time
 import logging
 from typing import Dict, List
 from agent_server.config import settings
-from agent_server.agents.experts.background.market_structure import MarketStructureExpert
+from agent_server.agent_context.market_structure import MarketStructureExpert
 from agent_server.agents.experts.background.kline import KLineExpert
 from agent_server.agents.experts.background.utils.market_state import market_state_aggregator, save_market_state, has_full_intervals
 from agent_server.agents.experts.background.utils.crowd_state_compactor import crowd_state_compactor

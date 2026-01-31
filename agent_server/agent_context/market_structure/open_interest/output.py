@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 if __package__:
     from agent_server.utils.redis_client import get_redis_client
-    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agent_context.market_structure.io.raw_reader import PERIODS, read_market_raw
     from .analysis import analyze_open_interest_hist
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +15,8 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from agent_server.utils.redis_client import get_redis_client
-    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
-    from agent_server.agents.experts.background.market_structure.open_interest.analysis import analyze_open_interest_hist
+    from agent_server.agent_context.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agent_context.market_structure.open_interest.analysis import analyze_open_interest_hist
 
 # 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
 redis_client = get_redis_client()

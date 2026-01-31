@@ -7,7 +7,7 @@ from .horizon_aggregate import (
     aggregate_price_by_horizon,
     funding_for_horizon,
 )
-from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
+from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
 from .interval_analysis import _analyze_period
 from .kline_fusion import aggregate_kline_background_by_horizon
 from .price_funding_analysis import analyze_funding, analyze_price_trends_from_klines

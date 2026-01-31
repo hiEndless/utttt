@@ -13,6 +13,9 @@ import os
 import sys
 from typing import Any, Dict, Mapping, Optional, Tuple
 
+from agent_server.agents.utils import _ensure_json_serializable
+from agent_server.utils.redis_client import RedisClient
+
 if __package__:
     from .behavioral.behavior_output import build_behavior_output
     from .horizon_schema import HORIZONS
@@ -21,14 +24,14 @@ if __package__:
     from .orderbook.output import build_output as build_orderbook_output
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "../../../../../api/application/apps/background", "..", "..", "..", ".."))
+    _root = os.path.abspath(os.path.join(_d, "../../../api/application/apps/background", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from agent_server.agents.experts.background.market_structure.behavioral.behavior_output import build_behavior_output
-    from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
-    from agent_server.agents.experts.background.market_structure.horizons.output import build_output as build_horizons_output
-    from agent_server.agents.experts.background.market_structure.open_interest.output import build_output as build_open_interest_output
-    from agent_server.agents.experts.background.market_structure.orderbook.output import build_output as build_orderbook_output
+    from agent_server.agent_context.market_structure.behavioral.behavior_output import build_behavior_output
+    from agent_server.agent_context.market_structure.horizon_schema import HORIZONS
+    from agent_server.agent_context.market_structure.horizons.output import build_output as build_horizons_output
+    from agent_server.agent_context.market_structure.open_interest.output import build_output as build_open_interest_output
+    from agent_server.agent_context.market_structure.orderbook.output import build_output as build_orderbook_output
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -385,11 +388,18 @@ async def build_output(
             cell["micro_liquidity"] = _build_micro_liquidity(_safe_dict(orderbook_out), include_snapshot=True)
         pre[hz] = cell
 
-    return {
+    data = {
         "symbol": symbol,
         "candidate_horizons": horizons,
         "pre_decision_structure": pre,
     }
+
+    key = f"background:{exchange}:{symbol}:market_state"
+    value_to_store = _ensure_json_serializable(data)
+    client = RedisClient()
+    await client.set_json(key, value_to_store)
+
+    return data
 
 
 def main(exchange: str = "binance", symbol: str = "ETHUSDT") -> None:
