@@ -437,6 +437,6 @@ def _market_context(out: Dict[str, Any]) -> str:
 if __name__ == "__main__":
     import asyncio
 
-    raw = asyncio.run(read_market_raw("binance", "RIVERUSDT"))
-    result = build_participant_structure(raw, "RIVERUSDT")
+    raw = asyncio.run(read_market_raw("binance", "ETHUSDT"))
+    result = build_participant_structure(raw, "ETHUSDT")
     print(json.dumps(result, ensure_ascii=False, indent=2))

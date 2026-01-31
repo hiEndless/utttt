@@ -11,7 +11,6 @@ import asyncio
 import json
 import os
 import sys
-import time
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 if __package__:
@@ -30,50 +29,6 @@ else:
     from api.application.apps.background.market_structure.horizons.output import build_output as build_horizons_output
     from api.application.apps.background.market_structure.open_interest.output import build_output as build_open_interest_output
     from api.application.apps.background.market_structure.orderbook.output import build_output as build_orderbook_output
-
-
-SHORT_TERM_MAX_MS = 8 * 60 * 60 * 1000
-MID_TERM_MAX_MS = 24 * 60 * 60 * 1000
-
-
-def _format_duration_ms(duration_ms: int) -> str:
-    """将毫秒时长格式化为紧凑的人类可读串（例如 2h15m）。"""
-    ms = max(0, int(duration_ms))
-    s = ms // 1000
-    m = s // 60
-    h = m // 60
-    d = h // 24
-    m = m % 60
-    h = h % 24
-
-    parts = []
-    if d:
-        parts.append(f"{d}d")
-    if h:
-        parts.append(f"{h}h")
-    if m or not parts:
-        parts.append(f"{m}m")
-    return "".join(parts)
-
-
-def _match_horizon_by_duration(duration_ms: int) -> str:
-    """根据持仓时长（毫秒）匹配 horizon。"""
-    ms = max(0, int(duration_ms))
-    if ms <= SHORT_TERM_MAX_MS:
-        return "short_term"
-    if ms <= MID_TERM_MAX_MS:
-        return "mid_term"
-    return "long_term"
-
-
-def _candidate_horizons(primary_horizon: str) -> list[str]:
-    """主 horizon 与候选集合的映射：短→短+中；中→中+长；长→长。"""
-    hz = str(primary_horizon or "").strip()
-    if hz == "short_term":
-        return ["short_term", "mid_term"]
-    if hz == "mid_term":
-        return ["mid_term", "long_term"]
-    return ["long_term"]
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -390,19 +345,13 @@ def _build_long_term_structural_context(open_interest_out: Mapping[str, Any], ho
     }
 
 
-async def build_output(exchange: str, symbol: str, holding_until_ts_ms: int, now_ts_ms: Optional[int] = None) -> Dict[str, Any]:
+async def build_output(
+    exchange: str,
+    symbol: str,
+) -> Dict[str, Any]:
     """聚合输出。
-
-    参数：
-    - holding_until_ts_ms：外部传入的目标时间戳（毫秒）。duration_ms = holding_until_ts_ms - now
-    - now_ts_ms：可选；用于离线回放/测试时固定当前时间
     """
-    now_ms = int(now_ts_ms if now_ts_ms is not None else time.time() * 1000)
-    duration_ms = int(holding_until_ts_ms) - int(now_ms)
-    duration_ms = max(0, int(duration_ms))
-
-    holding_horizon = _match_horizon_by_duration(duration_ms)
-    candidates = _candidate_horizons(holding_horizon)
+    horizons = ["short_term", "mid_term", "long_term"]
 
     orderbook_task = asyncio.create_task(build_orderbook_output(exchange, symbol))
     oi_task = asyncio.create_task(build_open_interest_output(exchange, symbol))
@@ -417,7 +366,7 @@ async def build_output(exchange: str, symbol: str, holding_until_ts_ms: int, now
     )
 
     pre: Dict[str, Any] = {}
-    for hz in candidates:
+    for hz in horizons:
         if hz == "long_term":
             ctx = _build_long_term_structural_context(_safe_dict(open_interest_out), _safe_dict(horizons_out))
             pre[hz] = {
@@ -438,20 +387,13 @@ async def build_output(exchange: str, symbol: str, holding_until_ts_ms: int, now
 
     return {
         "symbol": symbol,
-        "holding_context": {
-            "duration_ms": int(duration_ms),
-            "duration_human": _format_duration_ms(duration_ms),
-            "horizon": holding_horizon,
-        },
-        "candidate_horizons": candidates,
+        "candidate_horizons": horizons,
         "pre_decision_structure": pre,
     }
 
 
-def main(exchange: str = "binance", symbol: str = "ETHUSDT", holding_until_ts_ms: Optional[int] = None) -> None:
-    now_ms = int(time.time() * 1000)
-    holding_until_ts_ms = int(holding_until_ts_ms if holding_until_ts_ms is not None else (now_ms + 3 * 60 * 60 * 1000))
-    out = asyncio.run(build_output(exchange, symbol, holding_until_ts_ms, now_ts_ms=now_ms))
+def main(exchange: str = "binance", symbol: str = "ETHUSDT") -> None:
+    out = asyncio.run(build_output(exchange, symbol))
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 
