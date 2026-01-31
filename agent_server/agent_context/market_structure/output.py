@@ -11,6 +11,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 from agent_server.agents.utils import _ensure_json_serializable
@@ -390,6 +391,7 @@ async def build_output(
 
     data = {
         "symbol": symbol,
+        "ts": int(time.time() * 1000),
         "candidate_horizons": horizons,
         "pre_decision_structure": pre,
     }

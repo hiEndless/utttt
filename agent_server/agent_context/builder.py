@@ -3,10 +3,11 @@
 from typing import Any, Dict
 import json
 
-from .utils.path import get_by_path, set_by_path
-from .profiles import get_allowed_paths
-from .validators import validate_agent, forbid_full_context
+from .utils.path import delete_by_path
+from .profiles import get_forbidden_paths
+from .validators import validate_agent
 from .registry import AGENT_REGISTRY
+
 
 
 def _drop_internal_fields(ms: Dict[str, Any]) -> None:
@@ -29,19 +30,16 @@ def build_agent_context(
         ctx["_context_meta"] = AGENT_REGISTRY[agent]
         return ctx
 
-    paths = get_allowed_paths(agent)
-    if not paths:
-        forbid_full_context(agent)
+    forbidden_paths = get_forbidden_paths(agent)
 
-    out: Dict[str, Any] = {
-        "symbol": full_context.get("symbol"),
-        "ts": full_context.get("ts"),
-    }
+    out: Dict[str, Any] = json.loads(json.dumps(full_context or {}))
+    if out.get("symbol") is None:
+        out["symbol"] = (full_context or {}).get("symbol")
+    if out.get("ts") is None:
+        out["ts"] = (full_context or {}).get("ts")
 
-    for path in paths:
-        val = get_by_path(full_context, path)
-        if val is not None:
-            set_by_path(out, path, val)
+    for path in forbidden_paths:
+        delete_by_path(out, path)
 
     _drop_internal_fields(out)
 

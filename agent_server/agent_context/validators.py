@@ -8,8 +8,3 @@ def validate_agent(agent: str) -> None:
         raise ValueError(f"Unknown agent: {agent}")
 
 
-def forbid_full_context(agent: str) -> None:
-    if agent != "fusion":
-        raise ValueError(
-            f"Agent '{agent}' is not allowed to request full context"
-        )

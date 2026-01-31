@@ -15,11 +15,8 @@ Role = Literal[
 ]
 
 
-class AgentContextContract(TypedDict):
+class _AgentContextContractRequired(TypedDict):
     agent: str
-
-    # 该 Agent 被允许看到的字段路径（白名单）
-    allowed_paths: List[str]
 
     # 该 Agent 的分析时间尺度边界
     scope: List[Scope]
@@ -35,3 +32,8 @@ class AgentContextContract(TypedDict):
 
     # 语义约束（仅用于校验与 Fusion 解释）
     forbidden_semantics: List[str]
+
+
+class AgentContextContract(_AgentContextContractRequired, total=False):
+    # 该 Agent 明确禁止看到的字段路径（黑名单）
+    forbidden_paths: List[str]

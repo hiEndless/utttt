@@ -20,3 +20,33 @@ def set_by_path(out: Dict[str, Any], path: str, value: Any) -> None:
             cur[p] = {}
         cur = cur[p]
     cur[parts[-1]] = value
+
+
+def delete_by_path(out: Dict[str, Any], path: str) -> None:
+    """按路径删除字段；不存在则忽略，并向上清理空 dict。"""
+    parts = path.split(".")
+    if not parts:
+        return
+
+    cur: Any = out
+    stack: list[tuple[Dict[str, Any], str]] = []
+    for p in parts[:-1]:
+        if not isinstance(cur, dict) or p not in cur:
+            return
+        nxt = cur.get(p)
+        if not isinstance(nxt, dict):
+            return
+        stack.append((cur, p))
+        cur = nxt
+
+    if not isinstance(cur, dict):
+        return
+    cur.pop(parts[-1], None)
+
+    while stack:
+        parent, key = stack.pop()
+        child = parent.get(key)
+        if isinstance(child, dict) and not child:
+            parent.pop(key, None)
+        else:
+            break
