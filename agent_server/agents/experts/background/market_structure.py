@@ -77,5 +77,4 @@ if __name__ == "__main__":
     symbol = "ETHUSDT"
     full_context = asyncio.run(output.build_output("binance", symbol))
     query = build_agent_context("market_structure", full_context)
-    print(json.loads(json.dumps(query)))
-    # asyncio.run(expert.run(query, "binance", symbol))
+    asyncio.run(expert.run(query, "binance", symbol))
