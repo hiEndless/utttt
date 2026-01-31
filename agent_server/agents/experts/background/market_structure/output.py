@@ -21,14 +21,14 @@ if __package__:
     from .orderbook.output import build_output as build_orderbook_output
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
-    _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", ".."))
+    _root = os.path.abspath(os.path.join(_d, "../../../../../api/application/apps/background", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from api.application.apps.background.market_structure.behavioral.behavior_output import build_behavior_output
-    from api.application.apps.background.market_structure.horizon_schema import HORIZONS
-    from api.application.apps.background.market_structure.horizons.output import build_output as build_horizons_output
-    from api.application.apps.background.market_structure.open_interest.output import build_output as build_open_interest_output
-    from api.application.apps.background.market_structure.orderbook.output import build_output as build_orderbook_output
+    from agent_server.agents.experts.background.market_structure.behavioral.behavior_output import build_behavior_output
+    from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
+    from agent_server.agents.experts.background.market_structure.horizons.output import build_output as build_horizons_output
+    from agent_server.agents.experts.background.market_structure.open_interest.output import build_output as build_open_interest_output
+    from agent_server.agents.experts.background.market_structure.orderbook.output import build_output as build_orderbook_output
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:

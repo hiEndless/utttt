@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from api.application.apps.background.market_structure.horizon_schema import HORIZONS
+from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
 
 
 @dataclass(frozen=True)

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 if __package__:
     from api.application.common.redis_client import redis_client
-    from api.application.apps.background.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
     from .analysis import analyze_open_interest_hist
 else:
     _d = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +15,8 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from api.application.common.redis_client import redis_client
-    from api.application.apps.background.market_structure.io.raw_reader import PERIODS, read_market_raw
-    from api.application.apps.background.market_structure.open_interest.analysis import analyze_open_interest_hist
+    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agents.experts.background.market_structure.open_interest.analysis import analyze_open_interest_hist
 
 
 def _safe_float(x: Any, default: float = 0.0) -> float:

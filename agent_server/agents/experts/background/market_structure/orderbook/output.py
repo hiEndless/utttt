@@ -12,7 +12,7 @@ else:
     _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from api.application.apps.background.market_structure.orderbook.service import build_orderbook_structure
+    from agent_server.agents.experts.background.market_structure.orderbook.service import build_orderbook_structure
 
 
 async def build_output(exchange: str, symbol: str) -> Dict[str, Any]:

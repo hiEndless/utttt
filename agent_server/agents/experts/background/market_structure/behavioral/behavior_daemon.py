@@ -14,7 +14,7 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from api.application.common.redis_client import redis_client
-    from api.application.apps.background.market_structure.behavioral.behavior_output import build_behavior_output
+    from agent_server.agents.experts.background.market_structure.behavioral.behavior_output import build_behavior_output
 
 
 async def _scan_symbols(exchange: str, client: Optional[object] = None) -> Set[str]:

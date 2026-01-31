@@ -5,7 +5,7 @@ import sys
 from typing import Any, Dict
 
 if __package__:
-    from ...background_kline import read_multi_period
+    from api.application.apps.background.background_kline import read_multi_period
     from ..io.raw_reader import PERIODS, read_market_raw
     from .build_context import build_fused_horizons, build_horizon_context
 else:
@@ -14,8 +14,8 @@ else:
     if _root not in sys.path:
         sys.path.insert(0, _root)
     from api.application.apps.background.background_kline import read_multi_period
-    from api.application.apps.background.market_structure.io.raw_reader import PERIODS, read_market_raw
-    from api.application.apps.background.market_structure.horizons.build_context import (
+    from agent_server.agents.experts.background.market_structure.io.raw_reader import PERIODS, read_market_raw
+    from agent_server.agents.experts.background.market_structure.horizons.build_context import (
         build_fused_horizons,
         build_horizon_context,
     )
