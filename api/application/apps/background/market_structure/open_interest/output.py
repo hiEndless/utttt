@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 if __package__:
     from api.application.common.redis_client import redis_client
@@ -24,6 +24,33 @@ def _safe_float(x: Any, default: float = 0.0) -> float:
         return float(x)
     except Exception:
         return default
+
+
+def _coerce_open_interest_structure(open_interest_structure: Any) -> Dict[str, Any]:
+    if not isinstance(open_interest_structure, dict):
+        return {}
+    out: Dict[str, Any] = {}
+    for itv, cell in (open_interest_structure or {}).items():
+        if not isinstance(cell, dict):
+            continue
+        state = cell.get("state") if isinstance(cell.get("state"), dict) else {}
+        delta = cell.get("delta") if isinstance(cell.get("delta"), dict) else {}
+        meta = cell.get("meta") if isinstance(cell.get("meta"), dict) else {}
+        out[str(itv)] = dict(cell)
+        out[str(itv)]["state"] = {
+            **state,
+            "open_interest": _safe_float(state.get("open_interest"), default=0.0),
+            "open_interest_value": _safe_float(state.get("open_interest_value"), default=0.0),
+            "oi_to_quote_volume_ratio": _safe_float(state.get("oi_to_quote_volume_ratio"), default=0.0),
+        }
+        out[str(itv)]["delta"] = {
+            **delta,
+            "delta_oi": _safe_float(delta.get("delta_oi"), default=0.0),
+            "delta_oi_pct": _safe_float(delta.get("delta_oi_pct"), default=0.0),
+        }
+        if isinstance(meta, dict):
+            out[str(itv)]["meta"] = dict(meta)
+    return out
 
 
 def _kline_close(k: Any) -> Optional[float]:
@@ -151,6 +178,7 @@ async def build_output(exchange: str, symbol: str) -> Dict[str, Any]:
         raw.get("24hr", {}) or {},
         behavioral=behavioral,
     )
+    open_interest_structure = _coerce_open_interest_structure(open_interest_structure)
 
     return {
         "symbol": symbol,
