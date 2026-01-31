@@ -1,7 +1,10 @@
 from typing import Any, Dict, List, Optional
 import json
 
-from api.application.common.redis_client import redis_client
+from agent_server.utils.redis_client import get_redis_client
+
+# 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
+redis_client = get_redis_client()
 
 
 PERIODS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]

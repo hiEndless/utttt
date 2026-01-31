@@ -6,7 +6,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 if __package__:
-    from api.application.common.redis_client import redis_client
+    from agent_server.utils.redis_client import get_redis_client
     from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
     from .behavior_aggregate import build_behavioral_structure_from_aggtrades, parse_window_to_ms
 else:
@@ -14,12 +14,15 @@ else:
     _root = os.path.abspath(os.path.join(_d, "..", "..", "..", "..", "..", ".."))
     if _root not in sys.path:
         sys.path.insert(0, _root)
-    from api.application.common.redis_client import redis_client
+    from agent_server.utils.redis_client import get_redis_client
     from agent_server.agents.experts.background.market_structure.horizon_schema import HORIZONS
     from agent_server.agents.experts.background.market_structure.behavioral.behavior_aggregate import (
         build_behavioral_structure_from_aggtrades,
         parse_window_to_ms,
     )
+
+# 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
+redis_client = get_redis_client()
 
 
 def _max_behavior_window_ms() -> int:

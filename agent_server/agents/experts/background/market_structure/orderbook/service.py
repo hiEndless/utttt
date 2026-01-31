@@ -5,10 +5,10 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, Optional
 
-try:
-    from api.application.common.redis_client import redis_client
-except Exception:
-    from ...common.redis_client import redis_client
+from agent_server.utils.redis_client import get_redis_client
+
+# 统一从 agent_server 层获取 Redis 连接，避免依赖 api 模块的 redis_client
+redis_client = get_redis_client()
 
 from .depth_reader import read_orderbook_depth_stream
 from .metrics import build_frame_metrics, compute_orderbook_snapshot, liquidity_depth_score
