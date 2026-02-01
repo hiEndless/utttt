@@ -70,43 +70,6 @@ prompt = """
   }
 }
 
-
-────────────────────────
-【字段约束说明】
-
-- structural_weight  
-  仅用于标识该周期在整体结构中的角色属性，
-  不代表强度、优先级或决策权重判断。
-
-- confidence_level  
-  表示系统对该周期结构认知的确定性水平，
-  不进行量化、不引入阈值含义。
-
-- key_tags  
-  只能来自输入数据中明确提供的 interpretation_tags。
-  若输入中未提供 interpretation_tags，则该字段必须为空数组。
-  严禁基于其他字段生成、拼接或推断新标签。
-
-- unresolved_risks  
-  必须完整映射输入中的 structural_risks（方案 A：完全忠实）。
-  只要在 structural_risks 中出现过该键，就必须被记录到 unresolved_risks，
-  **包括值为 false 的情况**，不得做“弱过滤”或选择性省略。
-  不得基于风险等级、真假、阈值、频次进行过滤、消解或解释。
-
-  规范化规则（必须严格执行）：
-  - 以输入 key 为前缀，拼接 "_" + value 的字符串化结果
-  - 布尔值必须使用小写：true / false
-  - null 必须写为 "null"
-  - 数组内元素必须按 key 的字典序排序，确保在相同输入下稳定输出
-
-  示例：
-  structural_risks: { "crowding_risk": "low" }
-  → unresolved_risks: ["crowding_risk_low"]
-
-  structural_risks: { "liquidity_vacuum": false, "crowding_risk": "low" }
-  → unresolved_risks: ["liquidity_vacuum_false", "crowding_risk_low"]
-
-
 ────────────────────────
 【narrative（人类可读结构说明）】
 
@@ -115,7 +78,7 @@ prompt = """
 - 在相同输入条件下应保持高度稳定
 
 风险表述硬约束（必须严格遵守）：
-- narrative 中提及 unresolved_risks / structural_risks 时，只能使用“记录 / 标记 / 显示 / 列出”等冻结态动词
+- narrative 只能使用“记录 / 标记 / 显示 / 列出”等冻结态动词
 - 禁止使用“存在 / 面临 / 承担 / 压力 / 影响 / 风险暴露”等隐含后果或推断性的表达
 - 叙述不得引入输入中不存在的机制关系或后果推断
 
@@ -128,15 +91,16 @@ prompt = """
   - 已知结构性风险（如有）
 
 - Mid-term：
-  - 结构权重与清晰度（仅复述 horizons 字段）
-  - 已记录的 key_tags（若有）
-  - 已记录的 unresolved_risks（若有）
+  - 结构权重与清晰度，用自然语言描述 horizons 字段
+  - 用自然语言描述 key_tags（若有）
+  - 用自然语言描述 unresolved_risks（若有）
 
 - Long-term：
   - 是否具 veto 属性
   - 是否存在极端背景结构
   - 对整体结构稳定性的背景性约束
 
+不要出现原始字段复述，错误示例:"记录结构性风险：liquidity_vacuum_false, crowding_risk_high"
 
 ────────────────────────
 【Interpretive Overlay（仅供人类参考）】
