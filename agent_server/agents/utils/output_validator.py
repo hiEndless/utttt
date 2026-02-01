@@ -37,6 +37,9 @@ class LLMOutputValidator:
         if not isinstance(data, dict):
             raise ValidationError(f"输出必须是字典类型，实际类型: {type(data)}")
 
+        if not self.schema:
+            return data
+
         fixed_data = {}
         errors = []
 

@@ -18,6 +18,7 @@ from agent_server.agents.utils import (
 
 
 class MarketStructureExpert:
+    version = "v1.0"
     name = "market_structure"
 
     # Define Schema
@@ -27,7 +28,12 @@ class MarketStructureExpert:
     def __init__(self):
         self.validator = LLMOutputValidator(self.SCHEMA)
 
-    async def run(self, query: dict, exchange: str, symbol: str) -> str:
+    async def run(self, query: dict) -> str:
+        meta = {
+            "symbol": query["symbol"],
+            "ts": query["ts"],
+            "version": self.version,
+          }
 
         cfg = get_agent_config(self.name)
 
@@ -46,7 +52,7 @@ class MarketStructureExpert:
             run_output = await agent.arun(
                 Message(role="user", content=json.dumps(query, ensure_ascii=False)),
                 stream=False,
-                debug_mode=False,
+                debug_mode=True,
             )
             return run_output.content
 
@@ -64,6 +70,7 @@ class MarketStructureExpert:
         ts = int(time.time() * 1000)
         if isinstance(final_result, dict):
             final_result["ts"] = ts
+            final_result["meta"] = meta
         else:
             final_result = {"data": final_result, "ts": ts}
 
@@ -77,4 +84,4 @@ if __name__ == "__main__":
     symbol = "ETHUSDT"
     full_context = asyncio.run(output.build_output("binance", symbol))
     query = build_agent_context("market_structure", full_context)
-    asyncio.run(expert.run(query, "binance", symbol))
+    asyncio.run(expert.run(query))
