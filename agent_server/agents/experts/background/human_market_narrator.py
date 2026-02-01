@@ -1,3 +1,4 @@
+from typing import List, Dict, Any
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
@@ -19,6 +20,7 @@ from agent_server.agents.utils import (
 
 class HumanMarketNarratorExpert:
     """
+    叙事层
     生成人类可读的市场解读、复盘报告、直观说明
     不用做后续的回测，仅供前端展示
     """
@@ -37,6 +39,9 @@ class HumanMarketNarratorExpert:
             "symbol": query["symbol"],
             "ts": query["ts"],
             "version": self.version,
+            "human_readable_only": True,
+            "not_for_decision": True,
+            "not_for_backtest": True
           }
 
         cfg = get_agent_config(self.name)
@@ -84,8 +89,52 @@ class HumanMarketNarratorExpert:
 
 
 if __name__ == "__main__":
-    expert = HumanMarketNarratorExpert()
+    from agent_server.utils.http_client import http_client
+    from agent_server.config import settings
+
+
+    API_KLINE_BACKGROUND = "/kline/background/read_multi"
+    INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
+
     symbol = "ETHUSDT"
-    full_context = asyncio.run(output.build_output("binance", symbol))
-    query = build_agent_context("human_market_narrator", full_context)
-    asyncio.run(expert.run(query))
+
+    async def read_kline_backgrounds(exchange: str, symbol: str, intervals: List[str]) -> Dict[str, Any]:
+        base = settings.api_base_url.rstrip("/")
+        url = base + API_KLINE_BACKGROUND
+        # 后端接口 /kline/indicators/read_multi 的请求体字段名为 intervals（多周期列表）
+        payload = {"exchange": exchange, "symbol": symbol, "intervals": intervals}
+        res: Any = None
+        try:
+            res = await http_client.request("POST", url, json=payload)
+            data = (res or {}).get("data") if isinstance(res, dict) else None
+        except Exception as e:
+            # 统一返回错误信息，避免吞异常导致上层拿到 None/未定义变量
+            data = {}
+        return data
+
+    async def _main() -> None:
+        try:
+            data = await read_kline_backgrounds("binance", symbol, INDICATOR_INTERVALS)
+            kline_indicators = []
+            if data:
+                for k, v in data.items():
+                    kline_indicators.append(v)
+
+            expert = HumanMarketNarratorExpert()
+
+            full_context = await output.build_output("binance", symbol)
+            market_structure = build_agent_context("human_market_narrator", full_context)
+            # print(market_structure)
+
+            query = {
+                "symbol": market_structure["symbol"],
+                "ts": market_structure["ts"],
+                "market_structure": market_structure,
+                "kline_indicators": kline_indicators,
+            }
+            await expert.run(query)
+        finally:
+            # 关闭 aiohttp 会话，避免 “Unclosed client session/connector” 警告
+            await http_client.close()
+
+    asyncio.run(_main())

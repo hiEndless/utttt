@@ -71,6 +71,10 @@ async def _run():
             info["task"].cancel()
             await asyncio.gather(info["task"], return_exceptions=True)
         exchange_tasks.clear()
+        # 关闭全局 HTTPClient（如果本进程内使用过），避免退出时资源泄漏警告
+        from agent_server.utils.http_client import http_client
+
+        await http_client.close()
         await redis.aclose()
 
 
