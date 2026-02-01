@@ -18,6 +18,12 @@ from agent_server.agents.utils import (
 
 
 class MarketStructureExpert:
+    """
+    市场结构描述，使用同样的模型分析。用于人类可读，复盘方便。
+    非口语化描述，不掺杂“隐含判断”或“因果推断”
+    系统记忆的一部分。
+    复盘时需要严格排除interpretive_overlay字段
+    """
     version = "v1.0"
     name = "market_structure"
 
