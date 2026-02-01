@@ -1,5 +1,7 @@
 from redis.asyncio import Redis, ConnectionPool
+import asyncio
 import os
+import weakref
 from dotenv import load_dotenv
 
 # 加载环境变量
@@ -31,3 +33,22 @@ _redis_pool = ConnectionPool(**pool_kwargs)
 
 # 创建Redis客户端实例
 redis_client = Redis(connection_pool=_redis_pool)
+
+# 注意：redis-py 的 asyncio 连接会绑定到创建/使用它的事件循环。
+# 如果在同一进程内多次 asyncio.run（每次都会创建并关闭一个新的事件循环），复用全局连接池可能触发
+# “Future attached to a different loop / Event loop is closed”。
+# 这里提供一个按事件循环隔离的 client 获取方法，避免跨 loop 复用连接。
+_clients_by_loop: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, Redis]" = weakref.WeakKeyDictionary()
+
+
+def get_async_redis_client() -> Redis:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return redis_client
+    cli = _clients_by_loop.get(loop)
+    if cli is None:
+        pool = ConnectionPool(**pool_kwargs)
+        cli = Redis(connection_pool=pool)
+        _clients_by_loop[loop] = cli
+    return cli
