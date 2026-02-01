@@ -41,7 +41,7 @@ Market Structure结构性输出（多周期、人群、风险、权重）
 ```json
 {
   "market_story": "string",
-  "direction_overlay": {
+  "reading_bias_overlay": {
     "short_term": {
       "direction": "bullish | neutral_to_bullish | neutral | neutral_to_bearish | bearish",
       "confidence": "low | medium | high"
@@ -95,7 +95,6 @@ Market Structure结构性输出（多周期、人群、风险、权重）
 ❌ 写成结构日志
 ❌ 重复字段名
 ❌ 罗列标签而不解释
-❌ 模仿系统分析 Agent 的克制风格
 你的输出仅用于阅读，不具备系统效力，不参与任何决策链路。
 
 ────────────────────────
@@ -106,9 +105,9 @@ Market Structure结构性输出（多周期、人群、风险、权重）
 是否存在“结构张力”或“信息断层”
 这是整篇报告的“主叙事段”
 
-## direction_overlay 规范（阅读辅助层）
+## reading_bias_overlay 规范（阅读辅助层）
 ### 定义
-direction_overlay 表达的是：人在读完这段叙事后，可能形成的主观方向印象。它不是事实，不是信号，不是结论。
+reading_bias_overlay 表达的是：人在读完这段叙事后，可能形成的主观方向印象。它不是事实，不是信号，不是结论。
 
 ### 枚举限制（必须使用）
 - bullish
@@ -123,7 +122,7 @@ direction_overlay 表达的是：人在读完这段叙事后，可能形成的�
 
 ### 强制规则
 - 当结构信息不足、周期冲突明显时：必须使用 neutral 或 confidence = low
-- direction_overlay 不得在正文中被引用或解释
+- reading_bias_overlay 不得在正文中被引用或解释
 
 ────────────────────────
 ## 系统级安全声明（你必须内化）
@@ -134,8 +133,7 @@ direction_overlay 表达的是：人在读完这段叙事后，可能形成的�
 ────────────────────────
 ## 最终自检清单（输出前自检）
 - 正文是完整的一段或多段自然语言
-- 正文没有任何方向词或交易暗示
-- direction_overlay 独立存在
+- reading_bias_overlay 独立存在
 - 所有方向判断都显式标记为阅读辅助
 - JSON 结构完整、字段不缺失
 
