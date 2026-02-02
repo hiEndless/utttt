@@ -29,6 +29,86 @@ class HumanMarketNarratorExpert:
 
     # Define Schema
     SCHEMA = {
+        # 人类可读的市场叙事正文
+        "market_story": {
+            "type": "string",
+            "required": True,
+            "description": "用于阅读展示的人类可读市场叙事正文",
+        },
+        # 阅读辅助层：表达读完叙事后的主观方向印象（非信号、非结论）
+        "reading_bias_overlay": {
+            "type": "object",
+            "required": True,
+            "description": "阅读辅助层（short_term/mid_term/long_term 的方向与置信度）",
+            "schema": {
+                "short_term": {
+                    "type": "object",
+                    "required": True,
+                    "schema": {
+                        "direction": {
+                            "type": "string",
+                            "required": True,
+                            "options": [
+                                "bullish",
+                                "neutral_to_bullish",
+                                "neutral",
+                                "neutral_to_bearish",
+                                "bearish",
+                            ],
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "required": True,
+                            "options": ["low", "medium", "high"],
+                        },
+                    },
+                },
+                "mid_term": {
+                    "type": "object",
+                    "required": True,
+                    "schema": {
+                        "direction": {
+                            "type": "string",
+                            "required": True,
+                            "options": [
+                                "bullish",
+                                "neutral_to_bullish",
+                                "neutral",
+                                "neutral_to_bearish",
+                                "bearish",
+                            ],
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "required": True,
+                            "options": ["low", "medium", "high"],
+                        },
+                    },
+                },
+                "long_term": {
+                    "type": "object",
+                    "required": True,
+                    "schema": {
+                        "direction": {
+                            "type": "string",
+                            "required": True,
+                            "options": [
+                                "bullish",
+                                "neutral_to_bullish",
+                                "neutral",
+                                "neutral_to_bearish",
+                                "bearish",
+                            ],
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "required": True,
+                            "options": ["low", "medium", "high"],
+                        },
+                    },
+                },
+            },
+        },
     }
 
     def __init__(self):

@@ -22,6 +22,7 @@ class LLMOutputValidator:
                 "description": str,   # 用于错误信息
                 "options": list,      # 有效值列表 (枚举)
                 "range": (min, max),  # 数值范围
+                "schema": dict,       # 嵌套 object 的子 schema（递归校验并按子 schema 严格裁剪字段）
                 "case_sensitive": bool # 键名是否大小写敏感 (默认为 False，由验证器逻辑处理)
             }
         }
@@ -110,6 +111,15 @@ class LLMOutputValidator:
             min_val, max_val = val_range
             if value < min_val or value > max_val:
                 raise ValidationError(f"字段 '{field_name}' 的值 {value} 超出范围 [{min_val}, {max_val}]")
+
+        # 嵌套 object 校验：当字段是 dict 且提供了子 schema 时，递归验证并裁剪多余字段
+        nested_schema = rules.get("schema")
+        if nested_schema is not None:
+            if not isinstance(value, dict):
+                raise ValidationError(f"字段 '{field_name}' 期望类型 dict, 实际得到 {type(value)}")
+            if not isinstance(nested_schema, dict):
+                raise ValidationError(f"字段 '{field_name}' 的 schema 必须是 dict, 实际得到 {type(nested_schema)}")
+            value = LLMOutputValidator(nested_schema).validate(value)
 
         return value
 
