@@ -12,6 +12,38 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "allows_cross_timeframe_inference": False,
         "forbidden_semantics": [
         ],
+        "forbidden_paths": [
+            "pre_decision_structure.short_term.participant_positioning.oi_state",
+            "pre_decision_structure.short_term.participant_positioning.oi_delta",
+            "pre_decision_structure.short_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.short_term.participant_positioning.coupling",
+            "pre_decision_structure.short_term.participant_positioning.participant_inference.confidence.score",
+            "pre_decision_structure.short_term.participant_positioning.participant_inference.behavior",
+            "pre_decision_structure.short_term.participant_positioning.confidence.score",
+            "pre_decision_structure.short_term.participant_positioning.meta",
+            "pre_decision_structure.short_term.participant_positioning.risk_flags",
+            "pre_decision_structure.short_term.micro_liquidity.orderbook_structure",
+            "pre_decision_structure.short_term.behavioral_intent",
+            "pre_decision_structure.short_term.micro_liquidity.orderbook_snapshot",
+            "pre_decision_structure.short_term.micro_liquidity.confidence",
+            "pre_decision_structure.short_term.participant_positioning.participant_inference.dominant_group",
+
+
+            "pre_decision_structure.mid_term.participant_positioning.oi_state",
+            "pre_decision_structure.mid_term.participant_positioning.oi_delta",
+            "pre_decision_structure.mid_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.mid_term.participant_positioning.coupling",
+            "pre_decision_structure.mid_term.participant_positioning.participant_inference.dominant_group",
+            "pre_decision_structure.mid_term.participant_positioning.participant_inference.behavior",
+            "pre_decision_structure.mid_term.participant_positioning.participant_inference.confidence.score",
+            "pre_decision_structure.mid_term.participant_positioning.confidence.score",
+            "pre_decision_structure.mid_term.participant_positioning.meta",
+            "pre_decision_structure.mid_term.behavioral_intent",
+
+            "pre_decision_structure.long_term.structural_context.crowding_percentile.value",
+            "pre_decision_structure.long_term.confidence.score",
+
+        ],
     },
 
     "position_risk": {

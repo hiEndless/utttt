@@ -2,7 +2,7 @@ from agent_server.configs.prompts.signal_validation import get_prompt
 import json
 import asyncio
 from typing import Any, Dict
-
+from agent_server.agent_context.market_structure import output
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 
 
@@ -55,11 +55,12 @@ if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
     from agent_server.agents.experts.analysis.utils.signal_cropper import crop_signal
     from agent_server.agent_context.builder import build_agent_context
+    from agent_server.agent_context.market_structure.holding_context_from_positions import (
+        build_holding_context_from_positions,
+    )
     from agent_server.utils.redis_client import RedisClient
-    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
-    from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 
-    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
+    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "RIVERUSDT", "final_priority": "low",
                     "event_id": "ETHUSDT.final.1770232087150", "event_type": "market.structure",
                     "timestamp": "1770232087150", "market_state": "momentum", "direction": "bullish",
                     "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10, "l1_total_score": 8.19,
@@ -92,6 +93,8 @@ if __name__ == "__main__":
 
     # 获取持仓，计算持仓时间，裁剪周期桶背景
     positions = get_position(exchange, symbol)
+    holding_context = build_holding_context_from_positions(positions)
+    holding_horizon = holding_context.get("horizon")
 
 
     async def _read_market_state(ex: str, sym: str):
@@ -105,19 +108,8 @@ if __name__ == "__main__":
 
 
     async def _demo():
-        bg = await _read_market_state(exchange, symbol)
-        full_context = bg if isinstance(bg, dict) and bg else {"symbol": symbol, "ts": 0, "market_state": {},
-                                                               "crowd_state": {}}
-        ctx = build_agent_context("signal_validation", full_context)
-
-        # Inject deterministic crowd interpretation (replaces raw crowd_positioning)
-        interpretation = build_crowd_interpretation(full_context, direction)
-        ctx["crowd_interpretation"] = interpretation
-
-        ctx["crowd_state"], ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
-            exchange, symbol, ctx.get("crowd_state", {})
-        )
-
+        full_context = await output.build_output("binance", symbol)
+        ctx = build_agent_context("signal_validation", full_context, horizon=None)
         # print(ctx)
 
         query = {

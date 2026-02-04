@@ -1,11 +1,13 @@
 from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.signal_validation import SignalValidationExpert
 from agent_server.agent_context.builder import build_agent_context
+from agent_server.agent_context.market_structure.holding_context_from_positions import build_holding_context_from_positions
 from agent_server.agents.experts.analysis.utils.tf_validation import compute_tf_validation
 from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
+from agent_server.tools.get_position import get_position
 from agent_server.config import settings
 import json
 import asyncio
@@ -29,7 +31,11 @@ class SignalValidationComponent(BaseWorkflowComponent):
         tf_validation = compute_tf_validation(symbol, exchange, direction, tf_hint)
 
         full_context = await self._fetch_market_context(exchange, symbol)
-        agent_ctx = build_agent_context("signal_validation", full_context)
+        positions = get_position(exchange, symbol)
+        holding_context = build_holding_context_from_positions(positions)
+        holding_horizon = holding_context.get("horizon")
+        agent_ctx = build_agent_context("signal_validation", full_context, horizon=holding_horizon)
+        agent_ctx["holding_context"] = holding_context
 
         agent_ctx["crowd_state"], agent_ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
             exchange, symbol, agent_ctx.get("crowd_state", {})
