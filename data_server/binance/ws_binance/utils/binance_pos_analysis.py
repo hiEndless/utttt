@@ -45,14 +45,29 @@ class BinanceAnalysisService:
 
     def apply_trade_ids(self, old_data, new_data):
         old_iter = old_data if isinstance(old_data, list) else []
-        old_index = {(i.get('symbol'), i.get('positionSide')): i.get('trade_id') for i in old_iter}
+        # 按 (symbol, positionSide) 维度继承 trade_id / open_time，保证同一笔持仓在多次推送中保持一致
+        old_trade_id_index = {(i.get('symbol'), i.get('positionSide')): i.get('trade_id') for i in old_iter}
+        old_open_time_index = {}
+        for i in old_iter:
+            key = (i.get('symbol'), i.get('positionSide'))
+            open_time = i.get('open_time')
+            if open_time is None:
+                open_time = i.get('updateTime')
+            old_open_time_index[key] = open_time
         if isinstance(new_data, list):
+            now_ms = int(datetime.datetime.now().timestamp() * 1000)
             for p in new_data:
                 key = (p.get('symbol'), p.get('positionSide'))
-                tid = old_index.get(key)
+                tid = old_trade_id_index.get(key) or p.get('trade_id')
+                open_time = old_open_time_index.get(key)
+                if open_time is None:
+                    open_time = p.get('open_time')
                 if not tid:
                     tid = uuid.uuid4().hex
+                if not open_time:
+                    open_time = p.get('updateTime') or now_ms
                 p['trade_id'] = tid
+                p['open_time'] = open_time
         return new_data
 
     def get_old_data(self):
@@ -142,8 +157,9 @@ class BinanceAnalysisService:
             self.redis_client.set_json("positions:binance", new_data)
             return
 
+        # 先补齐 trade_id/open_time，再做对比，避免历史缓存缺字段导致无法补齐并写回 Redis
+        new_data = self.apply_trade_ids(old_data, new_data)
         if new_data != old_data:
-            new_data = self.apply_trade_ids(old_data, new_data)
             self.set_old_data(new_data)
             self.redis_client.set_json("positions:binance", new_data)
 
@@ -185,7 +201,7 @@ if __name__ == "__main__":
     old_data = [
         {'symbol': '1000PEPEUSDT', 'positionSide': 'LONG', 'positionAmt': '851', 'unrealizedProfit': '0.00930384',
          'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343',
-         'maintMargin': '0.03262502', 'updateTime': 1763031017638, 'trade_id': '2e317d6f9ace4114a4c44624eff952f5'}]
+         'maintMargin': '0.03262502', 'updateTime': 1763031017638, 'trade_id': '2e317d6f9ace4114a4c44624eff952f5', 'open_time': 1763031017638}]
     new_data = [
         {'symbol': '1000PEPEUSDT', 'positionSide': 'LONG', 'positionAmt': '852', 'unrealizedProfit': '0.00930384',
          'isolatedMargin': '0', 'notional': '5.01923424', 'isolatedWallet': '0', 'initialMargin': '0.50192343',
