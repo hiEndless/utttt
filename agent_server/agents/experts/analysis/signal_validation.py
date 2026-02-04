@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     async def _demo():
         full_context = await output.build_output("binance", symbol)
-        ctx = build_agent_context("signal_validation", full_context, horizon=None)
+        ctx = build_agent_context("signal_validation", full_context, horizon=holding_horizon)
         # print(ctx)
 
         query = {
