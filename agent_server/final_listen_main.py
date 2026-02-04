@@ -13,7 +13,7 @@ from agent_server.tools.price_fetcher import get_mark_price
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
-    DEBUG = False
+    DEBUG = True
 
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis

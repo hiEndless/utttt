@@ -7,6 +7,9 @@ from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInpu
 
 
 class SignalValidationExpert(BaseLLMExpert):
+    """
+    “已有方向信号，在当前多周期结构背景下是否自洽 / 是否存在硬性结构冲突”的审计器
+    """
     name = "signal_validation"
 
     # Define Schema
