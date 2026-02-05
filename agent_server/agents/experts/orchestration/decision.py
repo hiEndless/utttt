@@ -30,6 +30,20 @@ class DecisionExpert:
 
     # Define Schema
     SCHEMA = {
+        "trade_intent_range": {
+            "type": "object",
+            "required": True,
+            "schema": {
+                "allowed_actions": {"type": "array", "required": True},
+                "forbidden_actions": {"type": "array", "required": True},
+                "risk_bias": {
+                    "type": "string",
+                    "required": True,
+                    "options": ["defensive", "conservative", "neutral"],
+                },
+            },
+        },
+        "decision_rationale": {"type": "array", "required": True},
     }
 
     def __init__(self):
