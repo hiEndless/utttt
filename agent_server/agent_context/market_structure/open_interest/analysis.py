@@ -307,10 +307,16 @@ def analyze_open_interest_hist(
         )
 
         abs_delta_oi_pct = abs(float(delta_oi_pct))
+        hz = _interval_to_horizon(str(interval))
         allow_tags = abs_delta_oi_pct >= float(TAG_DELTA_PCT_THRESHOLD) and (
-            str(velocity) in ("medium", "high") or (str(interval) in ("5m", "15m", "30m", "1h") and abs_delta_oi_pct >= 0.01)
+            str(velocity) in ("medium", "high")
+            or (str(interval) in ("5m", "15m", "30m", "1h") and abs_delta_oi_pct >= 0.01)
+            or (hz == "mid_term" and abs_delta_oi_pct >= 0.004)
         )
         human_tags = _humanize_tags(str(interval), base_tags) if allow_tags else []
+        if allow_tags and not human_tags:
+            # 中期 OI 的变化往往更“慢”，在未命中细分解释标签时，至少输出一个“有变化但不清晰”的占位标签，避免下游看到空推断
+            human_tags = [f"{_dominant_group(str(interval))}_oi_change_detected"]
         risk_flags = sorted(set([r for r in (base_risks if allow_tags else []) if r]))
         participant_inference = _participant_inference(str(interval), human_tags, float(delta_oi_pct), str(velocity)) if allow_tags else None
 

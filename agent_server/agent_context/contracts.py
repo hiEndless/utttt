@@ -30,9 +30,6 @@ class _AgentContextContractRequired(TypedDict):
     # 是否允许跨周期外推（例如 short → mid）
     allows_cross_timeframe_inference: bool
 
-    # 语义约束（仅用于校验与 Fusion 解释）
-    forbidden_semantics: List[str]
-
 
 class AgentContextContract(_AgentContextContractRequired, total=False):
     # 该 Agent 明确禁止看到的字段路径（黑名单）

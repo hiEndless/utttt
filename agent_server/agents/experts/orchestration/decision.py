@@ -93,48 +93,40 @@ if __name__ == "__main__":
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
 
-    API_KLINE_BACKGROUND = "/kline/background/read_multi"
-    INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
+    signal = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
+              "reasoning": [
+                  "signal_context.dominant_bucket = mid 且 mid_term.participant_positioning.structural_weight = high，表明中期为唯一主裁周期。",
+                  "mid_term.participant_positioning.confidence.level = low，主裁周期未提供强方向性支持。",
+                  "mid_term.structural_risks.crowding_risk = high，表明中期结构存在风险标记。",
+                  "signal_direction = bullish 且 mid_term.participant_positioning.structural_weight = high，该方向未被主裁周期人群定位模式明确支持。",
+                  "long_term.structural_weight = veto_only 且 long_term.confidence.level = low，未满足长期否决条件。"],
+              "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
+                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0"}, "positions": [
+            {"symbol": "ETHUSDT", "position_side": "LONG", "size": "0.010", "notional": "21.73535821",
+             "pnl_ratio": 0.004305523686720178, "open_time": 1770237903887,
+             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"}]}
 
-    symbol = "RIVERUSDT"
-
-
-    async def read_kline_backgrounds(exchange: str, symbol: str, intervals: List[str]) -> Dict[str, Any]:
-        base = settings.api_base_url.rstrip("/")
-        url = base + API_KLINE_BACKGROUND
-        # 后端接口 /kline/indicators/read_multi 的请求体字段名为 intervals（多周期列表）
-        payload = {"exchange": exchange, "symbol": symbol, "intervals": intervals}
-        res: Any = None
-        try:
-            res = await http_client.request("POST", url, json=payload)
-            data = (res or {}).get("data") if isinstance(res, dict) else None
-        except Exception as e:
-            # 统一返回错误信息，避免吞异常导致上层拿到 None/未定义变量
-            data = {}
-        return data
-
+    meta = signal.get("meta")
+    symbol = meta.get("symbol")
+    positions = meta.get("positions")
 
     async def _main() -> None:
         try:
-            data = await read_kline_backgrounds("binance", symbol, INDICATOR_INTERVALS)
-            kline_indicators = []
-            if data:
-                for k, v in data.items():
-                    kline_indicators.append(v)
 
-            expert = HumanMarketNarratorExpert()
+            expert = DecisionExpert()
 
             full_context = await output.build_output("binance", symbol)
-            market_structure = build_agent_context("human_market_narrator", full_context)
-            print(market_structure)
+            market_structure = build_agent_context("decision", full_context)
+            # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
+            print(_json_dumps_safe(market_structure))
 
             query = {
-                "symbol": market_structure["symbol"],
-                "ts": market_structure["ts"],
+                "meta": meta,
                 "market_structure": market_structure,
-                "kline_indicators": kline_indicators,
+                "signal": {},
+                "position": {}
             }
-            await expert.run(query)
+            # await expert.run(query)
         finally:
             # 关闭 aiohttp 会话，避免 “Unclosed client session/connector” 警告
             await http_client.close()

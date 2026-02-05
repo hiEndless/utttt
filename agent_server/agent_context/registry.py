@@ -10,8 +10,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "scope": ["short", "mid", "long"],
         "uses_crowd_state": True,
         "allows_cross_timeframe_inference": False,
-        "forbidden_semantics": [
-        ],
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -46,24 +44,62 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         ],
     },
 
+    "decision": {
+        "agent": "decision",
+        "role": "decision",
+        "scope": ["short", "mid", "long"],
+        "uses_crowd_state": True,
+        "allows_cross_timeframe_inference": False,
+        "forbidden_paths": [
+            "ts",
+            "candidate_horizons",
+
+            "pre_decision_structure.short_term.participant_positioning.oi_state",
+            "pre_decision_structure.short_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.short_term.participant_positioning.oi_delta",
+            "pre_decision_structure.short_term.participant_positioning.coupling",
+            "pre_decision_structure.short_term.participant_positioning.interpretation_tags",
+            "pre_decision_structure.short_term.participant_positioning.meta",
+            "pre_decision_structure.short_term.participant_positioning.risk_flags",
+            "pre_decision_structure.short_term.participant_positioning.confidence.score",
+            "pre_decision_structure.short_term.behavioral_intent.interpretation_tags",
+            "pre_decision_structure.short_term.behavioral_intent.confidence.score",
+            "pre_decision_structure.short_term.structural_risks.liquidity_vacuum",
+            "pre_decision_structure.short_term.micro_liquidity",
+
+            "pre_decision_structure.mid_term.participant_positioning.oi_state",
+            "pre_decision_structure.mid_term.participant_positioning.oi_delta",
+            "pre_decision_structure.mid_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.mid_term.participant_positioning.coupling",
+            "pre_decision_structure.mid_term.participant_positioning.confidence.score",
+            "pre_decision_structure.mid_term.participant_positioning.participant_inference.confidence.score",
+            "pre_decision_structure.mid_term.participant_positioning.meta",
+            "pre_decision_structure.mid_term.participant_positioning.interpretation_tags",
+            "pre_decision_structure.mid_term.participant_positioning.risk_flags",
+            "pre_decision_structure.mid_term.behavioral_intent.interpretation_tags",
+            "pre_decision_structure.mid_term.behavioral_intent.confidence.score",
+            "pre_decision_structure.mid_term.structural_risks.liquidity_vacuum",
+
+            "pre_decision_structure.long_term.structural_context.crowding_percentile.value",
+            "pre_decision_structure.long_term.confidence.score",
+
+        ],
+    },
+
     "position_risk": {
         "agent": "position_risk",
         "role": "risk_management",
         "scope": ["short", "mid", "long"],
         "uses_crowd_state": True,
         "allows_cross_timeframe_inference": False,
-        "forbidden_semantics": [
-        ],
     },
 
     "trade_event": {
         "agent": "trade_event",
         "role": "trade_analysis",
-        "scope": ["micro", "short"],
+        "scope": ["short", "mid", "long"],
         "uses_crowd_state": True,
         "allows_cross_timeframe_inference": False,
-        "forbidden_semantics": [
-        ],
     },
 
     "market_structure": {
@@ -72,8 +108,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "scope": ["short", "mid", "long"],
         "uses_crowd_state": False,
         "allows_cross_timeframe_inference": False,
-        "forbidden_semantics": [
-        ],
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -97,8 +131,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         "scope": ["short", "mid", "long"],
         "uses_crowd_state": False,
         "allows_cross_timeframe_inference": False,
-        "forbidden_semantics": [
-        ],
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
