@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import signal
 import json
 import redis.asyncio as aioredis
@@ -146,8 +147,20 @@ class RouterFinalListener:
 
 
 async def _run():
-    redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port,
-                           db=settings.redis_db, decode_responses=True)
+    password = settings.redis_password
+    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+        password = None
+    # 中文注释：显式限制连接池，避免 Redis 端报 Too many connections
+    max_connections = int(os.environ.get("REDIS_MAX_CONNECTIONS", 20))
+    pool = aioredis.ConnectionPool(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+        password=password,
+        decode_responses=True,
+        max_connections=max_connections,
+    )
+    redis = aioredis.Redis(connection_pool=pool)
     listener = RouterFinalListener(redis)
     loop = asyncio.get_running_loop()
     stop = asyncio.Event()

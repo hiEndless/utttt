@@ -14,6 +14,15 @@ except ImportError:
     from api.application.common.redis_client import redis_client
 
 
+def _safe_json_loads(raw: str | None, default):
+    if not raw:
+        return default
+    try:
+        return json.loads(raw)
+    except Exception:
+        return default
+
+
 async def read_kline_indicators(
     exchange: str,
     symbol: str,
@@ -29,9 +38,9 @@ async def read_kline_indicators(
     prev_raw = await cli.get(k_prev)
     kl_raw = await cli.get(k_kl)
 
-    ind = json.loads(ind_raw) if ind_raw else {}
-    prev = json.loads(prev_raw) if prev_raw else {}
-    kl = json.loads(kl_raw) if kl_raw else []
+    ind = _safe_json_loads(ind_raw, {})
+    prev = _safe_json_loads(prev_raw, {})
+    kl = _safe_json_loads(kl_raw, [])
 
     return {
         "exchange": exchange,
@@ -51,7 +60,7 @@ async def read_indicators(
     cli = client or redis_client
     k_ind = f"indicators:{exchange}:{symbol}:{interval}"
     ind_raw = await cli.get(k_ind)
-    return json.loads(ind_raw) if ind_raw else {}
+    return _safe_json_loads(ind_raw, {})
 
 
 async def scan_symbols(

@@ -1,5 +1,6 @@
 import redis
 import json
+import os
 from agent_server.config import settings as cfg
 
 
@@ -11,14 +12,32 @@ def _read_json_list(client, key: str):
         return []
 
 
-def get_position(exchange: str, symbol: str) -> list[dict]:
-    client = redis.Redis(
+# 中文注释：复用同步 Redis 客户端，避免每次调用都新建连接池导致连接数暴涨
+_SYNC_CLIENT: redis.Redis | None = None
+
+
+def _get_sync_client() -> redis.Redis:
+    global _SYNC_CLIENT
+    if _SYNC_CLIENT is not None:
+        return _SYNC_CLIENT
+    password = cfg.redis_password
+    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+        password = None
+    max_connections = int(os.environ.get("REDIS_MAX_CONNECTIONS", 10))
+    pool = redis.ConnectionPool(
         host=cfg.redis_host,
         port=cfg.redis_port,
         db=cfg.redis_db,
-        password=(cfg.redis_password or None),
+        password=(password or None),
         decode_responses=True,
+        max_connections=max_connections,
     )
+    _SYNC_CLIENT = redis.Redis(connection_pool=pool)
+    return _SYNC_CLIENT
+
+
+def get_position(exchange: str, symbol: str) -> list[dict]:
+    client = _get_sync_client()
     key = f"positions:{exchange}"
     data = _read_json_list(client, key)
     filtered = [p for p in (data or []) if isinstance(p, dict) and str(p.get("symbol")) == symbol]

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import signal
 import redis.asyncio as aioredis
 from agent_server.config import settings
@@ -29,8 +30,20 @@ async def _start_exchange_loop(redis: aioredis.Redis, exchange: str, stop_event:
 
 
 async def _run():
-    redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port,
-                           db=settings.redis_db, decode_responses=True)
+    password = settings.redis_password
+    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+        password = None
+    # 中文注释：显式限制连接池，避免高并发时 Redis 连接数暴涨触发 Too many connections
+    max_connections = int(os.environ.get("REDIS_MAX_CONNECTIONS", 20))
+    pool = aioredis.ConnectionPool(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+        password=password,
+        decode_responses=True,
+        max_connections=max_connections,
+    )
+    redis = aioredis.Redis(connection_pool=pool)
     ex_watcher = RedisExchangeWatcher(redis)
     loop = asyncio.get_running_loop()
     stop = asyncio.Event()

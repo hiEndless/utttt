@@ -1,4 +1,7 @@
 import json
+import asyncio
+import os
+import weakref
 from redis.asyncio import Redis
 from redis.exceptions import AuthenticationError
 try:
@@ -7,18 +10,57 @@ except ImportError:
     from agent_server.config import settings
 
 
+# 中文注释：redis-py asyncio 客户端/连接池会绑定到事件循环；这里按事件循环缓存，避免高频 new 客户端导致连接数暴涨
+_CLIENTS_BY_LOOP: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, dict[tuple[int, bool], Redis]]" = weakref.WeakKeyDictionary()
+_CLIENTS_NO_LOOP: dict[tuple[int, bool], Redis] = {}
+
+
+def _redis_max_connections(default: int = 20) -> int:
+    try:
+        return int(os.environ.get("REDIS_MAX_CONNECTIONS", default))
+    except Exception:
+        return default
+
+
 def get_redis_client(db: int | None = None, decode_responses: bool = True) -> Redis:
     host = settings.redis_host
     port = settings.redis_port
     password = settings.redis_password
     use_db = db if db is not None else settings.redis_db
-    kwargs = {"host": host, "port": port, "db": use_db, "decode_responses": decode_responses}
+    cache_key = (use_db, bool(decode_responses))
+    try:
+        loop = asyncio.get_running_loop()
+        loop_cache = _CLIENTS_BY_LOOP.get(loop)
+        if loop_cache is not None and cache_key in loop_cache:
+            return loop_cache[cache_key]
+    except RuntimeError:
+        if cache_key in _CLIENTS_NO_LOOP:
+            return _CLIENTS_NO_LOOP[cache_key]
+
+    kwargs = {
+        "host": host,
+        "port": port,
+        "db": use_db,
+        "decode_responses": decode_responses,
+        # 中文注释：显式限制连接池上限，避免默认值过大导致 Redis maxclients 被打满
+        "max_connections": _redis_max_connections(),
+    }
     # 兼容 .env 里常见的占位写法（例如 REDIS_PASSWORD=None），避免误触发 AUTH 导致连接失败
     if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
         password = None
     if password:
         kwargs["password"] = password
-    return Redis(**kwargs)
+    client = Redis(**kwargs)
+    try:
+        loop = asyncio.get_running_loop()
+        loop_cache = _CLIENTS_BY_LOOP.get(loop)
+        if loop_cache is None:
+            loop_cache = {}
+            _CLIENTS_BY_LOOP[loop] = loop_cache
+        loop_cache[cache_key] = client
+    except RuntimeError:
+        _CLIENTS_NO_LOOP[cache_key] = client
+    return client
 
 
 async def get_verified_redis_client(db: int | None = None, decode_responses: bool = True) -> Redis:

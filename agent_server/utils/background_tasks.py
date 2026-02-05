@@ -28,6 +28,15 @@ def _period_seconds(interval: str) -> int:
     return int(SCHEDULE_SECONDS.get(interval, 300))
 
 
+def _truncate_text(val: object, limit: int = 500) -> str:
+    if val is None:
+        return ""
+    text = str(val)
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "...(truncated)"
+
+
 def make_kline_task(exchange: str, interval: str):
     expert = KLineExpert()
 
@@ -38,9 +47,33 @@ def make_kline_task(exchange: str, interval: str):
         payload = {"exchange": exchange, "symbol": symbol, "interval": interval}
         try:
             res = await http_client.request("POST", url, json=payload)
-            data = (res or {}).get("data") if isinstance(res, dict) else None
+            if not isinstance(res, dict):
+                logger.error("kline_read_api_bad_response symbol=%s interval=%s type=%s", symbol, interval, type(res).__name__)
+                return
+            if "data" not in res:
+                if "status" in res:
+                    logger.error(
+                        "kline_read_api_http_error symbol=%s interval=%s status=%s text=%s",
+                        symbol,
+                        interval,
+                        res.get("status"),
+                        _truncate_text(res.get("text")),
+                    )
+                    return
+                if "code" in res:
+                    logger.error(
+                        "kline_read_api_app_error symbol=%s interval=%s code=%s msg=%s",
+                        symbol,
+                        interval,
+                        res.get("code"),
+                        _truncate_text(res.get("msg")),
+                    )
+                    return
+                logger.error("kline_read_api_no_data_field symbol=%s interval=%s res=%s", symbol, interval, _truncate_text(res))
+                return
+            data = res.get("data")
             if data is None:
-                logger.error("kline_read_api_empty symbol=%s interval=%s", symbol, interval)
+                logger.error("kline_read_api_data_none symbol=%s interval=%s code=%s msg=%s", symbol, interval, res.get("code"), _truncate_text(res.get("msg")))
                 return
             query = {"interval": interval, "symbol": symbol, **(data or {})}
             await expert.run(query, exchange, symbol)

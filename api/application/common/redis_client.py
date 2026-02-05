@@ -22,7 +22,8 @@ pool_kwargs = {
     'password': REDIS_PASSWORD,
     'decode_responses': True,  # 自动解码响应
     'encoding': 'utf-8',
-    'max_connections': 10  # 最大连接数
+    # 中文注释：限制连接池最大连接数，避免 Redis 端 maxclients 被打满（可用环境变量覆盖）
+    'max_connections': int(os.getenv('REDIS_MAX_CONNECTIONS', 5))
 }
 
 # 只有当密码不为None时才添加password参数

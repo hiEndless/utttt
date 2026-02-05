@@ -1,5 +1,6 @@
 import redis
 import json
+import os
 from agent_server.config import settings as cfg
 
 KEY_LEVEL_NEAR_PCT = 0.005
@@ -14,13 +15,27 @@ def _read_json(client, key: str):
 
 
 def _build_redis_client():
-    return redis.Redis(
+    # 中文注释：复用同步 Redis 客户端，避免高频读取场景连接数暴涨
+    global _TFV_REDIS_CLIENT
+    if _TFV_REDIS_CLIENT is not None:
+        return _TFV_REDIS_CLIENT
+    password = cfg.redis_password
+    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+        password = None
+    max_connections = int(os.environ.get("REDIS_MAX_CONNECTIONS", 10))
+    pool = redis.ConnectionPool(
         host=cfg.redis_host,
         port=cfg.redis_port,
         db=cfg.redis_db,
-        password=(cfg.redis_password or None),
+        password=(password or None),
         decode_responses=True,
+        max_connections=max_connections,
     )
+    _TFV_REDIS_CLIENT = redis.Redis(connection_pool=pool)
+    return _TFV_REDIS_CLIENT
+
+
+_TFV_REDIS_CLIENT: redis.Redis | None = None
 
 
 def load_all_indicators(symbol: str, exchange: str, intervals: list[str], client=None) -> dict:
