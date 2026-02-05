@@ -60,32 +60,39 @@ if __name__ == "__main__":
     )
     from agent_server.utils.redis_client import RedisClient
 
-    final_signal = {"route": "indicators", "exchange": "binance", "symbol": "RIVERUSDT", "final_priority": "low",
-     "event_id": "RIVERUSDT.final.1770281607951", "event_type": "market.structure", "timestamp": "1770281607951",
-     "market_state": "momentum", "direction": "bullish", "confidence": "medium", "confidence_numeric": 0.5,
-     "priority_weight": 10, "l1_total_score": -10.514999999999999, "tf_hint": ["15m", "30m", "1h"],
-     "analysis_context": {"dominant_bucket": "mid", "supporting_buckets": ["mid"], "tf_hint": ["15m", "30m", "1h"],
-                          "l1_total_score": -10.514999999999999, "bias": {"short": False, "mid": True},
-                          "reason_tags": ["high_structure_score"], "lock_window_sec": 900,
-                          "provenance": {"origin_sources": ["ind_event_engine"], "origin_source_hint": "indicators"},
-                          "_debug": {"scores": {"bucket_short": "0.0", "bucket_mid": "-10.514999999999999",
-                                                "bucket_long": "0.0"},
-                                     "dirs": {"short": "neutral", "mid": "bearish", "long": "neutral"},
-                                     "component_scores": {"momentum": -10.514999999999999}, "indicators": [
-                                  {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                   "score": 3.19, "bucket": "mid", "priority": "high"},
-                                  {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bearish",
-                                   "score": 3.4, "bucket": "mid", "priority": "high"},
-                                  {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "neutral",
-                                   "score": 3.38, "bucket": "mid", "priority": "low"},
-                                  {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bearish",
-                                   "score": 3.4, "bucket": "mid", "priority": "high"},
-                                  {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bearish",
-                                   "score": 3.4, "bucket": "mid", "priority": "high"}]}},
-     "meta": {"grader_version": "1.2.0",
-              "source_event_id": "binance.binance_public.RIVERUSDT.single_signal_williams_r.1770281607951",
-              "ts_unit": "ms", "min_interval_sec": 900, "origin_source_hint": "indicators",
-              "origin_sources": ["ind_event_engine"]}, "trade_details": {}}
+    final_signal = {"route": "mixed", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
+                    "event_id": "ETHUSDT.final.1770290252305", "event_type": "market.structure",
+                    "timestamp": "1770290252305", "market_state": "momentum", "direction": "bullish",
+                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
+                    "l1_total_score": 19.668839999999996, "tf_hint": ["15m", "30m", "1h"],
+                    "analysis_context": {"dominant_bucket": "mid", "supporting_buckets": ["mid"],
+                                         "tf_hint": ["15m", "30m", "1h"], "l1_total_score": 19.668839999999996,
+                                         "bias": {"short": False, "mid": True}, "reason_tags": ["high_structure_score"],
+                                         "lock_window_sec": 900, "provenance": {
+                            "origin_sources": ["alerts_consumer", "force_stats_consumer", "ind_event_engine"],
+                            "origin_source_hint": "mixed"}, "_debug": {
+                            "scores": {"bucket_short": "0.0", "bucket_mid": "19.668839999999996", "bucket_long": "0.0"},
+                            "dirs": {"short": "neutral", "mid": "bullish", "long": "neutral"},
+                            "component_scores": {"momentum": 19.668839999999996}, "indicators": [
+                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
+                                 "score": 2.9599999999999995, "bucket": "mid", "priority": "medium"},
+                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
+                                 "score": 2.7079999999999997, "bucket": "mid", "priority": "medium"},
+                                {"plugin": "depth.liquidity_collapse", "cls": "unknown", "dir": "neutral", "score": 4.0,
+                                 "bucket": "short", "priority": "low"},
+                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
+                                 "score": 3.14, "bucket": "mid", "priority": "high"},
+                                {"plugin": "force_spike_sell", "cls": "unknown", "dir": "neutral",
+                                 "score": 0.3333333333333333, "bucket": "short", "priority": "low"},
+                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
+                                 "score": 2.9672, "bucket": "mid", "priority": "medium"},
+                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
+                                 "score": 3.0644, "bucket": "mid", "priority": "high"}]}},
+                    "meta": {"grader_version": "1.2.0",
+                             "source_event_id": "binance.binance_public.ETHUSDT.single_signal_williams_r.1770290252305",
+                             "ts_unit": "ms", "min_interval_sec": 900, "origin_source_hint": "mixed",
+                             "origin_sources": ["alerts_consumer", "force_stats_consumer", "ind_event_engine"]},
+                    "trade_details": {}}
 
     # 信号裁剪
     cropped_signal = crop_signal(final_signal)
