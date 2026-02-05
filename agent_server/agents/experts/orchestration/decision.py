@@ -4,7 +4,7 @@ from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
 from agent_server.agent_context.market_structure import output
 from agent_server.agent_context.builder import build_agent_context
-from agent_server.configs.prompts.decision import prompt
+from agent_server.configs.prompts.decision import build_decision_prompt
 from agno.models.message import Message
 import json
 import asyncio
@@ -36,15 +36,7 @@ class DecisionExpert:
         self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def run(self, query: dict) -> str:
-        meta = {
-            "symbol": query["symbol"],
-            "ts": query["ts"],
-            "version": self.version,
-            "human_readable_only": True,
-            "not_for_decision": True,
-            "not_for_backtest": True
-        }
-
+        meta = query.pop("meta")
         cfg = get_agent_config(self.name)
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
@@ -52,6 +44,7 @@ class DecisionExpert:
         api_key = cfg.get("llm_api_key")
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
+        prompt = build_decision_prompt(query)
 
         agent = Agent(
             model=model,
@@ -79,8 +72,9 @@ class DecisionExpert:
 
         ts = int(time.time() * 1000)
         if isinstance(final_result, dict):
-            final_result["ts"] = ts
             final_result["meta"] = meta
+            final_result["meta"]["ts"] = ts
+            final_result["meta"]["version"] = self.version
         else:
             final_result = {"data": final_result, "ts": ts}
 
@@ -92,6 +86,12 @@ class DecisionExpert:
 if __name__ == "__main__":
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
+    from agent_server.agents.experts.orchestration.utils import (
+        derive_directional_reference,
+        derive_exposure_level,
+        derive_holding_bias,
+        derive_pnl_state,
+    )
 
     signal = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
               "reasoning": [
@@ -106,9 +106,9 @@ if __name__ == "__main__":
              "pnl_ratio": 0.004305523686720178, "open_time": 1770237903887,
              "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"}]}
 
-    meta = signal.get("meta")
+    meta = signal.pop("meta")
     symbol = meta.get("symbol")
-    positions = meta.get("positions")
+    positions = signal.pop("positions") or []
 
     async def _main() -> None:
         try:
@@ -118,15 +118,33 @@ if __name__ == "__main__":
             full_context = await output.build_output("binance", symbol)
             market_structure = build_agent_context("decision", full_context)
             # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
-            print(_json_dumps_safe(market_structure))
+            # print(_json_dumps_safe(market_structure))
 
+            directional_reference = derive_directional_reference(signal, market_structure)
+            position_context = []
+            for p in positions:
+                if not isinstance(p, dict):
+                    continue
+                position_side = str(p.get("position_side") or "").upper()
+                if position_side not in {"LONG", "SHORT"}:
+                    continue
+                position_context.append(
+                    {
+                        "position_side": position_side,
+                        "exposure_level": derive_exposure_level(p),
+                        "pnl_state": derive_pnl_state(p.get("pnl_ratio")),
+                        "holding_bias": derive_holding_bias(position_side, directional_reference),
+                    }
+                )
+
+            # print(signal)
             query = {
                 "meta": meta,
                 "market_structure": market_structure,
-                "signal": {},
-                "position": {}
+                "signal_verdict": signal,
+                "position_state": position_context,
             }
-            # await expert.run(query)
+            await expert.run(query)
         finally:
             # 关闭 aiohttp 会话，避免 “Unclosed client session/connector” 警告
             await http_client.close()
