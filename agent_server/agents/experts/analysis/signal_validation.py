@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     # 信号裁剪
     cropped_signal = crop_signal(final_signal)
-    print(cropped_signal)
+    # print(cropped_signal)
 
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
