@@ -91,9 +91,12 @@ class BaseLLMExpert:
 
         qobj = self._parse_query(query)
         meta = qobj.pop("meta") or {}
+        positions = qobj.pop("positions") or []
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
         llm_query_obj["meta"] = dict(meta)
+        # 将 positions 也传递给 LLM，便于结合仓位状态做解释与建议
+        llm_query_obj["positions"] = positions
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
 
         try:
@@ -130,6 +133,7 @@ class BaseLLMExpert:
         except Exception:
             pass
         payload_obj["meta"] = meta
+        payload_obj["positions"] = positions
 
         try:
             await save_agent_output(
@@ -152,6 +156,7 @@ class BaseLLMExpert:
         else:
             result_for_return = {"raw": final_result}
         result_for_return["meta"] = meta
+        result_for_return["positions"] = positions
         output = _json_dumps_safe(result_for_return)
         print(output)
         return output

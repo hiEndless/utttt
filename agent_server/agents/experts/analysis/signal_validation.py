@@ -133,7 +133,7 @@ if __name__ == "__main__":
                 "event_id": event_id,
                 "event_type": final_signal.get("route"),
             },
-
+            "positions": positions,
             "final_event": cropped_signal,
             "context": ctx,
         }
