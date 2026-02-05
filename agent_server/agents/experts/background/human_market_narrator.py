@@ -122,7 +122,7 @@ class HumanMarketNarratorExpert:
             "human_readable_only": True,
             "not_for_decision": True,
             "not_for_backtest": True
-          }
+        }
 
         cfg = get_agent_config(self.name)
 
@@ -172,11 +172,11 @@ if __name__ == "__main__":
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
 
-
     API_KLINE_BACKGROUND = "/kline/background/read_multi"
     INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 
     symbol = "RIVERUSDT"
+
 
     async def read_kline_backgrounds(exchange: str, symbol: str, intervals: List[str]) -> Dict[str, Any]:
         base = settings.api_base_url.rstrip("/")
@@ -191,6 +191,7 @@ if __name__ == "__main__":
             # 统一返回错误信息，避免吞异常导致上层拿到 None/未定义变量
             data = {}
         return data
+
 
     async def _main() -> None:
         try:
@@ -216,5 +217,6 @@ if __name__ == "__main__":
         finally:
             # 关闭 aiohttp 会话，避免 “Unclosed client session/connector” 警告
             await http_client.close()
+
 
     asyncio.run(_main())

@@ -18,6 +18,7 @@ QueryInput = Union[str, Dict[str, Any]]
 
 class BaseLLMExpert:
     name: str
+    version: str
     SCHEMA: Dict[str, Any]
 
     def __init__(self, language: str = "zh"):
@@ -89,7 +90,11 @@ class BaseLLMExpert:
         agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
 
         qobj = self._parse_query(query)
-        llm_input = self.build_llm_input(qobj, **kwargs)
+        meta = qobj.pop("meta") or {}
+        # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
+        llm_query_obj = dict(qobj)
+        llm_query_obj["meta"] = dict(meta)
+        llm_input = self.build_llm_input(llm_query_obj, **kwargs)
 
         try:
             final_result = await self._run_validated(
@@ -107,11 +112,12 @@ class BaseLLMExpert:
         except Exception:
             pass
 
-        symbol = qobj.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or "binance"
-        event_id = qobj.get("event_id")
-        trade_id = qobj.get("trade_id")
-        ts = int(time.time() * 1000)
+        symbol = qobj.get("symbol") or meta.get("symbol") or "UNKNOWN"
+        exchange = qobj.get("exchange") or meta.get("exchange") or "binance"
+        event_id = qobj.get("event_id") or meta.get("event_id")
+        trade_id = qobj.get("trade_id") or meta.get("trade_id")
+        meta["ts"] = int(time.time() * 1000)
+        meta["version"] = self.version
 
         payload_obj: Dict[str, Any]
         try:
@@ -123,13 +129,14 @@ class BaseLLMExpert:
             payload_obj = self.normalize_for_storage(payload_obj, qobj, **kwargs)
         except Exception:
             pass
+        payload_obj["meta"] = meta
 
         try:
             await save_agent_output(
                 self.name,
                 exchange,
                 symbol,
-                ts,
+                meta["ts"],
                 payload_obj,
                 event_id=event_id,
                 trade_id=trade_id,
@@ -138,7 +145,13 @@ class BaseLLMExpert:
         except Exception:
             pass
 
-        output = _json_dumps_safe(final_result)
+        # 返回给调用方的结果也补充 meta（包含 ts/version），避免下游需要额外查存储
+        result_for_return: Dict[str, Any]
+        if isinstance(final_result, dict):
+            result_for_return = dict(final_result)
+        else:
+            result_for_return = {"raw": final_result}
+        result_for_return["meta"] = meta
+        output = _json_dumps_safe(result_for_return)
         print(output)
         return output
-
