@@ -212,7 +212,7 @@ if __name__ == "__main__":
                 "market_structure": market_structure,
                 "kline_indicators": kline_indicators,
             }
-            # await expert.run(query)
+            await expert.run(query)
         finally:
             # 关闭 aiohttp 会话，避免 “Unclosed client session/connector” 警告
             await http_client.close()
