@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Set
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
@@ -35,8 +35,7 @@ class DecisionExpert:
     def __init__(self):
         self.validator = LLMOutputValidator(self.SCHEMA)
 
-    async def run(self, query: dict) -> str:
-        meta = query.pop("meta")
+    async def _get_llm_result(self, query_payload: Dict[str, Any]) -> Any:
         cfg = get_agent_config(self.name)
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
@@ -44,7 +43,7 @@ class DecisionExpert:
         api_key = cfg.get("llm_api_key")
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-        prompt = build_decision_prompt(query)
+        prompt = build_decision_prompt(query_payload)
 
         agent = Agent(
             model=model,
@@ -53,44 +52,146 @@ class DecisionExpert:
 
         async def _run_llm():
             run_output = await agent.arun(
-                Message(role="user", content=json.dumps(query, ensure_ascii=False)),
+                Message(role="user", content=json.dumps(query_payload, ensure_ascii=False)),
                 stream=False,
                 debug_mode=True,
             )
             return run_output.content
 
+        return await validate_with_retry(
+            llm_runner=_run_llm,
+            validator=self.validator,
+            max_retries=3,
+            on_retry=lambda msg: print(f"[DecisionExpert] {msg}"),
+        )
+
+    @staticmethod
+    def _extract_position_sides(position_state: Any) -> Set[str]:
+        sides: Set[str] = set()
+        for item in list(position_state or []):
+            if not isinstance(item, dict):
+                continue
+            side = str(item.get("position_side") or "").upper()
+            if side in {"LONG", "SHORT"}:
+                sides.add(side)
+        return sides
+
+    @staticmethod
+    def _filter_position_state(position_state: Any, position_side: str) -> List[Dict[str, Any]]:
+        side = str(position_side or "").upper()
+        out: List[Dict[str, Any]] = []
+        for item in list(position_state or []):
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("position_side") or "").upper() != side:
+                continue
+            out.append(item)
+        return out
+
+    @staticmethod
+    def _extract_trade_id(query: Dict[str, Any], position_side: Optional[str] = None) -> Optional[str]:
+        side = str(position_side or "").upper()
+
+        # 优先从原始 positions 中提取 trade_id（最贴近真实持仓来源）
+        positions = query.get("positions") or []
+        for p in list(positions or []):
+            if not isinstance(p, dict):
+                continue
+            if side and str(p.get("position_side") or "").upper() != side:
+                continue
+            trade_id = p.get("trade_id") or p.get("tradeId")
+            if trade_id:
+                return str(trade_id)
+
+        # 兜底：从 position_state 中提取（若上游在 position_state 中透传了 trade_id）
+        position_state = query.get("position_state") or []
+        for p in list(position_state or []):
+            if not isinstance(p, dict):
+                continue
+            if side and str(p.get("position_side") or "").upper() != side:
+                continue
+            trade_id = p.get("trade_id") or p.get("tradeId")
+            if trade_id:
+                return str(trade_id)
+
+        # 最后兜底：若 meta 里已带 trade_id，直接复用
+        meta = query.get("meta") or {}
+        if isinstance(meta, dict) and meta.get("trade_id"):
+            return str(meta.get("trade_id"))
+        return None
+
+    async def run(self, query: dict) -> str:
+        query_local = dict(query or {})
+        meta = query_local.pop("meta", {}) or {}
+        query_for_extract = dict(query or {})
+
+        # 不将原始 positions 透传给 LLM（仅用于本地提取 trade_id）
+        query_local.pop("positions", None)
+
+        position_state = query_local.get("position_state")
+        position_sides = self._extract_position_sides(position_state)
+
+        ts = int(time.time() * 1000)
+        base_meta = dict(meta)
+        base_meta["ts"] = ts
+        base_meta["version"] = self.version
+
+        # 多空双开：按仓位方向拆分并发请求 LLM，再将两份结果合并为一个列表
+        if position_sides == {"LONG", "SHORT"}:
+            async def _run_one(side: str) -> Dict[str, Any]:
+                payload = dict(query_local)
+                payload["position_state"] = self._filter_position_state(position_state, side)
+                try:
+                    result = await self._get_llm_result(payload)
+                except Exception as e:
+                    print(f"[DecisionExpert] failed after retries ({side}): {e}")
+                    result = {"data": "No data available"}
+
+                if isinstance(result, dict):
+                    result_meta = dict(base_meta)
+                    result_meta["position_side"] = side
+                    trade_id = self._extract_trade_id(query_for_extract, side)
+                    if trade_id:
+                        result_meta["trade_id"] = trade_id
+                    result["meta"] = result_meta
+                    return result
+                result_meta = {**base_meta, "position_side": side}
+                trade_id = self._extract_trade_id(query_for_extract, side)
+                if trade_id:
+                    result_meta["trade_id"] = trade_id
+                return {"data": result, "meta": result_meta}
+
+            results = await asyncio.gather(_run_one("LONG"), _run_one("SHORT"))
+            final_result = {"meta": base_meta, "results": results}
+            output_text = _json_dumps_safe(final_result)
+            print(output_text)
+            return output_text
+
         try:
-            final_result = await validate_with_retry(
-                llm_runner=_run_llm,
-                validator=self.validator,
-                max_retries=3,
-                on_retry=lambda msg: print(f"[DecisionExpert] {msg}")
-            )
+            final_result = await self._get_llm_result(query_local)
         except Exception as e:
             print(f"[DecisionExpert] failed after retries: {e}")
             final_result = {"data": "No data available"}
 
-        ts = int(time.time() * 1000)
         if isinstance(final_result, dict):
-            final_result["meta"] = meta
-            final_result["meta"]["ts"] = ts
-            final_result["meta"]["version"] = self.version
+            final_result["meta"] = base_meta
         else:
-            final_result = {"data": final_result, "ts": ts}
+            final_result = {"data": final_result, "meta": base_meta}
 
-        output = _json_dumps_safe(final_result)
-        print(output)
-        return output
+        trade_id = self._extract_trade_id(query_for_extract)
+        if trade_id and isinstance(final_result.get("meta"), dict):
+            final_result["meta"]["trade_id"] = trade_id
+
+        output_text = _json_dumps_safe(final_result)
+        print(output_text)
+        return output_text
 
 
 if __name__ == "__main__":
     from agent_server.utils.http_client import http_client
     from agent_server.config import settings
     from agent_server.agents.experts.orchestration.utils import (
-        derive_directional_reference,
-        derive_exposure_level,
-        derive_holding_bias,
-        derive_pnl_state,
+        transform_positions_to_decision_context,
     )
 
     signal = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
@@ -104,7 +205,9 @@ if __name__ == "__main__":
                        "event_type": "mixed", "ts": 1770304117868, "version": "v1.0"}, "positions": [
             {"symbol": "ETHUSDT", "position_side": "LONG", "size": "0.010", "notional": "21.73535821",
              "pnl_ratio": 0.004305523686720178, "open_time": 1770237903887,
-             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"}]}
+             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"},{"symbol": "ETHUSDT", "position_side": "SHORT", "size": "0.010", "notional": "21.73535821",
+             "pnl_ratio": -0.004305523686720178, "open_time": 1770237903887,
+             "trade_id": "9cedf3d0770041c8b11856c35ef664a3", "initialMargin": "2.17353583"}]}
 
     meta = signal.pop("meta")
     symbol = meta.get("symbol")
@@ -120,22 +223,12 @@ if __name__ == "__main__":
             # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
             # print(_json_dumps_safe(market_structure))
 
-            directional_reference = derive_directional_reference(signal, market_structure)
-            position_context = []
-            for p in positions:
-                if not isinstance(p, dict):
-                    continue
-                position_side = str(p.get("position_side") or "").upper()
-                if position_side not in {"LONG", "SHORT"}:
-                    continue
-                position_context.append(
-                    {
-                        "position_side": position_side,
-                        "exposure_level": derive_exposure_level(p),
-                        "pnl_state": derive_pnl_state(p.get("pnl_ratio")),
-                        "holding_bias": derive_holding_bias(position_side, directional_reference),
-                    }
-                )
+            # positions -> position_state（决策层可直接消费的派生持仓状态）
+            position_context = transform_positions_to_decision_context(
+                positions,
+                signal=signal,
+                market_structure=market_structure,
+            )
 
             # print(signal)
             query = {
@@ -143,6 +236,7 @@ if __name__ == "__main__":
                 "market_structure": market_structure,
                 "signal_verdict": signal,
                 "position_state": position_context,
+                "positions": positions,
             }
             await expert.run(query)
         finally:
