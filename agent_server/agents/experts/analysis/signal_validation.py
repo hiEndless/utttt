@@ -132,6 +132,7 @@ if __name__ == "__main__":
                 "exchange": exchange,
                 "event_id": event_id,
                 "event_type": final_signal.get("route"),
+                "direction": direction
             },
             "positions": positions,
             "final_event": cropped_signal,
