@@ -175,7 +175,7 @@ if __name__ == "__main__":
     API_KLINE_BACKGROUND = "/kline/background/read_multi"
     INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 
-    symbol = "ETHUSDT"
+    symbol = "RIVERUSDT"
 
 
     async def read_kline_backgrounds(exchange: str, symbol: str, intervals: List[str]) -> Dict[str, Any]:
