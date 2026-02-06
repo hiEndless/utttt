@@ -216,12 +216,10 @@ if __name__ == "__main__":
                   "signal_direction = bullish 且 mid_term.participant_positioning.structural_weight = high，该方向未被主裁周期人群定位模式明确支持。",
                   "long_term.structural_weight = veto_only 且 long_term.confidence.level = low，未满足长期否决条件。"],
               "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
-                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0"}, "positions": [
+                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0", "direction": "bullish"}, "positions": [
             {"symbol": "ETHUSDT", "position_side": "LONG", "size": "0.010", "notional": "21.73535821",
              "pnl_ratio": 0.004305523686720178, "open_time": 1770237903887,
-             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"},{"symbol": "ETHUSDT", "position_side": "SHORT", "size": "0.010", "notional": "21.73535821",
-             "pnl_ratio": -0.004305523686720178, "open_time": 1770237903887,
-             "trade_id": "9cedf3d0770041c8b11856c35ef664a3", "initialMargin": "2.17353583"}]}
+             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"}]}
 
     meta = signal.pop("meta")
     symbol = meta.get("symbol")

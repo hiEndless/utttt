@@ -68,10 +68,10 @@ class ExecutionConstraintAggregator:
                 "risk_bias": risk_bias,
                 "confidence": confidence,
                 "constraint_reason_tags": constraint_reason_tags,
-                "rationale": {
-                    "signal_validation_reasoning": signal_reasoning,
-                    "decision_rationale": decision_rationale,
-                },
+                # "rationale": {
+                #     "signal_validation_reasoning": signal_reasoning,
+                #     "decision_rationale": decision_rationale,
+                # },
             }
         }
 
