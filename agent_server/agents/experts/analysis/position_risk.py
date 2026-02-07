@@ -4,7 +4,7 @@ import time
 from typing import Any, Dict
 
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
-from agent_server.utils.account import get_available_exposure_pct
+from agent_server.utils.account import account_state
 from agent_server.config import settings
 from agent_server.risk.action_policy import enforce_position_risk_action
 from agent_server.agent_context.market_structure import output
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
     from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
-    from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
+    from agent_server.agent_context.market_structure.holding_context import build_holding_context
     from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
     from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
     import asyncio
@@ -81,14 +81,26 @@ if __name__ == "__main__":
 
     execution_constraint = ExecutionConstraintAggregator().aggregate(sv_out, d_out).get("execution_constraint")
     meta = d_out.get("meta")
+    trade_id = meta.get("trade_id")
     exchange = meta.get("exchange")
     symbol = meta.get("symbol")
 
-    position = get_position(exchange, symbol)[0]
-    position_side = position["position_side"]
-    trade_id = position.pop("trade_id")
-    initialMargin = position.pop("initialMargin")  # 占用保证金，用于计算仓位占比
-
+    positions = get_position(exchange, symbol)
+    position = {}
+    for p in positions:
+        if p["trade_id"] == trade_id:
+            horizon = build_holding_context(p["open_time"], int(time.time() * 1000)).get("horizon")
+            position = {
+                "position_side": p["position_side"],
+                "size": p["size"],
+                "notional": p["notional"],
+                "pnl_ratio": p["pnl_ratio"],
+                "holding_duration": horizon.split("_")[0],
+            }
+            initialMargin = float(p.pop("initialMargin", 0))  # 占用保证金，用于计算仓位占比
+            break
+    # print(position)
+    
     expert = PositionRiskExpert()
 
 
@@ -97,34 +109,31 @@ if __name__ == "__main__":
         full_context = await output.build_output("binance", symbol)
         market_structure = build_agent_context("position_risk", full_context)
         # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
-        print(_json_dumps_safe(market_structure))
+        # print(_json_dumps_safe(market_structure))
 
-
-
-        # 4. 模拟 Operational Context (建议模式适配)
         # 从 Redis 获取上一次的建议记录，用于填充 action_state
         # rc = RedisClient()
         # last_suggestion_key = f"agent_output:{exchange}:{symbol}:position_risk:latest"
         # last_suggestion_str = await rc.get(last_suggestion_key)
 
         # 获取账户余额计算可用仓位比例
-        calculated_available_pct = await get_available_exposure_pct(exchange)
-
-
+        account_risk_state = await account_state(exchange)
+        account_risk_state["position_occupancy_ratio"] = initialMargin / account_risk_state.get("balance", 1)
 
         query = {
             "meta": meta,
             "market_structure": market_structure,
             "position": position,
-            "account": "",
+            "account_risk_state": account_risk_state,
             "execution_constraint": execution_constraint,
         }
+        # print( query)
 
         # print("\n=== Agent Input Query ===")
         # print(json.dumps(query, indent=2, ensure_ascii=False))
         # print("=========================\n")
 
-        # await expert.run(query)
+        await expert.run(query)
 
 
     asyncio.run(_demo())

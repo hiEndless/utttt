@@ -207,6 +207,9 @@ if __name__ == "__main__":
     from agent_server.agents.experts.orchestration.utils import (
         transform_positions_to_decision_context,
     )
+    from agent_server.agent_context.market_structure.holding_context_from_positions import (
+        build_holding_context_from_positions,
+    )
 
     signal = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
               "reasoning": [
@@ -225,13 +228,16 @@ if __name__ == "__main__":
     symbol = meta.get("symbol")
     positions = signal.pop("positions") or []
 
+    holding_context = build_holding_context_from_positions(positions)
+    holding_horizon = holding_context.get("horizon")
+
     async def _main() -> None:
         try:
 
             expert = DecisionExpert()
 
             full_context = await output.build_output("binance", symbol)
-            market_structure = build_agent_context("decision", full_context)
+            market_structure = build_agent_context("decision", full_context, horizon=holding_horizon)
             # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
             # print(_json_dumps_safe(market_structure))
 

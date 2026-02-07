@@ -53,7 +53,7 @@ def build_holding_context(holding_until_ts_ms: int, now_ts_ms: Optional[int] = N
     - now_ts_ms：可选；用于离线回放/测试时固定当前时间
     """
     now_ms = int(now_ts_ms if now_ts_ms is not None else time.time() * 1000)
-    duration_ms = int(holding_until_ts_ms) - int(now_ms)
+    duration_ms = int(now_ms) - int(holding_until_ts_ms)
     duration_ms = max(0, int(duration_ms))
     horizon = match_horizon_by_duration(duration_ms)
     return {
