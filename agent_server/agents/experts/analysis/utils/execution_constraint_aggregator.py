@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Any
 class ExecutionConstraintAggregator:
     """
     确定性聚合器：将 SignalValidation + Decision 的输出合成为 execution_constraint。
+    提供给持仓风控agent
     """
 
     BASE_CONFIDENCE = 0.75
