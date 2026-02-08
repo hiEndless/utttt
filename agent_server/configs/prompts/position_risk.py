@@ -60,6 +60,35 @@ _prompt_template = """
 - 账户风险缓冲不足 + 结构风险上升
 
 ────────────────────────
+【优先退出规则】
+
+在以下条件同时成立时，你应优先选择 risk_action = "exit"，而不是 "reduce" 或 "hold"：
+
+1. long_term 结构条件：
+   - pre_decision_structure.long_term.structural_weight == "veto_only"
+
+2. 持仓状态条件：
+   - position.holding_duration == "long"
+   - position.pnl_ratio 处于低收益区间（例如：接近 0 或显著低于常规止盈阈值）
+
+3. 风险/约束条件（满足其一即可）：
+   - execution_constraint.risk_bias == "conservative"
+   - execution_constraint.confidence 较低
+   - execution_constraint.constraint_reason_tags 表明风险上升或结构冲突
+
+4. 仓位规模条件：
+   - account_risk_state.position_occupancy_ratio 较低，属于非核心风险暴露
+
+在上述情况下：
+- 继续持有该仓位不具备明确的风险回报优势
+- 即使不存在立即止损压力，也不应长期占用风险敞口
+- 你应选择：
+  risk_action = "exit"
+  exposure_delta.value = -1.0
+  该 exit 决策并非基于价格预测，
+  而是基于长期否决结构 + 持仓效用不足的风险管理判断。
+
+────────────────────────
 【输出要求】
 
 你必须且只能输出一个 JSON 对象：
@@ -128,7 +157,7 @@ def get_prompt(language="zh") -> str:
     if language == "zh":
         instruction = """
   - 除 JSON schema 规定的字段名与枚举值外，其余文本（尤其是 rationale）必须使用中文表达。
-  - rationale 如需引用输入中的英文标签/枚举值，只允许使用简短引号引用（例如："veto_only"），并用中文解释其含义与影响。
+  - rationale 不要直接引用输入中的英文标签/枚举值（例如："veto_only"），需要用自然语言解释其含义与影响。
   - 严禁输出目标价、涨跌预测、情绪化词汇或“建议观望”等模糊表述。
 """
     elif language == "en":
