@@ -1,8 +1,14 @@
 """
+逐仓位的风控状态生成（跟随事件分析一起落库）
+
+它是：
+Position Risk Agent 的最终输出
+单仓位、不可推导、可直接执行
+不关心其他仓位、不关心账户整体
+
 输入：
 Position Risk Agent 输出（必需）
 Signal Validation Agent 输出（可选）
-Account Risk State（可选）
 previous_execution_state（可选）
 
 输出：
@@ -12,6 +18,9 @@ execution_state（只描述 “当前与未来一段时间允许做什么”）
 ❌ 不推翻 risk_action
 ❌ 不重新判断方向
 ❌ 不修改 exposure_delta
+
+用于：
+Order Executor / Trade Router（执行层）：校验账户级是否允许
 """
 import time
 from typing import Optional, Dict, Any
