@@ -128,29 +128,37 @@ class AgentAnalysis(models.Model):
     """
     Agent 分析记录表：记录每个 Agent 对特定事件的分析结果
 
-    以持多单(LONG)为例的判断逻辑(SHORT同理反之)：
-    
-    1. 价格上涨(有利方向)：
-       - ADD_POSITION / HOLD: 
-         market_accuracy=CORRECT (看对), decision_quality=GOOD (做对)
-       - DEFENSIVE: 
-         market_accuracy=CORRECT (看对), decision_quality=DEFENSIVE (偏保守/踏空)
-       - REDUCE / EXIT: 
-         market_accuracy=WRONG (卖飞), decision_quality=BAD (做错)
-    
-    2. 价格下跌(不利方向)：
-       - ADD_POSITION / HOLD: 
-         market_accuracy=WRONG (看错), decision_quality=BAD (死扛)
-       - REDUCE / EXIT / DEFENSIVE: 
-         market_accuracy=CORRECT (看对风险), decision_quality=GOOD (及时止损)
-    
-    3. 价格震荡(幅度<0.5%)：
-       - HOLD / DEFENSIVE: 
-         market_accuracy=NEUTRAL (中性), decision_quality=GOOD (稳健)
-       - ADD_POSITION: 
-         market_accuracy=WRONG (误判), decision_quality=OVERAGGRESSIVE (过度激进/磨损)
-       - REDUCE / EXIT: 
-         market_accuracy=NEUTRAL (中性), decision_quality=DEFENSIVE (过度反应但安全)
+    📈 FAVORABLE（行情对持仓有利）
+    条件
+    LONG 且价格上涨 ≥ 0.5%
+    或 SHORT 且价格下跌 ≥ 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    HOLD	CORRECT	GOOD	扛住正确行情
+    SCALE_IN_SMALL	CORRECT	GOOD	在正确方向下风险可控
+    REDUCE	WRONG	DEFENSIVE	卖飞，但风险行为合理
+    EXIT	WRONG	DEFENSIVE	过早退出，但符合风控
+
+    📉 UNFAVORABLE（行情对持仓不利）
+    条件
+    LONG 且价格下跌 ≥ 0.5%
+    或 SHORT 且价格上涨 ≥ 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    REDUCE	CORRECT	GOOD	正确止损 / 降风险
+    EXIT	CORRECT	GOOD	正确切断风险
+    HOLD	WRONG	DEFENSIVE	扛单，风险未扩张
+    SCALE_IN_SMALL	WRONG	OVERAGGRESSIVE	在错误方向下扩大风险
+
+    📊 SIDEWAYS（无有效方向）
+    条件
+    |pct_change| < 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    HOLD	NEUTRAL	GOOD	符合中性行情
+    SCALE_IN_SMALL	NEUTRAL	GOOD	风险仍可控
+    REDUCE	NEUTRAL	DEFENSIVE	偏保守但合理
+    EXIT	NEUTRAL	DEFENSIVE	过度防守但合规
     """
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
