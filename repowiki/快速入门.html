@@ -1,0 +1,2062 @@
+<!DOCTYPE html><html><head>
+      <title>快速入门</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\KJSH-DN-0287\.cursor\extensions\shd101wyy.markdown-preview-enhanced-0.8.20-universal\crossnote\dependencies\katex\katex.min.css">
+      
+      
+      <script type="text/javascript" src="file:///c:\Users\KJSH-DN-0287\.cursor\extensions\shd101wyy.markdown-preview-enhanced-0.8.20-universal\crossnote\dependencies\mermaid\mermaid.min.js" charset="UTF-8"></script>
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="快速入门">快速入门 </h1>
+<cite>
+**本文档中引用的文件**  
+- [requirements.txt](file://requirements.txt)
+- [pyproject.toml](file://pyproject.toml)
+- [agent_server/config.py](file://agent_server/config.py)
+- [event_center/config.py](file://event_center/config.py)
+- [data_server/binance/rest_binance/app/config.py](file://data_server/binance/rest_binance/app/config.py)
+- [api/main.py](file://api/main.py)
+- [agent_server/main.py](file://agent_server/main.py)
+- [event_center/main.py](file://event_center/main.py)
+- [data_server/binance/rest_binance/app/main.py](file://data_server/binance/rest_binance/app/main.py)
+- [api/application/apps/background/views.py](file://api/application/apps/background/views.py)
+- [data_server/binance/ws_binance/market_ws.py](file://data_server/binance/ws_binance/market_ws.py)
+- [data_server/binance/ws_binance/user_ws.py](file://data_server/binance/ws_binance/user_ws.py)
+- [agent_server/tools/get_position.py](file://agent_server/tools/get_position.py)
+</cite>
+<h2 id="目录">目录 </h2>
+<ol>
+<li><a href="#%E7%AE%80%E4%BB%8B">简介</a></li>
+<li><a href="#%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E6%80%BB%E8%A7%88">系统架构总览</a>
+<ul>
+<li><a href="#%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E5%9B%BE">整体架构图</a></li>
+<li><a href="#%E6%A0%B8%E5%BF%83%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5">核心设计理念</a></li>
+<li><a href="#%E7%B3%BB%E7%BB%9F%E6%B5%81%E7%A8%8B%E5%9B%BE">系统流程图</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%8C%E6%95%B4%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B">完整数据流程</a>
+<ul>
+<li><a href="#%E9%98%B6%E6%AE%B5%E4%B8%80%E6%95%B0%E6%8D%AE-collection">阶段一：数据采集</a></li>
+<li><a href="#%E9%98%B6%E6%AE%B5%E4%BA%8C%E6%8A%80%E6%9C%AF%E6%8C%87%E6%A0%87%E8%AE%A1%E7%AE%97%E4%B8%8E-api-%E6%9C%8D%E5%8A%A1-technical-indicators--api">阶段二：技术指标计算与 API 服务</a></li>
+<li><a href="#%E9%98%B6%E6%AE%B5%E4%B8%89%E4%BA%8B%E4%BB%B6%E7%94%9F%E6%88%90%E4%B8%8E%E5%A4%84%E7%90%86-event-processing">阶段三：事件生成与处理</a></li>
+<li><a href="#%E9%98%B6%E6%AE%B5%E5%9B%9B%E5%90%8E%E5%8F%B0%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90-background-analysis">阶段四：后台市场分析</a></li>
+<li><a href="#%E9%98%B6%E6%AE%B5%E4%BA%94%E6%9C%80%E7%BB%88%E4%BA%8B%E4%BB%B6%E5%88%86%E6%9E%90-final-event-analysis">阶段五：最终事件分析</a></li>
+<li><a href="#%E9%98%B6%E6%AE%B5%E5%85%AD%E5%8F%AF%E9%80%89%E5%88%86%E6%9E%90-agent">阶段六：可选分析 Agent</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E6%B5%81%E6%80%BB%E7%BB%93">数据流总结</a>
+<ul>
+<li><a href="#llm-%E4%BD%BF%E7%94%A8%E6%80%BB%E7%BB%93">LLM 使用总结</a></li>
+<li><a href="#%E9%9D%9E-llm-%E5%8A%9F%E8%83%BD%E6%80%BB%E7%BB%93">非 LLM 功能总结</a></li>
+</ul>
+</li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84">项目结构</a></li>
+<li><a href="#%E8%BF%90%E8%A1%8C%E6%AD%A5%E9%AA%A4">运行步骤</a></li>
+<li><a href="#%E6%9C%80%E5%B0%8F%E5%8C%96%E8%BF%90%E8%A1%8C%E7%A4%BA%E4%BE%8B">最小化运行示例</a></li>
+<li><a href="#%E9%AA%8C%E8%AF%81api%E6%8E%A5%E5%8F%A3">验证API接口</a></li>
+<li><a href="#%E6%9F%A5%E8%AF%A2%E8%B4%A6%E6%88%B7%E4%BB%93%E4%BD%8D">查询账户仓位</a></li>
+<li><a href="#%E7%AE%A1%E7%90%86%E7%9B%91%E6%8E%A7%E5%B8%81%E7%A7%8D">管理监控币种</a></li>
+<li><a href="#%E5%8D%95%E7%8B%AC%E8%BF%90%E8%A1%8C%E5%88%86%E6%9E%90-agent">单独运行分析 Agent</a></li>
+<li><a href="#%E5%85%B3%E9%94%AE%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9">关键注意事项</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ol>
+<h2 id="简介">简介 </h2>
+<p>UTaker 是一个基于事件驱动的量化分析系统，集成了市场数据采集、技术指标生成、事件检测与智能代理分析等功能。本指南旨在帮助新手开发者快速搭建并运行 UTaker 系统，理解其基本工作流程。</p>
+<p>系统主要由以下几个核心服务组成：</p>
+<ul>
+<li><strong>data_server</strong>：负责从 Binance 等交易所获取 K线、资金费率等原始数据，并存储到 Redis。</li>
+<li><strong>event_center</strong>：监听 Redis 中的技术指标，通过预设规则生成市场事件（如 MACD 金叉）。</li>
+<li><strong>agent_server</strong>：接收最终事件，调用大模型进行多维度分析（技术面、新闻、风险等），输出决策建议。</li>
+<li><strong>api</strong>：提供 RESTful 接口，支持用户注册、登录及查询市场状态，集成 Swagger UI 文档界面。</li>
+</ul>
+<p>本指南将引导您完成从克隆仓库到验证 API 的完整流程。</p>
+<h2 id="系统架构总览">系统架构总览 </h2>
+<p>UTaker 采用<strong>事件驱动 + 分层处理 + 智能分析</strong>的架构设计，整个系统分为四个核心服务层，通过 Redis 实现数据共享和事件传递。</p>
+<h3 id="整体架构图">整体架构图 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>┌─────────────────────────────────────────────────────────────────┐
+│                         UTaker 系统架构                          │
+└─────────────────────────────────────────────────────────────────┘
+
+数据采集层 (Data Layer)
+    │
+    ├─ data_server (REST API 采集)
+    │   ├─ K线数据 (1m/5m/15m/30m/1h/2h/4h/6h/12h/1d)
+    │   ├─ 多空比例数据 (taker/account/top/global)
+    │   ├─ 持仓量数据 (openInterest/openInterestHist)
+    │   ├─ 资金费率 (fundingRate)
+    │   └─ 24小时统计 (ticker24hr)
+    │
+    ├─ market_ws (WebSocket 市场数据)
+    │   ├─ 实时价格深度 (orderbook)
+    │   ├─ 强平订单流 (forceOrder)
+    │   └─ 价格波动检测 (spike detection)
+    │
+    └─ user_ws (WebSocket 用户数据)
+        ├─ 持仓信息 (positions)
+        └─ 账户余额 (balance)
+    │
+    ▼ 写入 Redis
+    │
+事件处理层 (Event Layer)
+    │
+    ├─ event_center
+    │   ├─ L0 Processor (原始事件聚合)
+    │   ├─ L1 Aggregator (多周期事件融合)
+    │   ├─ Final Grader (最终事件分级)
+    │   ├─ 指标事件生成 (indicators_event)
+    │   ├─ 告警消费 (alerts_consumer)
+    │   └─ 爆仓统计消费 (force_stats_consumer)
+    │
+    ▼ 生成 final_events Stream
+    │
+智能分析层 (Agent Layer)
+    │
+    ├─ agent_server (background)
+    │   ├─ K线分析 (KLineExpert) [LLM]
+    │   ├─ 市场结构分析 (MarketStructureExpert) [LLM]
+    │   └─ 人群趋势分析 (crowd_trend_analysis) [非LLM]
+    │
+    ├─ agent_server (final_listen)
+    │   ├─ 信号验证工作流 (SignalValidationWorkflow)
+    │   │   ├─ 信号验证 (SignalValidationExpert) [LLM]
+    │   │   └─ 持仓风控 (PositionRiskExpert) [LLM]
+    │   │
+    │   └─ 交易事件工作流 (TradeEventWorkflow)
+    │       ├─ 交易事件分析 (TradeEventExpert) [LLM]
+    │       └─ 持仓风控 (PositionRiskExpert) [LLM]
+    │
+    ├─ 可选：单独运行 Agent
+    │   ├─ ForceStatsExpert [LLM] - 爆仓统计分析
+    │   ├─ HumanMarketNarratorExpert [LLM] - 市场叙事生成
+    │   ├─ NewsExpert [LLM] - 新闻分析
+    │   ├─ TechnicalExpert [LLM] - 技术分析
+    │   ├─ PortfolioExpert [LLM] - 投资组合分析
+    │   ├─ ReflectionExpert [非LLM] - 反思评分
+    │   ├─ FusionExpert [非LLM] - 多专家融合
+    │   ├─ MemoryExpert [LLM] - 记忆管理
+    │   ├─ EventSummaryExpert [LLM] - 事件摘要
+    │   ├─ TradeSummaryExpert [LLM] - 交易摘要
+    │   └─ DecisionExpert [LLM] - 决策专家
+    │
+    ▼ 分析结果存储到 Redis/DB
+    │
+接口服务层 (API Layer)
+    │
+    └─ api (FastAPI)
+        ├─ 账户管理 (account)
+        │   ├─ POST /api/register - 用户注册
+        │   └─ POST /api/login - 用户登录
+        ├─ 市场数据 (background)
+        │   ├─ POST /api/market_raw/analyze - 市场原始数据分析
+        │   ├─ POST /api/indicators/read - K线指标读取
+        │   ├─ POST /api/indicators/multi_period - 多周期指标读取
+        │   ├─ POST /api/background/read - K线背景读取
+        │   ├─ POST /api/background/multi_period - 多周期背景读取
+        │   ├─ POST /api/market_state/read_full - 完整市场状态查询
+        │   ├─ POST /api/crowd_state/read - 人群状态读取
+        │   └─ POST /api/crowd_state/scan - 人群状态扫描
+        ├─ 交易模块 (trade)
+        │   └─ 交易记录管理（模型已定义，接口待完善）
+        └─ Swagger UI 文档 (http://localhost:8000/docs)
+</code></pre><h3 id="核心设计理念">核心设计理念 </h3>
+<ol>
+<li><strong>数据与计算分离</strong>：数据采集层专注原始数据获取，事件处理层专注规则判断，智能分析层专注 LLM 推理</li>
+<li><strong>事件驱动架构</strong>：通过 Redis Stream 实现异步事件传递，各服务解耦独立运行</li>
+<li><strong>分层事件处理</strong>：L0 → L1 → Final 三级事件处理，逐步提炼和过滤</li>
+<li><strong>周期分割机制</strong>：short_term/mid_term/long_term 三层周期分析，支持不同持仓策略</li>
+<li><strong>LLM 与非 LLM 结合</strong>：结构化数据处理用传统算法，复杂推理用 LLM</li>
+</ol>
+<h3 id="系统流程图">系统流程图 </h3>
+<div class="mermaid">graph TB
+    subgraph "数据采集层"
+        A1[data_server REST API&lt;br/&gt;data_server/binance/rest_binance/app/main.py]
+        A2[market_ws WebSocket&lt;br/&gt;data_server/binance/ws_binance/market_ws.py]
+        A3[user_ws WebSocket&lt;br/&gt;data_server/binance/ws_binance/user_ws.py]
+    end
+    
+    subgraph "Redis 数据存储"
+        R1[(K线数据&lt;br/&gt;klines:binance:BTCUSDT:1m)]
+        R2[(技术指标&lt;br/&gt;indicators:binance:BTCUSDT:1m)]
+        R3[(订单簿/强平&lt;br/&gt;force_stream:binance:BTCUSDT)]
+        R4[(持仓数据&lt;br/&gt;positions:binance)]
+    end
+    
+    subgraph "事件处理层"
+        E1[指标事件生成&lt;br/&gt;event_center/ind_envent_generator.py]
+        E2[L0 Processor&lt;br/&gt;event_center/pipeline/l0_processor.py]
+        E3[L1 Aggregator&lt;br/&gt;event_center/pipeline/l1_aggregator.py]
+        E4[Final Grader&lt;br/&gt;event_center/pipeline/final_grader.py]
+        E5[告警消费&lt;br/&gt;event_center/alerts_consumer.py]
+        E6[爆仓统计消费&lt;br/&gt;event_center/force_stats_consumer.py]
+    end
+    
+    subgraph "Redis Stream"
+        S1[raw_event_stream]
+        S2[l0_events]
+        S3[l1_events]
+        S4[final_events]
+    end
+    
+    subgraph "后台分析层"
+        B1[K线分析 LLM&lt;br/&gt;agent_server/agents/experts/background/kline.py]
+        B2[市场结构分析 LLM&lt;br/&gt;agent_server/agents/experts/background/market_structure.py]
+        B3[人群趋势分析&lt;br/&gt;agent_server/agent_context/utils/crowd_trend_analysis.py]
+    end
+    
+    subgraph "最终分析层"
+        F1[Final Router&lt;br/&gt;agent_server/final_listen_main.py]
+        F2[信号验证工作流&lt;br/&gt;agent_server/agent_workflow/signal_validation_workflow.py]
+        F3[交易事件工作流&lt;br/&gt;agent_server/agent_workflow/trade_event_workflow.py]
+    end
+    
+    subgraph "API 服务层"
+        API[FastAPI 接口&lt;br/&gt;api/main.py]
+    end
+    
+    A1 --&gt; R1
+    A2 --&gt; R3
+    A3 --&gt; R4
+    R1 --&gt; R2
+    R2 --&gt; E1
+    R3 --&gt; E6
+    E1 --&gt; S1
+    E5 --&gt; S1
+    E6 --&gt; S1
+    S1 --&gt; E2
+    E2 --&gt; S2
+    S2 --&gt; E3
+    E3 --&gt; S3
+    S3 --&gt; E4
+    E4 --&gt; S4
+    
+    R1 --&gt; API
+    R2 --&gt; API
+    API --&gt; B1
+    API --&gt; B2
+    R1 --&gt; B3
+    
+    S4 --&gt; F1
+    F1 --&gt; F2
+    F1 --&gt; F3
+    
+    style A1 fill:#e1f5ff
+    style A2 fill:#e1f5ff
+    style A3 fill:#e1f5ff
+    style E1 fill:#fff4e1
+    style E2 fill:#fff4e1
+    style E3 fill:#fff4e1
+    style E4 fill:#fff4e1
+    style B1 fill:#e8f5e9
+    style B2 fill:#e8f5e9
+    style F2 fill:#e8f5e9
+    style F3 fill:#e8f5e9
+</div><h2 id="完整数据流程">完整数据流程 </h2>
+<h3 id="阶段一数据采集-data-collection">阶段一：数据采集 (Data Collection) </h3>
+<p><strong>服务</strong>：<code>data_server</code> (REST + WebSocket)</p>
+<p><strong>功能模块</strong>：</p>
+<h4 id="1-rest-api-数据采集-data_serverbinancerest_binance">1. REST API 数据采集 (<code>data_server/binance/rest_binance</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>data_server/binance/rest_binance/app/main.py</code></li>
+<li><strong>配置</strong>：<code>data_server/binance/rest_binance/app/config.py</code></li>
+<li><strong>数据采集函数</strong>：<code>data_server/binance/rest_binance/app/fetchers.py</code></li>
+<li><strong>任务管理</strong>：<code>data_server/binance/rest_binance/app/manager.py</code></li>
+<li><strong>符号监听</strong>：<code>data_server/binance/rest_binance/app/utils/redis_watch.py</code></li>
+</ul>
+<p><strong>作用</strong>：定期从 Binance REST API 获取历史数据</p>
+<p><strong>采集内容</strong>：</p>
+<ul>
+<li><strong>K线数据</strong>：多周期 K线（1m/5m/15m/30m/1h/2h/4h/6h/12h/1d）</li>
+<li><strong>多空比例</strong>：takerLongShortRatio、topLongShortAccountRatio、topLongShortPositionRatio、globalLongShortAccountRatio</li>
+<li><strong>持仓量数据</strong>：openInterest（实时）、openInterestHist（历史）</li>
+<li><strong>资金费率</strong>：fundingRate</li>
+<li><strong>24小时统计</strong>：ticker24hr</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：纯 REST API 调用</li>
+<li><strong>动态监控</strong>：监听 Redis <code>symbol:binance</code> Set，自动启动/停止币种采集</li>
+<li><strong>限流控制</strong>：按周期设置采集间隔（1m=60s, 5m=150s, 1h=900s 等）</li>
+<li><strong>数据存储</strong>：写入 Redis，键名格式如 <code>klines:binance:BTCUSDT:1m</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>原始 K线数据 → 技术指标计算</li>
+<li>多空比例数据 → 人群结构分析</li>
+<li>持仓量数据 → 市场结构分析</li>
+</ul>
+<h4 id="2-websocket-市场数据-data_serverbinancews_binancemarket_ws">2. WebSocket 市场数据 (<code>data_server/binance/ws_binance/market_ws</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>data_server/binance/ws_binance/market_ws.py</code></li>
+<li><strong>强平订单处理</strong>：<code>data_server/binance/ws_binance/utils/force_order.py</code></li>
+<li><strong>价格波动检测</strong>：<code>data_server/binance/ws_binance/utils/spike_trigger.py</code></li>
+<li><strong>订单簿处理</strong>：<code>data_server/binance/ws_binance/utils/depth.py</code></li>
+<li><strong>Redis 客户端</strong>：<code>data_server/binance/ws_binance/utils/reids_connect.py</code></li>
+</ul>
+<p><strong>核心功能</strong>：实时采集 Binance 期货市场数据（价格、订单簿、强平订单），并写入 Redis 供后续分析使用。</p>
+<p><strong>主要组件</strong>：</p>
+<h5 id="21-websocket-连接管理-binancemarketws-类">2.1 WebSocket 连接管理 (<code>BinanceMarketWS</code> 类) </h5>
+<ul>
+<li><strong>连接地址</strong>：<code>wss://fstream.binance.com</code>（Binance 期货 WebSocket）</li>
+<li><strong>功能特性</strong>：
+<ul>
+<li>建立并维护 WebSocket 连接</li>
+<li>自动重连机制（连接断开时自动重连）</li>
+<li>动态订阅/取消订阅数据流（支持运行时修改订阅列表）</li>
+<li>支持多流合并订阅（通过 <code>/stream?streams=...</code> 接口）</li>
+</ul>
+</li>
+</ul>
+<h5 id="22-订阅的数据流类型">2.2 订阅的数据流类型 </h5>
+<p>每个币种订阅三种数据流：</p>
+<ul>
+<li>
+<p><strong><code>{symbol}@aggTrade</code></strong>：聚合交易数据</p>
+<ul>
+<li>包含：价格、数量、时间戳、买卖方向（is_buyer_maker）</li>
+<li>更新频率：实时（每笔成交）</li>
+</ul>
+</li>
+<li>
+<p><strong><code>{symbol}@depth20@500ms</code></strong>：20 档订单簿深度</p>
+<ul>
+<li>包含：买卖盘前 20 档价格和数量</li>
+<li>更新频率：500ms（每 500 毫秒更新一次）</li>
+</ul>
+</li>
+<li>
+<p><strong><code>{symbol}@forceOrder</code></strong>：强平订单流</p>
+<ul>
+<li>包含：强平方向（BUY/SELL）、价格、数量、时间戳</li>
+<li>更新频率：实时（每次强平时）</li>
+</ul>
+</li>
+</ul>
+<h5 id="23-数据处理流程-on_msg-函数">2.3 数据处理流程 (<code>on_msg</code> 函数) </h5>
+<p><strong>处理 <code>depthUpdate</code>（订单簿更新）</strong>：</p>
+<ol>
+<li>提取买卖盘数据（<code>bids</code> 和 <code>asks</code>）</li>
+<li>计算买卖盘流动性（汇总前 10 档数量）</li>
+<li>缓存流动性数据到 <code>_depth_liq_cache</code></li>
+<li>调用 <code>update_depth()</code> 写入 Redis Stream <code>depth:binance:{symbol}</code></li>
+<li>如果有价格缓存，触发价格波动检测器（传入价格和流动性数据）</li>
+</ol>
+<p><strong>处理 <code>aggTrade</code>（聚合交易）</strong>：</p>
+<ol>
+<li>提取价格、数量、时间戳、买卖方向</li>
+<li>写入 Redis Hash：<code>price:binance:{symbol}</code>（存储最新价格和时间戳）</li>
+<li>写入 Redis Stream：<code>aggtrades:binance:{symbol}</code>（成交行为流，保留 50000 条）</li>
+<li>缓存价格到 <code>_price_cache</code></li>
+<li>获取最新流动性数据，触发价格波动检测器</li>
+</ol>
+<p><strong>处理 <code>forceOrder</code>（强平订单）</strong>：</p>
+<ol>
+<li>调用 <code>handle_force_order()</code> 处理强平订单</li>
+<li>写入 Redis Stream：<code>force_stream:binance:{symbol}</code>（强平订单流）</li>
+<li>累加统计数据到 Redis String：<code>force_stats:binance:{symbol}</code>（包含 BUY/SELL 次数和数量）</li>
+</ol>
+<h5 id="24-价格波动检测-spikedetector">2.4 价格波动检测 (<code>SpikeDetector</code>) </h5>
+<p><strong>检测类型</strong>：</p>
+<ul>
+<li><strong>暴涨暴跌</strong>：价格在短时间内大幅波动（百分比阈值 + Z-Score）</li>
+<li><strong>单边行情</strong>：连续上涨/下跌且总幅度达标</li>
+<li><strong>流动性崩塌</strong>：买卖盘深度相对历史均值显著下降</li>
+</ul>
+<p><strong>检测参数</strong>：</p>
+<ul>
+<li>百分比阈值：1%（价格变化超过 1%）</li>
+<li>Z-Score 阈值：5.0（基于收益的 Z 分数异常）</li>
+<li>去抖时间：1000ms（避免高频误报）</li>
+<li>冷却时间：10s（检测到异常后的冷却期）</li>
+<li>连续确认：4 tick（需要连续 4 个 tick 确认）</li>
+<li>最小深度门槛：5.0（流动性最低要求）</li>
+<li>聚合窗口：2000ms（合并流动性崩塌事件）</li>
+</ul>
+<p><strong>输出</strong>：检测到异常时，写入 Redis Stream <code>alerts:binance:{symbol}</code>，供事件中心处理</p>
+<h5 id="25-动态符号监控-monitor_symbols-函数">2.5 动态符号监控 (<code>monitor_symbols</code> 函数) </h5>
+<ul>
+<li><strong>监听 Redis Set</strong>：<code>symbol:binance</code></li>
+<li><strong>自动订阅</strong>：当 Redis 中新增币种时，自动订阅该币种的三种数据流</li>
+<li><strong>自动取消订阅</strong>：当 Redis 中移除币种时，自动取消订阅并清理相关 Redis 键</li>
+<li><strong>轮询间隔</strong>：1 秒检查一次</li>
+</ul>
+<h5 id="26-数据清理-_cleanup_symbol_keys-函数">2.6 数据清理 (<code>_cleanup_symbol_keys</code> 函数) </h5>
+<p>取消订阅币种时，自动清理该币种的所有 Redis 键：</p>
+<ul>
+<li><code>price:binance:{symbol}</code></li>
+<li><code>depth:binance:{symbol}</code></li>
+<li><code>ticks:binance:{symbol}</code></li>
+<li><code>aggtrades:binance:{symbol}</code></li>
+<li><code>alerts:binance:{symbol}</code></li>
+<li><code>force_stream:binance:{symbol}</code></li>
+<li><code>stats:binance:{symbol}</code></li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：纯 WebSocket 实时数据流处理</li>
+<li><strong>本地缓存</strong>：使用 <code>_price_cache</code> 和 <code>_depth_liq_cache</code> 减少 Redis 查询</li>
+<li><strong>异常处理</strong>：各环节都有异常捕获，保证服务稳定运行</li>
+<li><strong>资源管理</strong>：取消订阅时自动清理相关数据，避免内存泄漏</li>
+</ul>
+<p><strong>数据输出到 Redis</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>Redis 键</th>
+<th>数据类型</th>
+<th>用途</th>
+<th>保留策略</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>price:binance:{symbol}</code></td>
+<td>Hash</td>
+<td>最新价格和时间戳</td>
+<td>永久</td>
+</tr>
+<tr>
+<td><code>aggtrades:binance:{symbol}</code></td>
+<td>Stream</td>
+<td>成交行为流（供行为分析）</td>
+<td>保留 50000 条</td>
+</tr>
+<tr>
+<td><code>depth:binance:{symbol}</code></td>
+<td>Stream</td>
+<td>订单簿深度流（供市场结构分析）</td>
+<td>保留 300 条</td>
+</tr>
+<tr>
+<td><code>force_stream:binance:{symbol}</code></td>
+<td>Stream</td>
+<td>强平订单流</td>
+<td>保留 100 条</td>
+</tr>
+<tr>
+<td><code>force_stats:binance:{symbol}</code></td>
+<td>String</td>
+<td>强平统计数据（JSON）</td>
+<td>3 分钟过期</td>
+</tr>
+<tr>
+<td><code>alerts:binance:{symbol}</code></td>
+<td>Stream</td>
+<td>价格波动告警事件</td>
+<td>保留固定长度</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li><strong>订单簿数据</strong> → 市场结构分析（订单簿结构、流动性分析）</li>
+<li><strong>成交行为数据</strong> → 行为分析模块（交易意图推断）</li>
+<li><strong>强平数据</strong> → ForceStats Agent 分析（爆仓统计分析）</li>
+<li><strong>价格波动告警</strong> → 事件中心生成市场事件（异常波动事件）</li>
+<li><strong>实时价格</strong> → 各模块实时价格查询</li>
+</ul>
+<p><strong>在系统中的作用</strong>：</p>
+<ol>
+<li><strong>实时数据源</strong>：为整个系统提供实时价格、订单簿、强平数据</li>
+<li><strong>事件触发</strong>：价格波动检测生成告警事件，供事件中心处理</li>
+<li><strong>行为数据</strong>：成交流供行为分析模块使用，推断市场意图</li>
+<li><strong>市场结构</strong>：订单簿数据供市场结构分析使用，分析买卖盘结构</li>
+<li><strong>强平分析</strong>：强平数据供 ForceStats Expert 分析，生成爆仓统计报告</li>
+</ol>
+<h4 id="3-websocket-用户数据-data_serverbinancews_binanceuser_ws">3. WebSocket 用户数据 (<code>data_server/binance/ws_binance/user_ws</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>data_server/binance/ws_binance/user_ws.py</code></li>
+<li><strong>持仓分析</strong>：<code>data_server/binance/ws_binance/utils/binance_pos_analysis.py</code></li>
+<li><strong>交易记录</strong>：<code>data_server/binance/ws_binance/utils/trade_recorder.py</code></li>
+<li><strong>交易事件发布</strong>：<code>data_server/binance/ws_binance/utils/trade_event_publisher.py</code></li>
+</ul>
+<p><strong>作用</strong>：实时获取账户持仓和余额信息</p>
+<p><strong>采集内容</strong>：</p>
+<ul>
+<li><strong>持仓信息</strong>：当前持仓、持仓方向、持仓数量、盈亏</li>
+<li><strong>账户余额</strong>：可用余额、冻结余额</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：WebSocket 实时数据流处理</li>
+<li><strong>数据存储</strong>：写入 Redis <code>positions:binance</code> 和 <code>balance:binance</code></li>
+<li><strong>交易事件发布</strong>：检测到开仓/平仓/加仓/减仓时，发布交易事件到 Redis Stream</li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>持仓数据 → 持仓风控分析</li>
+<li>交易事件 → TradeEventWorkflow 分析</li>
+</ul>
+<hr>
+<h3 id="阶段二技术指标计算与-api-服务-technical-indicators--api">阶段二：技术指标计算与 API 服务 (Technical Indicators &amp; API) </h3>
+<p><strong>服务</strong>：<code>api</code> (FastAPI Web 服务)</p>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>API 主入口</strong>：<code>api/main.py</code></li>
+<li><strong>应用创建</strong>：<code>api/application/__init__.py</code></li>
+<li><strong>账户管理接口</strong>：<code>api/application/apps/account/views.py</code></li>
+<li><strong>市场数据接口</strong>：<code>api/application/apps/background/views.py</code></li>
+<li><strong>指标计算引擎</strong>：<code>api/application/apps/kline/indicators/</code>（目录下各指标计算模块）</li>
+<li><strong>市场原始数据分析</strong>：<code>api/application/apps/background/market_raw_analysis.py</code></li>
+<li><strong>K线指标读取</strong>：<code>api/application/apps/background/kline_indicators.py</code></li>
+<li><strong>市场状态视图</strong>：<code>api/application/apps/background/market_state_view.py</code></li>
+<li><strong>人群状态压缩</strong>：<code>api/application/apps/background/crowd_state_compactor.py</code></li>
+</ul>
+<p><strong>功能模块</strong>：</p>
+<h4 id="1-账户管理模块-account">1. 账户管理模块 (<code>account</code>) </h4>
+<p><strong>API 接口</strong>：</p>
+<ul>
+<li><strong>POST /api/register</strong>：用户注册
+<ul>
+<li>请求参数：<code>username</code>, <code>email</code>, <code>password</code></li>
+<li>返回：注册结果和用户信息</li>
+</ul>
+</li>
+<li><strong>POST /api/login</strong>：用户登录
+<ul>
+<li>请求参数：<code>username</code>, <code>password</code></li>
+<li>返回：登录令牌和用户信息</li>
+</ul>
+</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>数据库</strong>：使用 Tortoise ORM 管理用户数据</li>
+<li><strong>认证</strong>：JWT Token 认证（待完善）</li>
+</ul>
+<h4 id="2-市场数据模块-background">2. 市场数据模块 (<code>background</code>) </h4>
+<p><strong>API 接口</strong>：</p>
+<ul>
+<li>
+<p><strong>POST /api/market_raw/analyze</strong>：市场原始数据分析</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code></li>
+<li>返回：参与者结构、ticker、资金费率分析</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/indicators/read</strong>：K线指标读取</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code>, <code>interval</code></li>
+<li>返回：指定周期的技术指标数据</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/indicators/multi_period</strong>：多周期指标读取</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code>, <code>intervals[]</code></li>
+<li>返回：多个周期的技术指标数据</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/background/read</strong>：K线背景读取</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code>, <code>interval</code></li>
+<li>返回：K线背景分析数据</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/background/multi_period</strong>：多周期背景读取</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code>, <code>intervals[]</code></li>
+<li>返回：多个周期的K线背景数据</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/market_state/read_full</strong>：完整市场状态查询</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code></li>
+<li>返回：完整的市场状态（包括原始数据、指标、背景、市场结构等）</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/crowd_state/read</strong>：人群状态读取</p>
+<ul>
+<li>请求参数：<code>exchange</code>, <code>symbol</code></li>
+<li>返回：人群状态和市场结构数据</li>
+</ul>
+</li>
+<li>
+<p><strong>POST /api/crowd_state/scan</strong>：人群状态扫描</p>
+<ul>
+<li>请求参数：<code>exchange</code></li>
+<li>返回：该交易所下所有币种的人群状态列表</li>
+</ul>
+</li>
+</ul>
+<p><strong>技术指标计算</strong>：</p>
+<ul>
+<li><strong>趋势指标</strong>：EMA、MA、MACD</li>
+<li><strong>动量指标</strong>：RSI、KDJ、Williams %R</li>
+<li><strong>波动指标</strong>：Bollinger Bands、ATR</li>
+<li><strong>支撑阻力</strong>：Support/Resistance 计算</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：纯数学计算（TA-Lib 或自定义算法）</li>
+<li><strong>多周期计算</strong>：为每个周期（1m/5m/15m/30m/1h/2h/4h/6h/12h/1d）独立计算</li>
+<li><strong>数据来源</strong>：从 Redis 读取 K线数据，计算后返回（不直接写入 Redis）</li>
+<li><strong>CORS 支持</strong>：配置了 CORS 中间件，支持跨域访问</li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>HTTP API 接口 → agent_server 调用获取数据</li>
+<li>技术指标数据 → 事件中心生成指标事件（通过 agent_server 调用）</li>
+<li>指标数据 → Agent 分析上下文</li>
+</ul>
+<hr>
+<h3 id="阶段三事件生成与处理-event-processing">阶段三：事件生成与处理 (Event Processing) </h3>
+<p><strong>服务</strong>：<code>event_center</code></p>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>event_center/main.py</code></li>
+<li><strong>配置</strong>：<code>event_center/config.py</code></li>
+</ul>
+<p><strong>多交易所支持</strong>：</p>
+<ul>
+<li><strong>自动发现</strong>：系统会自动扫描 Redis 中的 <code>symbols:*</code>、<code>indicators:*:*:*</code>、<code>alerts:*:*</code>、<code>force_stats_stream:*:*</code> 键，自动发现交易所</li>
+<li><strong>并发处理</strong>：每个交易所独立运行指标事件生成、告警消费、爆仓统计消费任务</li>
+<li><strong>默认交易所</strong>：如果未发现任何交易所，默认使用 <code>binance</code>（可通过环境变量 <code>IND_EVENT_EXCHANGE</code> 配置）</li>
+</ul>
+<p><strong>功能模块</strong>：</p>
+<h4 id="1-指标事件生成-indicators_event">1. 指标事件生成 (<code>indicators_event</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主循环</strong>：<code>event_center/ind_envent_generator.py</code></li>
+<li><strong>事件引擎</strong>：<code>event_center/indicators_event/engine/event_engine.py</code></li>
+<li><strong>规则配置</strong>：<code>event_center/indicators_event/config/</code>（YAML 配置文件）</li>
+<li><strong>评分聚合</strong>：<code>event_center/indicators_event/scoring/score_aggregator.py</code></li>
+</ul>
+<p><strong>作用</strong>：基于技术指标生成市场事件</p>
+<p><strong>事件类型</strong>：</p>
+<ul>
+<li>MACD 金叉/死叉</li>
+<li>EMA 金叉/死叉</li>
+<li>RSI 超买/超卖</li>
+<li>Bollinger Bands 突破</li>
+<li>支撑/阻力位突破</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于规则判断（YAML 配置文件定义规则）</li>
+<li><strong>多周期扫描</strong>：定期扫描各周期的技术指标</li>
+<li><strong>事件发布</strong>：发布到 Redis Stream <code>raw_event_stream</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>原始事件 → L0 Processor 聚合</li>
+</ul>
+<h4 id="2-l0-processor-原始事件聚合">2. L0 Processor (原始事件聚合) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>event_center/pipeline/l0_processor.py</code></li>
+</ul>
+<p><strong>作用</strong>：对同一币种、同一指标、同一周期的多个事件进行时间窗口聚合</p>
+<p><strong>处理逻辑</strong>：</p>
+<ul>
+<li><strong>时间窗口</strong>：300秒窗口内的事件聚合</li>
+<li><strong>方向一致性</strong>：判断事件方向是否一致</li>
+<li><strong>强度计算</strong>：基于事件数量和强度计算聚合分数</li>
+<li><strong>去重过滤</strong>：过滤低质量事件</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于时间窗口和统计聚合</li>
+<li><strong>数据存储</strong>：写入 Redis Stream <code>l0_events</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>L0 事件 → L1 Aggregator 融合</li>
+</ul>
+<h4 id="3-l1-aggregator-多周期事件融合">3. L1 Aggregator (多周期事件融合) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>event_center/pipeline/l1_aggregator.py</code></li>
+<li><strong>周期配置</strong>：<code>event_center/indicators_event/config/tf_buckets.yaml</code></li>
+</ul>
+<p><strong>作用</strong>：将多个周期的 L0 事件融合为统一的市场信号</p>
+<p><strong>处理逻辑</strong>：</p>
+<ul>
+<li><strong>周期分类</strong>：short_term (1m/5m)、mid_term (15m/30m/1h)、long_term (2h/4h/1d)</li>
+<li><strong>方向融合</strong>：判断多周期方向是否一致</li>
+<li><strong>强度计算</strong>：加权计算总分数</li>
+<li><strong>优先级判定</strong>：根据分数和一致性判定优先级（low/medium/high/critical）</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于加权融合算法</li>
+<li><strong>周期提示生成</strong>：生成 <code>tf_hint</code>（时间周期提示，如 ["15m", "30m", "1h"]）</li>
+<li><strong>数据存储</strong>：写入 Redis Stream <code>l1_events</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>L1 事件 → Final Grader 分级</li>
+</ul>
+<h4 id="4-final-grader-最终事件分级">4. Final Grader (最终事件分级) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>event_center/pipeline/final_grader.py</code></li>
+</ul>
+<p><strong>作用</strong>：对 L1 事件进行最终分级和去抖</p>
+<p><strong>处理逻辑</strong>：</p>
+<ul>
+<li><strong>优先级门控</strong>：过滤低于最低优先级的事件</li>
+<li><strong>背景就绪检查</strong>：确保市场结构数据已就绪</li>
+<li><strong>状态去抖</strong>：相同状态的事件在时间窗口内只保留一次</li>
+<li><strong>周期提示生成</strong>：根据 short_bias/mid_bias 生成 <code>tf_hint</code></li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于规则和状态机</li>
+<li><strong>数据存储</strong>：写入 Redis Stream <code>final_events</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>Final 事件 → Agent Server 分析</li>
+</ul>
+<h4 id="5-告警消费-alerts_consumer">5. 告警消费 (<code>alerts_consumer</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>event_center/alerts_consumer.py</code></li>
+</ul>
+<p><strong>作用</strong>：消费外部告警事件（如价格告警）</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：事件转发</li>
+<li><strong>数据来源</strong>：Redis Stream <code>alerts:binance:*</code></li>
+</ul>
+<h4 id="6-爆仓统计消费-force_stats_consumer">6. 爆仓统计消费 (<code>force_stats_consumer</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>event_center/force_stats_consumer.py</code></li>
+</ul>
+<p><strong>作用</strong>：消费强平订单流，生成爆仓统计事件</p>
+<p><strong>处理逻辑</strong>：</p>
+<ul>
+<li><strong>统计聚合</strong>：累加强平订单数量和数量</li>
+<li><strong>阈值检测</strong>：检测是否超过动态阈值</li>
+<li><strong>事件生成</strong>：生成 <code>force_spike_buy</code>/<code>force_spike_sell</code> 事件</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于统计和阈值判断</li>
+<li><strong>数据存储</strong>：写入 Redis Stream <code>force_stats_stream:binance:*</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>爆仓事件 → ForceStats Agent 分析</li>
+</ul>
+<hr>
+<h3 id="阶段四后台市场分析-background-analysis">阶段四：后台市场分析 (Background Analysis) </h3>
+<p><strong>服务</strong>：<code>agent_server</code> (background_main)</p>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>agent_server/main.py</code>（同时运行 background 和 final_listen）</li>
+<li><strong>Background 主循环</strong>：<code>agent_server/background_main.py</code></li>
+<li><strong>后台任务定义</strong>：<code>agent_server/utils/background_tasks.py</code></li>
+<li><strong>任务管理器</strong>：<code>agent_server/utils/manager.py</code></li>
+<li><strong>符号监听</strong>：<code>agent_server/utils/watchers/symbols.py</code></li>
+</ul>
+<p><strong>功能模块</strong>：</p>
+<h4 id="1-k线分析-klineexpert">1. K线分析 (<code>KLineExpert</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/background/kline.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/kline.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析多周期 K线形态和市场环境</p>
+<p><strong>分析内容</strong>：</p>
+<ul>
+<li><strong>周期趋势分析</strong>：各周期的趋势方向（up/down/flat）</li>
+<li><strong>市场结构识别</strong>：突破、假突破、盘整、支撑阻力</li>
+<li><strong>市场环境态势</strong>：趋势/回调/盘整、波动强度</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：多周期 K线数据和技术指标</li>
+<li><strong>输出</strong>：结构化的趋势背景摘要</li>
+<li><strong>数据存储</strong>：写入 Redis <code>background:binance:BTCUSDT:kline_background</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>K线背景数据 → 市场结构分析</li>
+<li>K线背景数据 → Agent 分析上下文</li>
+</ul>
+<h4 id="2-市场结构分析-marketstructureexpert">2. 市场结构分析 (<code>MarketStructureExpert</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/background/market_structure.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/market_structure.py</code></li>
+<li><strong>市场结构构建</strong>：<code>agent_server/agent_context/market_structure/output.py</code></li>
+<li><strong>周期聚合</strong>：<code>agent_server/agent_context/market_structure/horizons/build_context.py</code></li>
+<li><strong>周期配置</strong>：<code>agent_server/agent_context/market_structure/horizon_schema.py</code></li>
+<li><strong>订单簿分析</strong>：<code>agent_server/agent_context/market_structure/orderbook/service.py</code></li>
+<li><strong>持仓量分析</strong>：<code>agent_server/agent_context/market_structure/open_interest/analysis.py</code></li>
+<li><strong>行为分析</strong>：<code>agent_server/agent_context/market_structure/behavioral/behavior_aggregate.py</code></li>
+</ul>
+<p><strong>作用</strong>：综合分析订单簿、持仓量、行为数据，生成市场结构</p>
+<p><strong>分析内容</strong>：</p>
+<ul>
+<li><strong>订单簿结构</strong>：买卖盘深度、流动性分布、真空区域</li>
+<li><strong>持仓量结构</strong>：多空持仓分布、持仓变化趋势</li>
+<li><strong>行为意图</strong>：基于交易行为推断市场意图</li>
+<li><strong>周期分层</strong>：short_term/mid_term/long_term 三层结构</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：订单簿、持仓量、多空比例、K线背景</li>
+<li><strong>输出</strong>：结构化的市场结构数据</li>
+<li><strong>数据存储</strong>：写入 Redis <code>background:binance:BTCUSDT:market_structure</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>市场结构数据 → Final Grader 背景检查</li>
+<li>市场结构数据 → Agent 分析上下文</li>
+</ul>
+<h4 id="3-人群趋势分析-crowd_trend_analysis">3. 人群趋势分析 (<code>crowd_trend_analysis</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>agent_server/agent_context/utils/crowd_trend_analysis.py</code></li>
+<li><strong>人群解释</strong>：<code>agent_server/agent_context/utils/crowd_interpreter.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析多空比例数据，生成人群趋势分析</p>
+<p><strong>分析内容</strong>：</p>
+<ul>
+<li><strong>Z-Score 计算</strong>：计算多空比例的 Z-Score</li>
+<li><strong>趋势分析</strong>：计算 delta（变化量）、均值、标准差</li>
+<li><strong>拥挤度判定</strong>：基于 Z-Score 判定拥挤程度</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于统计计算（均值、标准差、Z-Score）</li>
+<li><strong>数据来源</strong>：Redis 中的多空比例数据</li>
+<li><strong>数据存储</strong>：写入 <code>crowd_trend_analysis</code> 字段</li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>人群趋势数据 → Agent 分析上下文</li>
+<li>人群趋势数据 → 信号验证</li>
+</ul>
+<hr>
+<h3 id="阶段五最终事件分析-final-event-analysis">阶段五：最终事件分析 (Final Event Analysis) </h3>
+<p><strong>服务</strong>：<code>agent_server</code> (final_listen_main)</p>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>agent_server/main.py</code>（同时运行 background 和 final_listen）</li>
+<li><strong>Final 监听主循环</strong>：<code>agent_server/final_listen_main.py</code></li>
+</ul>
+<p><strong>功能模块</strong>：</p>
+<h4 id="1-final-events-router-routerfinallistener">1. Final Events Router (<code>RouterFinalListener</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主文件</strong>：<code>agent_server/final_listen_main.py</code>（RouterFinalListener 类）</li>
+<li><strong>事件记录器</strong>：<code>agent_server/utils/trade_event_recorder.py</code></li>
+<li><strong>分析验证器</strong>：<code>agent_server/utils/analysis_verifier.py</code></li>
+<li><strong>价格获取</strong>：<code>agent_server/tools/price_fetcher.py</code></li>
+</ul>
+<p><strong>作用</strong>：监听 <code>final_events</code> Stream，根据事件类型路由到不同工作流</p>
+<p><strong>路由逻辑</strong>：</p>
+<ul>
+<li><strong>route = "indicators" 或 "mixed"</strong> → <code>SignalValidationWorkflow</code></li>
+<li><strong>route = "trade"</strong> → <code>TradeEventWorkflow</code></li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于事件字段的路由判断</li>
+<li><strong>事件解析</strong>：解析 <code>meta</code>、<code>analysis_context</code>、<code>structure</code>、<code>trade_details</code></li>
+<li><strong>周期判断</strong>：提取 <code>tf_hint</code> 和 <code>is_short_term</code></li>
+</ul>
+<p><strong>为后续提供</strong>：</p>
+<ul>
+<li>路由信息 → 相应工作流</li>
+</ul>
+<h4 id="2-信号验证工作流-signalvalidationworkflow">2. 信号验证工作流 (<code>SignalValidationWorkflow</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>工作流定义</strong>：<code>agent_server/agent_workflow/signal_validation_workflow.py</code></li>
+<li><strong>信号验证组件</strong>：<code>agent_server/agent_workflow/components/executors/signal_validation_execution.py</code></li>
+<li><strong>持仓风控组件</strong>：<code>agent_server/agent_workflow/components/executors/position_risk_execution.py</code></li>
+<li><strong>SignalValidation Expert</strong>：<code>agent_server/agents/experts/analysis/signal_validation.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/signal_validation.py</code></li>
+<li><strong>周期验证工具</strong>：<code>agent_server/agents/experts/analysis/utils/tf_validation.py</code></li>
+<li><strong>Agent 上下文构建</strong>：<code>agent_server/agent_context/builder.py</code></li>
+</ul>
+<p><strong>作用</strong>：验证指标信号的合理性和有效性</p>
+<p><strong>工作流步骤</strong>：</p>
+<p><strong>步骤1：信号验证 (<code>SignalValidationExpert</code>)</strong></p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：
+<ul>
+<li>Final 事件信息（方向、置信度、周期提示）</li>
+<li>市场结构数据（short_term/mid_term/long_term）</li>
+<li>人群结构数据（crowd_state、crowd_trend_analysis）</li>
+<li>技术指标验证（tf_validation）</li>
+</ul>
+</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>信号有效性判断（VALID/WEAK_VALID/INVALID）</li>
+<li>结构一致性判断（ALIGNED/CONFLICT/STRONGLY_CONFLICT）</li>
+<li>方向判断（long/short/neutral）</li>
+<li>置信度调整</li>
+</ul>
+</li>
+<li><strong>输出</strong>：结构化的信号验证结果</li>
+</ul>
+<p><strong>步骤2：持仓风控 (<code>PositionRiskExpert</code>)</strong></p>
+<ul>
+<li><strong>代码位置</strong>：
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/analysis/position_risk.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/position_risk.py</code></li>
+<li><strong>持仓上下文</strong>：<code>agent_server/agent_context/market_structure/holding_context.py</code></li>
+</ul>
+</li>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：
+<ul>
+<li>当前持仓状态</li>
+<li>信号验证结果</li>
+<li>市场结构数据</li>
+</ul>
+</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>持仓风险评估</li>
+<li>开仓/平仓/加仓/减仓建议</li>
+<li>风险等级判定</li>
+</ul>
+</li>
+<li><strong>输出</strong>：持仓风控决策</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>周期分割</strong>：根据 <code>tf_hint</code> 和 <code>HORIZONS</code> 配置进行周期分析</li>
+<li><strong>数据存储</strong>：分析结果存储到数据库和 Redis</li>
+</ul>
+<h4 id="3-交易事件工作流-tradeeventworkflow">3. 交易事件工作流 (<code>TradeEventWorkflow</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>工作流定义</strong>：<code>agent_server/agent_workflow/trade_event_workflow.py</code></li>
+<li><strong>交易事件组件</strong>：<code>agent_server/agent_workflow/components/executors/trade_event_execution.py</code></li>
+<li><strong>TradeEvent Expert</strong>：<code>agent_server/agents/experts/analysis/trade_event.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/trade_event.py</code></li>
+<li><strong>交易数据抽象</strong>：<code>agent_server/agents/experts/analysis/utils/trade_core_data.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析交易事件的合理性和结构一致性</p>
+<p><strong>工作流步骤</strong>：</p>
+<p><strong>步骤1：交易事件分析 (<code>TradeEventExpert</code>)</strong></p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：
+<ul>
+<li>交易详情（开仓/平仓/加仓/减仓）</li>
+<li>持仓状态（当前持仓、盈亏）</li>
+<li>市场结构数据</li>
+<li>人群结构数据</li>
+</ul>
+</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>交易合理性判断（VALID/WEAK_VALID/INVALID）</li>
+<li>结构一致性判断（ALIGNED/CONFLICT/STRONGLY_CONFLICT）</li>
+<li>风险调整建议</li>
+</ul>
+</li>
+<li><strong>输出</strong>：结构化的交易事件分析结果</li>
+</ul>
+<p><strong>步骤2：持仓风控 (<code>PositionRiskExpert</code>)</strong></p>
+<ul>
+<li>同信号验证工作流的步骤2</li>
+</ul>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>短线跳过</strong>：如果 <code>is_short_term=True</code>，跳过 LLM 分析以节省成本</li>
+<li><strong>数据存储</strong>：交易事件和分析结果存储到数据库</li>
+</ul>
+<hr>
+<h3 id="阶段六可选分析-agent">阶段六：可选分析 Agent </h3>
+<h4 id="1-forcestats-expert-force_stats">1. ForceStats Expert (<code>force_stats</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/analysis/force_stats.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/force_stats.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析爆仓统计数据，生成爆仓事件解读</p>
+<p><strong>使用场景</strong>：单独运行，分析强平订单数据</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>deepseek-ai/DeepSeek-V3</code></li>
+<li><strong>输入</strong>：
+<ul>
+<li>爆仓统计数据（BUY/SELL、BUY_QTY/SELL_QTY）</li>
+<li>市场状态背景</li>
+</ul>
+</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>爆仓事件结构识别</li>
+<li>微结构意义判断（顺势加速/逆势扫损/末端衰竭）</li>
+<li>时间周期对齐（1m/5m/15m）</li>
+<li>风险等级判定</li>
+</ul>
+</li>
+<li><strong>输出</strong>：结构化的爆仓分析结果</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.force_stats
+</code></pre><h4 id="2-humanmarketnarrator-expert-human_market_narrator">2. HumanMarketNarrator Expert (<code>human_market_narrator</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/background/human_market_narrator.py</code></li>
+<li><strong>Prompt 配置</strong>：<code>agent_server/configs/prompts/human_market_narrator.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：生成人类可读的市场叙事，用于前端展示</p>
+<p><strong>使用场景</strong>：单独运行，生成市场解读报告</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：
+<ul>
+<li>市场结构数据</li>
+<li>多周期 K线指标</li>
+</ul>
+</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>市场故事叙述（自然语言）</li>
+<li>阅读辅助层（short_term/mid_term/long_term 方向印象）</li>
+</ul>
+</li>
+<li><strong>输出</strong>：人类可读的市场叙事 JSON</li>
+</ul>
+<p><strong>特点</strong>：</p>
+<ul>
+<li><strong>仅用于展示</strong>：不参与交易决策，不用于回测</li>
+<li><strong>纯展示层</strong>：帮助用户理解市场状态</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.background.human_market_narrator
+</code></pre><h4 id="3-news-expert-news">3. News Expert (<code>news</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/analysis/news.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析市场相关新闻，生成新闻摘要和影响分析</p>
+<p><strong>使用场景</strong>：单独运行，分析市场新闻对交易的影响</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>deepseek-ai/DeepSeek-V3</code></li>
+<li><strong>输入</strong>：市场新闻、事件信息</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>新闻摘要生成</li>
+<li>市场影响评估</li>
+<li>相关性分析</li>
+</ul>
+</li>
+<li><strong>输出</strong>：结构化的新闻分析结果</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.news
+</code></pre><h4 id="4-technical-expert-technical">4. Technical Expert (<code>technical</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/analysis/technical.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：进行技术指标分析，生成技术分析报告</p>
+<p><strong>使用场景</strong>：单独运行，进行深度技术分析</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>deepseek-ai/DeepSeek-V3</code></li>
+<li><strong>输入</strong>：技术指标、价格数据</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>技术指标解读</li>
+<li>趋势判断</li>
+<li>买卖信号识别</li>
+</ul>
+</li>
+<li><strong>输出</strong>：技术分析报告</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.technical
+</code></pre><h4 id="5-portfolio-expert-portfolio">5. Portfolio Expert (<code>portfolio</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/analysis/portfolio.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：分析投资组合，提出持仓调整建议</p>
+<p><strong>使用场景</strong>：单独运行，进行投资组合优化分析</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>deepseek-ai/DeepSeek-V3</code></li>
+<li><strong>输入</strong>：持仓组合、市场数据</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>组合风险评估</li>
+<li>持仓调整建议</li>
+<li>资产配置优化</li>
+</ul>
+</li>
+<li><strong>输出</strong>：投资组合分析报告</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.portfolio
+</code></pre><h4 id="6-reflection-expert-reflection">6. Reflection Expert (<code>reflection</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/reflection.py</code></li>
+</ul>
+<p><strong>作用</strong>：对多个 Expert 的输出进行反思和评分</p>
+<p><strong>使用场景</strong>：编排层使用，评估各 Expert 的输出质量</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于输出长度和内容的简单评分算法</li>
+<li><strong>输入</strong>：多个 Expert 的名称和输出</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>输出质量评分（基于长度，0-1 范围）</li>
+<li>关键洞察提取</li>
+</ul>
+</li>
+<li><strong>输出</strong>：反思评分和洞察摘要</li>
+</ul>
+<p><strong>特点</strong>：</p>
+<ul>
+<li><strong>非 LLM</strong>：纯算法实现，快速高效</li>
+<li><strong>评分机制</strong>：基于输出长度计算质量分数</li>
+</ul>
+<h4 id="7-fusion-expert-fusion">7. Fusion Expert (<code>fusion</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/fusion.py</code></li>
+</ul>
+<p><strong>作用</strong>：融合多个 Expert 的输出，生成加权融合结果</p>
+<p><strong>使用场景</strong>：编排层使用，将多个 Expert 的分析结果进行融合</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>不使用 LLM</strong>：基于权重和评分的融合算法</li>
+<li><strong>输入</strong>：
+<ul>
+<li>多个 Expert 的名称和输出</li>
+<li>基础权重（base_weights）</li>
+<li>反思评分（reflection_scores）</li>
+<li>自动评分（auto_scores）</li>
+</ul>
+</li>
+<li><strong>融合公式</strong>：<code>combined = base_weight * (0.5 * reflection_score + 0.5 * auto_score)</code></li>
+<li><strong>输出</strong>：融合后的文本和权重分布</li>
+</ul>
+<p><strong>特点</strong>：</p>
+<ul>
+<li><strong>非 LLM</strong>：纯算法实现，快速高效</li>
+<li><strong>权重融合</strong>：综合考虑基础权重、反思评分和自动评分</li>
+</ul>
+<h4 id="8-memory-expert-memory">8. Memory Expert (<code>memory</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/memory.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：管理历史事件和交易记录的记忆，生成记忆摘要</p>
+<p><strong>使用场景</strong>：编排层使用，维护长期记忆</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：历史事件、交易记录</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>记忆摘要生成</li>
+<li>关键事件提取</li>
+<li>模式识别</li>
+</ul>
+</li>
+<li><strong>输出</strong>：记忆摘要</li>
+</ul>
+<h4 id="9-event-summary-expert-event_summary">9. Event Summary Expert (<code>event_summary</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/event_summary.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：对多个事件进行摘要，生成事件摘要报告</p>
+<p><strong>使用场景</strong>：编排层使用，汇总多个事件</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：多个事件信息</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>事件摘要生成</li>
+<li>关键事件识别</li>
+<li>事件关联分析</li>
+</ul>
+</li>
+<li><strong>输出</strong>：事件摘要报告</li>
+</ul>
+<h4 id="10-trade-summary-expert-trade_summary">10. Trade Summary Expert (<code>trade_summary</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/trade_summary.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：对交易记录进行摘要，生成交易摘要报告</p>
+<p><strong>使用场景</strong>：编排层使用，汇总交易记录</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：交易记录</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>交易摘要生成</li>
+<li>盈亏分析</li>
+<li>交易模式识别</li>
+</ul>
+</li>
+<li><strong>输出</strong>：交易摘要报告</li>
+</ul>
+<h4 id="11-decision-expert-decision">11. Decision Expert (<code>decision</code>) </h4>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>Expert 实现</strong>：<code>agent_server/agents/experts/orchestration/decision.py</code></li>
+<li><strong>Agent 配置</strong>：<code>agent_server/configs/source.py</code></li>
+</ul>
+<p><strong>作用</strong>：基于综合分析结果，生成最终决策建议</p>
+<p><strong>使用场景</strong>：编排层使用，生成最终交易决策</p>
+<p><strong>技术实现</strong>：</p>
+<ul>
+<li><strong>使用 LLM</strong>：<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></li>
+<li><strong>输入</strong>：综合分析结果（多个 Expert 的输出）</li>
+<li><strong>分析内容</strong>：
+<ul>
+<li>决策建议生成</li>
+<li>风险评估</li>
+<li>执行计划制定</li>
+</ul>
+</li>
+<li><strong>输出</strong>：最终决策报告</li>
+</ul>
+<hr>
+<h3 id="数据流总结">数据流总结 </h3>
+<h4 id="简化数据流">简化数据流 </h4>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>原始数据采集
+    ↓ (REST API + WebSocket)
+Redis 原始数据存储
+    ↓ (技术指标计算)
+Redis 技术指标存储
+    ↓ (事件生成)
+L0 事件聚合
+    ↓ (多周期融合)
+L1 事件融合
+    ↓ (最终分级)
+Final 事件
+    ↓ (后台分析)
+市场结构数据
+    ↓ (Final 监听)
+Agent 工作流分析
+    ↓ (LLM 推理)
+分析结果存储
+</code></pre><h4 id="详细数据流含代码位置">详细数据流（含代码位置） </h4>
+<div class="mermaid">sequenceDiagram
+    participant DS as data_server&lt;br/&gt;rest_binance/app/main.py
+    participant WS as market_ws&lt;br/&gt;ws_binance/market_ws.py
+    participant US as user_ws&lt;br/&gt;ws_binance/user_ws.py
+    participant R as Redis
+    participant API as api/main.py
+    participant EC as event_center/main.py
+    participant L0 as L0 Processor&lt;br/&gt;pipeline/l0_processor.py
+    participant L1 as L1 Aggregator&lt;br/&gt;pipeline/l1_aggregator.py
+    participant FG as Final Grader&lt;br/&gt;pipeline/final_grader.py
+    participant BG as background_main.py
+    participant FL as final_listen_main.py
+    participant SV as SignalValidationWorkflow
+    participant TE as TradeEventWorkflow
+    
+    DS-&gt;&gt;R: K线数据、多空比例、持仓量
+    WS-&gt;&gt;R: 订单簿、强平订单
+    US-&gt;&gt;R: 持仓、余额、交易事件
+    
+    API-&gt;&gt;R: 读取K线数据
+    API-&gt;&gt;R: 计算技术指标
+    API-&gt;&gt;R: 存储指标数据
+    
+    EC-&gt;&gt;R: 读取技术指标
+    EC-&gt;&gt;L0: 生成原始事件
+    L0-&gt;&gt;R: 写入 l0_events Stream
+    L0-&gt;&gt;L1: L0事件聚合
+    L1-&gt;&gt;R: 写入 l1_events Stream
+    L1-&gt;&gt;FG: L1事件融合
+    FG-&gt;&gt;R: 写入 final_events Stream
+    
+    BG-&gt;&gt;API: HTTP请求获取数据
+    API-&gt;&gt;BG: 返回K线/指标数据
+    BG-&gt;&gt;BG: KLineExpert [LLM]
+    BG-&gt;&gt;BG: MarketStructureExpert [LLM]
+    BG-&gt;&gt;R: 存储市场结构数据
+    
+    FL-&gt;&gt;R: 监听 final_events Stream
+    FL-&gt;&gt;FL: RouterFinalListener路由
+    FL-&gt;&gt;SV: route=indicators/mixed
+    FL-&gt;&gt;TE: route=trade
+    SV-&gt;&gt;SV: SignalValidationExpert [LLM]
+    SV-&gt;&gt;SV: PositionRiskExpert [LLM]
+    TE-&gt;&gt;TE: TradeEventExpert [LLM]
+    TE-&gt;&gt;TE: PositionRiskExpert [LLM]
+    SV-&gt;&gt;R: 存储分析结果
+    TE-&gt;&gt;R: 存储分析结果
+</div><h3 id="llm-使用总结">LLM 使用总结 </h3>
+<table>
+<thead>
+<tr>
+<th>Agent</th>
+<th>模型</th>
+<th>用途</th>
+<th>输入</th>
+<th>输出</th>
+<th>代码位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>后台分析 Expert</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>KLineExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>K线形态分析</td>
+<td>K线数据、技术指标</td>
+<td>趋势背景摘要</td>
+<td><code>agent_server/agents/experts/background/kline.py</code></td>
+</tr>
+<tr>
+<td>MarketStructureExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>市场结构分析</td>
+<td>订单簿、持仓量、行为数据</td>
+<td>市场结构数据</td>
+<td><code>agent_server/agents/experts/background/market_structure.py</code></td>
+</tr>
+<tr>
+<td>HumanMarketNarratorExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>市场叙事</td>
+<td>市场结构、K线指标</td>
+<td>人类可读叙事</td>
+<td><code>agent_server/agents/experts/background/human_market_narrator.py</code></td>
+</tr>
+<tr>
+<td><strong>事件分析 Expert</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>SignalValidationExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>信号验证</td>
+<td>事件信息、市场结构、人群结构</td>
+<td>信号验证结果</td>
+<td><code>agent_server/agents/experts/analysis/signal_validation.py</code></td>
+</tr>
+<tr>
+<td>TradeEventExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>交易事件分析</td>
+<td>交易详情、市场结构</td>
+<td>交易分析结果</td>
+<td><code>agent_server/agents/experts/analysis/trade_event.py</code></td>
+</tr>
+<tr>
+<td>PositionRiskExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>持仓风控</td>
+<td>持仓状态、市场结构</td>
+<td>风控决策</td>
+<td><code>agent_server/agents/experts/analysis/position_risk.py</code></td>
+</tr>
+<tr>
+<td>ForceStatsExpert</td>
+<td>deepseek-ai/DeepSeek-V3</td>
+<td>爆仓分析</td>
+<td>爆仓统计数据</td>
+<td>爆仓解读</td>
+<td><code>agent_server/agents/experts/analysis/force_stats.py</code></td>
+</tr>
+<tr>
+<td>NewsExpert</td>
+<td>deepseek-ai/DeepSeek-V3</td>
+<td>新闻分析</td>
+<td>市场新闻、事件</td>
+<td>新闻摘要和影响分析</td>
+<td><code>agent_server/agents/experts/analysis/news.py</code></td>
+</tr>
+<tr>
+<td>TechnicalExpert</td>
+<td>deepseek-ai/DeepSeek-V3</td>
+<td>技术分析</td>
+<td>技术指标、价格数据</td>
+<td>技术分析报告</td>
+<td><code>agent_server/agents/experts/analysis/technical.py</code></td>
+</tr>
+<tr>
+<td>PortfolioExpert</td>
+<td>deepseek-ai/DeepSeek-V3</td>
+<td>投资组合分析</td>
+<td>持仓组合、市场数据</td>
+<td>组合调整建议</td>
+<td><code>agent_server/agents/experts/analysis/portfolio.py</code></td>
+</tr>
+<tr>
+<td><strong>编排 Expert</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>MemoryExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>记忆管理</td>
+<td>历史事件、交易记录</td>
+<td>记忆摘要</td>
+<td><code>agent_server/agents/experts/orchestration/memory.py</code></td>
+</tr>
+<tr>
+<td>EventSummaryExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>事件摘要</td>
+<td>多个事件</td>
+<td>事件摘要</td>
+<td><code>agent_server/agents/experts/orchestration/event_summary.py</code></td>
+</tr>
+<tr>
+<td>TradeSummaryExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>交易摘要</td>
+<td>交易记录</td>
+<td>交易摘要</td>
+<td><code>agent_server/agents/experts/orchestration/trade_summary.py</code></td>
+</tr>
+<tr>
+<td>DecisionExpert</td>
+<td>Qwen/Qwen3-VL-235B-A22B-Instruct</td>
+<td>决策专家</td>
+<td>综合分析结果</td>
+<td>最终决策</td>
+<td><code>agent_server/agents/experts/orchestration/decision.py</code></td>
+</tr>
+<tr>
+<td><strong>非 LLM Expert</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ReflectionExpert</td>
+<td>-</td>
+<td>反思评分</td>
+<td>多个 Expert 输出</td>
+<td>评分和洞察</td>
+<td><code>agent_server/agents/experts/orchestration/reflection.py</code></td>
+</tr>
+<tr>
+<td>FusionExpert</td>
+<td>-</td>
+<td>多专家融合</td>
+<td>多个 Expert 输出、权重</td>
+<td>融合结果</td>
+<td><code>agent_server/agents/experts/orchestration/fusion.py</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="非-llm-功能总结">非 LLM 功能总结 </h3>
+<table>
+<thead>
+<tr>
+<th>功能模块</th>
+<th>技术实现</th>
+<th>作用</th>
+<th>为后续提供</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REST API 采集</td>
+<td>HTTP 请求</td>
+<td>获取历史数据</td>
+<td>原始数据</td>
+</tr>
+<tr>
+<td>WebSocket 采集</td>
+<td>WebSocket 流</td>
+<td>获取实时数据</td>
+<td>实时数据流</td>
+</tr>
+<tr>
+<td>技术指标计算</td>
+<td>数学计算</td>
+<td>计算技术指标</td>
+<td>指标数据</td>
+</tr>
+<tr>
+<td>事件生成</td>
+<td>规则判断</td>
+<td>生成市场事件</td>
+<td>原始事件</td>
+</tr>
+<tr>
+<td>L0/L1/Final 处理</td>
+<td>统计聚合</td>
+<td>事件融合和分级</td>
+<td>最终事件</td>
+</tr>
+<tr>
+<td>人群趋势分析</td>
+<td>统计计算</td>
+<td>Z-Score、趋势分析</td>
+<td>人群数据</td>
+</tr>
+<tr>
+<td>周期分割</td>
+<td>HORIZONS 配置</td>
+<td>三层周期聚合</td>
+<td>周期结构</td>
+</tr>
+</tbody>
+</table>
+<h2 id="项目结构">项目结构 </h2>
+<p>UTaker 采用模块化设计，各服务独立运行但通过 Redis 共享数据。主要目录结构如下：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>UTaker/
+├── agent_server/        # 智能代理服务
+├── api/                 # Web API 服务（FastAPI）
+├── data_server/         # 数据采集服务（Binance）
+├── event_center/        # 事件中心（指标事件生成）
+├── tests/               # 测试用例
+├── tools/               # 辅助工具脚本
+├── requirements.txt     # Python 依赖
+└── pyproject.toml       # 项目配置
+</code></pre><p>每个服务都有独立的 <code>main.py</code> 作为入口点，并通过环境变量或配置文件管理 Redis 连接等参数。</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[requirements.txt](file://requirements.txt)</li>
+<li>[pyproject.toml](file://pyproject.toml)</li>
+</ul>
+<h2 id="运行步骤">运行步骤 </h2>
+<p>以下是运行 UTaker 系统的完整步骤，建议按顺序执行。</p>
+<h3 id="1-克隆仓库">1. 克隆仓库 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">git</span> clone https://github.com/your-repo/UTaker.git
+<span class="token builtin class-name">cd</span> UTaker
+</code></pre><h3 id="2-安装-python-依赖">2. 安装 Python 依赖 </h3>
+<p>系统使用 Python 3.11+ 和 <code>pip</code> 管理依赖。建议使用虚拟环境：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python3 <span class="token parameter variable">-m</span> venv venv
+<span class="token builtin class-name">source</span> venv/bin/activate  <span class="token comment"># Linux/Mac</span>
+<span class="token comment"># 或 venv\Scripts\activate  # Windows</span>
+
+pip <span class="token function">install</span> <span class="token parameter variable">-r</span> requirements.txt
+</code></pre><h3 id="3-配置-redis-连接">3. 配置 Redis 连接 </h3>
+<p>系统通过 Redis 实现服务间通信。所有服务均通过环境变量或配置文件读取 Redis 参数。</p>
+<p>默认配置（可在各服务的 <code>config.py</code> 中修改）：</p>
+<ul>
+<li><strong>主机</strong>: <code>127.0.0.1</code></li>
+<li><strong>端口</strong>: <code>6379</code></li>
+<li><strong>数据库</strong>: <code>1</code></li>
+<li><strong>密码</strong>: 无</li>
+</ul>
+<p>如需自定义，请在运行前设置环境变量：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token builtin class-name">export</span> <span class="token assign-left variable">REDIS_HOST</span><span class="token operator">=</span><span class="token number">127.0</span>.0.1
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">REDIS_PORT</span><span class="token operator">=</span><span class="token number">6379</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">REDIS_DB</span><span class="token operator">=</span><span class="token number">1</span>
+<span class="token comment"># export REDIS_PASSWORD=yourpassword  # 如有密码</span>
+</code></pre><p><strong>Section sources</strong></p>
+<ul>
+<li>[agent_server/config.py](file://agent_server/config.py)</li>
+<li>[event_center/config.py](file://event_center/config.py)</li>
+<li>[data_server/binance/rest_binance/app/config.py](file://data_server/binance/rest_binance/app/config.py)</li>
+</ul>
+<h3 id="4-配置-llm大语言模型">4. 配置 LLM（大语言模型） </h3>
+<p><code>agent_server</code> 服务使用 LLM 进行智能分析，需要配置 LLM API 密钥。</p>
+<h4 id="配置方式">配置方式 </h4>
+<p><strong>方式1：通过环境变量（推荐）</strong></p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token builtin class-name">export</span> <span class="token assign-left variable">SILICONFLOW_TOKEN</span><span class="token operator">=</span>your_api_key_here
+</code></pre><p><strong>方式2：修改配置文件</strong><br>
+编辑 <code>agent_server/configs/source.py</code> 文件，修改各代理的 <code>llm_api_key</code> 字段。</p>
+<h4 id="llm-服务配置">LLM 服务配置 </h4>
+<p>系统默认使用 <strong>SiliconFlow</strong> 作为 LLM 服务提供商：</p>
+<ul>
+<li><strong>API 地址</strong>: <code>https://api.siliconflow.cn/v1</code></li>
+<li><strong>配置文件</strong>: <code>agent_server/configs/source.py</code></li>
+</ul>
+<h4 id="使用的模型">使用的模型 </h4>
+<p>系统为不同的代理专家配置了不同的模型：</p>
+<table>
+<thead>
+<tr>
+<th>代理类型</th>
+<th>模型</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>news, technical, risk, portfolio, reflection, fusion</td>
+<td><code>deepseek-ai/DeepSeek-V3</code></td>
+<td>文本分析、决策建议</td>
+</tr>
+<tr>
+<td>memory, kline, market_structure, signal_validation, position_risk</td>
+<td><code>Qwen/Qwen3-VL-235B-A22B-Instruct</code></td>
+<td>复杂分析、信号验证</td>
+</tr>
+</tbody>
+</table>
+<h4 id="获取-api-key">获取 API Key </h4>
+<ol>
+<li>访问 <a href="https://siliconflow.cn">SiliconFlow</a> 注册账号</li>
+<li>在控制台创建 API Key</li>
+<li>将 API Key 设置为环境变量或写入配置文件</li>
+</ol>
+<p><strong>注意</strong>：请妥善保管 API Key，不要将其提交到代码仓库。</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[agent_server/configs/source.py](file://agent_server/configs/source.py)</li>
+<li>[agent_server/agents/experts/analysis/technical.py](file://agent_server/agents/experts/analysis/technical.py)</li>
+</ul>
+<h3 id="5-启动各服务按顺序">5. 启动各服务（按顺序） </h3>
+<p>服务之间存在依赖关系，请严格按照以下顺序启动。</p>
+<h4 id="1-启动-data_server数据采集">(1) 启动 data_server（数据采集） </h4>
+<p>该服务负责从 Binance 获取 K线数据。</p>
+<p><strong>代码位置</strong>：<code>data_server/binance/rest_binance/app/main.py</code></p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token builtin class-name">cd</span> data_server/binance/rest_binance
+python app/main.py
+</code></pre><p><strong>可选：启动 WebSocket 服务</strong></p>
+<p><strong>市场数据 WebSocket</strong>（代码位置：<code>data_server/binance/ws_binance/market_ws.py</code>）：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> data_server.binance.ws_binance.market_ws
+</code></pre><p><strong>用户数据 WebSocket</strong>（代码位置：<code>data_server/binance/ws_binance/user_ws.py</code>）：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> data_server.binance.ws_binance.user_ws
+</code></pre><h4 id="2-启动-event_center事件中心">(2) 启动 event_center（事件中心） </h4>
+<p>该服务监听 Redis 中的指标数据，生成市场事件。</p>
+<p><strong>代码位置</strong>：<code>event_center/main.py</code></p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token builtin class-name">cd</span> <span class="token punctuation">..</span>/<span class="token punctuation">..</span>/<span class="token punctuation">..</span>  <span class="token comment"># 回到项目根目录</span>
+python <span class="token parameter variable">-m</span> event_center.main
+</code></pre><h4 id="3-启动-apiweb-服务">(3) 启动 api（Web 服务） </h4>
+<p>启动 FastAPI 服务，提供 HTTP 接口。<strong>注意：api 服务应该在 agent_server 之前启动</strong>，因为 agent_server 需要调用它的接口。</p>
+<p><strong>代码位置</strong>：<code>api/main.py</code></p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 方式1：从项目根目录运行（推荐）</span>
+python <span class="token parameter variable">-m</span> api.main
+
+<span class="token comment"># 方式2：进入 api 目录运行</span>
+<span class="token builtin class-name">cd</span> api
+python main.py
+</code></pre><h4 id="4-启动-agent_server智能代理">(4) 启动 agent_server（智能代理） </h4>
+<p>agent_server 包含主服务（background + final_listen），同时运行后台分析和最终事件监听。</p>
+<p><strong>代码位置</strong>：</p>
+<ul>
+<li><strong>主入口</strong>：<code>agent_server/main.py</code></li>
+<li><strong>Background 服务</strong>：<code>agent_server/background_main.py</code></li>
+<li><strong>Final 监听服务</strong>：<code>agent_server/final_listen_main.py</code></li>
+</ul>
+<p><strong>注意</strong>：agent_server 依赖 api 服务，它会通过 HTTP 请求调用 api 服务获取市场数据。</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 确保在项目根目录</span>
+python <span class="token parameter variable">-m</span> agent_server.main
+</code></pre><p><strong>服务说明</strong>：</p>
+<ul>
+<li><code>agent_server.main</code> 会同时启动 <code>background_main</code> 和 <code>final_listen_main</code></li>
+<li><code>background_main</code>：定期调用 API 获取数据，运行 K线分析和市场结构分析</li>
+<li><code>final_listen_main</code>：监听 <code>final_events</code> Stream，运行信号验证和交易事件分析工作流</li>
+</ul>
+<p><strong>服务关系说明：</strong></p>
+<ul>
+<li><strong>api 服务</strong>：提供 RESTful HTTP 接口，从 Redis 读取市场数据（K线、指标、市场结构等）并返回</li>
+<li><strong>agent_server</strong>：作为客户端，定期通过 HTTP 请求调用 api 服务的接口获取数据，然后使用 LLM 进行分析</li>
+<li><strong>调用关系</strong>：agent_server → HTTP 请求 → api 服务 → Redis → 返回数据</li>
+<li><strong>主要接口</strong>：
+<ul>
+<li><code>/api/kline/indicators/read</code> - 读取技术指标</li>
+<li><code>/api/kline/background/read_multi</code> - 读取多周期背景数据</li>
+<li><code>/api/crowd_state/read</code> - 读取市场结构</li>
+<li><code>/api/market_raw/analyze</code> - 分析市场原始数据</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-验证服务状态">5. 验证服务状态 </h3>
+<p>可通过日志观察各服务是否正常运行。例如，<code>data_server</code> 应定期输出类似：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>task_trigger name=spider_1m interval=1m time=...
+</code></pre><p>表示正在采集 1 分钟 K线。</p>
+<h2 id="最小化运行示例">最小化运行示例 </h2>
+<p>本示例演示如何启动系统并观察 BTC/USDT 的 MACD 金叉事件。</p>
+<h3 id="1-配置采集-btcusdt-1m-k线">1. 配置采集 BTC/USDT 1m K线 </h3>
+<p>确保 <code>data_server</code> 正在运行，并在 Redis 中添加监控符号：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>redis-cli
+<span class="token operator">&gt;</span> SADD <span class="token string">"symbol:binance"</span> <span class="token string">"BTCUSDT"</span>
+</code></pre><p><code>data_server</code> 会自动检测到该符号并开始采集 1m K线数据。</p>
+<h3 id="2-观察-event_center-生成-macd-金叉事件">2. 观察 event_center 生成 MACD 金叉事件 </h3>
+<p><code>event_center</code> 会定期扫描 Redis 中的指标数据。当检测到 MACD 金叉时，会在日志中输出类似：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>[EVENT] MACD crossover detected for BTCUSDT@binance (1m)
+</code></pre><p>该事件会被发布到 Redis Stream <code>l1_events</code> 或 <code>final_events</code>。</p>
+<h3 id="3-查看-agent_server-的分析输出">3. 查看 agent_server 的分析输出 </h3>
+<p><code>agent_server</code> 会消费 <code>final_events</code> 流，调用大模型进行分析。日志中会出现类似：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>[AGENT] Processing event: market_spike (BTCUSDT)
+[AGENT] Analysis result: ...
+</code></pre><p>表示智能代理已对事件做出响应。</p>
+<h2 id="验证api接口">验证API接口 </h2>
+<p>系统提供 Swagger UI 界面，便于测试 API。</p>
+<h3 id="1-访问-api-文档">1. 访问 API 文档 </h3>
+<p>启动 <code>api</code> 服务后，打开浏览器访问：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>http://localhost:8000/docs
+</code></pre><p>您将看到 Swagger UI 界面，列出所有可用的 API 端点。</p>
+<h3 id="2-执行第一个-http-请求">2. 执行第一个 HTTP 请求 </h3>
+<p>以下步骤获取市场状态：</p>
+<h4 id="1-注册用户可选">(1) 注册用户（可选） </h4>
+<p>使用 <code>/register</code> 端点注册一个账户：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> <span class="token string">'POST'</span> <span class="token punctuation">\</span>
+  <span class="token string">'http://localhost:8000/register'</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">'Content-Type: application/json'</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123"
+  }'</span>
+</code></pre><h4 id="2-获取市场状态">(2) 获取市场状态 </h4>
+<p>调用 <code>/market_state/read_full</code> 获取 BTC/USDT 的完整市场状态：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> <span class="token string">'POST'</span> <span class="token punctuation">\</span>
+  <span class="token string">'http://localhost:8000/market_state/read_full'</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">'Content-Type: application/json'</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{
+    "exchange": "binance",
+    "symbol": "BTCUSDT"
+  }'</span>
+</code></pre><p>成功响应将返回包含 K线、指标、市场结构等信息的 JSON 数据。</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[api/main.py](file://api/main.py)</li>
+<li>[api/application/apps/background/views.py](file://api/application/apps/background/views.py)</li>
+</ul>
+<h2 id="查询账户仓位">查询账户仓位 </h2>
+<p>系统通过 WebSocket 实时获取 Binance 账户持仓信息，数据自动写入 Redis。</p>
+<h3 id="实盘与模拟盘">实盘与模拟盘 </h3>
+<ul>
+<li><strong>实盘</strong>：连接真实账户，使用真实资金，WebSocket 地址 <code>wss://ws-fapi.binance.com/ws-fapi/v1</code></li>
+<li><strong>测试网（模拟盘）</strong>：连接测试网，使用虚拟资金，WebSocket 地址 <code>wss://testnet.binancefuture.com/ws-fapi/v1</code></li>
+</ul>
+<h3 id="配置环境变量">配置环境变量 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 必需：Binance API 凭证</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">BINANCE_API_KEY</span><span class="token operator">=</span>你的API_KEY
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">BINANCE_API_SECRET</span><span class="token operator">=</span>你的API_SECRET
+
+<span class="token comment"># 可选：使用测试网（默认 false，即实盘）</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">BINANCE_TESTNET</span><span class="token operator">=</span>true   <span class="token comment"># true=测试网，false或不设置=实盘</span>
+</code></pre><h3 id="启动服务">启动服务 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> data_server.binance.ws_binance.user_ws
+</code></pre><p>服务会自动连接 Binance，获取持仓和余额信息并写入 Redis（<code>positions:binance</code> 和 <code>balance:binance</code>）。</p>
+<h3 id="查询仓位">查询仓位 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 方式1：使用 Python 脚本（默认查询 ETHUSDT）</span>
+python <span class="token parameter variable">-m</span> agent_server.tools.get_position
+
+<span class="token comment"># 方式2：直接查询 Redis</span>
+redis-cli
+<span class="token operator">&gt;</span> GET positions:binance
+<span class="token operator">&gt;</span> GET balance:binance
+</code></pre><p><strong>Section sources</strong></p>
+<ul>
+<li>[data_server/binance/ws_binance/user_ws.py](file://data_server/binance/ws_binance/user_ws.py)</li>
+<li>[agent_server/tools/get_position.py](file://agent_server/tools/get_position.py)</li>
+</ul>
+<h2 id="管理监控币种">管理监控币种 </h2>
+<p>系统通过 Redis Set 来管理需要监控的交易对。所有服务会自动检测 Redis 中 <code>symbol:binance</code> 集合的变化，动态启动或停止数据采集。</p>
+<h3 id="添加监控币种">添加监控币种 </h3>
+<p>使用 Redis 命令添加交易对到监控列表：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 连接 Redis</span>
+redis-cli
+
+<span class="token comment"># 添加单个币种（例如：BTCUSDT）</span>
+SADD symbol:binance BTCUSDT
+SADD symbol:binance MERLUSDT
+
+<span class="token comment"># 添加多个币种</span>
+SADD symbol:binance PIPPINUSDT VVVUSDT BTCUSDT
+
+<span class="token comment"># 查看当前监控的币种列表</span>
+SMEMBERS symbol:binance
+</code></pre><p><strong>注意</strong>：</p>
+<ul>
+<li>币种名称必须使用<strong>大写</strong>，如 <code>BTCUSDT</code>、<code>ETHUSDT</code></li>
+<li>添加后，<code>data_server</code> 会自动检测到新币种并开始采集数据</li>
+<li><code>event_center</code> 会自动开始为新区块生成事件</li>
+<li><code>agent_server</code> 会自动开始分析新币种的市场数据</li>
+</ul>
+<h3 id="删除监控币种">删除监控币种 </h3>
+<p>使用 Redis 命令从监控列表中移除交易对：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 连接 Redis</span>
+redis-cli
+
+<span class="token comment"># 删除单个币种</span>
+SREM symbol:binance BTCUSDT
+
+<span class="token comment"># 删除多个币种</span>
+SREM symbol:binance ETHUSDT BNBUSDT
+
+<span class="token comment"># 查看当前监控的币种列表</span>
+SMEMBERS symbol:binance
+</code></pre><p><strong>注意</strong>：</p>
+<ul>
+<li>删除后，<code>data_server</code> 会自动停止该币种的数据采集任务</li>
+<li><code>event_center</code> 会停止为该币种生成新事件</li>
+<li><code>agent_server</code> 会停止分析该币种</li>
+<li>相关的 Redis 数据键会被自动清理</li>
+</ul>
+<h3 id="批量操作示例">批量操作示例 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 清空所有监控币种</span>
+redis-cli DEL symbol:binance
+
+<span class="token comment"># 重新添加多个币种</span>
+redis-cli SADD symbol:binance BTCUSDT ETHUSDT BNBUSDT SOLUSDT
+
+<span class="token comment"># 查看数量</span>
+redis-cli SCARD symbol:binance
+</code></pre><h3 id="自动化管理">自动化管理 </h3>
+<p>系统支持动态监控，无需重启服务：</p>
+<ul>
+<li><strong>实时生效</strong>：添加或删除币种后，系统会在 1 秒内自动检测并响应</li>
+<li><strong>无需重启</strong>：所有服务都会自动适应变化，无需手动重启</li>
+<li><strong>日志提示</strong>：服务日志会显示币种的添加/移除信息</li>
+</ul>
+<p><strong>示例日志输出</strong>：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>检测到新符号: ['BTCUSDT'] (总数: 1)
+检测到符号移除: ['ETHUSDT'] (剩余: 2)
+</code></pre><p><strong>Section sources</strong></p>
+<ul>
+<li>[data_server/binance/rest_binance/app/main.py](file://data_server/binance/rest_binance/app/main.py)</li>
+<li>[data_server/binance/ws_binance/market_ws.py](file://data_server/binance/ws_binance/market_ws.py)</li>
+<li>[agent_server/utils/watchers/symbols.py](file://agent_server/utils/watchers/symbols.py)</li>
+</ul>
+<h2 id="单独运行分析-agent">单独运行分析 Agent </h2>
+<p>系统支持单独运行特定的分析 Agent，用于调试、测试或独立分析场景。</p>
+<h3 id="forcestats-expert爆仓统计分析">ForceStats Expert（爆仓统计分析） </h3>
+<p><strong>作用</strong>：分析爆仓统计数据，生成爆仓事件的结构化解读</p>
+<p><strong>前置条件</strong>：</p>
+<ul>
+<li><code>data_server</code> 的 <code>market_ws</code> 服务正在运行（用于采集强平订单）</li>
+<li>Redis 中存在 <code>force_stats:binance:BTCUSDT</code> 数据（如果没有，会使用示例数据）</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.force_stats
+</code></pre><p><strong>工作原理</strong>：</p>
+<ol>
+<li>从 Redis 读取爆仓统计数据（<code>force_stats:binance:BTCUSDT</code>）</li>
+<li>从 Redis 读取市场状态（<code>background:binance:BTCUSDT:market_state</code>）</li>
+<li>调用 LLM（<code>deepseek-ai/DeepSeek-V3</code>）进行爆仓分析</li>
+<li>输出结构化的爆仓解读结果</li>
+</ol>
+<p><strong>输出内容</strong>：</p>
+<ul>
+<li>爆仓事件结构识别（单边主导/双向交替）</li>
+<li>微结构意义判断（顺势加速/逆势扫损/末端衰竭）</li>
+<li>时间周期对齐（1m/5m/15m）</li>
+<li>风险等级判定</li>
+</ul>
+<p><strong>注意</strong>：此 Agent 的分析结果不参与最终交易决策，主要用于理解爆仓事件的市场意义。</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[agent_server/agents/experts/analysis/force_stats.py](file://agent_server/agents/experts/analysis/force_stats.py)</li>
+<li>[agent_server/configs/prompts/force_stats.py](file://agent_server/configs/prompts/force_stats.py)</li>
+</ul>
+<h3 id="humanmarketnarrator-expert市场叙事生成">HumanMarketNarrator Expert（市场叙事生成） </h3>
+<p><strong>作用</strong>：将高度结构化的市场数据转换为人类可读的市场叙事，用于前端展示和用户理解</p>
+<p><strong>前置条件</strong>：</p>
+<ul>
+<li><code>data_server</code>、<code>event_center</code>、<code>api</code> 服务正常运行</li>
+<li>Redis 中存在市场结构数据（<code>background:binance:BTCUSDT:market_structure</code>）</li>
+</ul>
+<p><strong>启动命令</strong>：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>python <span class="token parameter variable">-m</span> agent_server.agents.experts.background.human_market_narrator
+</code></pre><p><strong>工作原理</strong>：</p>
+<ol>
+<li>从 API 读取多周期 K线背景数据</li>
+<li>构建市场结构上下文</li>
+<li>调用 LLM（<code>Qwen/Qwen3-VL-235B-A22B-Instruct</code>）生成市场叙事</li>
+<li>输出人类可读的市场故事和阅读辅助层</li>
+</ol>
+<p><strong>输出内容</strong>：</p>
+<ul>
+<li><code>market_story</code>：自然语言市场解读（类似分析员讲解）</li>
+<li><code>reading_bias_overlay</code>：阅读后的主观方向印象（short_term/mid_term/long_term）</li>
+</ul>
+<p><strong>特点</strong>：</p>
+<ul>
+<li><strong>仅用于展示</strong>：明确标注 <code>not_for_decision=True</code>、<code>not_for_backtest=True</code></li>
+<li><strong>不参与决策</strong>：输出不会被任何 Agent、策略、回测系统消费</li>
+<li><strong>纯展示层</strong>：帮助用户理解市场状态，而非指导交易</li>
+</ul>
+<p><strong>默认测试币种</strong>：<code>ETHUSDT</code>（可在代码中修改）</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[agent_server/agents/experts/background/human_market_narrator.py](file://agent_server/agents/experts/background/human_market_narrator.py)</li>
+<li>[agent_server/configs/prompts/human_market_narrator.py](file://agent_server/configs/prompts/human_market_narrator.py)</li>
+</ul>
+<h3 id="其他可单独运行的-agent">其他可单独运行的 Agent </h3>
+<p>系统还支持单独运行其他 Agent，用于调试和测试：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 信号验证 Agent</span>
+python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.signal_validation
+
+<span class="token comment"># 交易事件分析 Agent</span>
+python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.trade_event
+
+<span class="token comment"># 持仓风控 Agent</span>
+python <span class="token parameter variable">-m</span> agent_server.agents.experts.analysis.position_risk
+
+<span class="token comment"># K线分析 Agent</span>
+python <span class="token parameter variable">-m</span> agent_server.agents.experts.background.kline
+
+<span class="token comment"># 市场结构分析 Agent</span>
+python <span class="token parameter variable">-m</span> agent_server.agents.experts.background.market_structure
+</code></pre><h2 id="关键注意事项">关键注意事项 </h2>
+<p>为避免常见初始化问题，请注意以下事项：</p>
+<h3 id="1-确保-redis-服务已运行">1. 确保 Redis 服务已运行 </h3>
+<p>UTaker 依赖 Redis 作为核心消息中间件。请确保 Redis 服务已在 <code>6379</code> 端口启动：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>redis-server <span class="token parameter variable">--port</span> <span class="token number">6379</span>
+</code></pre><p>可通过 <code>redis-cli PING</code> 验证连接。</p>
+<h3 id="2-时区设置正确">2. 时区设置正确 </h3>
+<p>系统默认使用 <code>Asia/Shanghai</code> 时区。请确保环境变量 <code>APP_TIMEZONE</code> 设置正确：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token builtin class-name">export</span> <span class="token assign-left variable">APP_TIMEZONE</span><span class="token operator">=</span>Asia/Shanghai
+</code></pre><p>错误的时区可能导致 K线时间戳错乱。</p>
+<h3 id="3-llm-api-密钥配置">3. LLM API 密钥配置 </h3>
+<p><code>agent_server</code> 服务需要 LLM API 密钥才能进行智能分析。请确保：</p>
+<ul>
+<li>设置环境变量 <code>SILICONFLOW_TOKEN</code>，或</li>
+<li>在 <code>agent_server/configs/source.py</code> 中配置 <code>llm_api_key</code></li>
+</ul>
+<p>如果未配置，部分代理功能可能无法正常工作。</p>
+<h3 id="4-api-服务密钥配置">4. API 服务密钥配置 </h3>
+<p>虽然当前示例未涉及交易，但若需调用需要认证的接口，请确保在 <code>.env</code> 文件中配置 <code>JWT_SECRET</code>。</p>
+<h3 id="6-服务启动顺序">6. 服务启动顺序 </h3>
+<p>必须按 <code>data_server → event_center → agent_server → api</code> 的顺序启动，否则可能导致数据流中断。</p>
+<h3 id="7-日志监控">7. 日志监控 </h3>
+<p>各服务的日志是排查问题的关键。请关注 <code>ERROR</code> 和 <code>WARNING</code> 级别的日志输出。</p>
+<h2 id="总结">总结 </h2>
+<p>通过本指南，您已全面了解了 UTaker 系统的架构、数据流程和各个功能模块。UTaker 是一个功能完整的量化分析系统，包含：</p>
+<h3 id="核心服务">核心服务 </h3>
+<ol>
+<li><strong>data_server</strong>：数据采集服务（REST API + WebSocket）</li>
+<li><strong>event_center</strong>：事件处理中心（支持多交易所自动发现）</li>
+<li><strong>agent_server</strong>：智能分析服务（后台分析 + 最终事件分析）</li>
+<li><strong>api</strong>：Web API 服务（账户管理 + 市场数据查询）</li>
+</ol>
+<h3 id="智能分析能力">智能分析能力 </h3>
+<p>系统包含 <strong>15+ 个 Expert</strong>，分为三大类：</p>
+<ul>
+<li><strong>后台分析 Expert</strong>：K线分析、市场结构分析、市场叙事生成</li>
+<li><strong>事件分析 Expert</strong>：信号验证、交易事件分析、持仓风控、爆仓分析、新闻分析、技术分析、投资组合分析</li>
+<li><strong>编排 Expert</strong>：记忆管理、事件摘要、交易摘要、决策专家、反思评分、多专家融合</li>
+</ul>
+<h3 id="数据流程">数据流程 </h3>
+<p>完整的数据流程从原始数据采集 → 技术指标计算 → 事件生成与处理 → 后台市场分析 → 最终事件分析，形成了闭环的量化分析体系。</p>
+<h3 id="下一步建议">下一步建议 </h3>
+<ol>
+<li><strong>探索 API 接口</strong>：访问 <code>http://localhost:8000/docs</code> 查看完整的 Swagger UI 文档</li>
+<li><strong>修改事件规则</strong>：编辑 <code>event_center/rules.yml</code> 和 <code>event_center/indicators_event/config/</code> 下的 YAML 配置文件</li>
+<li><strong>扩展智能代理</strong>：在 <code>agent_server/agents/experts/</code> 目录下添加新的 Expert</li>
+<li><strong>单独运行 Agent</strong>：使用提供的启动命令单独测试各个 Expert</li>
+<li><strong>配置多交易所</strong>：通过 Redis 配置多个交易所，系统会自动发现和处理</li>
+</ol>
+<h3 id="系统特点">系统特点 </h3>
+<ul>
+<li><strong>事件驱动架构</strong>：通过 Redis Stream 实现异步事件传递</li>
+<li><strong>模块化设计</strong>：各服务独立运行，易于扩展和维护</li>
+<li><strong>多交易所支持</strong>：自动发现和并发处理多个交易所</li>
+<li><strong>LLM 与非 LLM 结合</strong>：结构化数据处理用传统算法，复杂推理用 LLM</li>
+<li><strong>周期分割机制</strong>：short_term/mid_term/long_term 三层周期分析</li>
+</ul>
+<p>UTaker 的模块化设计使其易于扩展和定制，欢迎您深入探索其更多功能。</p>
+<p><strong>Section sources</strong></p>
+<ul>
+<li>[data_server/binance/ws_binance/market_ws.py](file://data_server/binance/ws_binance/market_ws.py)</li>
+<li>[event_center/main.py](file://event_center/main.py)</li>
+<li>[agent_server/main.py](file://agent_server/main.py)</li>
+</ul>
+
+      </div>
+      
+      
+    
+    
+    <script type="module">
+// TODO: If ZenUML gets integrated into mermaid in the future,
+//      we can remove the following lines.
+
+
+var MERMAID_CONFIG = ({"startOnLoad":false});
+if (typeof MERMAID_CONFIG !== 'undefined') {
+  MERMAID_CONFIG.startOnLoad = false
+  MERMAID_CONFIG.cloneCssStyles = false
+  MERMAID_CONFIG.theme = "default"
+}
+
+mermaid.initialize(MERMAID_CONFIG || {})
+if (typeof(window['Reveal']) !== 'undefined') {
+  function mermaidRevealHelper(event) {
+    var currentSlide = event.currentSlide
+    var diagrams = currentSlide.querySelectorAll('.mermaid')
+    for (var i = 0; i < diagrams.length; i++) {
+      var diagram = diagrams[i]
+      if (!diagram.hasAttribute('data-processed')) {
+        mermaid.init(null, diagram, ()=> {
+          Reveal.slide(event.indexh, event.indexv)
+        })
+      }
+    }
+  }
+  Reveal.addEventListener('slidetransitionend', mermaidRevealHelper)
+  Reveal.addEventListener('ready', mermaidRevealHelper)
+  await mermaid.run({
+    nodes: document.querySelectorAll('.mermaid')
+  })
+} else {
+  await mermaid.run({
+    nodes: document.querySelectorAll('.mermaid')
+  })
+}
+</script>
+    
+    
+    
+  
+    </body></html>

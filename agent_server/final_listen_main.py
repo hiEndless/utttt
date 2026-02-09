@@ -169,8 +169,16 @@ async def _run():
         logging.getLogger("final").info("received_stop_signal")
         stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    # Windows 不支持 add_signal_handler，使用 try-except 处理
+    try:
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    except NotImplementedError:
+        # Windows 平台使用 signal.signal() 作为替代方案
+        import sys
+        signal.signal(signal.SIGINT, lambda s, f: stop.set())
+        if sys.platform != 'win32':
+            signal.signal(signal.SIGTERM, lambda s, f: stop.set())
     task = asyncio.create_task(listener.run(), name="final_events_router")
     try:
         while not stop.is_set():
