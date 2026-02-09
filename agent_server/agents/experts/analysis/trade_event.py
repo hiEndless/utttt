@@ -1,13 +1,18 @@
 from agent_server.configs.prompts.trade_event import get_prompt
 import json
+import time
 import asyncio
 from typing import Any, Dict
 
+from agent_server.agent_context.output_store import save_agent_output
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
+from agent_server.agents.utils import _json_dumps_safe
+from agent_server.configs.source import get_agent_config
 
 
 class TradeEventExpert(BaseLLMExpert):
     name = "trade_event"
+    version = "v1.0"
 
     # Define schema for LLM output validation
     SCHEMA = {
@@ -60,8 +65,88 @@ class TradeEventExpert(BaseLLMExpert):
             "reasoning": ["输出校验失败，已触发安全回退"],
         }
 
-    async def run(self, query: QueryInput) -> str:
-        return await super().run(query)
+    async def run(self, query: QueryInput, **kwargs: Any) -> str:
+        cfg = get_agent_config(self.name)
+        target_lang = cfg.get("language", self.language)
+
+        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
+        base_url = cfg.get("llm_base_url")
+        api_key = cfg.get("llm_api_key")
+
+        instructions = self.build_instructions(target_lang, **kwargs)
+        agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
+
+        qobj = self._parse_query(query)
+        meta = qobj.pop("meta", {}) or {}
+        positions = qobj.pop("positions",  []) or []
+        # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
+        llm_query_obj = dict(qobj)
+        llm_query_obj["meta"] = dict(meta)
+        # 将 positions 也传递给 LLM，便于结合仓位状态做解释与建议
+        llm_query_obj["positions"] = positions
+        llm_input = self.build_llm_input(llm_query_obj, **kwargs)
+
+        try:
+            final_result = await self._run_validated(
+                agent=agent,
+                llm_input=llm_input,
+                on_retry=lambda msg: print(f"[{self.__class__.__name__}] {msg}"),
+                max_retries=3,
+            )
+        except Exception as e:
+            print(f"[{self.__class__.__name__}] Validation failed after retries: {e}")
+            final_result = self.build_fallback_result(e, qobj, **kwargs)
+
+        try:
+            final_result = self.postprocess_result(final_result, qobj, **kwargs)
+        except Exception:
+            pass
+
+        symbol = qobj.get("symbol") or meta.get("symbol") or "UNKNOWN"
+        exchange = qobj.get("exchange") or meta.get("exchange") or "binance"
+        event_id = qobj.get("event_id") or meta.get("event_id")
+        trade_id = qobj.get("trade_id") or meta.get("trade_id")
+        meta["ts"] = int(time.time() * 1000)
+        meta["version"] = self.version
+
+        payload_obj: Dict[str, Any]
+        try:
+            payload_obj = final_result if isinstance(final_result, dict) else json.loads(str(final_result))
+        except Exception:
+            payload_obj = {"raw": final_result}
+
+        try:
+            payload_obj = self.normalize_for_storage(payload_obj, qobj, **kwargs)
+        except Exception:
+            pass
+        payload_obj["meta"] = meta
+        payload_obj["positions"] = positions
+
+        try:
+            await save_agent_output(
+                self.name,
+                exchange,
+                symbol,
+                meta["ts"],
+                payload_obj,
+                event_id=event_id,
+                trade_id=trade_id,
+                model_id=model_id,
+            )
+        except Exception:
+            pass
+
+        # 返回给调用方的结果也补充 meta（包含 ts/version），避免下游需要额外查存储
+        result_for_return: Dict[str, Any]
+        if isinstance(final_result, dict):
+            result_for_return = dict(final_result)
+        else:
+            result_for_return = {"raw": final_result}
+        result_for_return["meta"] = meta
+        result_for_return["positions"] = positions
+        output = _json_dumps_safe(result_for_return)
+        print(output)
+        return output
 
 
 if __name__ == "__main__":
