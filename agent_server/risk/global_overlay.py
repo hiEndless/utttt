@@ -77,32 +77,42 @@ def aggregate_global_overlay(
     """
 
     if not execution_states:
-        raise ValueError("execution_states must not be empty")
+        # 如果没有执行状态，返回一个默认的安全状态，而不是报错
+        # 允许空状态下的初始化
+        execution_states = []
 
     current_ts = current_ts or now_ts()
 
     # --------------------------------------------------
     # 1. Aggregate global risk regime (MAX principle)
     # --------------------------------------------------
-    global_risk_regime = max(
-        execution_states,
-        key=lambda x: RISK_REGIME_RANK.get(
-            x["execution_state"]["risk_regime"], 0
-        )
-    )["execution_state"]["risk_regime"]
+    if execution_states:
+        global_risk_regime = max(
+            execution_states,
+            key=lambda x: RISK_REGIME_RANK.get(
+                x.get("execution_state", {}).get("risk_regime", "normal"), 0
+            )
+        ).get("execution_state", {}).get("risk_regime", "normal")
+    else:
+        global_risk_regime = "normal"
 
     # --------------------------------------------------
     # 2. Aggregate action allowance (conservative AND)
     # --------------------------------------------------
-    allow_open = all(
-        es["execution_state"]["action_allowance"].get("allow_open", False)
-        for es in execution_states
-    )
+    # If no execution states, default to ALLOW (since no restrictions known)
+    if not execution_states:
+        allow_open = True
+        allow_add = True
+    else:
+        allow_open = all(
+            es.get("execution_state", {}).get("action_allowance", {}).get("allow_open", False)
+            for es in execution_states
+        )
 
-    allow_add = all(
-        es["execution_state"]["action_allowance"].get("allow_add", False)
-        for es in execution_states
-    )
+        allow_add = all(
+            es.get("execution_state", {}).get("action_allowance", {}).get("allow_add", False)
+            for es in execution_states
+        )
 
     # Global overlay NEVER blocks risk reduction / exit
     global_action_allowance = {
@@ -119,7 +129,7 @@ def aggregate_global_overlay(
     cooldown_until_candidates = []
 
     for es in execution_states:
-        cd = es["execution_state"].get("cooldown_state", {})
+        cd = es.get("execution_state", {}).get("cooldown_state", {})
         if cd.get("in_cooldown"):
             cooldown_until_candidates.append(cd.get("until_ts", 0))
 
@@ -248,22 +258,31 @@ async def _store_global_overlay(exchange: str, overlay: Dict) -> None:
     await r.set(global_key(exchange), json.dumps(overlay, ensure_ascii=False))
 
 
-async def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--exchange", default="binance")
-    args = parser.parse_args()
+async def aggregate_and_store_global_overlay(exchange: str) -> Dict:
+    """
+    聚合当前交易所下所有持仓的执行状态，并生成/存储全局风控状态。
+    这是供外部组件调用的主要接口。
+    """
+    execution_states = await _read_execution_states(exchange)
+    prev_global = await _read_prev_global_overlay(exchange)
 
-    execution_states = await _read_execution_states(args.exchange)
-    prev_global = await _read_prev_global_overlay(args.exchange)
-
-    account_risk_state = {}
+    account_risk_state = {} # Placeholder for now
     overlay = aggregate_global_overlay(
         execution_states=execution_states,
         account_risk_state=account_risk_state,
         prev_global_overlay_state=prev_global,
         current_ts=now_ts(),
     )
-    await _store_global_overlay(args.exchange, overlay)
+    await _store_global_overlay(exchange, overlay)
+    return overlay
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exchange", default="binance")
+    args = parser.parse_args()
+
+    overlay = await aggregate_and_store_global_overlay(args.exchange)
     print(json.dumps(overlay, ensure_ascii=False, indent=2))
 
 

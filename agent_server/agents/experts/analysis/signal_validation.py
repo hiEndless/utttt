@@ -1,5 +1,6 @@
 import asyncio
 import time
+import json
 from typing import Any, Dict
 
 from agent_server.agent_context.market_structure import output
@@ -67,9 +68,6 @@ class SignalValidationExpert(BaseLLMExpert):
         positions = qobj.pop("positions",  []) or []
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
-        llm_query_obj["meta"] = dict(meta)
-        # 将 positions 也传递给 LLM，便于结合仓位状态做解释与建议
-        llm_query_obj["positions"] = positions
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
 
         try:

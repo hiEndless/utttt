@@ -5,8 +5,6 @@ from typing import Any, Dict
 
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 from agent_server.utils.account import account_state
-from agent_server.config import settings
-from agent_server.risk.action_policy import enforce_position_risk_action
 from agent_server.agent_context.market_structure import output
 from agent_server.configs.source import get_agent_config
 from agent_server.agent_context.output_store import save_agent_output
@@ -65,20 +63,6 @@ class PositionRiskExpert(BaseLLMExpert):
             "reasoning": ["输出校验失败，已触发安全回退", str(error)],
         }
 
-    def postprocess_result(self, result: Dict[str, Any], query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        risk_rules_decision = query_obj.get("risk_rules_decision") or {}
-        available_pct = (
-            (query_obj.get("operational_context") or {})
-            .get("portfolio_context", {})
-            .get("available_exposure_pct")
-        )
-        final_result, _ = enforce_position_risk_action(
-            llm_output=result if isinstance(result, dict) else {},
-            risk_rules_decision=risk_rules_decision,
-            available_exposure_pct=available_pct,
-        )
-        return final_result
-
     async def run(self, query: QueryInput, **kwargs: Any) -> str:
         cfg = get_agent_config(self.name)
         target_lang = cfg.get("language", self.language)
@@ -92,12 +76,9 @@ class PositionRiskExpert(BaseLLMExpert):
 
         qobj = self._parse_query(query)
         meta = qobj.pop("meta", {}) or {}
-        positions = qobj.pop("positions",  []) or []
-        # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
+        position = qobj.pop("position", []) or []
+
         llm_query_obj = dict(qobj)
-        llm_query_obj["meta"] = dict(meta)
-        # 将 positions 也传递给 LLM，便于结合仓位状态做解释与建议
-        llm_query_obj["positions"] = positions
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
 
         try:
@@ -134,7 +115,7 @@ class PositionRiskExpert(BaseLLMExpert):
         except Exception:
             pass
         payload_obj["meta"] = meta
-        payload_obj["positions"] = positions
+        payload_obj["position"] = position
 
         try:
             await save_agent_output(
@@ -157,7 +138,7 @@ class PositionRiskExpert(BaseLLMExpert):
         else:
             result_for_return = {"raw": final_result}
         result_for_return["meta"] = meta
-        result_for_return["positions"] = positions
+        result_for_return["position"] = position
         output = _json_dumps_safe(result_for_return)
         print(output)
         return output
@@ -174,18 +155,13 @@ if __name__ == "__main__":
     import asyncio
     from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
 
-    sv_out = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
-              "reasoning": ["多周期结构存在轻度冲突，建议降低仓位与加仓强度"],
-              "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
-                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0", "direction": "bullish"}}
+    sv_out = {'verdict': 'ATTENUATE', 'structural_alignment': 'PARTIAL_CONFLICT', 'risk_implication': 'elevated'}
 
-    d_out = {"trade_intent_range": {"allowed_actions": ["hold", "reduce", "scale_in_small"],
-                                    "forbidden_actions": ["aggressive_add", "reverse_position"],
-                                    "risk_bias": "conservative"},
-             "decision_rationale": ["4h/1d 结构偏多但短周期流动性不稳，建议保守执行"],
-             "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
-                      "event_type": "mixed", "ts": 1770408041105, "version": "v1.0", "direction": "bullish",
-                      "trade_id": "9cedf3d0770041c8b11856c35ef664a2"}}
+    d_out = {'trade_intent_range': {'allowed_actions': ['hold', 'reduce', 'scale_in_small'],
+                                    'forbidden_actions': ['aggressive_add', 'reverse_position'],
+                                    'risk_bias': 'conservative'},
+             'meta': {'symbol': 'ETHUSDT', 'exchange': 'binance', 'event_id': 'ETHUSDT.final.1770290252305',
+                      'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '9cedf3d0770041c8b11856c35ef664a2'}}
 
     execution_constraint = ExecutionConstraintAggregator().aggregate(sv_out, d_out).get("execution_constraint")
     meta = d_out.get("meta")

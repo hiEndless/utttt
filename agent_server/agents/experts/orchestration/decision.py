@@ -43,7 +43,7 @@ class DecisionExpert:
                 },
             },
         },
-        "decision_rationale": {"type": "array", "required": True},
+        "reasoning": {"type": "array", "required": True},
     }
 
     def __init__(self):

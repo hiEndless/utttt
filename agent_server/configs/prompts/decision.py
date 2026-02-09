@@ -108,7 +108,7 @@ _prompt_template = """
     "forbidden_actions": ["aggressive_add", "reverse_position"],
     "risk_bias": "conservative | neutral | defensive"
   },
-  "decision_rationale": [
+  "reasoning": [
     "引用了哪些专家约束",
     "如何处理冲突",
     "为何收敛或放宽决策空间"
