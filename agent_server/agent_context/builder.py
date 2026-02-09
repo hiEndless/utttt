@@ -37,7 +37,12 @@ def _crop_market_structure_by_horizon(agent: str, ctx: Dict[str, Any], horizon: 
             "short_term": ["short_term", "mid_term"],
             "mid_term": ["mid_term", "long_term"],
             "long_term": ["mid_term", "long_term"],
-        }
+        },
+        "decision": {
+            "short_term": ["short_term", "mid_term"],
+            "mid_term": ["mid_term", "long_term"],
+            "long_term": ["mid_term", "long_term"],
+        },
     }
 
     agent_cfg = crop_config.get(agent)

@@ -207,6 +207,9 @@ if __name__ == "__main__":
     from agent_server.agents.experts.orchestration.utils import (
         transform_positions_to_decision_context,
     )
+    from agent_server.agent_context.market_structure.holding_context_from_positions import (
+        build_holding_context_from_positions,
+    )
 
     signal = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
               "reasoning": [
@@ -216,16 +219,17 @@ if __name__ == "__main__":
                   "signal_direction = bullish 且 mid_term.participant_positioning.structural_weight = high，该方向未被主裁周期人群定位模式明确支持。",
                   "long_term.structural_weight = veto_only 且 long_term.confidence.level = low，未满足长期否决条件。"],
               "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
-                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0"}, "positions": [
+                       "event_type": "mixed", "ts": 1770304117868, "version": "v1.0", "direction": "bullish"}, "positions": [
             {"symbol": "ETHUSDT", "position_side": "LONG", "size": "0.010", "notional": "21.73535821",
              "pnl_ratio": 0.004305523686720178, "open_time": 1770237903887,
-             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"},{"symbol": "ETHUSDT", "position_side": "SHORT", "size": "0.010", "notional": "21.73535821",
-             "pnl_ratio": -0.004305523686720178, "open_time": 1770237903887,
-             "trade_id": "9cedf3d0770041c8b11856c35ef664a3", "initialMargin": "2.17353583"}]}
+             "trade_id": "9cedf3d0770041c8b11856c35ef664a2", "initialMargin": "2.17353583"}]}
 
     meta = signal.pop("meta")
     symbol = meta.get("symbol")
     positions = signal.pop("positions") or []
+
+    holding_context = build_holding_context_from_positions(positions)
+    holding_horizon = holding_context.get("horizon")
 
     async def _main() -> None:
         try:
@@ -233,7 +237,7 @@ if __name__ == "__main__":
             expert = DecisionExpert()
 
             full_context = await output.build_output("binance", symbol)
-            market_structure = build_agent_context("decision", full_context)
+            market_structure = build_agent_context("decision", full_context, horizon=holding_horizon)
             # 打印裁剪后的 market_structure（用于验证 forbidden_* 裁剪是否生效）
             # print(_json_dumps_safe(market_structure))
 

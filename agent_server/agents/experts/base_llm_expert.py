@@ -91,7 +91,7 @@ class BaseLLMExpert:
 
         qobj = self._parse_query(query)
         meta = qobj.pop("meta") or {}
-        positions = qobj.pop("positions") or []
+        positions = qobj.pop("positions",  []) or []
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
         llm_query_obj["meta"] = dict(meta)
