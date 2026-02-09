@@ -123,7 +123,7 @@ def key(
 ) -> str:
     # 中文注释：逐仓位“时间状态/执行状态”的 Redis Key（按交易账户 + 标的 + trade_id 分桶）
     return (
-        f"risk:"
+        f"risk:execution:"
         f"{(exchange or '').lower()}:"
         f"{(symbol or '').upper()}:"
         f"{(trade_id or 'default').lower()}:"

@@ -20,8 +20,13 @@ Signal Validation Agent（信号确认）：判断“这个信号，在当前账
 Order Executor / Trade Router（执行层）：校验账户级是否允许
 """
 
+import argparse
+import asyncio
+import json
 from typing import List, Dict, Optional
 import time
+
+from agent_server.utils.redis_client import get_verified_redis_client
 
 RISK_REGIME_RANK = {
     "normal": 0,
@@ -158,12 +163,109 @@ def aggregate_global_overlay(
     }
 
 
+def execution_key(exchange: str) -> str:
+    # 中文注释：逐仓位 execution_state 的“目录前缀”，具体 key 允许按 symbol/trade_id 扩展
+    return f"risk:execution:{(exchange or '').lower()}"
+
+
+def global_key(exchange: str) -> str:
+    # 中文注释：账户级 global overlay 的唯一 key
+    return f"risk:global:{(exchange or '').lower()}"
+
+
+def _try_infer_symbol_from_key(redis_key: str) -> str | None:
+    parts = (redis_key or "").split(":")
+    if len(parts) >= 4 and parts[0] == "risk" and parts[1] == "execution":
+        sym = parts[3]
+        return sym or None
+    return None
+
+
+async def _read_execution_states(exchange: str) -> List[Dict]:
+    """
+    从 Redis 读取当前交易所下的所有逐仓位 execution_state。
+    兼容两种存储形态：
+    1) 多个 string key：risk:execution:{exchange}:*
+    2) 单个 hash key：risk:execution:{exchange}（field->json）
+    """
+    r = await get_verified_redis_client()
+    prefix_key = execution_key(exchange)
+
+    execution_states: List[Dict] = []
+
+    try:
+        t = await r.type(prefix_key)
+    except Exception:
+        t = None
+
+    if t in ("hash", b"hash"):
+        items = await r.hgetall(prefix_key)
+        for _, raw in (items or {}).items():
+            try:
+                if isinstance(raw, (bytes, bytearray)):
+                    raw = raw.decode("utf-8")
+                payload = json.loads(raw) if raw else None
+                if isinstance(payload, dict):
+                    execution_states.append(payload)
+            except Exception:
+                continue
+
+    scan_pattern = f"{prefix_key}:*"
+    async for k in r.scan_iter(match=scan_pattern, count=200):
+        try:
+            if isinstance(k, (bytes, bytearray)):
+                k = k.decode("utf-8")
+            raw = await r.get(k)
+            if isinstance(raw, (bytes, bytearray)):
+                raw = raw.decode("utf-8")
+            payload = json.loads(raw) if raw else None
+            if not isinstance(payload, dict):
+                continue
+            if "symbol" not in payload:
+                inferred_symbol = _try_infer_symbol_from_key(k)
+                if inferred_symbol:
+                    payload["symbol"] = inferred_symbol
+            execution_states.append(payload)
+        except Exception:
+            continue
+
+    return execution_states
+
+
+async def _read_prev_global_overlay(exchange: str) -> Optional[Dict]:
+    r = await get_verified_redis_client()
+    raw = await r.get(global_key(exchange))
+    if isinstance(raw, (bytes, bytearray)):
+        raw = raw.decode("utf-8")
+    try:
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
+
+
+async def _store_global_overlay(exchange: str, overlay: Dict) -> None:
+    r = await get_verified_redis_client()
+    await r.set(global_key(exchange), json.dumps(overlay, ensure_ascii=False))
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exchange", default="binance")
+    args = parser.parse_args()
+
+    execution_states = await _read_execution_states(args.exchange)
+    prev_global = await _read_prev_global_overlay(args.exchange)
+
+    account_risk_state = {}
+    overlay = aggregate_global_overlay(
+        execution_states=execution_states,
+        account_risk_state=account_risk_state,
+        prev_global_overlay_state=prev_global,
+        current_ts=now_ts(),
+    )
+    await _store_global_overlay(args.exchange, overlay)
+    print(json.dumps(overlay, ensure_ascii=False, indent=2))
+
+
 if __name__ == "__main__":
-    execution_state = {'execution_state': {'risk_regime': 'elevated',
-                                           'action_allowance': {'allow_open': False, 'allow_add': False,
-                                                                'allow_hold': False, 'allow_reduce': False,
-                                                                'allow_close': True},
-                                           'cooldown_state': {'in_cooldown': True, 'until_ts': 1770574916}}}
-    account_risk_state = {"balance": 43.06110522, "available_pct": 0.9494231736767299, "position_occupancy_ratio": 0.05047561642682798}
-    global_overlay = aggregate_global_overlay([execution_state], account_risk_state)
-    print(global_overlay)
+    asyncio.run(main())
