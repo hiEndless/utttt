@@ -159,7 +159,7 @@ async def aggregate_execution_state_and_store(
         trade_id: str | None = None,
         symbol: str | None = None,
         redis_db: int | None = None,
-        ttl_seconds: int | None = None,
+        ttl_seconds: int = 900,
 ) -> Dict[str, Any]:
     """
     生成 execution_state 并落库到 Redis。
