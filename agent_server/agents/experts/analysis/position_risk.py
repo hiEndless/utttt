@@ -65,6 +65,7 @@ if __name__ == "__main__":
     from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
     from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
     import asyncio
+    from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
 
     sv_out = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT", "risk_implication": "elevated",
               "reasoning": ["多周期结构存在轻度冲突，建议降低仓位与加仓强度"],
@@ -100,9 +101,8 @@ if __name__ == "__main__":
             initialMargin = float(p.pop("initialMargin", 0))  # 占用保证金，用于计算仓位占比
             break
     # print(position)
-    
-    expert = PositionRiskExpert()
 
+    expert = PositionRiskExpert()
 
 
     async def _demo():
@@ -133,7 +133,26 @@ if __name__ == "__main__":
         # print(json.dumps(query, indent=2, ensure_ascii=False))
         # print("=========================\n")
 
-        await expert.run(query)
+        # 中文注释：等待 LLM 输出完成后再返回
+        raw = await expert.run(query)
+        return json.loads(raw)
 
 
-    asyncio.run(_demo())
+    # out_put = asyncio.run(_demo())
+
+    async def _execution():
+        out_put = await _demo()
+        # 生成仓位风控状态
+        execution_state = await aggregate_execution_state_and_store(
+            risk_action_output=out_put,
+            signal_validation_output=sv_out,
+            previous_execution_state=None,
+            now_ts=int(time.time() * 1000),
+            exchange=exchange,
+            trade_id=trade_id,
+            symbol=symbol,
+        )
+        print(json.dumps(execution_state, ensure_ascii=False))
+
+
+    asyncio.run(_execution())
