@@ -102,7 +102,7 @@ _prompt_template = """
     "type": "percentage",
     "value": -1.0 ~ +1.0
   },
-  "rationale": [
+  "reasoning": [
     "string"
   ]
 }
@@ -141,7 +141,7 @@ exit 时必须为 -1.0
 - scale_in_small：+0.05 ~ +0.2
 - exit：-1.0
 
-3. rationale
+3. reasoning
 必须是“事实 + 结构/约束驱动”的理由：
 - 不得出现价格预测、目标价、情绪化表述
 - 应尽量引用：结构冲突/否决条件、执行约束、账户风险缓冲、持仓盈亏与持仓时间匹配性

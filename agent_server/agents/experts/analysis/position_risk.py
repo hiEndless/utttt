@@ -45,7 +45,7 @@ class PositionRiskExpert(BaseLLMExpert):
                 },
             },
         },
-        "rationale": {
+        "reasoning": {
             "type": "array",
             "required": True,
             "description": "2-5条事实+结构/约束驱动理由（中文）",
@@ -60,7 +60,7 @@ class PositionRiskExpert(BaseLLMExpert):
         return {
             "risk_action": "hold",
             "exposure_delta": {"type": "percentage", "value": 0.0},
-            "rationale": ["输出校验失败，已触发安全回退", str(error)],
+            "reasoning": ["输出校验失败，已触发安全回退", str(error)],
         }
 
     def postprocess_result(self, result: Dict[str, Any], query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
