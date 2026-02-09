@@ -186,6 +186,10 @@ class AgentAnalysis(models.Model):
     reasoning = fields.JSONField(description="分析理由 (List or Dict)")
     full_output = fields.JSONField(description="完整输出 (Raw JSON)")
 
+    # 风控状态
+    execution_state = fields.JSONField(null=True, description="执行状态 (Dict)")
+    global_state = fields.JSONField(null=True, description="全局状态 (Dict)")
+
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
