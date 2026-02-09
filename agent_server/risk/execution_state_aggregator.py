@@ -23,7 +23,10 @@ execution_state（只描述 “当前与未来一段时间允许做什么”）
 Order Executor / Trade Router（执行层）：校验账户级是否允许
 """
 import time
+import asyncio
+import json
 from typing import Optional, Dict, Any
+from agent_server.utils.redis_client import RedisClient
 
 COOLDOWN_SECONDS = 15 * 60  # 15 minutes
 
@@ -113,6 +116,81 @@ def aggregate_execution_state(
     }
 
 
+def key(
+        exchange: str,
+        trade_id: str,
+        symbol: str
+) -> str:
+    # 中文注释：逐仓位“时间状态/执行状态”的 Redis Key（按交易账户 + 标的 + trade_id 分桶）
+    return (
+        f"risk:"
+        f"{(exchange or '').lower()}:"
+        f"{(symbol or '').upper()}:"
+        f"{(trade_id or 'default').lower()}:"
+    )
+
+
+async def store_aggregate_execution_state(
+        *,
+        exchange: str,
+        trade_id: str,
+        symbol: str,
+        execution_state: Dict[str, Any],
+        redis_db: int | None = None,
+        ttl_seconds: int | None = None,
+) -> str:
+    """
+    将 aggregate_execution_state 的结果写入 Redis（覆盖写）。
+    - ttl_seconds: 可选 TTL（秒），用于避免旧状态长期残留
+    """
+    rc = RedisClient(db=redis_db)
+    k = key(exchange=exchange, trade_id=trade_id, symbol=symbol)
+    await rc.set_json(k, execution_state, ex=ttl_seconds)
+    return k
+
+
+async def aggregate_execution_state_and_store(
+        risk_action_output: Dict[str, Any],
+        signal_validation_output: Optional[Dict[str, Any]] = None,
+        previous_execution_state: Optional[Dict[str, Any]] = None,
+        now_ts: Optional[int] = None,
+        *,
+        exchange: str | None = None,
+        trade_id: str | None = None,
+        symbol: str | None = None,
+        redis_db: int | None = None,
+        ttl_seconds: int | None = None,
+) -> Dict[str, Any]:
+    """
+    生成 execution_state 并落库到 Redis。
+    - exchange/trade_id/symbol：若未显式传入，会尝试从 risk_action_output["meta"] 取值
+    """
+    execution_state = aggregate_execution_state(
+        risk_action_output=risk_action_output,
+        signal_validation_output=signal_validation_output,
+        previous_execution_state=previous_execution_state,
+        now_ts=now_ts,
+    )
+
+    meta = risk_action_output.get("meta") if isinstance(risk_action_output, dict) else None
+    if not isinstance(meta, dict):
+        meta = {}
+    ex = exchange if exchange is not None else meta.get("exchange")
+    td = trade_id if trade_id is not None else meta.get("trade_id")
+    sym = symbol if symbol is not None else meta.get("symbol")
+
+    await store_aggregate_execution_state(
+        exchange=str(ex or ""),
+        trade_id=str(td or "default"),
+        symbol=str(sym or ""),
+        execution_state=execution_state,
+        redis_db=redis_db,
+        ttl_seconds=ttl_seconds,
+    )
+    return execution_state
+
+
+
 if __name__ == "__main__":
     risk_action_output = {
         "risk_action": "exit",
@@ -125,7 +203,10 @@ if __name__ == "__main__":
             "持仓已处于长期持有状态，但浮盈极低，未实现有效风险回报补偿，继续占用 敞口性价比不足。",
             "执行约束显示风险偏好保守，且置信度偏低，叠加结构冲突与风险升高标签， 强化退出必要性。",
             "当前仓位占用账户资金比例极低，平仓后对整体账户影响可控，符合风险控制 优先原则。"
-        ]
+        ],
+        "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
+                 "event_type": "mixed", "ts": 1770627390376, "version": "v1.0", "direction": "bullish",
+                 "trade_id": "9cedf3d0770041c8b11856c35ef664a2"}
     }
 
     signal_validation_output = {"verdict": "ATTENUATE", "structural_alignment": "PARTIAL_CONFLICT",
@@ -136,6 +217,11 @@ if __name__ == "__main__":
                                          "event_type": "mixed", "ts": 1770304117868, "version": "v1.0",
                                          "direction": "bullish"}}
 
+    async def _demo():
+        execution_state = await aggregate_execution_state_and_store(
+            risk_action_output=risk_action_output,
+            signal_validation_output=signal_validation_output,
+        )
+        print(json.dumps(execution_state, ensure_ascii=False))
 
-    execution_state = aggregate_execution_state(risk_action_output, signal_validation_output)
-    print(execution_state)
+    asyncio.run(_demo())

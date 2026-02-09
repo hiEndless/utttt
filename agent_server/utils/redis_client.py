@@ -98,9 +98,10 @@ class RedisClient:
     def __init__(self, db: int | None = None, decode_responses: bool = True):
         self.client = get_redis_client(db, decode_responses)
 
-    async def set_json(self, key: str, value) -> bool:
+    async def set_json(self, key: str, value, ex: int | None = None) -> bool:
+        # 中文注释：统一 JSON 落库入口；必要时可通过 ex 设置 Redis TTL（秒）
         data = json.dumps(value, ensure_ascii=False)
-        await self.client.set(key, data)
+        await self.client.set(key, data, ex=ex)
         return True
 
     async def get(self, key: str):
