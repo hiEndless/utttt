@@ -20,22 +20,47 @@ class PositionRiskExpert(BaseLLMExpert):
     name = "position_risk"
     version = "v1.0"
 
-    # Define Schema
+    # 中文注释：LLM 输出严格 schema（与 prompts/position_risk.py 的“输出要求”一致）
     SCHEMA = {
+        "risk_action": {
+            "type": "string",
+            "options": ["hold", "reduce", "scale_in_small", "exit"],
+            "required": True,
+            "description": "风控动作：hold/reduce/scale_in_small/exit",
+        },
+        "exposure_delta": {
+            "type": "object",
+            "required": True,
+            "description": "相对当前仓位的变化比例（percentage）",
+            "schema": {
+                "type": {
+                    "type": "string",
+                    "options": ["percentage"],
+                    "required": True,
+                },
+                "value": {
+                    "type": "number",
+                    "required": True,
+                    "range": (-1.0, 1.0),
+                },
+            },
+        },
+        "rationale": {
+            "type": "array",
+            "required": True,
+            "description": "2-5条事实+结构/约束驱动理由（中文）",
+        },
     }
 
     def build_instructions(self, target_lang: str, **kwargs: Any) -> str:
         return get_prompt(target_lang)
 
     def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
+        # 中文注释：校验失败时返回保守“持有”，并补齐 execution_state 所需字段
         return {
-            "verdict": "CRITICAL",
-            "suggestion": "HOLD",
-            "reduce_pct": 0.0,
-            "add_pct": 0.0,
-            "tighten_stop": True,
-            "freeze_add_position_min": 60,
-            "reasoning": ["输出校验失败，已触发安全回退", str(error)],
+            "risk_action": "hold",
+            "exposure_delta": {"type": "percentage", "value": 0.0},
+            "rationale": ["输出校验失败，已触发安全回退", str(error)],
         }
 
     def postprocess_result(self, result: Dict[str, Any], query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
