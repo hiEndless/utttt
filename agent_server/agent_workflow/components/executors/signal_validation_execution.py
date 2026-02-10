@@ -7,6 +7,7 @@ from agent_server.agents.experts.analysis.utils.signal_cropper import crop_signa
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
 from agent_server.tools.get_position import get_position
+from agent_server.risk.global_overlay import _read_global_overlay_raw, get_global_risk_narrative
 from agent_server.config import settings
 import json
 import asyncio
@@ -40,6 +41,12 @@ class SignalValidationComponent(BaseWorkflowComponent):
         full_context = await market_structure_output.build_output(exchange, symbol)
         agent_ctx = build_agent_context("signal_validation", full_context, horizon=holding_horizon)
 
+        # 4.1 Get Global Risk Overlay (Cognitive Layer)
+        # 获取自然语言描述的全局风控状态，作为 Agent 的“认知输入”
+        # 使用 Internal Raw API 读取，然后通过 Narrative Adapter 转换
+        global_overlay_data = await _read_global_overlay_raw(exchange)
+        global_risk_desc = get_global_risk_narrative(global_overlay_data)
+
         # 5. Construct query
         query = {
             "meta": {
@@ -52,15 +59,15 @@ class SignalValidationComponent(BaseWorkflowComponent):
             "positions": positions,
             "final_event": cropped_signal,
             "context": agent_ctx,
+            "global_risk_overlay": global_risk_desc,
         }
 
         # 6. Run expert
         # Load user specific config (TODO: DB)
         user_config = {}
         risk_cfg = {**settings.risk_defaults, **user_config}
-        risk_mode = risk_cfg.get("risk_mode", "normal")
 
-        sv_output_str = await self.expert.run(query, risk_mode=risk_mode)
+        sv_output_str = await self.expert.run(query)
 
         try:
             sv_output = json.loads(sv_output_str)

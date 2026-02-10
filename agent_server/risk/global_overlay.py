@@ -35,7 +35,6 @@ RISK_REGIME_RANK = {
     "critical": 2
 }
 
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -168,7 +167,7 @@ def aggregate_global_overlay(
     # --------------------------------------------------
     # 只在仍有活跃冷却候选者时继承冷却
     # 防止“幽灵冷却”，即所有仓位退出冷却后全局冷却仍然持续
-    
+
     cooldown_source = "none"
     if computed_in_cooldown:
         cooldown_source = "derived"
@@ -178,11 +177,11 @@ def aggregate_global_overlay(
         if prev_cd.get("in_cooldown"):
             # 如果之前有冷却，且当前计算也有冷却候选者，则尝试继承/延长
             computed_in_cooldown = True
-            
+
             # 合并逻辑：取当前计算的截止时间和先前截止时间的最大值
             current_max = computed_until_ts if computed_until_ts is not None else 0
             prev_max = prev_cd.get("until_ts", 0)
-            
+
             if prev_max > current_max:
                 computed_until_ts = prev_max
                 cooldown_source = "inherited"
@@ -218,6 +217,57 @@ def execution_key(exchange: str) -> str:
 def global_key(exchange: str) -> str:
     # 中文注释：账户级 global overlay 的唯一 key
     return f"risk:global:{(exchange or '').lower()}"
+
+
+async def read_global_overlay(exchange: str, redis_client: Optional[Redis] = None) -> Dict:
+    """
+    [Public Interface] 读取当前的 Global Overlay 状态。
+    此接口支持双向接入：
+    1. 供 Agent 获取认知上下文 (Cognitive Context)
+    2. 供 Executor 执行安全门控 (Safety Gating)
+    """
+    return await _read_prev_global_overlay(exchange, redis_client)
+
+
+def check_global_permission(overlay: Dict, action: str) -> bool:
+    """
+    [Safety Layer] 确定性的安全门控检查。
+    
+    原则：
+    - 离散：Yes/No。
+    - 确定：直接读取 global_action_allowance。
+    - 不可讨论：这是硬约束。
+    
+    Args:
+        action: "open", "add", "close", "reduce" (大小写不敏感)
+    """
+    if not overlay:
+        # 默认安全策略：如果没有 overlay，是否允许？
+        # 假设允许，因为初始化时可能为空。
+        return True
+
+    allowance = overlay.get("global_action_allowance", {})
+
+    # 归一化 action
+    act = action.lower().strip()
+
+    # 映射常用动词到 allowance key
+    # allow_open, allow_add, allow_close, allow_reduce, allow_hold
+
+    if act in ("open", "entry", "long", "short"):  # long/short 通常指开仓
+        return allowance.get("allow_open", True)
+
+    if act in ("add", "increase"):
+        return allowance.get("allow_add", True)
+
+    # 默认允许平仓/减仓类操作，除非显式禁止（虽然 global_overlay 逻辑里写死了 True）
+    if act in ("close", "exit", "reduce", "trim"):
+        # 对应 allow_close 或 allow_reduce
+        if act in ("reduce", "trim"):
+            return allowance.get("allow_reduce", True)
+        return allowance.get("allow_close", True)
+
+    return True
 
 
 def _try_infer_symbol_from_key(redis_key: str) -> str | None:
@@ -266,12 +316,12 @@ async def _read_and_maintain_execution_states(exchange: str, redis_client: Optio
                     # --- Hash 的维护逻辑 ---
                     # 1. 老化
                     new_payload = age_execution_state(payload, now_ts=now)
-                    
+
                     # 2. 检查变更
                     content_changed = (
-                        new_payload.get("execution_state") != payload.get("execution_state")
+                            new_payload.get("execution_state") != payload.get("execution_state")
                     )
-                    
+
                     if content_changed:
                         # 准备回写
                         if isinstance(field, (bytes, bytearray)):
@@ -293,17 +343,17 @@ async def _read_and_maintain_execution_states(exchange: str, redis_client: Optio
     # 2. Handle String Keys (Active Maintenance) (处理 String Key（主动维护）)
     scan_pattern = f"{prefix_key}:*"
     # 如果量大可使用管道更新，但此处为简单和即时一致性采用迭代处理
-    
+
     async for k in r.scan_iter(match=scan_pattern, count=200):
         try:
             key_str = k.decode("utf-8") if isinstance(k, (bytes, bytearray)) else k
             raw = await r.get(key_str)
             if not raw:
                 continue
-                
+
             payload_str = raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else raw
             payload = json.loads(payload_str)
-            
+
             if not isinstance(payload, dict):
                 continue
 
@@ -312,39 +362,39 @@ async def _read_and_maintain_execution_states(exchange: str, redis_client: Optio
                 inferred_symbol = _try_infer_symbol_from_key(key_str)
                 if inferred_symbol:
                     payload["symbol"] = inferred_symbol
-            
+
             # --- 维护逻辑 ---
             # 1. 老化
             new_payload = age_execution_state(payload, now_ts=now)
-            
+
             # 2. 检查变更
             # 如果 Key 顺序稳定，简单的字符串比较可能就够了，
             # 但 age_execution_state 返回的是副本。
-            
+
             # 比较相关字段以查看逻辑是否更改了内容
             content_changed = (
-                new_payload.get("execution_state") != payload.get("execution_state")
+                    new_payload.get("execution_state") != payload.get("execution_state")
             )
-            
+
             if content_changed:
                 await r.set(key_str, json.dumps(new_payload, ensure_ascii=False), ex=900)
             else:
                 # 优化维护：仅当 TTL 较低（< 5 分钟）或缺失时才 EXPIRE
                 current_ttl = await r.ttl(key_str)
                 # Redis ttl 返回 -2 表示 Key 不存在，-1 表示无过期，否则返回秒数
-                
+
                 # 安全：确保 execution_state 始终具有 TTL，以防止僵尸数据
                 if current_ttl == -1:
                     await r.expire(key_str, 900)
                 elif current_ttl != -2 and current_ttl < 300:
                     await r.expire(key_str, 900)
-                
+
             execution_states.append(new_payload)
-            
+
         except Exception as e:
             logger.debug(f"维护 execution_state key={key_str} 失败: {e}")
             continue
-            
+
     return execution_states
 
 
@@ -388,6 +438,144 @@ async def aggregate_and_store_global_overlay(exchange: str, redis_client: Option
     return overlay
 
 
+async def _read_global_overlay_raw(exchange: str, redis_client: Optional[Redis] = None) -> Optional[Dict]:
+    """
+    [内部接口] 读取原始 Overlay 数据。
+    警告：禁止直接在 Agent 或 Executor 中使用。
+    请分别使用 `get_global_risk_narrative` (认知层) 或 `check_global_permission` (安全层)。
+    """
+    return await _read_prev_global_overlay(exchange, redis_client=redis_client)
+
+
+def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
+    """
+    [认知层] 将结构化风控状态转换为 Agent 可理解的自然语言描述。
+    
+    原则：
+    - 软性语言：使用“不建议”而非“禁止”，作为环境上下文而非指令。
+    - 解释性：告知 Agent “为什么”。
+    - 可讨论性：允许 Agent 在推理中权衡。
+    
+    Designed for: Signal Validation Agent, Position Risk Agent
+    """
+    if not overlay:
+        return "全局风控状态：未知（系统默认假设为正常运行）。"
+
+    regime = overlay.get("global_risk_regime", "normal")
+    allowance = overlay.get("global_action_allowance", {})
+    cooldown = overlay.get("global_cooldown_state", {})
+
+    parts = []
+
+    # 1. Regime Description
+    if regime == "critical":
+        parts.append("严重风险警报：账户处于严重风险状态，整体环境强烈偏向防御。")
+    elif regime == "elevated":
+        parts.append("风险升高：账户处于高风险监控中，市场波动可能加剧。")
+    else:
+        parts.append("风险状态：正常。适用标准市场验证流程。")
+
+    # 2. Action Guidance (Soft/Preference Language)
+    # "Discourage" implies environment preference, not hard rule.
+    restrictions = []
+    if not allowance.get("allow_open", True):
+        restrictions.append("当前风控协议不建议开立新仓位；信号需要具备极强的理由")
+    if not allowance.get("allow_add", True):
+        restrictions.append("当前风险参数下不建议增加风险敞口")
+
+    if restrictions:
+        parts.append(f"指导建议：{'; '.join(restrictions)}。")
+    else:
+        parts.append("指导建议：无特定的风控限制建议。")
+
+    # 3. Cooldown Context
+    if cooldown.get("in_cooldown"):
+        # 模糊化时间，防止 Agent 进行时间博弈（例如“只剩几秒了，我可以等一下”）
+        # 重点在于“状态”而非“时刻”
+        parts.append(f"上下文：账户正处于冷静期，系统处于风险恢复阶段。需要极高的确信度才能打破惯性。")
+
+    return " ".join(parts)
+
+
+ACTION_ALLOWANCE_MAP = {
+    # Opening new positions
+    "open": "allow_open",
+    "entry": "allow_open",
+    "long": "allow_open",
+    "short": "allow_open",
+    "buy": "allow_open",
+    "sell": "allow_open",  # Assuming 'sell' without position context means short entry
+
+    # Adding to existing positions
+    "add": "allow_add",
+    "increase": "allow_add",
+
+    # Reducing risk
+    "reduce": "allow_reduce",
+    "trim": "allow_reduce",
+    "close": "allow_close",
+    "exit": "allow_close",
+
+    # Neutral
+    "hold": "allow_hold",
+}
+
+
+def check_global_permission(overlay: Optional[Dict], action: str) -> bool:
+    """
+    [安全层] 确定性的安全门控检查。
+    
+    原则：
+    - 离散：Yes/No。
+    - 确定：使用 ACTION_ALLOWANCE_MAP 映射动作。
+    - 故障安全（Fail-Safe）：如果 Overlay 缺失，默认禁止风险扩张操作。
+    - 隐式冷却（Implicit Cooldown）：冷却期间禁止开仓/加仓。
+    
+    Args:
+        action: "open", "add", "close", "reduce" ... (大小写不敏感)
+    """
+    # 归一化 action
+    act = action.lower().strip()
+
+    # 1. Fail-Safe Logic:
+    # If overlay is missing (Redis down, key missing), we must NOT fail-open.
+    # We allow risk-reducing actions (close/reduce) but BLOCK risk-increasing ones (open/add).
+    if overlay is None:
+        logger.error("安全检查时缺失 Global Overlay，进入安全模式 (SAFE MODE)。")
+        # Only allow exit/reduce
+        return act in ("close", "exit", "reduce", "trim", "hold")
+
+    # 2. Map Action to Allowance Key
+    allowance_key = ACTION_ALLOWANCE_MAP.get(act)
+
+    # 如果是未知动作，默认策略：
+    # 现在的策略是允许，还是为了安全起见拒绝？
+    # 考虑到可能有一些非标动作，如果不涉及资金（比如 query），默认允许是合理的。
+    # 但如果涉及资金，应该在 Map 中定义。
+    # 这里保持 "Default Allow unless Forbidden" 的语义，但对于 Map 中没有的动作，
+    # 实际上我们无法检查 global_action_allowance，所以直接返回 True。
+    if not allowance_key:
+        logger.warning(f"未识别的 action '{act}'，默认放行。请确认是否需要纳入风控映射。")
+        return True
+
+    allowance = overlay.get("global_action_allowance", {})
+    is_allowed_by_flag = allowance.get(allowance_key, True)
+
+    if not is_allowed_by_flag:
+        return False
+
+    # 3. Implicit Cooldown Gating
+    # 如果动作是增加风险（Open/Add），且处于冷却期，则禁止。
+    if allowance_key in ("allow_open", "allow_add"):
+        cooldown = overlay.get("global_cooldown_state", {})
+        if cooldown.get("in_cooldown"):
+            # 冷却期禁止开仓/加仓
+            # 这里不打印日志，日志由调用方打印
+            return False
+
+    return True
+
+
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--exchange", default="binance")
@@ -398,4 +586,9 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    overlay = {"global_risk_regime": "normal",
+               "global_action_allowance": {"allow_open": True, "allow_add": True, "allow_hold": True,
+                                           "allow_reduce": True, "allow_close": True},
+               "global_cooldown_state": {"in_cooldown": False, "until_ts": None}, "meta": {"updated_at": 1770757423}}
+    print(get_global_risk_narrative(overlay))

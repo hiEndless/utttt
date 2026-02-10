@@ -30,6 +30,9 @@ _prompt_template = """
 - candidate_horizons：当前有效的周期集合
 - pre_decision_structure：
   - short_term / mid_term / long_term 下的人群结构、风险状态与结构权重
+- global_risk_overlay（如有，全局风控叠加层）：
+  - 自然语言描述的账户级风险状态与环境偏好。
+  - 你必须参考此信息来校准对“风险”的容忍度。
 
 ────────────────────────
 【核心判断原则（必须严格遵守）】

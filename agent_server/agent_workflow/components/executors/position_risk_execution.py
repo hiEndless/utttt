@@ -11,6 +11,7 @@ from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import get_available_exposure_pct, account_state
 from agent_server.config import settings
 from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
@@ -114,6 +115,11 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             account_risk_state = await account_state(exchange)
             initialMargin = float(position_snapshot.get("initialMargin", 0))
             account_risk_state["position_occupancy_ratio"] = initialMargin / account_risk_state.get("balance", 1)
+            
+            # [NEW] 获取 Global Risk Overlay (Cognitive Layer)
+            # 同样使用 Internal Raw API + Narrative Adapter
+            global_overlay_data = await _read_global_overlay_raw(exchange)
+            global_risk_desc = get_global_risk_narrative(global_overlay_data)
 
             # 构造与 Demo 一致的简单 Query 结构，移除 operational_context 等额外逻辑
             return {
@@ -127,6 +133,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 "market_structure": pr_ctx,  # 注意：这里用 build_agent_context 的结果
                 "position": position_snapshot,
                 "account_risk_state": account_risk_state,
+                "global_risk_overlay": global_risk_desc,
                 "execution_constraint": execution_constraint,
             }
 
@@ -162,6 +169,12 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         # --- Aggregation Logic ---
         decisions = []
+        
+        # [NEW] 读取 Global Overlay 进行硬性门控 (检查层)
+        # 使用内部原始 API + 权限检查器
+        global_overlay = await _read_global_overlay_raw(exchange)
+        
+        # ----------- 逐行处理每个持仓的风控结果 -----------
         for q, r in zip(queries, parsed_results):
             pos_snapshot = q.get("position", {})
             pos_side = pos_snapshot.get("position_side", "NONE")
@@ -170,6 +183,25 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             payload = r.get("payload", r)
             # PositionRiskExpert v1.0 输出结构: { "risk_action": ..., "exposure_delta": ..., "reasoning": ... }
             decision = payload.get("risk_action") or payload.get("suggestion") or "hold"
+        # ----------- 结束 逐行处理 -----------
+            
+            # --- 硬性门控逻辑 (Fail-Safe) ---
+            original_decision = decision
+            gated = False
+            
+            # 使用 check_global_permission 内部处理 Fail-Safe 逻辑
+            if not check_global_permission(global_overlay, decision):
+                decision = "hold"
+                gated = True
+            
+            if gated:
+                reason = "全局门控：被风控协议拦截 (故障安全机制激活)"
+                print(f"  -> [GATE] 拦截: {trade_id} {original_decision} -> {decision}")
+                # 注入跟踪信息到 details
+                if isinstance(r, dict):
+                    r["system_override"] = reason
+                    r["original_decision"] = original_decision
+            # --------- 硬性门控逻辑 (Fail-Safe) ----------------
 
             decisions.append({
                 "trade_id": trade_id,
