@@ -29,7 +29,7 @@ async def _start_exchange_loop(redis: aioredis.Redis, exchange: str, stop_event:
             await manager.stop_symbol(s)
 
 
-async def _run():
+async def _run(stop_event: asyncio.Event = None):
     password = settings.redis_password
     if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
         password = None
@@ -45,15 +45,19 @@ async def _run():
     )
     redis = aioredis.Redis(connection_pool=pool)
     ex_watcher = RedisExchangeWatcher(redis)
-    loop = asyncio.get_running_loop()
-    stop = asyncio.Event()
+    
+    if stop_event is None:
+        stop = asyncio.Event()
+        loop = asyncio.get_running_loop()
 
-    def _on_sig(*_):
-        logging.getLogger("background").info("received_stop_signal")
-        stop.set()
+        def _on_sig(*_):
+            logging.getLogger("background").info("received_stop_signal")
+            stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    else:
+        stop = stop_event
 
     exchange_tasks: dict[str, dict] = {}
 
@@ -85,9 +89,11 @@ async def _run():
             await asyncio.gather(info["task"], return_exceptions=True)
         exchange_tasks.clear()
         # 关闭全局 HTTPClient（如果本进程内使用过），避免退出时资源泄漏警告
-        from agent_server.utils.http_client import http_client
+        # 仅在独立运行时关闭
+        if stop_event is None:
+            from agent_server.utils.http_client import http_client
 
-        await http_client.close()
+            await http_client.close()
         await redis.aclose()
 
 

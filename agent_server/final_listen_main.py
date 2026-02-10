@@ -146,7 +146,7 @@ class RouterFinalListener:
                     await self.redis.xack(self.final_stream, self.group, entry_id)
 
 
-async def _run():
+async def _run(stop_event: asyncio.Event = None):
     password = settings.redis_password
     if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
         password = None
@@ -162,15 +162,20 @@ async def _run():
     )
     redis = aioredis.Redis(connection_pool=pool)
     listener = RouterFinalListener(redis)
-    loop = asyncio.get_running_loop()
-    stop = asyncio.Event()
+    
+    if stop_event is None:
+        stop = asyncio.Event()
+        loop = asyncio.get_running_loop()
 
-    def _on_sig(*_):
-        logging.getLogger("final").info("received_stop_signal")
-        stop.set()
+        def _on_sig(*_):
+            logging.getLogger("final").info("received_stop_signal")
+            stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    else:
+        stop = stop_event
+        
     task = asyncio.create_task(listener.run(), name="final_events_router")
     try:
         while not stop.is_set():
@@ -182,9 +187,11 @@ async def _run():
         except Exception:
             pass
         # 关闭全局 HTTPClient（如果本进程内使用过），避免退出时资源泄漏警告
-        from agent_server.utils.http_client import http_client
+        # 仅在独立运行时关闭
+        if stop_event is None:
+            from agent_server.utils.http_client import http_client
 
-        await http_client.close()
+            await http_client.close()
         await redis.aclose()
 
 

@@ -57,7 +57,7 @@ async def _risk_update_loop(exchange: str, stop_event: asyncio.Event, redis_clie
     logger.info(f"已停止交易所的风控更新循环: {exchange}")
 
 
-async def _run():
+async def _run(stop_event: asyncio.Event = None):
     # 使用统一的 Redis 客户端获取方法，确保配置（如 decode_responses）一致
     # ⚠️ 隐含前提：该 redis client 用于多 exchange 并发风控任务
     # 需保证连接池容量 >= exchange_count * 2 (每个循环可能有 read + write)
@@ -66,15 +66,18 @@ async def _run():
     # 监听活跃的交易所
     ex_watcher = RedisExchangeWatcher(redis)
     
-    loop = asyncio.get_running_loop()
-    stop = asyncio.Event()
+    if stop_event is None:
+        stop = asyncio.Event()
+        loop = asyncio.get_running_loop()
 
-    def _on_sig(*_):
-        logger.info("收到停止信号")
-        stop.set()
+        def _on_sig(*_):
+            logger.info("收到停止信号")
+            stop.set()
 
-    loop.add_signal_handler(signal.SIGINT, _on_sig)
-    loop.add_signal_handler(signal.SIGTERM, _on_sig)
+        loop.add_signal_handler(signal.SIGINT, _on_sig)
+        loop.add_signal_handler(signal.SIGTERM, _on_sig)
+    else:
+        stop = stop_event
 
     exchange_tasks: dict[str, dict] = {}
 
@@ -126,13 +129,15 @@ async def _run():
         await redis.aclose()
         
         # 如果初始化了，尝试关闭全局 http_client
-        try:
-            from agent_server.utils.http_client import http_client
-            await http_client.close()
-        except ImportError:
-            pass
-        except Exception as e:
-            logger.warning(f"关闭 http_client 时出错: {e}")
+        # 仅在独立运行时关闭，若由 main 统一调度则由 main 关闭
+        if stop_event is None:
+            try:
+                from agent_server.utils.http_client import http_client
+                await http_client.close()
+            except ImportError:
+                pass
+            except Exception as e:
+                logger.warning(f"关闭 http_client 时出错: {e}")
             
         logger.info("关闭完成。")
 
