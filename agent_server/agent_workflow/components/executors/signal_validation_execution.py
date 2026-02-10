@@ -2,6 +2,7 @@ from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.signal_validation import SignalValidationExpert
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agent_context.market_structure.holding_context_from_positions import build_holding_context_from_positions
+from agent_server.agent_context.market_structure import output as market_structure_output
 from agent_server.agents.experts.analysis.utils.signal_cropper import crop_signal
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.trade_event_recorder import get_recorder
@@ -35,7 +36,8 @@ class SignalValidationComponent(BaseWorkflowComponent):
         holding_horizon = holding_context.get("horizon")
 
         # 4. Build agent context
-        full_context = await self._fetch_market_context(exchange, symbol)
+        # 在流程入口处实时生成最新的市场结构上下文，并会自动写入 Redis 供后续步骤使用
+        full_context = await market_structure_output.build_output(exchange, symbol)
         agent_ctx = build_agent_context("signal_validation", full_context, horizon=holding_horizon)
 
         # 5. Construct query

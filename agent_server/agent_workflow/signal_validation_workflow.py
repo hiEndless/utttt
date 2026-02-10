@@ -7,6 +7,7 @@ from agent_server.agent_workflow.components.executors.signal_validation_executio
 from agent_server.agent_workflow.components.executors.decision_execution import DecisionExecutionComponent
 from agent_server.agent_workflow.components.executors.position_risk_execution import PositionRiskExecutionComponent
 from agent_server.agent_workflow.components.executors.risk_state_aggregation import RiskStateAggregationComponent
+from agent_server.agent_workflow.components.executors.market_structure_execution import MarketStructureExecutionComponent
 
 
 class SignalValidationWorkflow(Workflow):
@@ -15,7 +16,8 @@ class SignalValidationWorkflow(Workflow):
     1. 信号验证 (SignalValidationExpert)
     2. 决策层 (DecisionExpert)
     3. 持仓风控执行 (PositionRiskExpert)
-    4. 风险状态聚合 (RiskStateAggregationComponent) - 新增：生成 execution_state & global_overlay
+    4. 风险状态聚合 (RiskStateAggregationComponent)
+    5. 市场结构分析 (MarketStructureExecutionComponent) - 系统认知与复盘
     """
 
     def __init__(self, run_id: Optional[str] = None, **kwargs):
@@ -26,6 +28,7 @@ class SignalValidationWorkflow(Workflow):
         self.comp_decision = DecisionExecutionComponent()
         self.comp_position_risk = PositionRiskExecutionComponent()
         self.comp_risk_state_aggregation = RiskStateAggregationComponent()
+        self.comp_market_structure = MarketStructureExecutionComponent()
 
         super().__init__(
             steps=[
@@ -33,6 +36,7 @@ class SignalValidationWorkflow(Workflow):
                 self.comp_decision.execute,
                 self.comp_position_risk.execute,
                 self.comp_risk_state_aggregation.execute,
+                self.comp_market_structure.execute,
             ],
             **kwargs
         )

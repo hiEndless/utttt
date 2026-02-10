@@ -38,6 +38,6 @@ class BaseWorkflowComponent:
         bg = json.loads(bg_str) if bg_str else {}
 
         full_context = bg if isinstance(bg, dict) and bg else {
-            "symbol": symbol, "ts": 0, "market_state": {}, "crowd_state": {}
+            "symbol": symbol, "ts": 0
         }
         return full_context

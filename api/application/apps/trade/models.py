@@ -109,6 +109,7 @@ class TradeEvent(models.Model):
     
     # 原始输入快照 (JSON)
     market_context = fields.JSONField(null=True, description="市场背景快照 (Trend, Volatility...)")
+    market_structure = fields.JSONField(null=True, description="市场快照 (压缩版的背景，供后续回测)")
     event_data = fields.JSONField(description="事件原始数据 (analysis_context)")
     indicators_snapshot = fields.JSONField(null=True, description="关键技术指标快照 (EMA, MACD, RSI...)")
     

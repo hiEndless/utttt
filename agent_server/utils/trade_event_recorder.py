@@ -512,6 +512,48 @@ class TradeEventRecorder:
             logger.error(f"更新市场背景快照失败: {e}, event_id={event_id}", exc_info=True)
             return False
 
+    async def update_market_structure(self, event_id: str, market_structure: Dict[str, Any]) -> bool:
+        """
+        更新事件的市场结构分析结果
+        
+        :param event_id: 事件ID
+        :param market_structure: 市场结构分析结果
+        :return: 是否成功
+        """
+        try:
+            def _update_sync():
+                with PostgresDB() as db:
+                    # 检查事件是否存在
+                    check_sql = "SELECT id FROM trade_events WHERE event_id = %s LIMIT 1"
+                    existing = db.fetch_one(check_sql, [event_id])
+                    
+                    if not existing:
+                        logger.warning(f"事件不存在，无法更新 market_structure: event_id={event_id}")
+                        return False
+                    
+                    # 更新所有匹配 event_id 的记录
+                    update_sql = """
+                        UPDATE trade_events 
+                        SET market_structure = %s
+                        WHERE event_id = %s
+                    """
+                    db.execute(update_sql, [
+                        json.dumps(market_structure, ensure_ascii=False),
+                        event_id
+                    ])
+                    
+                    logger.info(f"市场结构已更新: event_id={event_id}")
+                    return True
+            
+            # 异步执行
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _update_sync)
+            return result
+            
+        except Exception as e:
+            logger.error(f"更新市场结构失败: {e}, event_id={event_id}", exc_info=True)
+            return False
+
     async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], exchange: str, symbol: str, trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
         """
         保存 Agent 分析结果 (agent_analyses 表)
