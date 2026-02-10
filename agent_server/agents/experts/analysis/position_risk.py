@@ -145,12 +145,9 @@ class PositionRiskExpert(BaseLLMExpert):
 
 
 if __name__ == "__main__":
-    from agent_server.reducers.position_risk_decider import decide_position_action
     from agent_server.tools.get_position import get_position
-    from agent_server.utils.redis_client import RedisClient
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.agent_context.market_structure.holding_context import build_holding_context
-    from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
     from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
     import asyncio
     from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
