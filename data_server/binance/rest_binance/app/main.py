@@ -127,8 +127,21 @@ FETCH_PLAN = [
 
 
 async def _run():
+    logger.info("=" * 60)
+    logger.info("启动 data_server (rest_binance)")
+    logger.info("Redis 配置: host=%s port=%s db=%s", settings.redis_host,
+                settings.redis_port, settings.redis_db)
+
     # 使用统一的 Redis 客户端管理，避免连接数过多
-    redis = get_redis_client(db=settings.redis_db, decode_responses=True)
+    try:
+        redis = get_redis_client(db=settings.redis_db, decode_responses=True)
+        # 测试 Redis 连接
+        await redis.ping()
+        logger.info("Redis 连接成功")
+    except Exception as e:
+        logger.error("Redis 连接失败: %s", e)
+        raise
+
     watcher = RedisSymbolWatcher(redis)
     manager = SymbolTaskManager()
     loop = asyncio.get_running_loop()
@@ -148,21 +161,50 @@ async def _run():
         if sys.platform != 'win32':
             signal.signal(signal.SIGTERM, lambda s, f: stop.set())
 
+    # 初始化时检查一次符号列表
+    try:
+        initial_symbols = await watcher.list_symbols()
+        logger.info("当前监控符号: %s (共 %d 个)",
+                    list(initial_symbols) if initial_symbols else "无",
+                    len(initial_symbols))
+        if initial_symbols:
+            for s in initial_symbols:
+                await manager.start_symbol(s, FETCH_PLAN)
+    except Exception as e:
+        logger.exception("初始化符号失败: %s", e)
+
+    logger.info("开始监听符号变化...")
+    logger.info("提示: 使用 redis-cli 执行 'SADD symbol:binance BTCUSDT' 添加监控符号")
+    logger.info("=" * 60)
+
     try:
         async for symbols in watcher.watch_changes():
             cur = set(manager.list_symbols())
-            for s in symbols - cur:
+            added = symbols - cur
+            removed = cur - symbols
+
+            if added:
+                logger.info("检测到新符号: %s (总数: %d)", list(added), len(symbols))
+            if removed:
+                logger.info("检测到符号移除: %s (剩余: %d)", list(removed),
+                            len(symbols))
+
+            for s in added:
                 await manager.start_symbol(s, FETCH_PLAN)
-            for s in cur - symbols:
+            for s in removed:
                 await manager.stop_symbol(s)
+
             if stop.is_set():
                 break
             await asyncio.sleep(0.1)
+    except Exception as e:
+        logger.exception("运行错误: %s", e)
+        raise
     finally:
         # 停止所有任务
         for s in manager.list_symbols():
             await manager.stop_symbol(s)
-        
+
         # 刷新所有批量写入器，确保数据不丢失
         for writer in _BATCH_WRITERS.values():
             try:
@@ -170,7 +212,7 @@ async def _run():
                 await writer.close()
             except Exception as e:
                 logger.exception("batch_writer_close_error %s", e)
-        
+
         # 关闭 HTTP 客户端和 Redis 连接
         await http_client.close()
         await redis.aclose()
@@ -178,8 +220,16 @@ async def _run():
 
 def main():
     logging.basicConfig(
-        level=getattr(logging, settings.log_level, logging.INFO))
-    asyncio.run(_run())
+        level=getattr(logging, settings.log_level, logging.INFO),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
+    try:
+        asyncio.run(_run())
+    except KeyboardInterrupt:
+        logger.info("程序被用户中断")
+    except Exception as e:
+        logger.exception("程序异常退出: %s", e)
+        raise
 
 
 if __name__ == "__main__":

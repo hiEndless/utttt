@@ -1,6 +1,7 @@
 import json
 import asyncio
 import os
+import sys
 import weakref
 from typing import Optional, Dict, List, Tuple
 from redis.asyncio import Redis
@@ -36,15 +37,6 @@ def _redis_socket_keepalive() -> bool:
                               "true").lower() == "true"
     except Exception:
         return True
-
-
-def _redis_socket_keepalive_options() -> dict:
-    """Socket keepalive 选项"""
-    return {
-        "TCP_KEEPIDLE": 1,
-        "TCP_KEEPINTVL": 3,
-        "TCP_KEEPCNT": 5,
-    }
 
 
 def get_redis_client(db: int | None = None,
@@ -83,11 +75,29 @@ def get_redis_client(db: int | None = None,
         "db": use_db,
         "decode_responses": decode_responses,
         "max_connections": max_conn,
-        "socket_keepalive": _redis_socket_keepalive(),
     }
+    
+    # Socket keepalive 配置
+    # 注意：Windows 平台可能不支持 socket_keepalive_options，只启用基本的 keepalive
     if _redis_socket_keepalive():
-        pool_kwargs[
-            "socket_keepalive_options"] = _redis_socket_keepalive_options()
+        pool_kwargs["socket_keepalive"] = True
+        # Windows 平台不支持 socket_keepalive_options，跳过以避免错误
+        if sys.platform != 'win32':
+            try:
+                import socket
+                keepalive_opts = {}
+                if hasattr(socket, 'TCP_KEEPIDLE'):
+                    keepalive_opts[socket.TCP_KEEPIDLE] = 1
+                if hasattr(socket, 'TCP_KEEPINTVL'):
+                    keepalive_opts[socket.TCP_KEEPINTVL] = 3
+                if hasattr(socket, 'TCP_KEEPCNT'):
+                    keepalive_opts[socket.TCP_KEEPCNT] = 5
+                if keepalive_opts:
+                    pool_kwargs["socket_keepalive_options"] = keepalive_opts
+            except Exception:
+                # 如果获取选项失败，只使用基本的 keepalive
+                pass
+    
     if password:
         pool_kwargs["password"] = password
 
