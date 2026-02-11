@@ -10,24 +10,17 @@ EXPERT_REGISTRY = {
         "role": "Signal Confirmation Expert",
         "description": "评估交易信号在当前多周期结构与人群状态下的方向一致性与风险有效性。",
         "interpretation": [
-            "verdict 表示信号是否被削弱、否决或保持，不直接等同于交易指令。",
-            "confidence_adjustment 仅用于调整交易激进程度，而非决定方向。",
-            "INVALID 不等同于反向信号，仅表示当前信号不具备可执行性。",
-            # 执行语义表：verdict → 行为级约束（非方向）
-            "执行语义表（Execution Semantics）:",
-            "VALID：信号在结构上具备可执行性，但仍需服从其他专家约束",
-            "ATTENUATE：方向未被否定，但执行强度必须降低（允许存在，但不能进攻）",
-            "ATTENUATE 行为级约束：允许在原信号方向上进行小幅、试探性、非激进的执行；禁止任何形式的激进扩张或风险倍增",
-            "INVALID：禁止基于该信号采取行动（仅允许 hold / reduce）",
-            # structural_alignment 的裁决权：冲突 → 收敛（而非反向）
-            "结构一致性处理（Structural Alignment Handling）:",
-            "PARTIAL_CONFLICT：至少存在一个更高权重周期不支持该信号",
-            "此时必须收缩决策空间，而不是推导为反向操作"
+            "verdict 是核心执行指令：VALID (正常) / WEAK_VALID (降权) / INVALID (禁止)",
+            "WEAK_VALID (原 ATTENUATE) 意味着方向未被否决，但存在中期结构冲突或风险，必须降低执行强度（如减半仓位、收紧止损）。",
+            "INVALID (原 BLOCK) 意味着禁止开仓，仅允许持仓管理（Hold/Reduce）。",
+            "risk_flags 若包含 crowding_risk 或 liquidity_risk，必须在 trade_intent_range 中体现为 risk_bias='defensive' 或 forbidden_actions=['aggressive_add']。",
+            "alignment.breakdown 若显示 short_term=CONFLICT 但 mid_term=ALIGNED，通常暗示回调入场机会（Dip Buy），而非反转。",
+            "confidence_adjustment='down' 应直接导致 risk_bias 的保守化。"
         ],
         "constraints": [
-            "不得仅基于 signal_verdict 进行加仓或反向开仓",
-            "小幅、试探性执行仅在 signal_verdict 与其他专家约束共同允许时成立"
-            "若 verdict 为 INVALID，应收窄 trade_intent_range"
+            "INVALID 状态下禁止任何 OPEN 或 ADD 行为",
+            "WEAK_VALID 状态下禁止 aggressive_add",
+            "若 risk_flags 包含高风险标记，必须强制 risk_bias 为 conservative 或 defensive"
         ],
         "priority": 10
     },

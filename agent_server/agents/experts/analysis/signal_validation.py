@@ -22,18 +22,46 @@ class SignalValidationExpert(BaseLLMExpert):
     SCHEMA = {
         "verdict": {
             "type": str,
-            "options": ["ALLOW", "ATTENUATE", "BLOCK"],
-            "description": "Whether the signal is allowed to propagate under current structure"
+            "options": ["VALID", "WEAK_VALID", "INVALID"],
+            "description": "Validation result: VALID (executable), WEAK_VALID (attenuated execution), INVALID (forbidden)"
         },
-        "structural_alignment": {
-            "type": str,
-            "options": ["ALIGNED", "PARTIAL_CONFLICT", "STRONG_CONFLICT"],
-            "description": "Degree of structural consistency between signal direction and multi-horizon context"
+        "alignment": {
+            "type": dict,
+            "schema": {
+                "global_status": {
+                    "type": str,
+                    "options": ["ALIGNED", "CONFLICT", "STRONGLY_CONFLICT"],
+                    "description": "Overall structural alignment status"
+                },
+                "conflict_score": {
+                    "type": float,
+                    "description": "Normalized conflict score (0.0-1.0)"
+                },
+                "breakdown": {
+                    "type": list,
+                    "description": "Detailed alignment status for each time horizon"
+                }
+            }
         },
-        "risk_implication": {
-            "type": str,
-            "options": ["none", "elevated"],
-            "description": "Structural risk implication implied by conflicts"
+        "risk_flags": {
+            "type": list,
+            "description": "List of identified risk flags (e.g., crowding_risk, liquidity_risk)"
+        },
+        "confidence": {
+            "type": dict,
+            "schema": {
+                "agent_confidence_score": {"type": float},
+                "confidence_adjustment": {"type": str, "options": ["none", "down"]},
+                "confidence_reason": {"type": str}
+            }
+        },
+        "impact_assessment": {
+            "type": dict,
+            "schema": {
+                "structural_consistency_score": {"type": float},
+                "behavior_risk_score": {"type": float},
+                "veto_triggered": {"type": bool}
+            }
         },
         "reasoning": {
             "type": list,
@@ -46,9 +74,23 @@ class SignalValidationExpert(BaseLLMExpert):
 
     def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         return {
-            "verdict": "BLOCK",
-            "structural_alignment": "STRONG_CONFLICT",
-            "risk_implication": "elevated",
+            "verdict": "INVALID",
+            "alignment": {
+                "global_status": "STRONGLY_CONFLICT",
+                "conflict_score": 1.0,
+                "breakdown": []
+            },
+            "risk_flags": [{"type": "error_fallback", "severity": 1.0}],
+            "confidence": {
+                "agent_confidence_score": 0.0,
+                "confidence_adjustment": "down",
+                "confidence_reason": "system_error"
+            },
+            "impact_assessment": {
+                "structural_consistency_score": 0.0,
+                "behavior_risk_score": 1.0,
+                "veto_triggered": True
+            },
             "reasoning": ["输出校验失败，已触发安全回退", str(error)],
         }
 
