@@ -91,7 +91,7 @@ def query_db_env():
             "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             "a2a_url": "http://localhost:10007/",
         },
-        "trade_event": {
+        "trade_behavior": {
             "language": "zh",
             "model_id": "qwen3-max",
             "llm_base_url": "https://apis.iflow.cn/v1/chat/completions",

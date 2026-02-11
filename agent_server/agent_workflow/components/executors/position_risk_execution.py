@@ -4,14 +4,12 @@ import time
 from typing import Dict, Optional, List, Any
 from agno.workflow import StepInput
 from agent_server.tools.get_position import get_position
-from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.account import get_available_exposure_pct, account_state
-from agent_server.config import settings
+from agent_server.utils.account import account_state
 from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
-from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission
+from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission, get_global_risk_narrative
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):

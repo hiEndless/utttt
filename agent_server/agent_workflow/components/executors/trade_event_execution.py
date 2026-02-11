@@ -1,5 +1,5 @@
 from agno.workflow import StepInput
-from agent_server.agents.experts.analysis.trade_event import TradeEventExpert
+from agent_server.agents.experts.analysis.trade_behavior import TradeEventExpert
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
