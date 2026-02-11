@@ -7,6 +7,7 @@ from data_server.binance.ws_binance.utils.redis_client import (
     key_latest_price,
 )
 
+# 使用全局连接，确保连接池复用
 conn = get_sync_redis()
 DEPTH_STREAM_MAXLEN = int(os.getenv("DEPTH_STREAM_MAXLEN", 300))
 

@@ -65,6 +65,7 @@ import os
 from data_server.binance.ws_binance.utils.redis_client import (
     build_url,
     get_async_redis,
+    get_async_batch_writer,
     key_alerts,
 )
 
@@ -147,6 +148,8 @@ class SpikeDetector:
 
         # redis client
         self.redis = get_async_redis(self.redis_url)
+        # 使用批量写入器，减少连接数
+        self._batch_writer = None  # 延迟初始化，在 start() 中初始化
 
         # control
         self._running = False
@@ -154,18 +157,22 @@ class SpikeDetector:
     async def start(self):
         # 预热连接
         await self.redis.ping()
+        # 初始化批量写入器
+        self._batch_writer = get_async_batch_writer(self.redis)
         self._running = True
 
     async def stop(self):
         self._running = False
-        try:
-            # redis.asyncio 在不同版本里关闭接口不一致，优先使用 aclose() 回收连接池
-            if hasattr(self.redis, "aclose"):
-                await self.redis.aclose()
-            else:
-                await self.redis.close()
-        except Exception:
-            pass
+        # 刷新批量写入器，确保数据不丢失
+        if self._batch_writer:
+            try:
+                await self._batch_writer.flush()
+                await self._batch_writer.close()
+            except Exception as e:
+                print(f"batch writer flush error: {e}")
+        # 注意：不要关闭共享的连接池，因为连接池是全局缓存的
+        # 连接池会在程序退出时自动清理
+        # 如果关闭连接池，会导致其他使用相同连接池的地方出错
 
     def register_alert_callback(self, cb):
         """cb(symbol, alert_type, details:dict) -> None"""
@@ -215,33 +222,59 @@ class SpikeDetector:
         # persist to redis stream（XADD）
         stream_key = self.stream_key_template.format(symbol=symbol)
         latest_key = self.latest_key_template.format(symbol=symbol)
-        # 分开捕获，便于定位具体错误键
-        try:
-            # XADD: 支持 capped stream（字段统一：ts,bid,ask,price；ts 为毫秒整数）
-            await self.redis.xadd(stream_key, {
-                "ts": ts_ms,
-                "price": float(price),
-                "bid": float(bid_liq),
-                "ask": float(ask_liq)
-            }, maxlen=self.max_stream_len, approximate=True)
-        except Exception as e:
-            # 打印出错的键与其当前类型
+        
+        # 使用批量写入器，减少连接数
+        if self._batch_writer:
             try:
-                ktype = await self.redis.type(stream_key)
-            except Exception:
-                ktype = "unknown"
-            print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+                # XADD: 支持 capped stream（字段统一：ts,bid,ask,price；ts 为毫秒整数）
+                await self._batch_writer.xadd(stream_key, {
+                    "ts": ts_ms,
+                    "price": float(price),
+                    "bid": float(bid_liq),
+                    "ask": float(ask_liq)
+                }, maxlen=self.max_stream_len, approximate=True)
+            except Exception as e:
+                # 打印出错的键与其当前类型
+                try:
+                    ktype = await self.redis.type(stream_key)
+                except Exception:
+                    ktype = "unknown"
+                print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
 
-        try:
-            # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
-            await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
-        except Exception as e:
-            # 打印出错的键与其当前类型
             try:
-                ktype = await self.redis.type(latest_key)
-            except Exception:
-                ktype = "unknown"
-            print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
+                # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
+                await self._batch_writer.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
+            except Exception as e:
+                # 打印出错的键与其当前类型
+                try:
+                    ktype = await self.redis.type(latest_key)
+                except Exception:
+                    ktype = "unknown"
+                print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
+        else:
+            # 降级到直接写入（如果批量写入器未初始化）
+            try:
+                await self.redis.xadd(stream_key, {
+                    "ts": str(ts_ms),
+                    "price": str(float(price)),
+                    "bid": str(float(bid_liq)),
+                    "ask": str(float(ask_liq))
+                }, maxlen=self.max_stream_len, approximate=True)
+            except Exception as e:
+                try:
+                    ktype = await self.redis.type(stream_key)
+                except Exception:
+                    ktype = "unknown"
+                print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+
+            try:
+                await self.redis.hset(latest_key, mapping={"ts": str(ts_ms), "price": str(price), "bid": str(bid_liq), "ask": str(ask_liq)})
+            except Exception as e:
+                try:
+                    ktype = await self.redis.type(latest_key)
+                except Exception:
+                    ktype = "unknown"
+                print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
 
         # 非阻塞触发检测
         asyncio.create_task(self._evaluate(symbol))
@@ -359,7 +392,13 @@ class SpikeDetector:
         # 统一为毫秒整数时间戳
         payload = {"ts": int(time.time()*1000), "type": alert_type, "details": json.dumps(details)}
         try:
-            await self.redis.xadd(alert_stream, payload, maxlen=1000, approximate=True)
+            # 使用批量写入器（如果已初始化）
+            if self._batch_writer:
+                await self._batch_writer.xadd(alert_stream, payload, maxlen=1000, approximate=True)
+            else:
+                # 降级到直接写入
+                str_payload = {k: str(v) for k, v in payload.items()}
+                await self.redis.xadd(alert_stream, str_payload, maxlen=1000, approximate=True)
         except Exception as e:
             print("alert redis write error:", e)
 

@@ -390,8 +390,15 @@ async def main():
         try:
             if detector is not None:
                 await detector.stop()
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning(f"[WS] detector stop error: {e}")
+        # 刷新批量写入器，确保数据不丢失（同步方法，不需要 await）
+        try:
+            if redis_client._batch_writer:
+                redis_client._batch_writer.flush()
+                redis_client._batch_writer.close()
+        except Exception as e:
+            logging.warning(f"[WS] batch writer flush error: {e}")
 
 
 if __name__ == "__main__":

@@ -1,42 +1,29 @@
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=ticker24hr interval=1h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=fundingRate interval=4h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=openInterest interval=1m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1m interval=1m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_5m interval=5m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_15m interval=15m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_30m interval=30m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1h interval=1h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_2h interval=2h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_4h interval=4h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_6h interval=6h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_12h interval=12h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1d interval=1d time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=ticker24hr interval=1h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=fundingRate interval=4h time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=openInterest interval=1m time=2026-02-11 18:14:27
-2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error BTCUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error ETHUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:27 - rest_binance - ERROR - store_market_raw_error BTCUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error BNBUSDT 30m 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 1h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error BTCUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error SOLUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 6h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 6h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 1h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error ETHUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error ETHUSDT 15m 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error SOLUSDT 'ConnectionPool' object has no attribute 'is_connected'
-2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 1m 'ConnectionPool' object has no attribute 'is_connected'
+收到: {'e': 'aggTrade', 'E': 1770805800340, 'a': 1036023772, 's': 'SOLUSDT', 'p': '80.8900', 'q': '11.73', 'nq': '11.73', 'f': 3156551868, 'l': 3156551870, 'T': 1770805800197, 'm': False}
+收到: {'e': 'aggTrade', 'E': 1770805800344, 'a': 3129768676, 's': 'BTCUSDT', 'p': '66844.90', 'q': '0.045', 'nq': '0.045', 'f': 7268800883, 'l': 7268800884, 'T': 1770805800190, 'm': True}
+收到: {'e': 'aggTrade', 'E': 1770805800348, 'a': 2801516402, 's': 'ETHUSDT', 'p': '1944.78', 'q': '0.124', 'nq': '0.124', 'f': 7512516861, 'l': 7512516861, 'T': 1770805800194, 'm': True}
+收到: {'e': 'depthUpdate', 'E': 1770805800404, 'T': 1770805800403, 's': 'SOLUSDT', 'U': 9884377158422, 'u': 9884377258075, 'pu': 9884377158359, 'b': [['80.8800', '1823.73'], ['80.8700', '2150.82'], ['80.8600', '4055.84'], ['80.8500', '2594.99'], ['80.8400', '2411.75'], ['80.8300', '4155.23'], ['80.8200', '2865.55'], ['80.8100', '1878.51'], ['80.8000', '4066.97'], ['80.7900', '1724.57'], ['80.7800', '1767.40'], ['80.7700', '3644.36'], ['80.7600', '1776.95'], ['80.7500', '1556.29'], ['80.7400', '3382.18'], ['80.7300', '1750.14'], ['80.7200', '2099.61'], ['80.7100', '3082.42'], ['80.7000', '1264.95'], ['80.6900', '1323.64']], 'a': [['80.8900', '687.20'], ['80.9000', '2243.59'], ['80.9100', '1614.21'], ['80.9200', '3891.67'], ['80.9300', '2065.36'], ['80.9400', '2116.05'], ['80.9500', '4300.06'], ['80.9600', '1908.38'], ['80.9700', '3251.55'], ['80.9800', '3695.66'], ['80.9900', '2175.41'], ['81.0000', '3815.76'], ['81.0100', '3471.68'], ['81.0200', '2124.78'], ['81.0300', '2214.51'], ['81.0400', '4241.39'], ['81.0500', '2396.23'], ['81.0600', '3147.87'], ['81.0700', '2523.83'], ['81.0800', '2233.81']]}
+[TOP_DEPTH] SOLUSDT 写入 ticks:binance:SOLUSDT: {'ts': '1770805800403', 'price': '80.89', 'bid': '49375.9', 'ask': '54119.0'}
+收到: {'e': 'aggTrade', 'E': 1770805800453, 'a': 809267766, 's': 'BNBUSDT', 'p': '589.900', 'q': '0.04', 'nq': '0.04', 'f': 2045014903, 'l': 2045014904, 'T': 1770805800299, 'm': False}
+收到: {'e': 'aggTrade', 'E': 1770805800491, 'a': 1036023773, 's': 'SOLUSDT', 'p': '80.8900', 'q': '1.10', 'nq': '1.10', 'f': 3156551871, 'l': 3156551871, 'T': 1770805800337, 'm': False}
+收到: {'e': 'aggTrade', 'E': 1770805800546, 'a': 2801516403, 's': 'ETHUSDT', 'p': '1944.79', 'q': '0.045', 'nq': '0.045', 'f': 7512516862, 'l': 7512516862, 'T': 1770805800393, 'm': False}
+收到: {'e': 'aggTrade', 'E': 1770805800590, 'a': 809267767, 's': 'BNBUSDT', 'p': '589.890', 'q': '1.23', 'nq': '1.23', 'f': 2045014905, 'l': 2045014906, 'T': 1770805800476, 'm': True}
+收到: {'e': 'aggTrade', 'E': 1770805800653, 'a': 1036023774, 's': 'SOLUSDT', 'p': '80.8900', 'q': '7.03', 'nq': '7.03', 'f': 3156551872, 'l': 3156551872, 'T': 1770805800499, 'm': False}
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
+redis write error on HSET key=price:binance:BTCUSDT type=unknown: Too many connections
+redis write error on XADD key=ticks:binance:BTCUSDT type=unknown: Too many connections
