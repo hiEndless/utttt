@@ -1,5 +1,9 @@
 import json
-from utils.redis_client import get_redis_client
+try:
+    from config import settings
+except ImportError:
+    from ..config import settings
+from utils.redis_client import get_redis_client, get_batch_writer
 
 
 def extract_endpoint_name(url: str) -> str:
@@ -9,19 +13,58 @@ def extract_endpoint_name(url: str) -> str:
     return name
 
 
-async def store_market_raw(symbol: str, interval: str, url: str, data, db: int | None = None, exchange: str = "binance"):
-    client = get_redis_client(db)
+async def store_market_raw(symbol: str, interval: str, url: str, data, db: int | None = None, exchange: str = "binance", use_batch: bool = True):
+    """
+    存储市场原始数据
+    
+    Args:
+        symbol: 交易对符号
+        interval: 时间周期
+        url: API 端点 URL
+        data: 数据内容
+        db: Redis 数据库编号
+        exchange: 交易所名称
+        use_batch: 是否使用批量写入（默认 True，提高性能）
+    """
     name = extract_endpoint_name(url)
     key = f"market_raw:{exchange}:{symbol}:{interval}:{name}"
-    await client.set(key, json.dumps(data, ensure_ascii=False))
+    json_data = json.dumps(data, ensure_ascii=False)
+    
+    if use_batch:
+        # 使用批量写入器，支持海量数据瞬时插入
+        writer = get_batch_writer(db=db)
+        await writer.set(key, json_data)
+    else:
+        # 直接写入（用于需要立即生效的场景）
+        client = get_redis_client(db)
+        await client.set(key, json_data)
     return True
 
 
-async def store_market_raw_simple(symbol: str, url: str, data, db: int | None = None, exchange: str = "binance"):
-    client = get_redis_client(db)
+async def store_market_raw_simple(symbol: str, url: str, data, db: int | None = None, exchange: str = "binance", use_batch: bool = True):
+    """
+    存储市场原始数据（简化版，无 interval）
+    
+    Args:
+        symbol: 交易对符号
+        url: API 端点 URL
+        data: 数据内容
+        db: Redis 数据库编号
+        exchange: 交易所名称
+        use_batch: 是否使用批量写入（默认 True，提高性能）
+    """
     name = extract_endpoint_name(url)
     key = f"market_raw:{exchange}:{symbol}:{name}"
-    await client.set(key, json.dumps(data, ensure_ascii=False))
+    json_data = json.dumps(data, ensure_ascii=False)
+    
+    if use_batch:
+        # 使用批量写入器，支持海量数据瞬时插入
+        writer = get_batch_writer(db=db)
+        await writer.set(key, json_data)
+    else:
+        # 直接写入（用于需要立即生效的场景）
+        client = get_redis_client(db)
+        await client.set(key, json_data)
     return True
 
 async def delete_market_raw_all(db: int | None = None, count: int = 1000, dry_run: bool = False) -> dict:

@@ -3,10 +3,10 @@ import signal
 import logging
 import time
 import sys
-import redis.asyncio as aioredis
 from config import settings
 from manager import SymbolTaskManager
 from utils.redis_watch import RedisSymbolWatcher
+from utils.redis_client import get_redis_client, _BATCH_WRITERS
 from fetchers import (
     fetch_kline,
     fetch_takerLongShortRatio,
@@ -127,11 +127,8 @@ FETCH_PLAN = [
 
 
 async def _run():
-    redis = aioredis.Redis(host=settings.redis_host,
-                           password=settings.redis_password,
-                           port=settings.redis_port,
-                           db=settings.redis_db,
-                           decode_responses=True)
+    # 使用统一的 Redis 客户端管理，避免连接数过多
+    redis = get_redis_client(db=settings.redis_db, decode_responses=True)
     watcher = RedisSymbolWatcher(redis)
     manager = SymbolTaskManager()
     loop = asyncio.get_running_loop()
@@ -162,8 +159,19 @@ async def _run():
                 break
             await asyncio.sleep(0.1)
     finally:
+        # 停止所有任务
         for s in manager.list_symbols():
             await manager.stop_symbol(s)
+        
+        # 刷新所有批量写入器，确保数据不丢失
+        for writer in _BATCH_WRITERS.values():
+            try:
+                await writer.flush()
+                await writer.close()
+            except Exception as e:
+                logger.exception("batch_writer_close_error %s", e)
+        
+        # 关闭 HTTP 客户端和 Redis 连接
         await http_client.close()
         await redis.aclose()
 

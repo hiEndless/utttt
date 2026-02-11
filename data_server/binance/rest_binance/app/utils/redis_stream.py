@@ -1,6 +1,9 @@
 import json
 from typing import Dict, List, Optional
-from redis.asyncio import Redis
+try:
+    from utils.redis_client import get_redis_client
+except ImportError:
+    from .redis_client import get_redis_client
 
 
 class RedisStreamWriter:
@@ -13,7 +16,8 @@ class RedisStreamWriter:
         decode_responses: bool = True,
     ):
         self.stream_key = stream_key
-        self.client = Redis(host=host, port=port, db=db, decode_responses=decode_responses)
+        # 使用统一的 Redis 客户端管理，避免连接数过多
+        self.client = get_redis_client(db=db, decode_responses=decode_responses)
 
     async def write(self, event: Dict) -> str:
         data = dict(event)
