@@ -59,13 +59,13 @@ def get_redis_client(db: int | None = None,
         loop_pools = _POOLS_BY_LOOP.get(loop)
         if loop_pools is not None and pool_key in loop_pools:
             pool = loop_pools[pool_key]
-            if pool.is_connected:
-                return Redis(connection_pool=pool)
+            # 直接复用连接池，Redis 客户端会在需要时自动建立连接
+            return Redis(connection_pool=pool)
     except RuntimeError:
         if pool_key in _POOLS_NO_LOOP:
             pool = _POOLS_NO_LOOP[pool_key]
-            if pool.is_connected:
-                return Redis(connection_pool=pool)
+            # 直接复用连接池，Redis 客户端会在需要时自动建立连接
+            return Redis(connection_pool=pool)
 
     # 创建新的连接池
     max_conn = _redis_max_connections()

@@ -1,0 +1,42 @@
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=ticker24hr interval=1h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=fundingRate interval=4h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=openInterest interval=1m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1m interval=1m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_5m interval=5m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_15m interval=15m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_30m interval=30m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1h interval=1h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_2h interval=2h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_4h interval=4h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_6h interval=6h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_12h interval=12h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=spider_1d interval=1d time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=ticker24hr interval=1h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=fundingRate interval=4h time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - INFO - task_trigger name=openInterest interval=1m time=2026-02-11 18:14:27
+2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error BTCUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error ETHUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:27 - rest_binance - ERROR - store_market_raw_error BTCUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:27 - rest_binance - ERROR - indicators_producer_error BNBUSDT 30m 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 1h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error BTCUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error SOLUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 6h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 4h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 6h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BTCUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 1h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error ETHUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 2h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 12h 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error ETHUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error ETHUSDT 15m 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error BNBUSDT 1d 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - store_market_raw_error SOLUSDT 'ConnectionPool' object has no attribute 'is_connected'
+2026-02-11 18:14:28 - rest_binance - ERROR - indicators_producer_error SOLUSDT 1m 'ConnectionPool' object has no attribute 'is_connected'
