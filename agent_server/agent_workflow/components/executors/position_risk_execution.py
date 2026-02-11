@@ -1,26 +1,24 @@
 import asyncio
 import json
 import time
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 from agno.workflow import StepInput
 from agent_server.tools.get_position import get_position
-from agent_server.reducers.temporal_state_reducer import reduce_temporal_state
-from agent_server.reducers.position_risk_decider import decide_position_action
 from agent_server.utils.redis_client import RedisClient
 from agent_server.agent_context.builder import build_agent_context
-from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
-from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.account import get_available_exposure_pct
+from agent_server.utils.account import get_available_exposure_pct, account_state
 from agent_server.config import settings
-from agent_server.risk.action_policy import derive_allowed_llm_policy
+from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
     """
     负责构建持仓风控的上下文（Prompt）并并发执行风控 Agent。
     合并了原有的 ContextEnrichment 和 RiskAssessment 步骤。
+    支持决策层（DecisionExpert）的输入作为约束。
     """
 
     def __init__(self):
@@ -29,21 +27,29 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
     async def execute(self, ctx: StepInput) -> str:
         prev_result = self._parse_step_content(ctx.previous_step_content)
 
-        event_data = prev_result["event_data"]
-        prev_output = prev_result["output"]
-        full_context = prev_result["full_context"]
+        event_data = prev_result.get("event_data", {})
+        # 支持从 SignalValidation 直接过来，或者从 DecisionComponent 过来
+        # 如果从 DecisionComponent 过来，sv_output 在 sv_output 字段
+        # 如果从 SignalValidation 过来，output 就是 sv_output
+        sv_output = prev_result.get("sv_output") or prev_result.get("output", {})
+        decision_output = prev_result.get("decision_output", {})  # Optional from DecisionComponent
+
+        full_context = prev_result.get("full_context")
+
         # 判断是否有skipped字段
-        if prev_output.get("skipped"):
+        if prev_result.get("skipped"):
             print(f"--- 持仓风控跳过：{event_data.get('symbol')} (Previous Skipped) ---")
-            return self._safe_json_dumps(prev_output)
+            return self._safe_json_dumps(prev_result)
 
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")
-        
+
         print(f"--- 持仓风控执行：{symbol} ---")
 
-        # 1. 获取持仓
-        positions = get_position(exchange, symbol)
+        # 1. 获取持仓 (优先用上游传递的)
+        positions = prev_result.get("positions")
+        if not positions:
+            positions = get_position(exchange, symbol)
 
         # 针对交易事件，只评估对应方向的持仓
         if event_data.get("route") == "trade":
@@ -55,12 +61,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                     if str(p.get("position_side")).upper() == str(target_side).upper()
                 ]
                 print(f"  -> [Trade Event] 仅评估 {target_side} 方向持仓")
-        
+
         # 2. 准备上下文数据
-        agent_output = prev_output.get("agent_output", prev_output)
-        verdict = agent_output.get("verdict", "UNKNOWN")
-        alignment = agent_output.get("alignment")
-        
         # 优先使用上游传递的 context，如果缺失则自行获取
         if full_context:
             context_to_use = full_context
@@ -69,132 +71,70 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             context_to_use = await self._fetch_market_context(exchange, symbol)
 
         pr_ctx = build_agent_context("position_risk", context_to_use)
-        
-        market_context = {
-            "htf_trend": pr_ctx.get("market_state", {}).get("long_term", {}).get("direction", "unknown"),
-            "ltf_structure": pr_ctx.get("market_state", {}).get("short_term", {}).get("structure", "unknown"),
-            "vol_regime": pr_ctx.get("market_state", {}).get("short_term", {}).get("risk", "unknown"),
-            "distance_to_key_level_pct": pr_ctx.get("market_state", {}).get("micro_term", {}).get("state", "unknown")
-        }
-
-        crowd_context = {
-            "crowding_level": pr_ctx.get("crowd_state", {}).get("crowding_level", "unknown"),
-            "funding_pressure": pr_ctx.get("crowd_state", {}).get("funding_pressure", "unknown"),
-            "fragility": pr_ctx.get("crowd_state", {}).get("fragility", "unknown"),
-            "bias": pr_ctx.get("crowd_state", {}).get("bias", "unknown")
-        }
 
         ts_now = int(time.time() * 1000)
-
-        crowd_context, crowd_trend_analysis = await enrich_and_clean_crowd_context(exchange, symbol, crowd_context)
-        market_snapshot_base = dict(context_to_use or {})
-        market_snapshot_base["crowd_trend_analysis"] = crowd_trend_analysis or {}
 
         # 3. 内部辅助函数：构建单个 Query
         async def build_query(position_snapshot: Dict):
             trade_id = position_snapshot.get("trade_id")
             pos_side = position_snapshot.get("position_side", "LONG")
+
+            # 查找对应的决策输出 (Decision Output)
+            # decision_output 可能是单个 dict，也可能是包含 results 列表的 dict (多空双开)
+            my_decision = {}
+            if decision_output:
+                results = decision_output.get("results")
+                if isinstance(results, list):
+                    # 多空分开的结果，需匹配
+                    for r in results:
+                        # 假设 result 的 meta 里有 position_side
+                        meta = r.get("meta", {})
+                        if str(meta.get("position_side")).upper() == str(pos_side).upper():
+                            my_decision = r
+                            break
+                    # 如果没找到 meta.position_side，尝试匹配 data 里的
+                    if not my_decision:
+                        # Fallback: try to find match in data part if structure is different
+                        pass
+                else:
+                    # 单个结果，假设适用于当前持仓 (或单向持仓)
+                    my_decision = decision_output
+
+            # 聚合 Execution Constraints
+            # 使用 ExecutionConstraintAggregator 将 SV 输出和 Decision 输出合并
+            aggregator = ExecutionConstraintAggregator()
+
+            # 提取 data 部分（如果是 {data: ..., meta: ...} 结构）
+            d_out_data = my_decision.get("data", my_decision) if isinstance(my_decision, dict) else {}
+            sv_output_data = sv_output.get("data", sv_output) if isinstance(sv_output, dict) else {}
+
+            agg_result = aggregator.aggregate(sv_output_data, d_out_data)
+            execution_constraint = agg_result.get("execution_constraint", {})
+
+            # 获取账户风险状态
+            account_risk_state = await account_state(exchange)
+            initialMargin = float(position_snapshot.get("initialMargin", 0))
+            account_risk_state["position_occupancy_ratio"] = initialMargin / account_risk_state.get("balance", 1)
             
-            # Position-aware Context Injection
-            # 为当前处理的持仓方向生成专属的解释
-            interpretation = build_crowd_interpretation(market_snapshot_base, pos_side)
-            pr_ctx["crowd_interpretation"] = interpretation
+            # [NEW] 获取 Global Risk Overlay (Cognitive Layer)
+            # 同样使用 Internal Raw API + Narrative Adapter
+            global_overlay_data = await _read_global_overlay_raw(exchange)
+            global_risk_desc = get_global_risk_narrative(global_overlay_data)
 
-            # Re-extract Crowd Context from injected interpretation
-            # 此时 crowd_context 已经是“顺风/逆风”等结论性描述
-            injected_crowd = pr_ctx.get("crowd_interpretation", {})
-
-            state = await reduce_temporal_state(
-                exchange=exchange,
-                trade_id=trade_id or "sim",
-                symbol=symbol,
-                position_side=pos_side,
-                verdict=verdict,
-                alignment=alignment,
-                entry_ts=int(position_snapshot.get("entry_ts", 0)),
-                event_ts=ts_now,
-            )
-
-            # Load user specific config from DB here (TODO)
-            user_config = {}
-            risk_cfg = {**settings.risk_defaults, **user_config}
-
-            decision_rules = decide_position_action(
-                holding_duration_min=state["holding_duration_min"],
-                # 使用 reducer 计算的“距上一次事件时间”，避免 last_update_ts 刚覆盖导致恒为 0
-                time_since_last_event_min=int(state.get("time_since_last_event_min", 0) or 0),
-                valid_streak=state["valid_streak"],
-                invalid_streak=state["invalid_streak"],
-                conflict_streak=state["conflict_streak"],
-                risk_mode=risk_cfg["risk_mode"]  # 动态传入 risk_mode
-            )
-
-            # 将硬规则动作集合投影到 LLM 输出动作集合，降低 LLM 选错动作的概率
-            llm_policy = derive_allowed_llm_policy(decision_rules)
-            decision_rules["allowed_actions_llm"] = sorted(llm_policy.allowed_llm_actions)
-            if llm_policy.max_add_pct is not None:
-                decision_rules["max_add_pct"] = llm_policy.max_add_pct
-            if llm_policy.forbid_add:
-                decision_rules["forbid_add"] = True
-
-            rc = RedisClient()
-            last_suggestion_key = f"agent_output:{exchange}:{symbol}:position_risk:latest"
-            last_suggestion_str = await rc.get(last_suggestion_key)
-            last_action = "HOLD"
-            last_action_ts = 0
-            if last_suggestion_str:
-                try:
-                    ls = json.loads(last_suggestion_str)
-                    meta = ls.get("_context_meta", ls)
-                    # 避免与外部变量 agent_output 冲突
-                    last_risk_output = ls.get("agent_output", ls)
-                    last_action = last_risk_output.get("suggestion", "HOLD")
-                    last_action_ts = int(meta.get("ts", 0))
-                except:
-                    pass
-
-            minutes_since_last = (ts_now - last_action_ts) / 1000 / 60 if last_action_ts > 0 else 9999
-
-            calculated_available_pct = await get_available_exposure_pct(exchange)
-
-            operational_context = {
-                "risk_limits": {
-                    "max_loss_pct": risk_cfg["max_loss_pct"],  # 最大亏损百分比 (建议参考值) 用户设置
-                    "max_holding_min": risk_cfg["max_holding_min"],  # 最长持仓时间 (0 表示不限制，由上游策略决定)
-                    "cooldown_after_invalid_min": risk_cfg["cooldown_after_invalid_min"]  # 建议模式下设为 0，保持对风险的实时敏感度
-                },
-                "portfolio_context": {
-                    "risk_mode": risk_cfg["risk_mode"],  # 账户风险模式: normal | conservative | aggressive
-                    "available_exposure_pct": calculated_available_pct,  # 剩余可用仓位
-                    "allow_add_position": risk_cfg["allow_add_position"]  # 是否允许加仓 (根据资金情况)
-                },
-                "action_state": {
-                    "last_action": last_action,  # 使用上一次的“建议”作为 last_action
-                    "last_action_min_ago": minutes_since_last,
-                    "recent_action_count": 0,  # 建议模式下可忽略频次限制
-                    "cooldown_active": False  # 建议模式下关闭冷却，允许随时输出最新建议
-                },
-                "system_mode": {
-                    "mode": risk_cfg["system_mode"],  # 标记为建议/顾问模式 系统整体模式: normal | defensive | recovery
-                    "allow_reverse": risk_cfg["allow_reverse"]  # 允许灵活调整观点
-                }
-            }
-
+            # 构造与 Demo 一致的简单 Query 结构，移除 operational_context 等额外逻辑
             return {
-                "symbol": symbol,
-                "exchange": exchange,
-                "event_id": event_data.get("event_id"),
-                "trade_id": trade_id,
-                "ts_now": ts_now,
-                "position_snapshot": position_snapshot,
-                "signal_verdict": agent_output,
-                "temporal_state": state,
-                "risk_rules_decision": decision_rules,
-                "market_context": market_context,
-                "crowd_context": crowd_context,
-                "crowd_interpretation": injected_crowd,
-                "crowd_trend_analysis": crowd_trend_analysis,
-                "operational_context": operational_context
+                "meta": {
+                    "symbol": symbol,
+                    "exchange": exchange,
+                    "event_id": event_data.get("event_id"),
+                    "trade_id": trade_id,
+                    "ts": ts_now
+                },
+                "market_structure": pr_ctx,  # 注意：这里用 build_agent_context 的结果
+                "position": position_snapshot,
+                "account_risk_state": account_risk_state,
+                "global_risk_overlay": global_risk_desc,
+                "execution_constraint": execution_constraint,
             }
 
         # 4. 构建并执行任务
@@ -229,13 +169,39 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         # --- Aggregation Logic ---
         decisions = []
+        
+        # [NEW] 读取 Global Overlay 进行硬性门控 (检查层)
+        # 使用内部原始 API + 权限检查器
+        global_overlay = await _read_global_overlay_raw(exchange)
+        
+        # ----------- 逐行处理每个持仓的风控结果 -----------
         for q, r in zip(queries, parsed_results):
-            pos_snapshot = q.get("position_snapshot", {})
+            pos_snapshot = q.get("position", {})
             pos_side = pos_snapshot.get("position_side", "NONE")
             trade_id = pos_snapshot.get("trade_id")
 
             payload = r.get("payload", r)
-            decision = payload.get("suggestion") or "HOLD"
+            # PositionRiskExpert v1.0 输出结构: { "risk_action": ..., "exposure_delta": ..., "reasoning": ... }
+            decision = payload.get("risk_action") or payload.get("suggestion") or "hold"
+        # ----------- 结束 逐行处理 -----------
+            
+            # --- 硬性门控逻辑 (Fail-Safe) ---
+            original_decision = decision
+            gated = False
+            
+            # 使用 check_global_permission 内部处理 Fail-Safe 逻辑
+            if not check_global_permission(global_overlay, decision):
+                decision = "hold"
+                gated = True
+            
+            if gated:
+                reason = "全局门控：被风控协议拦截 (故障安全机制激活)"
+                print(f"  -> [GATE] 拦截: {trade_id} {original_decision} -> {decision}")
+                # 注入跟踪信息到 details
+                if isinstance(r, dict):
+                    r["system_override"] = reason
+                    r["original_decision"] = original_decision
+            # --------- 硬性门控逻辑 (Fail-Safe) ----------------
 
             decisions.append({
                 "trade_id": trade_id,
@@ -248,5 +214,5 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             "decisions": decisions,
             "risk_results": parsed_results,
             "queries": queries,
-            "step1_result": prev_result
+            "step2_result": prev_result
         })

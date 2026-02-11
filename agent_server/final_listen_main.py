@@ -14,7 +14,7 @@ from agent_server.tools.price_fetcher import get_mark_price
 
 class RouterFinalListener:
     FINAL_STREAM = "final_events"
-    DEBUG = True
+    DEBUG = False
 
     def __init__(self, redis: aioredis.Redis):
         self.redis = redis
@@ -24,10 +24,8 @@ class RouterFinalListener:
         # 初始化事件记录器 (使用单例以共享连接池)
         self.event_recorder = get_recorder()
         # 初始化分析验证器 (复用 recorder 的 DB 和 Executor)
-        self.analysis_verifier = AnalysisVerifier(
-            self.event_recorder.db,
-            self.event_recorder.executor
-        )
+        self.analysis_verifier = AnalysisVerifier(self.event_recorder.db,
+                                                  self.event_recorder.executor)
 
     @staticmethod
     def _j(s: str):
@@ -43,20 +41,29 @@ class RouterFinalListener:
         """
         try:
             # 尝试创建消费者组，如果已存在则忽略错误
-            await self.redis.xgroup_create(self.final_stream, self.group, id="0", mkstream=True)
+            await self.redis.xgroup_create(self.final_stream,
+                                           self.group,
+                                           id="0",
+                                           mkstream=True)
         except Exception:
             pass
         while True:
             # 阻塞读取 Stream 消息
-            res = await self.redis.xreadgroup(self.group, self.consumer, streams={self.final_stream: ">"}, count=50,
+            res = await self.redis.xreadgroup(self.group,
+                                              self.consumer,
+                                              streams={self.final_stream: ">"},
+                                              count=50,
                                               block=5000)
             if not res:
                 continue
             for _stream_name, entries in res:
                 for entry_id, fields in entries:
                     # 1. 基础字段解析
-                    ev = {k: (v if isinstance(v, str) else str(v)) for k, v in fields.items()}
-                    
+                    ev = {
+                        k: (v if isinstance(v, str) else str(v))
+                        for k, v in fields.items()
+                    }
+
                     # 2. 解析嵌套的 JSON 结构 (meta, analysis_context, structure, trade_details)
                     meta = self._j(ev.get("meta") or "{}")
                     ac = self._j(ev.get("analysis_context") or "{}")
@@ -65,14 +72,16 @@ class RouterFinalListener:
 
                     # 3. 提取路由提示 (origin_source_hint)
                     # 该字段决定了事件的来源类型 (如 indicators, orderbook, liquidation 等)
-                    hint = meta.get("origin_source_hint") or (ac.get("provenance") or {}).get(
-                        "origin_source_hint") or "unknown"
+                    hint = meta.get("origin_source_hint") or (
+                        ac.get("provenance")
+                        or {}).get("origin_source_hint") or "unknown"
 
                     # 4. 提取交易所信息 (exchange)
                     # 尝试从多个位置获取，如果没有明确指定，尝试从 account_id 或 source_event_id 推断
                     account_id = ev.get("account_id") or ""
-                    exchange = account_id.split("_")[0].lower() if account_id else ""
-                    
+                    exchange = account_id.split(
+                        "_")[0].lower() if account_id else ""
+
                     if not exchange:
                         # 尝试从 source_event_id 解析 (例如: binance.BTCUSDT.trade... -> binance)
                         se_id = meta.get("source_event_id") or ""
@@ -92,7 +101,7 @@ class RouterFinalListener:
                         "event_id": ev.get("event_id") or "",
                         "event_type": event_type,
                         "timestamp": ev.get("timestamp"),
-                        
+
                         # 分析数据
                         "market_state": st.get("market_state"),
                         "direction": st.get("direction"),
@@ -102,14 +111,15 @@ class RouterFinalListener:
                         "l1_total_score": ac.get("l1_total_score"),
                         "tf_hint": ac.get("tf_hint"),
                         "analysis_context": ac,
-                        
+
                         # 完整数据 (供 recorder 和 price_fetcher 使用)
                         "meta": meta,
                         "trade_details": td,
                     }
 
                     try:
-                        print("[FinalRouter] dispatch", json.dumps(info, ensure_ascii=False))
+                        print("[FinalRouter] dispatch",
+                              json.dumps(info, ensure_ascii=False))
                     except Exception:
                         print("[FinalRouter] dispatch", info)
 
@@ -125,30 +135,39 @@ class RouterFinalListener:
                         else:
                             is_short_term = bool(raw_is_short)
                         info["is_short_term"] = is_short_term
-                    
+
                     # 创建入库任务（不等待结果，避免阻塞）
-                    asyncio.create_task(self.event_recorder.save_event(info, mark_price))
-                    
+                    asyncio.create_task(
+                        self.event_recorder.save_event(info, mark_price))
+
                     # 验证上一个事件的分析结果 (异步)
-                    asyncio.create_task(self.analysis_verifier.verify_previous_analyses(info, mark_price))
-                    
+                    asyncio.create_task(
+                        self.analysis_verifier.verify_previous_analyses(
+                            info, mark_price))
+
                     # 7. 根据路由分发任务
                     if not self.DEBUG:
-                        if info.get("symbol") and info.get("route") in ["indicators", "mixed"]:
+                        if info.get("symbol") and info.get("route") in [
+                                "indicators", "mixed"
+                        ]:
                             wf = SignalValidationWorkflow()
                             # 异步启动工作流
                             asyncio.create_task(wf.arun(info))
-                        elif info.get("symbol") and info.get("route") == "trade":
+                        elif info.get("symbol") and info.get(
+                                "route") == "trade":
                             wf = TradeEventWorkflow()
                             asyncio.create_task(wf.arun(info))
-                    
+
                     # 确认消息已处理
-                    await self.redis.xack(self.final_stream, self.group, entry_id)
+                    await self.redis.xack(self.final_stream, self.group,
+                                          entry_id)
 
 
-async def _run():
+async def _run(stop_event: asyncio.Event = None):
     password = settings.redis_password
-    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+    if isinstance(password,
+                  str) and password.strip().lower() in ("none", "null",
+                                                        "undefined", ""):
         password = None
     # 中文注释：显式限制连接池，避免 Redis 端报 Too many connections
     max_connections = int(os.environ.get("REDIS_MAX_CONNECTIONS", 20))
@@ -190,14 +209,17 @@ async def _run():
         except Exception:
             pass
         # 关闭全局 HTTPClient（如果本进程内使用过），避免退出时资源泄漏警告
-        from agent_server.utils.http_client import http_client
+        # 仅在独立运行时关闭
+        if stop_event is None:
+            from agent_server.utils.http_client import http_client
 
-        await http_client.close()
+            await http_client.close()
         await redis.aclose()
 
 
 def main():
-    logging.basicConfig(level=getattr(logging, settings.log_level, logging.INFO))
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level, logging.INFO))
     asyncio.run(_run())
 
 

@@ -79,7 +79,7 @@ async def save_agent_output(agent: str, exchange: str, symbol: str, ts: int, out
             )
         except Exception as e:
             # 记录日志但不阻断主流程
-            print(f"Warning: Failed to save agent analysis to DB: {e}")
+            print(f"Warning: 存储 Agent 分析结果失败: {e}")
 
     return payload
 

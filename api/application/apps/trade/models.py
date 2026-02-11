@@ -109,6 +109,7 @@ class TradeEvent(models.Model):
     
     # 原始输入快照 (JSON)
     market_context = fields.JSONField(null=True, description="市场背景快照 (Trend, Volatility...)")
+    market_structure = fields.JSONField(null=True, description="市场快照 (压缩版的背景，供后续回测)")
     event_data = fields.JSONField(description="事件原始数据 (analysis_context)")
     indicators_snapshot = fields.JSONField(null=True, description="关键技术指标快照 (EMA, MACD, RSI...)")
     
@@ -128,29 +129,37 @@ class AgentAnalysis(models.Model):
     """
     Agent 分析记录表：记录每个 Agent 对特定事件的分析结果
 
-    以持多单(LONG)为例的判断逻辑(SHORT同理反之)：
-    
-    1. 价格上涨(有利方向)：
-       - ADD_POSITION / HOLD: 
-         market_accuracy=CORRECT (看对), decision_quality=GOOD (做对)
-       - DEFENSIVE: 
-         market_accuracy=CORRECT (看对), decision_quality=DEFENSIVE (偏保守/踏空)
-       - REDUCE / EXIT: 
-         market_accuracy=WRONG (卖飞), decision_quality=BAD (做错)
-    
-    2. 价格下跌(不利方向)：
-       - ADD_POSITION / HOLD: 
-         market_accuracy=WRONG (看错), decision_quality=BAD (死扛)
-       - REDUCE / EXIT / DEFENSIVE: 
-         market_accuracy=CORRECT (看对风险), decision_quality=GOOD (及时止损)
-    
-    3. 价格震荡(幅度<0.5%)：
-       - HOLD / DEFENSIVE: 
-         market_accuracy=NEUTRAL (中性), decision_quality=GOOD (稳健)
-       - ADD_POSITION: 
-         market_accuracy=WRONG (误判), decision_quality=OVERAGGRESSIVE (过度激进/磨损)
-       - REDUCE / EXIT: 
-         market_accuracy=NEUTRAL (中性), decision_quality=DEFENSIVE (过度反应但安全)
+    📈 FAVORABLE（行情对持仓有利）
+    条件
+    LONG 且价格上涨 ≥ 0.5%
+    或 SHORT 且价格下跌 ≥ 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    HOLD	CORRECT	GOOD	扛住正确行情
+    SCALE_IN_SMALL	CORRECT	GOOD	在正确方向下风险可控
+    REDUCE	WRONG	DEFENSIVE	卖飞，但风险行为合理
+    EXIT	WRONG	DEFENSIVE	过早退出，但符合风控
+
+    📉 UNFAVORABLE（行情对持仓不利）
+    条件
+    LONG 且价格下跌 ≥ 0.5%
+    或 SHORT 且价格上涨 ≥ 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    REDUCE	CORRECT	GOOD	正确止损 / 降风险
+    EXIT	CORRECT	GOOD	正确切断风险
+    HOLD	WRONG	DEFENSIVE	扛单，风险未扩张
+    SCALE_IN_SMALL	WRONG	OVERAGGRESSIVE	在错误方向下扩大风险
+
+    📊 SIDEWAYS（无有效方向）
+    条件
+    |pct_change| < 0.5%
+
+    suggestion	market_accuracy	decision_quality	语义解释
+    HOLD	NEUTRAL	GOOD	符合中性行情
+    SCALE_IN_SMALL	NEUTRAL	GOOD	风险仍可控
+    REDUCE	NEUTRAL	DEFENSIVE	偏保守但合理
+    EXIT	NEUTRAL	DEFENSIVE	过度防守但合规
     """
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
@@ -163,11 +172,10 @@ class AgentAnalysis(models.Model):
     model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
 
     # 核心产出
-    verdict = fields.CharField(null=True, max_length=32, description="结论 (VALID, INVALID, HOLD, REDUCE...)")
-    alignment = fields.CharField(null=True, max_length=32, description="方向与市场结构是否对齐 (ALIGNED | CONFLICT | STRONGLY_CONFLICT)")
+    verdict = fields.CharField(null=True, max_length=32, description="分析结论 (ALLOW, ATTENUATE, BLOCK)")
     
     # 风控专用字段
-    suggestion = fields.CharField(max_length=32, null=True, description="持仓建议 (ADD_POSITION, HOLD, DEFENSIVE, REDUCE, EXIT)")
+    risk_action = fields.CharField(max_length=32, null=True, description="持仓风控建议 (hold/reduce/scale_in_small/exit)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="分析时的标记价格")
     verification_mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="验证时的价格")
     
@@ -185,6 +193,10 @@ class AgentAnalysis(models.Model):
     # 详细内容
     reasoning = fields.JSONField(description="分析理由 (List or Dict)")
     full_output = fields.JSONField(description="完整输出 (Raw JSON)")
+
+    # 风控状态
+    execution_state = fields.JSONField(null=True, description="执行状态 (Dict)")
+    global_state = fields.JSONField(null=True, description="全局状态 (Dict)")
 
     created_at = fields.DatetimeField(auto_now_add=True)
 

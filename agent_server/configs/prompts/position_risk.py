@@ -22,7 +22,12 @@ _prompt_template = """
 3. account_risk_state
    - 当前账户总资金、仓位占用资金比例、可用资金比例
 
-4. execution_constraint
+4. global_risk_overlay（如有，全局风控叠加层）
+   - 全局风控环境描述（风险体制、冷却状态、操作偏好）。
+   - 自然语言描述的账户级风险状态与环境偏好。
+   - 这是“环境上下文”，用于辅助判断是否需要更激进或更保守。
+
+5. execution_constraint
    - 上游已聚合好的执行约束（允许 / 禁止行为、风险偏好、信号衰减状态）
 
 ────────────────────────
@@ -102,7 +107,7 @@ _prompt_template = """
     "type": "percentage",
     "value": -1.0 ~ +1.0
   },
-  "rationale": [
+  "reasoning": [
     "string"
   ]
 }
@@ -141,7 +146,7 @@ exit 时必须为 -1.0
 - scale_in_small：+0.05 ~ +0.2
 - exit：-1.0
 
-3. rationale
+3. reasoning
 必须是“事实 + 结构/约束驱动”的理由：
 - 不得出现价格预测、目标价、情绪化表述
 - 应尽量引用：结构冲突/否决条件、执行约束、账户风险缓冲、持仓盈亏与持仓时间匹配性

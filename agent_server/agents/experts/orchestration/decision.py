@@ -7,6 +7,7 @@ from agent_server.agent_context.builder import build_agent_context
 from agent_server.configs.prompts.decision import build_decision_prompt
 from agno.models.message import Message
 import json
+from agent_server.agent_context.output_store import save_agent_output
 import asyncio
 from agent_server.utils.redis_client import RedisClient
 import time
@@ -43,7 +44,7 @@ class DecisionExpert:
                 },
             },
         },
-        "decision_rationale": {"type": "array", "required": True},
+        "reasoning": {"type": "array", "required": True},
     }
 
     def __init__(self):
@@ -135,6 +136,9 @@ class DecisionExpert:
         return None
 
     async def run(self, query: dict) -> str:
+        cfg = get_agent_config(self.name)
+        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
+
         query_local = dict(query or {})
         meta = query_local.pop("meta", {}) or {}
         query_for_extract = dict(query or {})
@@ -195,6 +199,20 @@ class DecisionExpert:
         trade_id = self._extract_trade_id(query_for_extract)
         if trade_id and isinstance(final_result.get("meta"), dict):
             final_result["meta"]["trade_id"] = trade_id
+
+        try:
+            await save_agent_output(
+                self.name,
+                base_meta.get("exchange", "binance"),
+                base_meta.get("symbol", "UNKNOWN"),
+                base_meta.get("ts"),
+                final_result,
+                event_id=base_meta.get("event_id"),
+                trade_id=trade_id or base_meta.get("trade_id"),
+                model_id=model_id,
+            )
+        except Exception as e:
+            print(f"[DecisionExpert] Save failed: {e}")
 
         output_text = _json_dumps_safe(final_result)
         print(output_text)

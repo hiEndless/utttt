@@ -195,7 +195,7 @@ class AnalysisVerifier:
 
                         # 4. 获取该事件的所有分析记录（仅限目标 agent）
                         sql_analyses = f"""
-                            SELECT id, suggestion, mark_price, agent_name 
+                            SELECT id, risk_action, mark_price, agent_name 
                             FROM agent_analyses 
                             WHERE event_id = %s AND agent_name IN ({placeholders})
                         """
@@ -207,7 +207,7 @@ class AnalysisVerifier:
                         for ana in analyses:
                             # db 可能返回 tuple，避免直接 .get 报错
                             ana_id = self._row_get(ana, "id", 0)
-                            suggestion = self._row_get(ana, "suggestion", 1)
+                            suggestion = self._row_get(ana, "risk_action", 1)
 
                             if not suggestion:
                                 continue
@@ -245,10 +245,11 @@ class AnalysisVerifier:
         """
         根据价格变化和建议判断准确性
         返回: (market_accuracy, decision_quality)
-        """
-        # 阈值
-        THRESHOLD = 0.005  # 0.5%
 
+        market_accuracy: CORRECT | WRONG | NEUTRAL
+        decision_quality: GOOD | DEFENSIVE | OVERAGGRESSIVE
+        """
+        THRESHOLD = 0.005  # 0.5%
         suggestion = suggestion.upper()
 
         is_favorable = False
@@ -257,42 +258,45 @@ class AnalysisVerifier:
 
         if not is_sideways:
             if position_side == "LONG":
-                if pct_change > 0:
-                    is_favorable = True
-                else:
-                    is_unfavorable = True
+                is_favorable = pct_change > 0
+                is_unfavorable = pct_change < 0
             else:  # SHORT
-                if pct_change < 0:
-                    is_favorable = True
-                else:
-                    is_unfavorable = True
+                is_favorable = pct_change < 0
+                is_unfavorable = pct_change > 0
 
-        # 判定
-        # market_accuracy: CORRECT, WRONG, NEUTRAL
-        # decision_quality: GOOD, BAD, DEFENSIVE, OVERAGGRESSIVE
-
+        # =========================
+        # favorable：行情朝持仓有利
+        # =========================
         if is_favorable:
-            if suggestion in ("ADD_POSITION", "HOLD"):
+            if suggestion in ("HOLD", "SCALE_IN_SMALL"):
                 return "CORRECT", "GOOD"
-            elif suggestion == "DEFENSIVE":
-                return "CORRECT", "DEFENSIVE"
             elif suggestion in ("REDUCE", "EXIT"):
-                return "WRONG", "BAD"  # 卖飞
+                # 卖飞：方向判断失败，但风控行为并非错误
+                return "WRONG", "DEFENSIVE"
 
+        # =========================
+        # unfavorable：行情朝持仓不利
+        # =========================
         elif is_unfavorable:
-            if suggestion in ("REDUCE", "EXIT", "DEFENSIVE"):
+            if suggestion in ("REDUCE", "EXIT"):
                 return "CORRECT", "GOOD"
-            elif suggestion in ("ADD_POSITION", "HOLD"):
-                return "WRONG", "BAD"  # 死扛
+            elif suggestion == "HOLD":
+                # 扛单：方向错，但仍属风险中性
+                return "WRONG", "DEFENSIVE"
+            elif suggestion == "SCALE_IN_SMALL":
+                # 在不利行情下仍允许扩张风险
+                return "WRONG", "OVERAGGRESSIVE"
 
-        else:  # is_sideways
-            if suggestion in ("HOLD", "DEFENSIVE"):
+        # =========================
+        # sideways：价格未形成有效方向
+        # =========================
+        else:
+            if suggestion in ("HOLD", "SCALE_IN_SMALL"):
                 return "NEUTRAL", "GOOD"
-            elif suggestion == "ADD_POSITION":
-                return "WRONG", "OVERAGGRESSIVE"  # 震荡期加仓，容易磨损
             elif suggestion in ("REDUCE", "EXIT"):
-                return "NEUTRAL", "DEFENSIVE"  # 反应过度但规避风险
+                return "NEUTRAL", "DEFENSIVE"
 
+        # 兜底（理论上不会走到）
         return "NEUTRAL", "DEFENSIVE"
 
 
