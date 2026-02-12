@@ -229,47 +229,6 @@ async def read_global_overlay(exchange: str, redis_client: Optional[Redis] = Non
     return await _read_prev_global_overlay(exchange, redis_client)
 
 
-def check_global_permission(overlay: Dict, action: str) -> bool:
-    """
-    [Safety Layer] 确定性的安全门控检查。
-    
-    原则：
-    - 离散：Yes/No。
-    - 确定：直接读取 global_action_allowance。
-    - 不可讨论：这是硬约束。
-    
-    Args:
-        action: "open", "add", "close", "reduce" (大小写不敏感)
-    """
-    if not overlay:
-        # 默认安全策略：如果没有 overlay，是否允许？
-        # 假设允许，因为初始化时可能为空。
-        return True
-
-    allowance = overlay.get("global_action_allowance", {})
-
-    # 归一化 action
-    act = action.lower().strip()
-
-    # 映射常用动词到 allowance key
-    # allow_open, allow_add, allow_close, allow_reduce, allow_hold
-
-    if act in ("open", "entry", "long", "short"):  # long/short 通常指开仓
-        return allowance.get("allow_open", True)
-
-    if act in ("add", "increase"):
-        return allowance.get("allow_add", True)
-
-    # 默认允许平仓/减仓类操作，除非显式禁止（虽然 global_overlay 逻辑里写死了 True）
-    if act in ("close", "exit", "reduce", "trim"):
-        # 对应 allow_close 或 allow_reduce
-        if act in ("reduce", "trim"):
-            return allowance.get("allow_reduce", True)
-        return allowance.get("allow_close", True)
-
-    return True
-
-
 def _try_infer_symbol_from_key(redis_key: str) -> str | None:
     parts = (redis_key or "").split(":")
     if len(parts) >= 4 and parts[0] == "risk" and parts[1] == "execution":
@@ -509,6 +468,8 @@ ACTION_ALLOWANCE_MAP = {
     # Adding to existing positions
     "add": "allow_add",
     "increase": "allow_add",
+    "scale_in_small": "allow_add",
+    "scale_in": "allow_add",
 
     # Reducing risk
     "reduce": "allow_reduce",
@@ -534,13 +495,13 @@ def check_global_permission(overlay: Optional[Dict], action: str) -> bool:
     Args:
         action: "open", "add", "close", "reduce" ... (大小写不敏感)
     """
-    # 归一化 action
-    act = action.lower().strip()
+    # 中文注释：Position Risk 等上游可能使用不同的动作命名，这里先做统一归一化
+    act = str(action or "").lower().strip()
 
     # 1. Fail-Safe Logic:
     # If overlay is missing (Redis down, key missing), we must NOT fail-open.
     # We allow risk-reducing actions (close/reduce) but BLOCK risk-increasing ones (open/add).
-    if overlay is None:
+    if not overlay:
         logger.error("安全检查时缺失 Global Overlay，进入安全模式 (SAFE MODE)。")
         # Only allow exit/reduce
         return act in ("close", "exit", "reduce", "trim", "hold")
@@ -548,15 +509,10 @@ def check_global_permission(overlay: Optional[Dict], action: str) -> bool:
     # 2. Map Action to Allowance Key
     allowance_key = ACTION_ALLOWANCE_MAP.get(act)
 
-    # 如果是未知动作，默认策略：
-    # 现在的策略是允许，还是为了安全起见拒绝？
-    # 考虑到可能有一些非标动作，如果不涉及资金（比如 query），默认允许是合理的。
-    # 但如果涉及资金，应该在 Map 中定义。
-    # 这里保持 "Default Allow unless Forbidden" 的语义，但对于 Map 中没有的动作，
-    # 实际上我们无法检查 global_action_allowance，所以直接返回 True。
+    # 中文注释：未知动作一律拒绝，避免新增动作名绕过全局门控（保守收敛）。
     if not allowance_key:
-        logger.warning(f"未识别的 action '{act}'，默认放行。请确认是否需要纳入风控映射。")
-        return True
+        logger.warning(f"未识别的 action '{act}'，默认拒绝（保守收敛）。请确认是否需要纳入风控映射。")
+        return False
 
     allowance = overlay.get("global_action_allowance", {})
     is_allowed_by_flag = allowance.get(allowance_key, True)
