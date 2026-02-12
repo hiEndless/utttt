@@ -11,6 +11,9 @@ from agent_server.configs.source import get_agent_config
 
 
 class TradeBehaviorExpert(BaseLLMExpert):
+    """
+    将所有审计型 Expert Agent 统一为这种“证据导向”的结构
+    """
     name = "trade_behavior"
     version = "v1.2"  # Updated version for Layered Conflict Structure
 

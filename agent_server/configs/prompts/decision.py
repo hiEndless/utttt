@@ -25,6 +25,25 @@ EXPERT_REGISTRY = {
         "priority": 10
     },
 
+    "trade_behavior_audit": {
+        "role": "Trade Behavior Audit Expert",
+        "description": "提供详细的市场周期行为审计与结构性冲突证据。",
+        "interpretation": [
+            "dominant_cycle 指示当前市场的主导周期，决策应优先服从主导周期的结构特征。",
+            "cycle_weights 描述各周期的结构重要性，high 权重的周期具有否决权。",
+            "audit_breakdown.directional_alignment 显示各周期的方向一致性，CONFLICT 暗示逆势风险。",
+            "audit_breakdown.leverage_phase_match 显示杠杆周期匹配度，MISMATCH 暗示动能衰竭或反转风险。",
+            "risk_exposure_flags 列出了具体的风险点（如 liquidity_vacuum），需在执行中规避。",
+            "audit_confidence.structural_clarity 描述结构清晰度，DOMINANT_CONFLICT 或 RISK_CLUSTER_PRESENT 应触发防御性策略。"
+        ],
+        "constraints": [
+            "若 dominant_cycle 处于 CONFLICT 状态，禁止激进追涨杀跌",
+            "若存在 high 权重的周期 veto_only 且 directional_alignment 为 CONFLICT，禁止同向开仓",
+            "若 audit_confidence 为 LOW 且 structural_clarity 为 NOISE_DOMINATED，应收缩风险暴露"
+        ],
+        "priority": 15
+    },
+
     "market_structure": {
         "role": "Market Structure Expert",
         "description": "刻画多周期市场结构与参与者行为，用于约束交易意图空间。",
