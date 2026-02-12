@@ -44,14 +44,14 @@ class TradeEventWorkflow(Workflow):
 
 if __name__ == "__main__":
     final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
-                    'event_id': 'binance.ETHUSDT.trade.open.1768803852754', 'event_type': 'trade.open',
+                    'event_id': 'binance.ETHUSDT.trade.increase.1769433262513', 'event_type': 'trade.open',
                     'timestamp': '1768803852754', 'market_state': None, 'direction': None, 'confidence': None,
                     'confidence_numeric': None, 'priority_weight': None, 'l1_total_score': None, 'tf_hint': None,
                     'analysis_context': {}, 'meta': {'source_event_id': 'binance.ETHUSDT.trade.open.1768803852754',
                                                      'origin_source_hint': 'trade', 'is_short_term': False},
                     'trade_details': {'trade_id': 'e95cbad77cde4d8e80d405d1ff9a6f5f', 'position_side': 'SHORT',
                                       'current_size': '-0.007', 'entry_price': '3193.0', 'mark_price': '3193.00000000',
-                                      'pnl_ratio': '0.0', 'action': 'OPEN', 'change_amount': '-0.007'}}
+                                      'pnl_ratio': '0.0', 'action': 'INCREASE', 'change_amount': '-0.007', 'initialMargin': 2.5, "exchange": "binance"}}
 
     workflow = TradeEventWorkflow()
     asyncio.run(workflow.arun(final_signal))
