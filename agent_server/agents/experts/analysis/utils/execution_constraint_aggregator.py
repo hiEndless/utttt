@@ -5,6 +5,13 @@ class ExecutionConstraintAggregator:
     """
     确定性聚合器：将 SignalValidation + Decision 的输出合成为 execution_constraint。
     提供给持仓风控agent
+
+    将 信号验证 (SignalValidation) 等 agnet 的客观评估结果与 交易决策 (Decision) 的主观意图进行“对抗性聚合”，生成最终的 执行约束 (Execution Constraint) 。
+
+    它是连接“市场认知”与“持仓风控”的关键桥梁，主要功能包括：
+    1. 硬性门控 (Gating) : 当信号验证判定市场结构存在严重冲突时，直接阻断 (BLOCK) 任何开仓或加仓行为。
+    2. 信心降权 (Confidence Attenuation) : 当信号质量一般或存在风险时，降低执行置信度，从而触发“减半执行”或“更严格的止损”策略。
+    3. 意图修正 (Intent Bias) : 确保交易意图（如“做多”）与大周期方向一致。
     """
 
     BASE_CONFIDENCE = 0.75
@@ -33,14 +40,24 @@ class ExecutionConstraintAggregator:
         signal_validation: Dict,
         decision_output: Dict
     ) -> Dict:
+        """
+        Aggregate SignalValidation V2 output with Decision output.
+        V1 format is no longer supported.
+        """
+        
+        # Extract core metrics from V2 structure
+        structural_alignment = self._derive_structural_alignment(signal_validation)
+        risk_implication = self._derive_risk_implication(signal_validation)
+        verdict = self._derive_verdict(signal_validation, structural_alignment, risk_implication)
+        
+        # Decision output processing
         trade_intent = decision_output.get("trade_intent_range", {})
-
         allowed_actions = list(trade_intent.get("allowed_actions", []) or [])
         forbidden_actions = list(trade_intent.get("forbidden_actions", []) or [])
         risk_bias = trade_intent.get("risk_bias")
-        decision_rationale = list(decision_output.get("decision_rationale", []) or [])
+        # decision_rationale = list(decision_output.get("decision_rationale", []) or [])
 
-        verdict = self._normalize_verdict(signal_validation.get("verdict"))
+        # Apply gate
         allowed_actions_effective, forbidden_actions_effective = self._apply_verdict_gate(
             verdict=verdict,
             allowed_actions=allowed_actions,
@@ -53,13 +70,17 @@ class ExecutionConstraintAggregator:
             risk_bias=risk_bias
         )
 
-        confidence = self._derive_confidence(signal_validation, verdict=verdict)
+        confidence = self._derive_confidence(
+            verdict=verdict,
+            structural_alignment=structural_alignment,
+            risk_implication=risk_implication
+        )
 
-        constraint_reason_tags = self._derive_reason_tags(signal_validation, verdict=verdict)
-
-        signal_reasoning = signal_validation.get("reasoning")
-        if not isinstance(signal_reasoning, list):
-            signal_reasoning = []
+        constraint_reason_tags = self._derive_reason_tags(
+            verdict=verdict,
+            structural_alignment=structural_alignment,
+            risk_implication=risk_implication
+        )
 
         return {
             "execution_constraint": {
@@ -69,71 +90,83 @@ class ExecutionConstraintAggregator:
                 "risk_bias": risk_bias,
                 "confidence": confidence,
                 "constraint_reason_tags": constraint_reason_tags,
-                # "rationale": {
-                #     "signal_validation_reasoning": signal_reasoning,
-                #     "decision_rationale": decision_rationale,
-                # },
             }
         }
 
     # ------------------------
-    # Derivation methods
+    # Derivation methods (V2)
     # ------------------------
 
-    @staticmethod
-    def _normalize_verdict(verdict: Any) -> Optional[str]:
+    def _derive_structural_alignment(self, sv: Dict) -> str:
         """
-        统一 verdict 口径：
-        - 新：ALLOW / ATTENUATE / BLOCK
-        - 旧：VALID / WEAK_VALID / INVALID
+        Derive structural alignment from V2 audit breakdown.
+        Returns: ALIGNED / PARTIAL_CONFLICT / STRONG_CONFLICT
         """
-        if verdict is None:
-            return None
-        v = str(verdict).strip().upper()
-        mapping = {
-            "ALLOW": "ALLOW",
-            "VALID": "ALLOW",
-            "ATTENUATE": "ATTENUATE",
-            "WEAK_VALID": "ATTENUATE",
-            "BLOCK": "BLOCK",
-            "INVALID": "BLOCK",
-        }
-        return mapping.get(v)
+        audit_confidence = sv.get("audit_confidence", {})
+        audit_breakdown = sv.get("audit_breakdown", {})
+        structural_clarity = audit_confidence.get("structural_clarity")
+        
+        dir_align = audit_breakdown.get("directional_alignment", {})
+        lev_match = audit_breakdown.get("leverage_phase_match", {})
+        
+        # Priority 1: Dominant/Strong Conflict
+        if structural_clarity == "DOMINANT_CONFLICT":
+            return "STRONG_CONFLICT"
+        if dir_align.get("mid_term") == "CONFLICT":
+            return "STRONG_CONFLICT"
+            
+        # Priority 2: Partial Conflict
+        if dir_align.get("mid_term") == "NEUTRAL":
+            return "PARTIAL_CONFLICT"
+        if lev_match.get("mid_term") == "MISMATCH":
+            return "PARTIAL_CONFLICT"
+            
+        return "ALIGNED"
 
-    @staticmethod
-    def _normalize_structural_alignment(alignment: Any) -> Optional[str]:
+    def _derive_risk_implication(self, sv: Dict) -> str:
         """
-        统一 structural_alignment 口径：
-        - 新：ALIGNED / PARTIAL_CONFLICT / STRONG_CONFLICT
-        - 旧：ALIGNED / CONFLICT / STRONGLY_CONFLICT
+        Derive risk implication from V2 risk flags.
+        Returns: none / elevated / high
         """
-        if alignment is None:
-            return None
-        a = str(alignment).strip().upper()
-        mapping = {
-            "ALIGNED": "ALIGNED",
-            "PARTIAL_CONFLICT": "PARTIAL_CONFLICT",
-            "STRONG_CONFLICT": "STRONG_CONFLICT",
-            "CONFLICT": "PARTIAL_CONFLICT",
-            "STRONGLY_CONFLICT": "STRONG_CONFLICT",
-        }
-        return mapping.get(a, None)
+        risk_flags = sv.get("risk_exposure_flags", [])
+        
+        has_high_risk = any(str(f.get("value")).lower() == "high" for f in risk_flags)
+        # Check for liquidity vacuum (boolean true or string "true")
+        has_vacuum = any(
+            f.get("type") == "liquidity_vacuum" and 
+            (f.get("value") is True or str(f.get("value")).lower() == "true") 
+            for f in risk_flags
+        )
+        
+        if has_high_risk:
+            return "high"
+        if has_vacuum:
+            return "elevated"
+            
+        return "none"
 
-    @staticmethod
-    def _normalize_risk_implication(risk: Any) -> Optional[str]:
+    def _derive_verdict(self, sv: Dict, alignment: str, risk: str) -> str:
         """
-        统一 risk_implication 口径：
-        - 新：none / elevated
-        - 旧：normal / elevated / high
+        Derive final verdict.
+        Returns: ALLOW / ATTENUATE / BLOCK
         """
-        if risk is None:
-            return None
-        r = str(risk).strip().lower()
-        if r in {"none", "normal"}:
-            return "none"
-        if r in {"elevated", "high"}:
-            return r
-        return None
+        audit_confidence = sv.get("audit_confidence", {})
+        confidence_level = audit_confidence.get("level", "HIGH")
+        
+        if alignment == "STRONG_CONFLICT":
+            return "BLOCK"
+            
+        # High risk usually attenuates rather than blocks (unless combined with conflict)
+        if risk == "high":
+            return "ATTENUATE"
+            
+        if confidence_level == "LOW":
+            return "ATTENUATE"
+            
+        if alignment == "PARTIAL_CONFLICT":
+            return "ATTENUATE"
+            
+        return "ALLOW"
 
     @staticmethod
     def _dedupe_actions(actions: List[Any]) -> List[str]:
@@ -194,15 +227,13 @@ class ExecutionConstraintAggregator:
 
         return None
 
-    def _derive_confidence(self, signal_validation: Dict, verdict: Optional[str]) -> float:
+    def _derive_confidence(
+        self, 
+        verdict: str, 
+        structural_alignment: str, 
+        risk_implication: str
+    ) -> float:
         confidence = self.BASE_CONFIDENCE
-
-        structural_alignment = self._normalize_structural_alignment(
-            signal_validation.get("structural_alignment")
-        )
-        risk_implication = self._normalize_risk_implication(
-            signal_validation.get("risk_implication")
-        )
 
         confidence += self.VERDICT_PENALTY.get(verdict, 0.0)
         confidence += self.STRUCTURAL_ALIGNMENT_PENALTY.get(structural_alignment, 0.0)
@@ -210,15 +241,13 @@ class ExecutionConstraintAggregator:
 
         return max(0.0, min(round(confidence, 2), 1.0))
 
-    def _derive_reason_tags(self, signal_validation: Dict, verdict: Optional[str]) -> List[str]:
+    def _derive_reason_tags(
+        self, 
+        verdict: str, 
+        structural_alignment: str, 
+        risk_implication: str
+    ) -> List[str]:
         tags = []
-
-        structural_alignment = self._normalize_structural_alignment(
-            signal_validation.get("structural_alignment")
-        )
-        risk_implication = self._normalize_risk_implication(
-            signal_validation.get("risk_implication")
-        )
 
         if verdict == "ATTENUATE":
             tags.append("signal_attenuated")
@@ -239,12 +268,36 @@ class ExecutionConstraintAggregator:
 if __name__ == "__main__":
     aggregator = ExecutionConstraintAggregator()
 
+    # V2 Test Data
     signal_validation = {
-        "verdict": "ATTENUATE",
-        "structural_alignment": "PARTIAL_CONFLICT",
-        "risk_implication": "elevated",
-        "reasoning": ["多周期结构存在轻度冲突，建议降低仓位与加仓强度"],
+        "dominant_cycle": "mid_term",
+        "cycle_weights": {"short_term": "low", "mid_term": "high", "long_term": "veto_only"},
+        "audit_breakdown": {
+            "directional_alignment": {
+                "short_term": "NEUTRAL",
+                "mid_term": "CONFLICT",
+                "long_term": "ALIGNED"
+            },
+            "leverage_phase_match": {
+                "short_term": "NEUTRAL",
+                "mid_term": "MISMATCH",
+                "long_term": "NOT_APPLICABLE"
+            }
+        },
+        "conflict_evidence": {
+            "directional_conflict": ["mid_term positioning_mode = risk_off"],
+            "leverage_conflict": ["mid_term possible_liquidation_or_unwind"]
+        },
+        "risk_exposure_flags": [
+            {"cycle": "short_term", "type": "crowding_risk", "value": "high"},
+            {"cycle": "mid_term", "type": "liquidity_vacuum", "value": True}
+        ],
+        "audit_confidence": {
+            "level": "LOW",
+            "structural_clarity": "DOMINANT_CONFLICT"
+        },
         "meta": {
+            "symbol": "ETHUSDT",
             "direction": "bullish"
         }
     }
@@ -255,7 +308,7 @@ if __name__ == "__main__":
             "forbidden_actions": ["aggressive_add", "reverse_position"],
             "risk_bias": "conservative"
         },
-        "decision_rationale": ["4h/1d 结构偏多但短周期流动性不稳，建议保守执行"],
+        "decision_rationale": ["结构偏多但短周期流动性不稳"],
     }
 
     result = aggregator.aggregate(signal_validation, decision_output)

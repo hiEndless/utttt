@@ -20,52 +20,66 @@ class SignalValidationExpert(BaseLLMExpert):
 
     # Define Schema
     SCHEMA = {
-        "verdict": {
+        "dominant_cycle": {
             "type": str,
-            "options": ["VALID", "WEAK_VALID", "INVALID"],
-            "description": "Validation result: VALID (executable), WEAK_VALID (attenuated execution), INVALID (forbidden)"
+            "options": ["short_term", "mid_term", "long_term"],
+            "description": "The cycle that currently dominates the structure"
         },
-        "alignment": {
+        "cycle_weights": {
             "type": dict,
             "schema": {
-                "global_status": {
-                    "type": str,
-                    "options": ["ALIGNED", "CONFLICT", "STRONGLY_CONFLICT"],
-                    "description": "Overall structural alignment status"
+                "short_term": {"type": str, "options": ["high", "medium", "low", "veto_only"]},
+                "mid_term": {"type": str, "options": ["high", "medium", "low", "veto_only"]},
+                "long_term": {"type": str, "options": ["high", "medium", "low", "veto_only"]}
+            }
+        },
+        "audit_breakdown": {
+            "type": dict,
+            "schema": {
+                "directional_alignment": {
+                    "type": dict,
+                    "schema": {
+                        "short_term": {"type": str, "options": ["ALIGNED", "CONFLICT", "NEUTRAL"]},
+                        "mid_term": {"type": str, "options": ["ALIGNED", "CONFLICT", "NEUTRAL"]},
+                        "long_term": {"type": str, "options": ["ALIGNED", "CONFLICT", "NEUTRAL"]}
+                    }
                 },
-                "conflict_score": {
-                    "type": float,
-                    "description": "Normalized conflict score (0.0-1.0)"
-                },
-                "breakdown": {
-                    "type": list,
-                    "description": "Detailed alignment status for each time horizon"
+                "leverage_phase_match": {
+                    "type": dict,
+                    "schema": {
+                        "short_term": {"type": str, "options": ["MATCH", "MISMATCH", "NEUTRAL", "NOT_APPLICABLE"]},
+                        "mid_term": {"type": str, "options": ["MATCH", "MISMATCH", "NEUTRAL", "NOT_APPLICABLE"]},
+                        "long_term": {"type": str, "options": ["MATCH", "MISMATCH", "NEUTRAL", "NOT_APPLICABLE"]}
+                    }
                 }
             }
         },
-        "risk_flags": {
-            "type": list,
-            "description": "List of identified risk flags (e.g., crowding_risk, liquidity_risk)"
-        },
-        "confidence": {
+        "conflict_evidence": {
             "type": dict,
             "schema": {
-                "agent_confidence_score": {"type": float},
-                "confidence_adjustment": {"type": str, "options": ["none", "down"]},
-                "confidence_reason": {"type": str}
+                "directional_conflict": {
+                    "type": list,
+                    "description": "Evidence of directional conflicts"
+                },
+                "leverage_conflict": {
+                    "type": list,
+                    "description": "Evidence of leverage cycle mismatches"
+                }
             }
         },
-        "impact_assessment": {
+        "risk_exposure_flags": {
+            "type": list,
+            "description": "List of identified risk flags (e.g., crowding_risk, liquidity_vacuum)"
+        },
+        "audit_confidence": {
             "type": dict,
             "schema": {
-                "structural_consistency_score": {"type": float},
-                "behavior_risk_score": {"type": float},
-                "veto_triggered": {"type": bool}
+                "level": {"type": str, "options": ["HIGH", "MEDIUM", "LOW"]},
+                "structural_clarity": {
+                    "type": str, 
+                    "options": ["DOMINANT_CONFLICT", "CLEAR_DOMINANT_CYCLE", "MULTI_CYCLE_CONFLICT", "RISK_CLUSTER_PRESENT", "NOISE_DOMINATED", "VETO_TRIGGERED"]
+                }
             }
-        },
-        "reasoning": {
-            "type": list,
-            "description": "Concrete structural conflict or support points"
         }
     }
 
@@ -74,24 +88,33 @@ class SignalValidationExpert(BaseLLMExpert):
 
     def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         return {
-            "verdict": "INVALID",
-            "alignment": {
-                "global_status": "STRONGLY_CONFLICT",
-                "conflict_score": 1.0,
-                "breakdown": []
+            "dominant_cycle": "mid_term",
+            "cycle_weights": {
+                "short_term": "low",
+                "mid_term": "high",
+                "long_term": "veto_only"
             },
-            "risk_flags": [{"type": "error_fallback", "severity": 1.0}],
-            "confidence": {
-                "agent_confidence_score": 0.0,
-                "confidence_adjustment": "down",
-                "confidence_reason": "system_error"
+            "audit_breakdown": {
+                "directional_alignment": {
+                    "short_term": "NEUTRAL",
+                    "mid_term": "CONFLICT",
+                    "long_term": "CONFLICT"
+                },
+                "leverage_phase_match": {
+                    "short_term": "NOT_APPLICABLE",
+                    "mid_term": "NOT_APPLICABLE",
+                    "long_term": "NOT_APPLICABLE"
+                }
             },
-            "impact_assessment": {
-                "structural_consistency_score": 0.0,
-                "behavior_risk_score": 1.0,
-                "veto_triggered": True
+            "conflict_evidence": {
+                "directional_conflict": ["System Error Fallback"],
+                "leverage_conflict": []
             },
-            "reasoning": ["输出校验失败，已触发安全回退", str(error)],
+            "risk_exposure_flags": ["system_error"],
+            "audit_confidence": {
+                "level": "LOW",
+                "structural_clarity": "NOISE_DOMINATED"
+            }
         }
 
     async def run(self, query: QueryInput, **kwargs: Any) -> str:

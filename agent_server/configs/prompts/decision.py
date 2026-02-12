@@ -7,20 +7,19 @@ from typing import Dict, Any, List
 
 EXPERT_REGISTRY = {
     "signal_verdict": {
-        "role": "Signal Confirmation Expert",
-        "description": "评估交易信号在当前多周期结构与人群状态下的方向一致性与风险有效性。",
+        "role": "Signal Validation Expert",
+        "description": "基于多周期结构与风险审计，评估交易信号的有效性与结构自洽性。",
         "interpretation": [
-            "verdict 是核心执行指令：VALID (正常) / WEAK_VALID (降权) / INVALID (禁止)",
-            "WEAK_VALID (原 ATTENUATE) 意味着方向未被否决，但存在中期结构冲突或风险，必须降低执行强度（如减半仓位、收紧止损）。",
-            "INVALID (原 BLOCK) 意味着禁止开仓，仅允许持仓管理（Hold/Reduce）。",
-            "risk_flags 若包含 crowding_risk 或 liquidity_risk，必须在 trade_intent_range 中体现为 risk_bias='defensive' 或 forbidden_actions=['aggressive_add']。",
-            "alignment.breakdown 若显示 short_term=CONFLICT 但 mid_term=ALIGNED，通常暗示回调入场机会（Dip Buy），而非反转。",
-            "confidence_adjustment='down' 应直接导致 risk_bias 的保守化。"
+            "audit_breakdown.directional_alignment 中若出现 dominant_cycle 的 CONFLICT，视为主要结构冲突，应严格限制或禁止交易。",
+            "audit_confidence.level 为 LOW 或 structural_clarity 为 DOMINANT_CONFLICT / NOISE_DOMINATED 时，意味着信号缺乏结构支持，应采取 defensive 策略。",
+            "risk_exposure_flags 若包含高风险标记（如 crowding_risk, liquidity_vacuum），必须在 trade_intent_range 中体现为 risk_bias='defensive' 或 forbidden_actions=['aggressive_add']。",
+            "cycle_weights 中 high 权重的周期若出现 CONFLICT，具有否决效应。",
+            "leverage_phase_match 为 MISMATCH 时，提示动能可能衰竭，不宜激进追单。"
         ],
         "constraints": [
-            "INVALID 状态下禁止任何 OPEN 或 ADD 行为",
-            "WEAK_VALID 状态下禁止 aggressive_add",
-            "若 risk_flags 包含高风险标记，必须强制 risk_bias 为 conservative 或 defensive"
+            "若 dominant_cycle 存在 CONFLICT，禁止 aggressive_add",
+            "若 audit_confidence.level = LOW，必须强制 risk_bias 为 conservative 或 defensive",
+            "若存在主要结构冲突或高风险标记，禁止 risk_bias = neutral"
         ],
         "priority": 10
     },
@@ -209,16 +208,64 @@ prompt = ""
 if __name__ == "__main__":
     example_inputs = {
         "meta": {"symbol": "ETHUSDT"},
-        "signal_verdict": {"verdict": "ATTENUATE",
-                           "structural_alignment": "PARTIAL_CONFLICT",
-                           "risk_implication": "elevated",
-                           "reasoning": [
-                               "signal_context.dominant_bucket = mid 且 mid_term.participant_positioning.structural_weight = high，表明中期为唯一主裁周期。",
-                               "mid_term.participant_positioning.confidence.level = low，主裁周期未提供强方向性支持。",
-                               "mid_term.structural_risks.crowding_risk = high，表明中期结构存在风险标记。",
-                               "signal_direction = bullish 且 mid_term.participant_positioning.structural_weight = high，该方向未被主裁周期人群定位模式明确支持。",
-                               "long_term.structural_weight = veto_only 且 long_term.confidence.level = low，未满足长期否决条件。"]
-                           },
+        "signal_verdict": {
+            "dominant_cycle": "mid_term",
+            "cycle_weights": {
+                "short_term": "low",
+                "mid_term": "high",
+                "long_term": "veto_only"
+            },
+            "audit_breakdown": {
+                "directional_alignment": {
+                    "short_term": "NEUTRAL",
+                    "mid_term": "CONFLICT",
+                    "long_term": "CONFLICT"
+                },
+                "leverage_phase_match": {
+                    "short_term": "NOT_APPLICABLE",
+                    "mid_term": "NOT_APPLICABLE",
+                    "long_term": "NOT_APPLICABLE"
+                }
+            },
+            "conflict_evidence": {
+                "directional_conflict": ["Mid-term structure shows clear resistance", "Long-term trend is bearish"],
+                "leverage_conflict": []
+            },
+            "risk_exposure_flags": ["crowding_risk"],
+            "audit_confidence": {
+                "level": "MEDIUM",
+                "structural_clarity": "DOMINANT_CONFLICT"
+            }
+        },
+        "trade_behavior_audit": {
+            "dominant_cycle": "short_term",
+            "cycle_weights": {
+                "short_term": "high",
+                "mid_term": "medium",
+                "long_term": "low"
+            },
+            "audit_breakdown": {
+                "directional_alignment": {
+                    "short_term": "ALIGNED",
+                    "mid_term": "NEUTRAL",
+                    "long_term": "NEUTRAL"
+                },
+                "leverage_phase_match": {
+                    "short_term": "MATCH",
+                    "mid_term": "NEUTRAL",
+                    "long_term": "NEUTRAL"
+                }
+            },
+            "conflict_evidence": {
+                "directional_conflict": [],
+                "leverage_conflict": []
+            },
+            "risk_exposure_flags": [],
+            "audit_confidence": {
+                "level": "HIGH",
+                "structural_clarity": "CLEAR_DOMINANT_CYCLE"
+            }
+        },
         "market_structure": {"symbol": "ETHUSDT", "pre_decision_structure": {"short_term": {
             "participant_positioning": {"participant_inference": {}, "structural_weight": "low",
                                         "confidence": {"level": "low"}}, "behavioral_intent": {

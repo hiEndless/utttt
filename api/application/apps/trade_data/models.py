@@ -191,7 +191,7 @@ class AgentAnalysis(models.Model):
     )
 
     # 详细内容
-    reasoning = fields.JSONField(description="分析理由 (List or Dict)")
+    reasoning = fields.JSONField(null=True, description="分析理由 (List or Dict)")
     full_output = fields.JSONField(description="完整输出 (Raw JSON)")
 
     # 风控状态
