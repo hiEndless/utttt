@@ -16,20 +16,29 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
     async def execute(self, ctx: StepInput) -> str:
         prev_result = self._parse_step_content(ctx.previous_step_content)
         
-        # Unpack previous result (from SignalValidationComponent)
-        event_data = prev_result.get("event_data", {})
-        sv_output = prev_result.get("output", {})
-        sv_output_meta = sv_output.pop("meta")
-
-        full_context = prev_result.get("full_context", {})
+        event_data = prev_result.get("event_data", {}) or {}
+        full_context = prev_result.get("full_context", {}) or {}
         
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange")
         
         print(f"--- 决策层执行：{symbol} ---")
 
-        # 1. Get Positions
-        positions = sv_output.pop("positions")
+        sv_output = prev_result.get("sv_output", None)
+        if sv_output is None:
+            sv_output = prev_result.get("output", {})
+        if not isinstance(sv_output, dict):
+            sv_output = {"raw": sv_output}
+
+        route = str(event_data.get("route") or "").lower()
+        event_type = str(event_data.get("event_type") or "").lower()
+        expert_key = "trade_behavior" if (route == "trade" or event_type.startswith("trade.")) else "signal_verdict"
+
+        sv_output_meta = sv_output.get("meta", {}) if isinstance(sv_output.get("meta", {}), dict) else {}
+
+        positions = sv_output.get("positions") or prev_result.get("positions")
+        if not positions:
+            positions = get_position(exchange, symbol)
         if not positions:
              print("  -> 无持仓，跳过决策层")
              return self._safe_json_dumps({
@@ -37,7 +46,8 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
                 "reason": "no_positions",
                 "event_data": event_data,
                 "sv_output": sv_output,
-                "full_context": full_context
+                "full_context": full_context,
+                "positions": [],
              })
 
         # 2. Build Context
@@ -63,10 +73,11 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
                 "symbol": symbol,
                 "exchange": exchange,
                 "event_id": event_data.get("event_id"),
+                "trade_id": sv_output_meta.get("trade_id"),
                 "ts": int(time.time() * 1000)
             },
             "market_structure": market_structure,
-            "signal_verdict": sv_output,
+            expert_key: sv_output,
             "position_state": position_context,
             "positions": positions, 
         }
@@ -79,9 +90,6 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
             decision_output = json.loads(decision_output_str)
         except:
             decision_output = {"raw": decision_output_str}
-
-        # 补回meta
-        sv_output["meta"] = sv_output_meta
 
         return self._safe_json_dumps({
             "event_data": event_data,

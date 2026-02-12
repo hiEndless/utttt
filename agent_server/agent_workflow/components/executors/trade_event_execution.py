@@ -1,10 +1,12 @@
 from agno.workflow import StepInput
-from agent_server.agents.experts.analysis.trade_behavior import TradeEventExpert
+from agent_server.agents.experts.analysis.trade_behavior import TradeBehaviorExpert
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agent_context.utils.crowd_interpreter import build_crowd_interpretation
 from agent_server.agent_context.utils.crowd_trend_analysis import enrich_and_clean_crowd_context
 from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
+from agent_server.tools.get_position import get_position
+from agent_server.agent_context.market_structure.holding_context_from_positions import build_holding_context_from_positions
 from agent_server.utils.trade_event_recorder import get_recorder
 import json
 import asyncio
@@ -13,7 +15,7 @@ import time
 
 class TradeEventExecutionComponent(BaseWorkflowComponent):
     def __init__(self):
-        self.expert = TradeEventExpert()
+        self.expert = TradeBehaviorExpert()
 
     async def execute(self, ctx: StepInput) -> str:
         event_data = ctx.input
@@ -53,12 +55,24 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
                 "event_data": event_data,
                 "output": {"skipped": True, "reason": f"action_{event_action}_shortterm_{is_short_term}"},
                 "full_context": full_context,
+                "positions": [],
             })
 
         # 提取 trade_details 并抽象化
         trade_details = event_data.get("trade_details", {})
-        trade_abstract = abstract_trade_event(trade_details)
-        agent_ctx = build_agent_context("trade_event", full_context)
+        trade_id = trade_details.get("trade_id")
+        positions = get_position(exchange, symbol)
+        if len(positions) == 2 and trade_id:
+            matched_positions = [p for p in positions if str(p.get("trade_id")) == str(trade_id)]
+            if matched_positions:
+                positions = matched_positions
+
+        holding_context = build_holding_context_from_positions(positions)
+        holding_horizon = holding_context.get("horizon") or "short_term"
+        trade_details["holding_horizon"] = holding_horizon
+
+        trade_core = await abstract_trade_event(trade_details)
+        agent_ctx = build_agent_context("trade_behavior", full_context, horizon=holding_horizon)
 
         agent_ctx["crowd_state"], agent_ctx["crowd_trend_analysis"] = await enrich_and_clean_crowd_context(
             exchange, symbol, agent_ctx.get("crowd_state", {})
@@ -71,17 +85,30 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
         interpretation = build_crowd_interpretation(market_snapshot, position_side)
         agent_ctx["crowd_interpretation"] = interpretation
 
+        p_side = trade_details.get("position_side")
+        p_action = str(trade_details.get("action") or "").upper()
+        if p_side == "LONG":
+            direction = "bullish" if p_action == "OPEN" else "bearish"
+        elif p_side == "SHORT":
+            direction = "bearish" if p_action == "OPEN" else "bullish"
+        else:
+            direction = None
+
         query = {
-            "symbol": symbol,
-            "exchange": exchange,
-            "event_id": event_id,
-            "trade_core": trade_abstract.get("trade_core", {}),
-            "position_effect": trade_abstract.get("position_effect", {}),
-            "position_context": trade_abstract.get("position_context", {}),
-            "context": agent_ctx,
+            "meta": {
+                "symbol": symbol,
+                "exchange": exchange,
+                "event_id": event_id,
+                "event_type": event_data.get("event_type"),
+                "trade_id": trade_id,
+                "direction": direction,
+            },
+            "trade": trade_core,
+            "structure_context": agent_ctx,
+            "positions": positions,
         }
 
-        output_str = await self.expert.run(json.dumps(query, ensure_ascii=False))
+        output_str = await self.expert.run(query)
 
         try:
             output_json = json.loads(output_str)
@@ -104,6 +131,7 @@ class TradeEventExecutionComponent(BaseWorkflowComponent):
             "event_data": event_data,
             "output": output_json,
             "full_context": full_context,
+            "positions": positions,
         })
 
     async def _wait_for_valid_context(self, exchange: str, symbol: str, event_data: dict) -> dict:

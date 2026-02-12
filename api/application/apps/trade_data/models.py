@@ -171,9 +171,6 @@ class AgentAnalysis(models.Model):
     agent_name = fields.CharField(max_length=32, description="Agent 名称 (e.g. signal_validation, position_risk)")
     model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
 
-    # 核心产出
-    verdict = fields.CharField(null=True, max_length=32, description="分析结论 (ALLOW, ATTENUATE, BLOCK)")
-    
     # 风控专用字段
     risk_action = fields.CharField(max_length=32, null=True, description="持仓风控建议 (hold/reduce/scale_in_small/exit)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="分析时的标记价格")
