@@ -24,7 +24,7 @@ EXPERT_REGISTRY = {
         "priority": 10
     },
 
-    "trade_behavior_audit": {
+    "trade_behavior": {
         "role": "Trade Behavior Audit Expert",
         "description": "提供详细的市场周期行为审计与结构性冲突证据。",
         "interpretation": [
@@ -42,38 +42,6 @@ EXPERT_REGISTRY = {
         ],
         "priority": 15
     },
-
-    "market_structure": {
-        "role": "Market Structure Expert",
-        "description": "刻画多周期市场结构与参与者行为，用于约束交易意图空间。",
-        "interpretation": [
-            "long_term 结构用于风险否决，不用于短期方向判断。",
-            "risk_state 为 high 时，应限制风险扩张行为。",
-            "结构冲突时，以高周期为约束优先级。",
-            # 当主裁周期呈现 risk_off 行为时，输出应更偏向收敛空间
-            "当主裁周期 participant positioning 为 risk_off 时：",
-            "不鼓励在同方向继续增加风险暴露",
-            "更倾向于保持或减少风险暴露",
-            "当 risk_off 与 ATTENUATE 同时存在时：可允许极小幅度、非趋势性风险增加，但整体风险偏好必须保持收敛"
-        ],
-        "constraints": [
-            "long_term 不支持风险扩张时，禁止扩大仓位暴露"
-        ],
-        "priority": 20
-    },
-
-    "position_state": {
-        "role": "Position State Expert",
-        "description": "描述当前账户持仓状态与风险暴露情况。",
-        "interpretation": [
-            "position_side 仅描述事实状态，不隐含主观判断。",
-            "exposure_level 用于限制决策空间，而非方向选择。"
-        ],
-        "constraints": [
-            "高 exposure_level 下不得叠加同方向风险"
-        ],
-        "priority": 30
-    }
 }
 
 # =========================

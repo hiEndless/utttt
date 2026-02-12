@@ -20,7 +20,6 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
         event_data = prev_result.get("event_data", {})
         sv_output = prev_result.get("output", {})
         sv_output_meta = sv_output.pop("meta")
-        sv_output.pop("reasoning")
 
         full_context = prev_result.get("full_context", {})
         
