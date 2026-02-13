@@ -78,34 +78,43 @@ class BinanceUserWS:
         return request
 
     async def _connect(self):
-        async with websockets.connect(
-                self.ws_url,
-                ping_interval=20,  # 底层 WebSocket 自动 ping
-                ssl=self.ssl_context
-        ) as ws:
-            self._ws = ws
-            # 发送初始请求
-            await ws.send(json.dumps(self._request("v2/account.status")))
-            await ws.send(json.dumps(self._request("v2/account.position")))
+        # 临时去掉代理相关环境变量，强制直连（避免 ALL_PROXY / HTTPS_PROXY 等导致走代理）
+        _saved = {}
+        for _k in ("ALL_PROXY", "all_proxy", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "WSS_PROXY", "wss_proxy", "WS_PROXY", "ws_proxy"):
+            if _k in os.environ:
+                _saved[_k] = os.environ.pop(_k)
+        try:
+            async with websockets.connect(
+                    self.ws_url,
+                    ping_interval=20,  # 底层 WebSocket 自动 ping
+                    ssl=self.ssl_context,
+            ) as ws:
+                self._ws = ws
+                # 发送初始请求
+                await ws.send(json.dumps(self._request("v2/account.status")))
+                await ws.send(json.dumps(self._request("v2/account.position")))
 
-            while self._running:
-                try:
-                    message = await asyncio.wait_for(ws.recv(), timeout=4)  # 主动超时实现每秒请求
-                    data = json.loads(message)
-                    if self._callback:
-                        if asyncio.iscoroutinefunction(self._callback):
-                            await self._callback(data)
-                        else:
-                            self._callback(data)
-                except asyncio.TimeoutError:
-                    # 超时发送两个请求
-                    await ws.send(json.dumps(self._request("v2/account.status")))
-                    await ws.send(json.dumps(self._request("v2/account.position")))
-                except websockets.ConnectionClosed as e:
-                    print(f"⚠️ WS 已关闭: {e}")
-                    break
-                except Exception as e:
-                    print(f"❌ 消息处理错误: {e}")
+                while self._running:
+                    try:
+                        message = await asyncio.wait_for(ws.recv(), timeout=4)  # 主动超时实现每秒请求
+                        data = json.loads(message)
+                        if self._callback:
+                            if asyncio.iscoroutinefunction(self._callback):
+                                await self._callback(data)
+                            else:
+                                self._callback(data)
+                    except asyncio.TimeoutError:
+                        # 超时发送两个请求
+                        await ws.send(json.dumps(self._request("v2/account.status")))
+                        await ws.send(json.dumps(self._request("v2/account.position")))
+                    except websockets.ConnectionClosed as e:
+                        print(f"⚠️ WS 已关闭: {e}")
+                        break
+                    except Exception as e:
+                        print(f"❌ 消息处理错误: {e}")
+        finally:
+            for _k, _v in _saved.items():
+                os.environ[_k] = _v
 
     async def run(self):
         self._running = True
@@ -153,6 +162,12 @@ async def user_callback(data):
             print(f"Redis 写入错误: {e}")
 
 
+def _is_testnet() -> bool:
+    """从环境变量读取是否使用模拟盘（测试网）。默认 True=模拟盘。"""
+    v = os.getenv("BINANCE_TESTNET", "true").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
 if __name__ == "__main__":
     api_key = os.getenv("BINANCE_API_KEY", "").strip()
     api_secret = os.getenv("BINANCE_API_SECRET", "").strip()
@@ -161,7 +176,15 @@ if __name__ == "__main__":
         print("示例: export BINANCE_API_KEY=xxx  export BINANCE_API_SECRET=xxx")
         raise SystemExit(1)
 
-    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
+    use_testnet = _is_testnet()
+    if use_testnet:
+        ws_url = "wss://testnet.binancefuture.com/ws-fapi/v1"
+        print("🔶 使用模拟盘（测试网）")
+    else:
+        ws_url = "wss://ws-fapi.binance.com/ws-fapi/v1"
+        print("🔴 使用实盘")
+
+    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret, ws_url=ws_url)
     ws_client.register_callback(user_callback)
 
     asyncio.run(ws_client.run())

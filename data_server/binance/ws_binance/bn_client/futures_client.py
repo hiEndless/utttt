@@ -8,23 +8,34 @@ from typing import List, Dict, Optional, Any, Union
 import pandas as pd
 
 
+def _binance_futures_base_url() -> str:
+    """根据环境变量 BINANCE_TESTNET 返回实盘或模拟盘 REST 地址。"""
+    v = os.getenv("BINANCE_TESTNET", "true").strip().lower()
+    if v in ("1", "true", "yes", "on"):
+        return "https://testnet.binancefuture.com"
+    return "https://fapi.binance.com"
+
+
 class BinanceFuturesClient:
     """
     Binance Futures REST API Client.
     Provides methods to fetch user trades and calculate position history/PnL.
+    根据环境变量 BINANCE_TESTNET 自动选择实盘或模拟盘（测试网）。
     """
     BASE_URL = "https://fapi.binance.com"
 
-    def __init__(self, api_key: str, api_secret: str):
+    def __init__(self, api_key: str, api_secret: str, base_url: Optional[str] = None):
         """
         Initialize the client with API credentials.
-        
+
         Args:
             api_key: Binance API Key
             api_secret: Binance API Secret
+            base_url: 可选，不传则从 BINANCE_TESTNET 环境变量推断
         """
         self.api_key = api_key
         self.api_secret = api_secret
+        self.base_url = (base_url or _binance_futures_base_url()).rstrip("/")
         self.session = requests.Session()
         self.session.headers.update({
             "X-MBX-APIKEY": self.api_key
@@ -56,7 +67,7 @@ class BinanceFuturesClient:
         # Sign the parameters
         self._sign(params)
 
-        url = f"{self.BASE_URL}{endpoint}"
+        url = f"{self.base_url}{endpoint}"
         try:
             response = self.session.request(method, url, params=params, timeout=10)
             response.raise_for_status()
@@ -373,8 +384,11 @@ class BinanceFuturesClient:
 
 
 if __name__ == "__main__":
-    API_KEY = os.getenv("BINANCE_API_KEY", "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0")
-    API_SECRET = os.getenv("BINANCE_API_SECRET", "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B")
+    API_KEY = (os.getenv("BINANCE_API_KEY") or "").strip()
+    API_SECRET = (os.getenv("BINANCE_API_SECRET") or "").strip()
+    if not API_KEY or not API_SECRET:
+        print("请设置环境变量 BINANCE_API_KEY 和 BINANCE_API_SECRET")
+        raise SystemExit(1)
 
     symbol = "ETHUSDT"
 
