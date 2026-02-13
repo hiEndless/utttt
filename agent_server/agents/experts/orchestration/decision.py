@@ -153,6 +153,7 @@ class DecisionExpert:
         base_meta = dict(meta)
         base_meta["ts"] = ts
         base_meta["version"] = self.version
+        meta["name"] = self.name
 
         # 多空双开：按仓位方向拆分并发请求 LLM，再将两份结果合并为一个列表
         if position_sides == {"LONG", "SHORT"}:

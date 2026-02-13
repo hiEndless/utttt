@@ -10,6 +10,7 @@ class BinanceAnalysisService:
     def __init__(self):
         self.redis_client = RedisClient()
         self.trade_recorder = TradeRecorder(exchange="binance")
+        self.previous_data = None
 
     def data_clean(self, new_data):
         filtered = []
@@ -71,16 +72,14 @@ class BinanceAnalysisService:
         return new_data
 
     def get_old_data(self):
-        global previous_data
-        if previous_data is None:
+        if self.previous_data is None:
             cached = self.redis_client.get_json("positions:binance")
             if cached is not None:
-                previous_data = cached
-        return previous_data
+                self.previous_data = cached
+        return self.previous_data
 
     def set_old_data(self, new_data):
-        global previous_data
-        previous_data = new_data
+        self.previous_data = new_data
 
     def find_added_items(self, old_data, new_data):
         old_set = set((i.get('symbol'), i.get('isolatedMargin'), i.get('positionSide')) for i in old_data)

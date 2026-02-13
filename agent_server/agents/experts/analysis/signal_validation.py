@@ -157,6 +157,7 @@ class SignalValidationExpert(BaseLLMExpert):
         trade_id = qobj.get("trade_id") or meta.get("trade_id")
         meta["ts"] = int(time.time() * 1000)
         meta["version"] = self.version
+        meta["name"] = self.name
 
         payload_obj: Dict[str, Any]
         try:
