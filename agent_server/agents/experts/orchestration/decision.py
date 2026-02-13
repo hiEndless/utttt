@@ -139,9 +139,12 @@ class DecisionExpert:
         cfg = get_agent_config(self.name)
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
 
-        query_local = dict(query or {})
+        # 确保 query 是字典
+        query = query or {}
+
+        # 1. 构建 LLM 请求用的 query_local (需要移除 meta 和 positions)
+        query_local = dict(query)
         meta = query_local.pop("meta", {}) or {}
-        query_for_extract = dict(query or {})
 
         # 不将原始 positions 透传给 LLM（仅用于本地提取 trade_id）
         query_local.pop("positions", None)
@@ -153,7 +156,7 @@ class DecisionExpert:
         base_meta = dict(meta)
         base_meta["ts"] = ts
         base_meta["version"] = self.version
-        meta["name"] = self.name
+        base_meta["name"] = self.name
 
         # 多空双开：按仓位方向拆分并发请求 LLM，再将两份结果合并为一个列表
         if position_sides == {"LONG", "SHORT"}:
@@ -166,18 +169,16 @@ class DecisionExpert:
                     print(f"[DecisionExpert] failed after retries ({side}): {e}")
                     result = {"data": "No data available"}
 
-                if isinstance(result, dict):
-                    result_meta = dict(base_meta)
-                    result_meta["position_side"] = side
-                    trade_id = self._extract_trade_id(query_for_extract, side)
-                    if trade_id:
-                        result_meta["trade_id"] = trade_id
-                    result["meta"] = result_meta
-                    return result
-                result_meta = {**base_meta, "position_side": side}
-                trade_id = self._extract_trade_id(query_for_extract, side)
+                # 统一构建 meta
+                result_meta = dict(base_meta)
+                result_meta["position_side"] = side
+                trade_id = self._extract_trade_id(query, side)
                 if trade_id:
                     result_meta["trade_id"] = trade_id
+
+                if isinstance(result, dict):
+                    result["meta"] = result_meta
+                    return result
                 return {"data": result, "meta": result_meta}
 
             results = await asyncio.gather(_run_one("LONG"), _run_one("SHORT"))
@@ -197,7 +198,7 @@ class DecisionExpert:
         else:
             final_result = {"data": final_result, "meta": base_meta}
 
-        trade_id = self._extract_trade_id(query_for_extract)
+        trade_id = self._extract_trade_id(query)
         if trade_id and isinstance(final_result.get("meta"), dict):
             final_result["meta"]["trade_id"] = trade_id
 
