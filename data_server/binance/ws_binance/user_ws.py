@@ -1,4 +1,5 @@
 import asyncio
+import os
 import traceback
 
 import websockets
@@ -153,8 +154,12 @@ async def user_callback(data):
 
 
 if __name__ == "__main__":
-    api_key = "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0"
-    api_secret = "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B"
+    api_key = os.getenv("BINANCE_API_KEY", "").strip()
+    api_secret = os.getenv("BINANCE_API_SECRET", "").strip()
+    if not api_key or not api_secret:
+        print("错误: 请设置环境变量 BINANCE_API_KEY 和 BINANCE_API_SECRET")
+        print("示例: export BINANCE_API_KEY=xxx  export BINANCE_API_SECRET=xxx")
+        raise SystemExit(1)
 
     ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
     ws_client.register_callback(user_callback)
