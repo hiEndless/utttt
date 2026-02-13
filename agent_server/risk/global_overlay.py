@@ -120,22 +120,19 @@ def aggregate_global_overlay(
     )
 
     # --------------------------------------------------
-    # 2. 聚合操作权限（修正为“或”逻辑）
+    # 2. 聚合操作权限（保守的“与”逻辑）
     # --------------------------------------------------
     # 如果没有执行状态，默认为允许（因为未知限制）
     if not risk_sources["positions"]:
         allow_open = True
         allow_add = True
     else:
-        # 修正：从 all 改为 any (Rule 1)
-        # 语义变更：只要有一个仓位/路径允许开仓/加仓，全局即允许（具体限制由各仓位自行把控）
-        # 避免单个仓位的冷却/风控“传染”冻结整个账户
-        allow_open = any(
+        allow_open = all(
             es.get("execution_state", {}).get("action_allowance", {}).get("allow_open", False)
             for es in risk_sources["positions"]
         )
 
-        allow_add = any(
+        allow_add = all(
             es.get("execution_state", {}).get("action_allowance", {}).get("allow_add", False)
             for es in risk_sources["positions"]
         )
@@ -147,30 +144,6 @@ def aggregate_global_overlay(
         "allow_hold": True,
         "allow_reduce": True,
         "allow_close": True
-    }
-
-    # --------------------------------------------------
-    # Rule 2: 语义化风险参数 (Risk Bias & Exposure Limits)
-    # --------------------------------------------------
-    # 将 risk_regime 映射为具体的风险偏好参数，而不是简单的 forbid_all
-    
-    risk_bias = "neutral"
-    max_exposure_delta = 1.0  # Default: no strict limit
-    no_new_exposure = False
-
-    if global_risk_regime == "critical":
-        risk_bias = "defensive"
-        max_exposure_delta = -0.3  # 建议只允许减少敞口
-        no_new_exposure = True     # 禁止新增敞口
-    elif global_risk_regime == "elevated":
-        risk_bias = "cautious"
-        max_exposure_delta = 0.0   # 不建议增加净敞口
-        no_new_exposure = False    # 允许但需谨慎
-
-    global_risk_parameters = {
-        "risk_bias": risk_bias,
-        "max_exposure_delta": max_exposure_delta,
-        "no_new_exposure": no_new_exposure
     }
 
     # --------------------------------------------------
@@ -199,16 +172,11 @@ def aggregate_global_overlay(
     if computed_in_cooldown:
         cooldown_source = "derived"
 
-    if prev_global_overlay_state:
+    if prev_global_overlay_state and cooldown_until_candidates:
         prev_cd = prev_global_overlay_state.get("global_cooldown_state", {})
-        
-        # Check for expiration (Was in cooldown, now not)
-        if prev_cd.get("in_cooldown") and not computed_in_cooldown:
-            cooldown_source = "expired"
-
-        if prev_cd.get("in_cooldown") and computed_in_cooldown:
+        if prev_cd.get("in_cooldown"):
             # 如果之前有冷却，且当前计算也有冷却候选者，则尝试继承/延长
-            # computed_in_cooldown is already True here
+            computed_in_cooldown = True
 
             # 合并逻辑：取当前计算的截止时间和先前截止时间的最大值
             current_max = computed_until_ts if computed_until_ts is not None else 0
@@ -232,7 +200,6 @@ def aggregate_global_overlay(
     return {
         "global_risk_regime": global_risk_regime,
         "global_action_allowance": global_action_allowance,
-        "global_risk_parameters": global_risk_parameters,
         "global_cooldown_state": global_cooldown_state,
         "meta": {
             # "derived_from": [es.get("symbol") for es in execution_states],
@@ -277,7 +244,7 @@ async def _read_and_maintain_execution_states(exchange: str, redis_client: Optio
     1. 续期 TTL（保证常驻）。
     2. 执行状态老化（Aging）：检查冷却过期、风控等级降级。
     3. 如果状态发生变化，写回 Redis。
-    
+
     兼容两种存储形态：
     1) 多个 string key：risk:execution:{exchange}:* (主要路径)
     2) 单个 hash key：risk:execution:{exchange}（field->json） (Legacy, not actively maintained here)
@@ -410,7 +377,7 @@ async def aggregate_and_store_global_overlay(exchange: str, redis_client: Option
     """
     聚合当前交易所下所有持仓的执行状态，并生成/存储全局风控状态。
     这是供外部组件调用的主要接口。
-    
+
     同时会执行“维护”逻辑（TTL续期、冷却检查）。
 
     NOTE: aggregate_and_store_global_overlay must NOT create new redis clients internally.
@@ -442,12 +409,12 @@ async def _read_global_overlay_raw(exchange: str, redis_client: Optional[Redis] 
 def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
     """
     [认知层] 将结构化风控状态转换为 Agent 可理解的自然语言描述。
-    
+
     原则：
     - 软性语言：使用“不建议”而非“禁止”，作为环境上下文而非指令。
     - 解释性：告知 Agent “为什么”。
     - 可讨论性：允许 Agent 在推理中权衡。
-    
+
     Designed for: Signal Validation Agent, Position Risk Agent
     """
     if not overlay:
@@ -455,7 +422,6 @@ def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
 
     regime = overlay.get("global_risk_regime", "normal")
     allowance = overlay.get("global_action_allowance", {})
-    params = overlay.get("global_risk_parameters", {})
     cooldown = overlay.get("global_cooldown_state", {})
 
     parts = []
@@ -467,13 +433,6 @@ def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
         parts.append("风险升高：账户处于高风险监控中，市场波动可能加剧。")
     else:
         parts.append("风险状态：正常。适用标准市场验证流程。")
-
-    # 1.5 Risk Parameters Narrative
-    bias = params.get("risk_bias", "neutral")
-    if bias == "defensive":
-        parts.append(f"风险偏好：防御型 (Defensive)。建议最大敞口变化 {params.get('max_exposure_delta', 0)}。")
-    elif bias == "cautious":
-        parts.append("风险偏好：谨慎型 (Cautious)。")
 
     # 2. Action Guidance (Soft/Preference Language)
     # "Discourage" implies environment preference, not hard rule.
