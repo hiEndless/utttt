@@ -112,7 +112,8 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             # 获取账户风险状态
             account_risk_state = await account_state(exchange)
             initialMargin = float(position_snapshot.get("initialMargin", 0))
-            account_risk_state["position_occupancy_ratio"] = initialMargin / account_risk_state.get("balance", 1)
+            leverage = str(position_snapshot.get("leverage", ""))
+            account_risk_state["position_occupancy_ratio"] = initialMargin / (account_risk_state.get("balance", 1) * float(leverage))
             
             # [NEW] 获取 Global Risk Overlay (Cognitive Layer)
             # 同样使用 Internal Raw API + Narrative Adapter

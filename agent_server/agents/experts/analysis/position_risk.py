@@ -179,6 +179,7 @@ if __name__ == "__main__":
                 "holding_duration": horizon.split("_")[0],
             }
             initialMargin = float(p.pop("initialMargin", 0))  # 占用保证金，用于计算仓位占比
+            leverage = str(p.pop("leverage", ""))  # 杠杆倍数，用于计算仓位占比
             break
     # print(position)
 
@@ -198,7 +199,7 @@ if __name__ == "__main__":
 
         # 获取账户余额计算可用仓位比例
         account_risk_state = await account_state(exchange)
-        account_risk_state["position_occupancy_ratio"] = initialMargin / account_risk_state.get("balance", 1)
+        account_risk_state["position_occupancy_ratio"] = initialMargin / (account_risk_state.get("balance", 1) * float(leverage))
 
         query = {
             "meta": meta,
