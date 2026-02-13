@@ -98,7 +98,6 @@ def generate_position_time_semantics(
         pnl_direction = "flat"
 
     abs_pnl = abs(pnl_pct)
-    print(pnl_pct)
     if abs_pnl < 0.1:
         pnl_magnitude = "small"
     elif abs_pnl < 0.3:
@@ -165,11 +164,11 @@ def generate_position_time_semantics(
     }
 
 
-async def fetch_positions_and_balance(exchange: str = "binance"):
+async def fetch_positions_and_balance(exchange: str = "binance", redis_client=None):
     """
     从 Redis 读取持仓和账户余额
     """
-    redis = get_redis_client()
+    redis = redis_client if redis_client else get_redis_client()
     
     # 1. 获取账户权益
     balance_key = f"balance:{exchange}"
@@ -202,13 +201,13 @@ async def fetch_positions_and_balance(exchange: str = "binance"):
     return positions, total_balance
 
 
-async def process_positions(exchange: str = "binance", save_to_redis: bool = True):
+async def process_positions(exchange: str = "binance", save_to_redis: bool = True, redis_client=None):
     """
     主处理逻辑：读取 -> 计算 -> (保存)
     """
     logger.info(f"Starting position time semantics analysis for {exchange}...")
     
-    positions, total_balance = await fetch_positions_and_balance(exchange)
+    positions, total_balance = await fetch_positions_and_balance(exchange, redis_client=redis_client)
     
     if not positions:
         logger.info("No active positions found.")
@@ -216,7 +215,7 @@ async def process_positions(exchange: str = "binance", save_to_redis: bool = Tru
 
     logger.info(f"Found {len(positions)} positions. Total Balance: {total_balance}")
     
-    redis = get_redis_client()
+    redis = redis_client if redis_client else get_redis_client()
     now_ts = int(time.time())
     
     for pos in positions:
