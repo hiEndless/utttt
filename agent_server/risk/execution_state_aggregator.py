@@ -90,28 +90,7 @@ def aggregate_execution_state(
 
     system_info: Dict[str, Any] = {}
 
-    # ---------- 防止“被约束逼出 exit”的安全网 ----------
-    if risk_action == "exit":
-        forbidden = execution_constraint.get("forbidden_actions", []) if execution_constraint else []
 
-        is_hold_forbidden = "hold" in forbidden
-        is_reduce_forbidden = "reduce" in forbidden
-
-        decision_supports_exit = False
-        if decision_output:
-            d_intent = str(decision_output.get("trade_intent", "")).lower()
-            d_action = str(decision_output.get("action", "")).lower()
-            if any(k in d_intent for k in ("exit", "close")) or any(k in d_action for k in ("exit", "close")):
-                decision_supports_exit = True
-
-        if is_hold_forbidden and is_reduce_forbidden and not decision_supports_exit:
-            allowance["allow_hold"] = True
-            allowance["allow_reduce"] = True
-            system_info["forced_exit_override"] = True
-            system_info["reason"] = (
-                "Detected self-locking constraint without explicit decision-level exit. "
-                "Downgraded to allow hold/reduce."
-            )
 
     # ---------- 冷却与执行态 ----------
     execution_regime = "normal"
