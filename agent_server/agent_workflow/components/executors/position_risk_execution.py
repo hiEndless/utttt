@@ -29,7 +29,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
         # 支持从 SignalValidation 直接过来，或者从 DecisionComponent 过来
         # 统一使用 output 字段
         output = prev_result.get("output", {})
-        print(f"pos_risk::{output}")
+        # print(f"pos_risk::{output}")
         decision_output = prev_result.get("decision_output", {})  # Optional from DecisionComponent
 
         full_context = prev_result.get("full_context")

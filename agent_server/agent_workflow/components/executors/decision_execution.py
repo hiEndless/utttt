@@ -30,6 +30,18 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
 
         route = str(event_data.get("route") or "").lower()
         event_type = str(event_data.get("event_type") or "").lower()
+
+        if "close" in event_type:
+            print(f"  -> 平仓事件 {event_type}，跳过决策层")
+            return self._safe_json_dumps({
+                "skipped": True,
+                "reason": "trade_close_event",
+                "event_data": event_data,
+                "output": output,
+                "full_context": full_context,
+                "positions": output.get("positions") or prev_result.get("positions") or [],
+            })
+
         expert_key = "trade_behavior" if (route == "trade" or event_type.startswith("trade.")) else "signal_verdict"
 
         sv_output_meta = output.get("meta", {}) if isinstance(output.get("meta", {}), dict) else {}
