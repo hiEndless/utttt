@@ -81,17 +81,54 @@ def aggregate_execution_state(
     risk_action = risk_action_output["risk_action"]
     meta = risk_action_output.get("meta", {}) or {}
 
+    system_info: Dict[str, Any] = {}
+
     # ---------- exit 类型（新增） ----------
     # 默认认为是结构性 exit（不惩罚）
-    exit_type = meta.get("exit_type", "structural")
+    exit_type = meta.get("exit_type")
+    if not exit_type:
+        exit_type = "structural"
+        # 强烈建议 2: 显式标记 inferred，方便 debug
+        system_info["exit_type_inference"] = "inferred_default (structural)"
 
     # ---------- 基础权限 ----------
     allowance = RISK_ACTION_TO_ALLOWANCE.get(risk_action, {}).copy()
 
-    system_info: Dict[str, Any] = {}
+    # ---------- Rule: Execution Constraint Application ----------
+    # 原则：Exit 应该是“最后一个合法动作”，而不是“唯一合法动作”。
+    # 只有在极端风险下（结构否决、时间耗尽、紧急状态）才允许封死 reduce。
+    if execution_constraint:
+        forbidden = set(execution_constraint.get("forbidden_actions", []))
+        
+        # 1. Apply standard prohibitions (Open/Add/Hold)
+        if "open" in forbidden: allowance["allow_open"] = False
+        if "add" in forbidden: allowance["allow_add"] = False
+        if "hold" in forbidden: allowance["allow_hold"] = False
+        
+        # 2. Conditional Reduce Prohibition
+        if "reduce" in forbidden:
+            # Check severity conditions
+            struct_align = (signal_validation_output or {}).get("structural_alignment", "").upper()
+            time_flag = meta.get("time_risk_flag", "")
+            risk_imp = (signal_validation_output or {}).get("risk_implication", "").lower()
+            
+            is_veto_only = (struct_align == "VETO_ONLY")
+            is_time_decay = (time_flag in ("decay", "overstayed"))
+            is_emergency = (risk_imp in ("critical", "emergency"))
+            
+            if is_veto_only or is_time_decay or is_emergency:
+                # Severity met: Allow ban on reduce (Force Exit)
+                allowance["allow_reduce"] = False
+                system_info["reduce_ban_enforced"] = True
+                system_info["reduce_ban_reason"] = f"Severity met: veto={is_veto_only}, time={is_time_decay}, risk={is_emergency}"
+            else:
+                # Severity NOT met: Override ban (Allow Reduce)
+                # Keep allowance["allow_reduce"] as derived from risk_action
+                system_info["reduce_ban_overridden"] = True
+                system_info["reason"] = "Constraint 'reduce' ban ignored: Exit should be last resort."
 
-    # ---------- 防止“被约束逼出 exit”的安全网 ----------
-    if risk_action == "exit":
+    # ---------- 防止“被约束逼出 exit”的安全网 (Legacy check, kept for safety) ----------
+    if risk_action == "exit" and not system_info.get("forced_exit_revert"):
         forbidden = execution_constraint.get("forbidden_actions", []) if execution_constraint else []
 
         is_hold_forbidden = "hold" in forbidden
