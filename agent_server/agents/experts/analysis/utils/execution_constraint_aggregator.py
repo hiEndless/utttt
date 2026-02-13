@@ -3,8 +3,17 @@ from typing import Dict, List, Optional, Tuple, Any
 
 class ExecutionConstraintAggregator:
     """
-    确定性聚合器：将 SignalValidation + Decision 的输出合成为 execution_constraint。
+    确定性聚合器
     提供给持仓风控agent
+    职责：
+    - 将 SignalValidation + Decision 的结果，转换为【确定性的执行边界】
+    - 只回答：哪些动作【绝对不允许】
+    - 不对“应该做什么”做任何判断
+
+    明确不做：
+    - 不输出 verdict / confidence
+    - 不触发 exit / reduce
+    - 不评估持仓好坏
 
     将 信号验证 (SignalValidation) 等 agnet 的客观评估结果与 交易决策 (Decision) 的主观意图进行“对抗性聚合”，生成最终的 执行约束 (Execution Constraint) 。
 
@@ -14,267 +23,179 @@ class ExecutionConstraintAggregator:
     3. 意图修正 (Intent Bias) : 确保交易意图（如“做多”）与大周期方向一致。
     """
 
-    BASE_CONFIDENCE = 0.75
-
-    VERDICT_PENALTY = {
-        "ALLOW": 0.0,
-        "ATTENUATE": -0.15,
-        "BLOCK": -0.55,
-    }
-
-    STRUCTURAL_ALIGNMENT_PENALTY = {
-        "ALIGNED": 0.0,
-        "PARTIAL_CONFLICT": -0.10,
-        "STRONG_CONFLICT": -0.25
-    }
-
-    RISK_IMPLICATION_PENALTY = {
-        "none": 0.0,
-        "normal": 0.0,
-        "elevated": -0.05,
-        "high": -0.15
-    }
+    # ------------------------
+    # Public API
+    # ------------------------
 
     def aggregate(
-            self,
-            signal_validation: Dict,
-            decision_output: Dict
-    ) -> Dict:
-        """
-        Aggregate SignalValidation V2 output with Decision output.
-        V1 format is no longer supported.
-        """
+        self,
+        signal_validation: Dict[str, Any],
+        decision_output: Dict[str, Any],
+    ) -> Dict[str, Any]:
 
-        # Extract core metrics from V2 structure
-        structural_alignment = self._derive_structural_alignment(signal_validation)
-        risk_implication = self._derive_risk_implication(signal_validation)
-        verdict = self._derive_verdict(signal_validation, structural_alignment, risk_implication)
+        forbidden_from_signal = self._derive_signal_forbidden_actions(signal_validation)
+        forbidden_from_decision = self._derive_decision_forbidden_actions(decision_output)
 
-        # Decision output processing
-        trade_intent = decision_output.get("trade_intent_range", {})
-        allowed_actions = list(trade_intent.get("allowed_actions", []) or [])
-        forbidden_actions = list(trade_intent.get("forbidden_actions", []) or [])
-        risk_bias = trade_intent.get("risk_bias")
-        # decision_rationale = list(decision_output.get("decision_rationale", []) or [])
+        forbidden_actions = self._merge_forbidden(
+            forbidden_from_signal,
+            forbidden_from_decision,
+        )
 
-        # Apply gate
-        allowed_actions_effective, forbidden_actions_effective = self._apply_verdict_gate(
-            verdict=verdict,
-            allowed_actions=allowed_actions,
+        allowed_actions = self._derive_allowed_actions(
+            decision_output=decision_output,
             forbidden_actions=forbidden_actions,
         )
 
-        intent_bias = self._derive_intent_bias(
+        intent_bias = self._derive_intent_bias(signal_validation)
+
+        reason_tags = self._derive_reason_tags(
             signal_validation=signal_validation,
-            verdict=verdict,
-            risk_bias=risk_bias
-        )
-
-        confidence = self._derive_confidence(
-            verdict=verdict,
-            structural_alignment=structural_alignment,
-            risk_implication=risk_implication
-        )
-
-        constraint_reason_tags = self._derive_reason_tags(
-            verdict=verdict,
-            structural_alignment=structural_alignment,
-            risk_implication=risk_implication
+            forbidden_actions=forbidden_actions,
         )
 
         return {
             "execution_constraint": {
                 "intent_bias": intent_bias,
-                "allowed_actions": allowed_actions_effective,
-                "forbidden_actions": forbidden_actions_effective,
-                "risk_bias": risk_bias,
-                "confidence": confidence,
-                "constraint_reason_tags": constraint_reason_tags,
+                "allowed_actions": allowed_actions,
+                "forbidden_actions": forbidden_actions,
+                "risk_bias": self._extract_risk_bias(decision_output),
+                "constraint_reason_tags": reason_tags,
             }
         }
 
     # ------------------------
-    # Derivation methods (V2)
+    # Forbidden Actions (Hard Gate)
     # ------------------------
 
-    def _derive_structural_alignment(self, sv: Dict) -> str:
+    def _derive_signal_forbidden_actions(
+        self, signal_validation: Dict[str, Any]
+    ) -> List[str]:
         """
-        Derive structural alignment from V2 audit breakdown.
-        Returns: ALIGNED / PARTIAL_CONFLICT / STRONG_CONFLICT
+        从 SignalValidation 中提取【必须禁止】的行为
+        只处理“结构性 veto / block”级别
         """
-        audit_confidence = sv.get("audit_confidence", {})
-        audit_breakdown = sv.get("audit_breakdown", {})
-        structural_clarity = audit_confidence.get("structural_clarity")
 
-        dir_align = audit_breakdown.get("directional_alignment", {})
-        lev_match = audit_breakdown.get("leverage_phase_match", {})
+        forbidden: List[str] = []
 
-        # Priority 1: Dominant/Strong Conflict
+        audit_conf = signal_validation.get("audit_confidence", {})
+        structural_clarity = audit_conf.get("structural_clarity")
+
         if structural_clarity == "DOMINANT_CONFLICT":
-            return "STRONG_CONFLICT"
-        if dir_align.get("mid_term") == "CONFLICT":
-            return "STRONG_CONFLICT"
+            forbidden += [
+                "open",
+                "aggressive_add",
+                "scale_in_small",
+                "reverse_position",
+            ]
 
-        # Priority 2: Partial Conflict
-        if dir_align.get("mid_term") == "NEUTRAL":
-            return "PARTIAL_CONFLICT"
-        if lev_match.get("mid_term") == "MISMATCH":
-            return "PARTIAL_CONFLICT"
-
-        return "ALIGNED"
-
-    def _derive_risk_implication(self, sv: Dict) -> str:
-        """
-        Derive risk implication from V2 risk flags.
-        Returns: none / elevated / high
-        """
-        risk_flags = sv.get("risk_exposure_flags", [])
-
-        has_high_risk = False
-        has_vacuum = False
-
+        risk_flags = signal_validation.get("risk_exposure_flags", [])
         for f in risk_flags:
-            if isinstance(f, dict):
-                val = str(f.get("value", "")).lower()
-                if val == "high":
-                    has_high_risk = True
+            if isinstance(f, str) and "crowding_risk_high" in f:
+                forbidden += ["aggressive_add"]
 
-                if f.get("type") == "liquidity_vacuum" and (
-                        f.get("value") is True or val == "true"
-                ):
-                    has_vacuum = True
-            elif isinstance(f, str):
-                s = str(f).lower()
-                if "high" in s:
-                    has_high_risk = True
-                if "liquidity_vacuum" in s:
-                    has_vacuum = True
+        return self._dedupe(forbidden)
 
-        if has_high_risk:
-            return "high"
-        if has_vacuum:
-            return "elevated"
+    def _derive_decision_forbidden_actions(
+        self, decision_output: Dict[str, Any]
+    ) -> List[str]:
 
-        return "none"
+        trade_intent = decision_output.get("trade_intent_range", {}) or {}
+        forbidden = trade_intent.get("forbidden_actions", []) or []
 
-    def _derive_verdict(self, sv: Dict, alignment: str, risk: str) -> str:
+        return self._dedupe(forbidden)
+
+    # ------------------------
+    # Allowed Actions（弱定义）
+    # ------------------------
+
+    def _derive_allowed_actions(
+        self,
+        decision_output: Dict[str, Any],
+        forbidden_actions: List[str],
+    ) -> List[str]:
         """
-        Derive final verdict.
-        Returns: ALLOW / ATTENUATE / BLOCK
+        allowed_actions 只做一件事：
+        - 从 decision 中继承
+        - 移除 forbidden
         """
-        audit_confidence = sv.get("audit_confidence", {})
-        confidence_level = audit_confidence.get("level", "HIGH")
 
-        if alignment == "STRONG_CONFLICT":
-            return "BLOCK"
+        trade_intent = decision_output.get("trade_intent_range", {}) or {}
+        allowed = trade_intent.get("allowed_actions", []) or []
 
-        # High risk usually attenuates rather than blocks (unless combined with conflict)
-        if risk == "high":
-            return "ATTENUATE"
+        allowed_clean = [
+            a for a in self._dedupe(allowed)
+            if a not in forbidden_actions
+        ]
 
-        if confidence_level == "LOW":
-            return "ATTENUATE"
+        return allowed_clean
 
-        if alignment == "PARTIAL_CONFLICT":
-            return "ATTENUATE"
-
-        return "ALLOW"
-
-    @staticmethod
-    def _dedupe_actions(actions: List[Any]) -> List[str]:
-        out: List[str] = []
-        seen = set()
-        for a in list(actions or []):
-            if a is None:
-                continue
-            s = str(a).strip()
-            if not s or s in seen:
-                continue
-            seen.add(s)
-            out.append(s)
-        return out
-
-    def _apply_verdict_gate(
-            self,
-            verdict: Optional[str],
-            allowed_actions: List[Any],
-            forbidden_actions: List[Any],
-    ) -> Tuple[List[str], List[str]]:
-        """
-        将 SignalValidation 的 verdict 转换为“可执行动作门控”：
-        - BLOCK：禁止所有动作（allowed 置空，原 allowed 并入 forbidden）
-        - 其他：保持 Decision 输出不变（仅做去重与清洗）
-        """
-        allowed = self._dedupe_actions(allowed_actions)
-        forbidden = self._dedupe_actions(forbidden_actions)
-
-        if verdict == "BLOCK":
-            return [], self._dedupe_actions(forbidden + allowed)
-        return allowed, forbidden
+    # ------------------------
+    # Intent Bias（仅语义提示）
+    # ------------------------
 
     def _derive_intent_bias(
-            self,
-            signal_validation: Dict,
-            verdict: Optional[str],
-            risk_bias: Optional[str]
+        self, signal_validation: Dict[str, Any]
     ) -> Optional[str]:
 
         direction = (
-                (signal_validation.get("meta", {}) or {}).get("direction")
-                or signal_validation.get("direction")
+            (signal_validation.get("meta", {}) or {}).get("direction")
+            or signal_validation.get("direction")
         )
-        direction = str(direction).strip().lower() if direction else None
-        risk_bias_norm = str(risk_bias).strip().lower() if risk_bias else None
 
-        if not direction or not verdict or not risk_bias_norm:
+        if not direction:
             return None
 
-        if verdict == "ATTENUATE":
-            if direction in {"bullish", "bearish"}:
-                return f"{direction}_but_attenuated"
-            return "attenuated"
+        return str(direction).strip().lower()
 
-        if verdict == "ALLOW":
-            return direction
-
-        return None
-
-    def _derive_confidence(
-            self,
-            verdict: str,
-            structural_alignment: str,
-            risk_implication: str
-    ) -> float:
-        confidence = self.BASE_CONFIDENCE
-
-        confidence += self.VERDICT_PENALTY.get(verdict, 0.0)
-        confidence += self.STRUCTURAL_ALIGNMENT_PENALTY.get(structural_alignment, 0.0)
-        confidence += self.RISK_IMPLICATION_PENALTY.get(risk_implication, 0.0)
-
-        return max(0.0, min(round(confidence, 2), 1.0))
+    # ------------------------
+    # Reason Tags（Explain Only）
+    # ------------------------
 
     def _derive_reason_tags(
-            self,
-            verdict: str,
-            structural_alignment: str,
-            risk_implication: str
+        self,
+        signal_validation: Dict[str, Any],
+        forbidden_actions: List[str],
     ) -> List[str]:
-        tags = []
 
-        if verdict == "ATTENUATE":
-            tags.append("signal_attenuated")
-        elif verdict == "BLOCK":
-            tags.append("signal_blocked")
+        tags: List[str] = []
 
-        if structural_alignment == "PARTIAL_CONFLICT":
-            tags.append("partial_structural_conflict")
-        elif structural_alignment == "STRONG_CONFLICT":
-            tags.append("strong_structural_conflict")
+        audit_conf = signal_validation.get("audit_confidence", {})
+        if audit_conf.get("structural_clarity") == "DOMINANT_CONFLICT":
+            tags.append("dominant_structural_conflict")
 
-        if risk_implication and risk_implication != "none":
-            tags.append(f"risk_{risk_implication}")
+        if any(a in forbidden_actions for a in ("aggressive_add", "scale_in_small")):
+            tags.append("risk_exposure_restricted")
 
         return tags
+
+    # ------------------------
+    # Utilities
+    # ------------------------
+
+    @staticmethod
+    def _extract_risk_bias(decision_output: Dict[str, Any]) -> Optional[str]:
+        trade_intent = decision_output.get("trade_intent_range", {}) or {}
+        return trade_intent.get("risk_bias")
+
+    @staticmethod
+    def _dedupe(actions: List[Any]) -> List[str]:
+        out = []
+        seen = set()
+        for a in actions:
+            if not a:
+                continue
+            s = str(a).strip()
+            if s and s not in seen:
+                seen.add(s)
+                out.append(s)
+        return out
+
+    @staticmethod
+    def _merge_forbidden(*lists: List[str]) -> List[str]:
+        merged: List[str] = []
+        for lst in lists:
+            merged += lst
+        return list(dict.fromkeys(merged))
 
 
 if __name__ == "__main__":
