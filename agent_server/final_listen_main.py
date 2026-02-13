@@ -165,8 +165,8 @@ class RouterFinalListener:
 
                 try:
                     print("[FinalRouter] dispatch", json.dumps(info, ensure_ascii=False))
-                except Exception:
-                    print("[FinalRouter] dispatch", info)
+                except Exception as e:
+                    print("[FinalRouter] dispatch", e)
 
                 try:
                     # 6. 使用统一的 get_mark_price 组件获取价格
