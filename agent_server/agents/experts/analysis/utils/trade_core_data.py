@@ -62,31 +62,40 @@ async def abstract_trade_event(raw: Dict[str, Any]) -> Dict[str, Any]:
     exchange = raw.get("exchange")
 
     # ============================================================
-    # 1. Behavior
+    # 1. Behavior & Exposure Pre-calculation
     # ============================================================
+
+    # Determine exposure change direction
+    if action in ("CLOSE", "REDUCE", "DECREASE"):
+        exposure_change = "DECREASE"
+    else:
+        exposure_change = "INCREASE"
 
     behavior = {
         "position_side": position_side,
+        "position_direction": (
+            "UPWARD" if position_side == "LONG"
+            else "DOWNWARD" if position_side == "SHORT"
+            else "NEUTRAL"
+        ),
         "action": action,
+        "exposure_change": exposure_change,
         "size_change": {
-            "direction": "DECREASE" if action in ("CLOSE", "REDUCE") else "INCREASE",
             "absolute": action == "CLOSE"
+            # Removed 'direction' to avoid double semantics
         }
     }
 
     # ============================================================
-    # 2. Exposure
+    # 2. Exposure Context
     # ============================================================
 
     if action == "CLOSE":
         post_state = "FLAT"
-        exposure_change = "REDUCE"
-    elif action == "REDUCE":
+    elif action in ("REDUCE", "DECREASE"):
         post_state = "PARTIAL"
-        exposure_change = "REDUCE"
     else:
         post_state = "OPEN"
-        exposure_change = "INCREASE"
 
     if position_side == "SHORT":
         directional_exposure = "DOWNWARD"
@@ -185,7 +194,7 @@ async def abstract_trade_event(raw: Dict[str, Any]) -> Dict[str, Any]:
             phase_detail = "NEUTRAL_EXPANSION"
             risk_intent = "POSITION_BUILDING"
 
-    elif action == "REDUCE":
+    elif action in ("REDUCE", "DECREASE"):
         position_phase = "DE_RISKING"
 
         if pnl_bias == "FAVORABLE":
@@ -219,7 +228,7 @@ async def abstract_trade_event(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     if exposure_change == "INCREASE":
         risk_regime = "EXPANSION"
-    elif exposure_change == "REDUCE":
+    elif exposure_change == "DECREASE":
         risk_regime = "CONTRACTION"
     else:
         risk_regime = "STABLE"
