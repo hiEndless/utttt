@@ -56,7 +56,10 @@ class RouterFinalListener:
 
     async def _autoclaim_pending(self, count: int = 50):
         try:
-            _next_id, messages = await self.redis.xautoclaim(
+            # 中文注释：不同 redis-py 版本的 xautoclaim 返回值个数不同（可能是 2 或 3 个元素）
+            # - (next_start_id, messages)
+            # - (next_start_id, messages, deleted_ids)
+            res = await self.redis.xautoclaim(
                 self.final_stream,
                 self.group,
                 self.consumer,
@@ -64,6 +67,15 @@ class RouterFinalListener:
                 "0-0",
                 count=count,
             )
+            if isinstance(res, (list, tuple)):
+                if len(res) == 2:
+                    _next_id, messages = res
+                elif len(res) >= 3:
+                    _next_id, messages, *_ = res
+                else:
+                    messages = []
+            else:
+                messages = []
             return messages or []
         except Exception as e:
             logging.getLogger("final").error(f"autoclaim_failed: {e}", exc_info=True)

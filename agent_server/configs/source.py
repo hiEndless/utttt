@@ -8,9 +8,9 @@ def query_db_env():
         },
         "kline": {
             "language": "zh",
-            "model_id": "qwen3-max",
-            "llm_base_url": "https://apis.iflow.cn/v1/chat/completions",
-            "llm_api_key": "sk-67f7879452d92f3b4f56e530ce7b46b9",
+            "model_id": "deepseek-ai/DeepSeek-V3",
+            "llm_base_url": "https://api.siliconflow.cn/v1",
+            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
             "a2a_url": "http://localhost:10006/",
         },
         "market_structure": {
