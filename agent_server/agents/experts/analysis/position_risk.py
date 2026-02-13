@@ -152,6 +152,7 @@ if __name__ == "__main__":
     from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
     import asyncio
     from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
+    from agent_server.tools.get_time_semantics import get_position_time_semantics
 
     sv_out = {'verdict': 'ATTENUATE', 'structural_alignment': 'PARTIAL_CONFLICT', 'risk_implication': 'elevated'}
 
@@ -159,7 +160,7 @@ if __name__ == "__main__":
                                     'forbidden_actions': ['aggressive_add', 'reverse_position'],
                                     'risk_bias': 'conservative'},
              'meta': {'symbol': 'ETHUSDT', 'exchange': 'binance', 'event_id': 'ETHUSDT.final.1770290252305',
-                      'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '9cedf3d0770041c8b11856c35ef664a2'}}
+                      'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '1f9d3feb1dff4fda9c4462eb71e2f21f'}}
 
     execution_constraint = ExecutionConstraintAggregator().aggregate(sv_out, d_out).get("execution_constraint")
     meta = d_out.get("meta")
@@ -198,18 +199,17 @@ if __name__ == "__main__":
         # last_suggestion_key = f"agent_output:{exchange}:{symbol}:position_risk:latest"
         # last_suggestion_str = await rc.get(last_suggestion_key)
 
-        # 获取账户余额计算可用仓位比例
-        account_risk_state = await account_state(exchange)
-        account_risk_state["position_occupancy_ratio"] = initialMargin / (account_risk_state.get("balance", 1) * float(leverage))
+        # 获取 Position Time Semantics
+        position_time_semantics = await get_position_time_semantics(exchange, symbol, trade_id)
 
         query = {
             "meta": meta,
             "market_structure": market_structure,
             "position": position,
-            "account_risk_state": account_risk_state,
+            "position_time_semantics": position_time_semantics,
             "execution_constraint": execution_constraint,
         }
-        # print( query)
+        print( query)
 
         # print("\n=== Agent Input Query ===")
         # print(json.dumps(query, indent=2, ensure_ascii=False))
