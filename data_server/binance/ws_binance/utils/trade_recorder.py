@@ -35,10 +35,19 @@ class TradeRecorder:
             return datetime.datetime.now(datetime.timezone.utc)
 
     def _calculate_leverage(self, item):
-        """计算杠杆倍数 = notional / positionInitialMargin"""
+        """计算杠杆倍数 = notional / 初始保证金
+        
+        说明：
+        - WS 持仓推送里常见字段是 initialMargin
+        - 部分来源也可能使用 positionInitialMargin
+        这里做兼容兜底，避免初始保证金字段缺失导致杠杆恒为 1。
+        """
         try:
             notional = abs(float(item.get('notional', 0)))
-            initial_margin = abs(float(item.get('positionInitialMargin', 0)))
+            initial_margin = item.get('positionInitialMargin', None)
+            if initial_margin is None:
+                initial_margin = item.get('initialMargin', 0)
+            initial_margin = abs(float(initial_margin))
             if initial_margin > 0:
                 return int(round(notional / initial_margin))
             return 1  # 默认值
@@ -149,6 +158,8 @@ class TradeRecorder:
             
             # 计算杠杆
             leverage = self._calculate_leverage(item)
+            # 回填到 item，便于事件发布侧统一携带杠杆字段
+            item['leverage'] = leverage
 
             # 插入 Trade 表
             # 初始化时 pnl, net_pnl, total_commission, pnl_ratio 均为 0
@@ -212,6 +223,8 @@ class TradeRecorder:
 
             # 计算平仓时的杠杆 (防止用户持仓期间调整)
             leverage = self._calculate_leverage(item)
+            # 回填到 item，便于事件发布侧统一携带杠杆字段
+            item['leverage'] = leverage
 
             # 更新 Trade 表
             # 平仓时，增加 closed_size，并将 size 置为 0
@@ -289,6 +302,10 @@ class TradeRecorder:
                 if info_res:
                     symbol = symbol or info_res.get('symbol')
                     position_side = position_side or info_res.get('position_side')
+
+            # 计算杠杆并回填到 item，便于事件发布侧统一携带杠杆字段
+            leverage = self._calculate_leverage(item)
+            item['leverage'] = leverage
             
             # 更新 Trade 表
             if change_type == 'INCREASE':
@@ -297,10 +314,11 @@ class TradeRecorder:
                     UPDATE trades 
                     SET size = %s, 
                         max_size = GREATEST(max_size, %s),
+                        leverage = %s,
                         updated_at = NOW() 
                     WHERE trade = %s
                 """
-                self.db.execute(sql_trade, (new_size, new_size, trade_id))
+                self.db.execute(sql_trade, (new_size, new_size, leverage, trade_id))
             else:
                 # 减仓：更新 size，增加 closed_size
                 # 减仓量是负的 amount (因为 amount = new - old < 0)，所以 closed_size 增加 -amount
@@ -309,10 +327,11 @@ class TradeRecorder:
                     UPDATE trades 
                     SET size = %s, 
                         closed_size = closed_size + %s,
+                        leverage = %s,
                         updated_at = NOW() 
                     WHERE trade = %s
                 """
-                self.db.execute(sql_trade, (new_size, decreased_amount, trade_id))
+                self.db.execute(sql_trade, (new_size, decreased_amount, leverage, trade_id))
 
             # 插入 TradeAction 表
             sql_action = """

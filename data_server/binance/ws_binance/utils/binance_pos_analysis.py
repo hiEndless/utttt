@@ -140,6 +140,9 @@ class BinanceAnalysisService:
                         'price': j.get('markPrice'),
                         'markPrice': j.get('markPrice'),
                         'entryPrice': j.get('entryPrice'),
+                        'notional': j.get('notional'),  # 名义价值：用于计算杠杆
+                        'initialMargin': j.get('initialMargin'),  # 初始保证金：用于计算杠杆
+                        'positionInitialMargin': j.get('positionInitialMargin'),  # 兼容字段：部分来源可能使用该字段名
                         'updateTime': j.get('updateTime'),
                         'lastUpdateTime': i.get('updateTime')  # 增加上一次更新时间
                     })
