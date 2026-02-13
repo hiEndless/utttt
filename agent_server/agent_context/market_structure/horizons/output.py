@@ -45,15 +45,9 @@ async def build_output(exchange: str, symbol: str) -> Dict[str, Any]:
             "base": build_horizon_context(raw, symbol),
             "fused": build_fused_horizons(raw, symbol, kline_backgrounds),
         }
-    finally:
-        try:
-            # redis.asyncio 在不同版本里关闭接口不一致，优先使用 aclose() 回收连接池
-            if hasattr(client, "aclose"):
-                await client.aclose()
-            else:
-                await client.close()
-        except Exception:
-            pass
+    except Exception:
+        raise
+
 
 
 def main(exchange: str = "binance", symbol: str = "ETHUSDT") -> None:

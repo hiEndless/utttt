@@ -174,7 +174,7 @@ async def build_output(exchange: str, symbol: str) -> Dict[str, Any]:
     behavioral = None
     try:
         beh_key = f"behavior:aggTrade:{exchange}:{symbol}"
-        beh_raw = await redis_client.get(beh_key)
+        beh_raw = await get_redis_client().get(beh_key)
         behavioral = json.loads(beh_raw) if beh_raw else None
     except Exception:
         behavioral = None

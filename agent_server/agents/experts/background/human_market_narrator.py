@@ -173,6 +173,19 @@ class HumanMarketNarratorExpert:
             final_result = {"data": final_result, "ts": ts}
 
         output = _json_dumps_safe(final_result)
+        
+        # Save to Redis if exchange is available
+        exchange = query.get("exchange")
+        symbol = query.get("symbol")
+        if exchange and symbol:
+            try:
+                key = f"background:{exchange}:{symbol}:market_structure"
+                redis_client = RedisClient()
+                await redis_client.set_json(key, final_result)
+                print(f"[HumanMarketNarratorExpert] Saved to Redis: {key}")
+            except Exception as e:
+                print(f"[HumanMarketNarratorExpert] Failed to save to Redis: {e}")
+        
         print(output)
         return output
 

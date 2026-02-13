@@ -439,7 +439,16 @@ class TradeEventRecorder:
             ]
             
             # 并发保存
-            await asyncio.gather(*save_tasks, return_exceptions=True)
+            results = await asyncio.gather(*save_tasks, return_exceptions=True)
+            errors = [r for r in results if isinstance(r, Exception)]
+            if errors:
+                logger.error(
+                    f"事件入库存在失败项: exchange={exchange}, symbol={symbol}, trade_ids={trade_ids}, "
+                    f"errors_count={len(errors)}"
+                )
+                for idx, err in enumerate(errors[:5]):
+                    logger.error(f"入库异常[{idx}]: {err}", exc_info=err)
+                return False
             
             logger.info(
                 f"事件已保存到 {len(trade_ids)} 个持仓: "
@@ -587,7 +596,7 @@ class TradeEventRecorder:
                     event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
                     
                     # 2. 提取通用字段
-                    verdict = analysis_data.get("verdict")
+                    # agent_analyses 表已移除 verdict 字段，这里不再单独落库 verdict
                     risk_action = analysis_data.get("risk_action")
                     # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
                     final_model_version = model_version or analysis_data.get("model_version")
@@ -604,13 +613,13 @@ class TradeEventRecorder:
                     insert_sql = """
                         INSERT INTO agent_analyses (
                             event_id, agent_name, model_version,
-                            verdict, risk_action, mark_price,
+                            risk_action, mark_price,
                             reasoning, full_output, created_at,
                             symbol, exchange
                         ) VALUES (
                             %s, %s, %s,
                             %s, %s,
-                            %s, %s, %s, NOW(),
+                            %s, %s, NOW(),
                             %s, %s
                         )
                     """
@@ -620,7 +629,6 @@ class TradeEventRecorder:
                             event_db_id,
                             agent_name,
                             final_model_version,
-                            verdict,
                             risk_action,
                             mark_price,
                             json.dumps(reasoning, ensure_ascii=False) if reasoning else None,

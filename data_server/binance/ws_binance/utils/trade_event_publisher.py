@@ -41,11 +41,14 @@ class TradeEventPublisher:
             # 交易详情打包
             trade_details = {
                 "trade_id": trade_id,
+                "exchange": "binance",
                 "position_side": item.get('positionSide', ''),
                 "current_size": str(item.get('positionAmt', '0')),  # 当前持仓量
                 "entry_price": str(item.get('entryPrice', '0')),
                 "mark_price": str(item.get('markPrice', '0')),
                 "pnl_ratio": str(item.get('pnl_ratio', '0')),  # 收益率
+                "initialMargin": float(item.get('initialMargin', '0')),  # 占用保证金
+                "leverage": str(item.get('leverage', '')),  # 杠杆倍数：由 TradeRecorder 统一计算并回填到 item
             }
 
             if extra_data:

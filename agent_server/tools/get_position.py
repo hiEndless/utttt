@@ -1,13 +1,25 @@
 import redis
 import json
 import os
+try:
+    import json_repair
+except ImportError:
+    json_repair = None
 from agent_server.config import settings as cfg
 
 
 def _read_json_list(client, key: str):
     try:
         v = client.get(key)
-        return json.loads(v) if v else []
+        if not v:
+            return []
+        try:
+            return json.loads(v)
+        except json.JSONDecodeError:
+            if json_repair:
+                res = json_repair.loads(v)
+                return res if res is not None else []
+            return []
     except Exception:
         return []
 

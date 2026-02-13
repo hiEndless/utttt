@@ -53,7 +53,8 @@ async def account_state(exchange: str) -> dict:
     rc = RedisClient()
     balance_key = f"balance:{exchange}"
     balance_str = await rc.get(balance_key)
-    calculated_available_pct = 0.12  # 默认后备值
+    total_balance = 0
+    available_pct = 0
 
     if balance_str:
         try:
@@ -70,5 +71,5 @@ async def account_state(exchange: str) -> dict:
 
 if __name__ == "__main__":
     import asyncio
-    available_pct = asyncio.run(get_available_exposure_pct("binance"))
+    available_pct = asyncio.run(account_state("binance"))
     print(available_pct)

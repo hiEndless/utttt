@@ -145,21 +145,21 @@ class AgentAnalysis(models.Model):
     LONG 且价格下跌 ≥ 0.5%
     或 SHORT 且价格上涨 ≥ 0.5%
 
-    suggestion	market_accuracy	decision_quality	语义解释
-    REDUCE	CORRECT	GOOD	正确止损 / 降风险
-    EXIT	CORRECT	GOOD	正确切断风险
-    HOLD	WRONG	DEFENSIVE	扛单，风险未扩张
-    SCALE_IN_SMALL	WRONG	OVERAGGRESSIVE	在错误方向下扩大风险
+    suggestion(risk_action)	market_accuracy	decision_quality	语义解释
+    REDUCE                	CORRECT	        GOOD	            正确止损 / 降风险
+    EXIT                	CORRECT	        GOOD	            正确切断风险
+    HOLD                	WRONG	        DEFENSIVE	        扛单，风险未扩张
+    SCALE_IN_SMALL	        WRONG	        OVERAGGRESSIVE	    在错误方向下扩大风险
 
     📊 SIDEWAYS（无有效方向）
     条件
     |pct_change| < 0.5%
 
-    suggestion	market_accuracy	decision_quality	语义解释
-    HOLD	NEUTRAL	GOOD	符合中性行情
-    SCALE_IN_SMALL	NEUTRAL	GOOD	风险仍可控
-    REDUCE	NEUTRAL	DEFENSIVE	偏保守但合理
-    EXIT	NEUTRAL	DEFENSIVE	过度防守但合规
+    suggestion	    market_accuracy	  decision_quality	   语义解释
+    HOLD	        NEUTRAL	          GOOD	               符合中性行情
+    SCALE_IN_SMALL	NEUTRAL	          GOOD	               风险仍可控
+    REDUCE	        NEUTRAL	          DEFENSIVE	           偏保守但合理
+    EXIT	        NEUTRAL	          DEFENSIVE	           过度防守但合规
     """
     id = fields.IntField(pk=True, generated=True)
     event = fields.ForeignKeyField('models.TradeEvent', related_name='analyses', description="关联的事件")
@@ -171,9 +171,6 @@ class AgentAnalysis(models.Model):
     agent_name = fields.CharField(max_length=32, description="Agent 名称 (e.g. signal_validation, position_risk)")
     model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
 
-    # 核心产出
-    verdict = fields.CharField(null=True, max_length=32, description="分析结论 (ALLOW, ATTENUATE, BLOCK)")
-    
     # 风控专用字段
     risk_action = fields.CharField(max_length=32, null=True, description="持仓风控建议 (hold/reduce/scale_in_small/exit)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="分析时的标记价格")
@@ -191,7 +188,7 @@ class AgentAnalysis(models.Model):
     )
 
     # 详细内容
-    reasoning = fields.JSONField(description="分析理由 (List or Dict)")
+    reasoning = fields.JSONField(null=True, description="分析理由 (List or Dict)")
     full_output = fields.JSONField(description="完整输出 (Raw JSON)")
 
     # 风控状态

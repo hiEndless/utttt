@@ -27,7 +27,7 @@ else:
     )
 
 # 统一从 agent_server 层获取 Redis 连接，避免跨模块重复初始化导致的不一致
-redis_client = get_redis_client()
+# 移除模块级全局 redis_client，改为在函数内动态获取，确保与当前事件循环绑定
 
 
 def _max_behavior_window_ms() -> int:
@@ -99,8 +99,9 @@ async def read_aggtrade_stream_available_since_ms(
 async def build_behavior_output(exchange: str, symbol: str) -> Dict[str, Any]:
     max_ms = _max_behavior_window_ms()
     now_ms = int(time.time() * 1000)
-    available_since_ms = await read_aggtrade_stream_available_since_ms(exchange, symbol, redis_client)
-    items = await read_recent_aggtrades(exchange, symbol, max_ms, now_ms=now_ms, client=redis_client)
+    client = get_redis_client()
+    available_since_ms = await read_aggtrade_stream_available_since_ms(exchange, symbol, client)
+    items = await read_recent_aggtrades(exchange, symbol, max_ms, now_ms=now_ms, client=client)
     return build_behavioral_structure_from_aggtrades(
         symbol,
         items,

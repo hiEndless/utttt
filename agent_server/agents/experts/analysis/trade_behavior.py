@@ -1,24 +1,23 @@
-import asyncio
-import time
+from agent_server.configs.prompts.trade_behavior import get_prompt
 import json
+import time
+import asyncio
 from typing import Any, Dict
-
 from agent_server.agent_context.market_structure import output
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
 from agent_server.agents.utils import _json_dumps_safe
-from agent_server.configs.prompts.signal_validation import get_prompt
 from agent_server.configs.source import get_agent_config
 
 
-class SignalValidationExpert(BaseLLMExpert):
+class TradeBehaviorExpert(BaseLLMExpert):
     """
-    “已有方向信号，在当前多周期结构背景下是否自洽 / 是否存在硬性结构冲突”的审计器
+    将所有审计型 Expert Agent 统一为这种“证据导向”的结构
     """
-    name = "signal_validation"
-    version = "v1.0"
+    name = "trade_behavior"
+    version = "v1.2"  # Updated version for Layered Conflict Structure
 
-    # Define Schema
+    # Define schema for LLM output validation
     SCHEMA = {
         "dominant_cycle": {
             "type": str,
@@ -86,31 +85,39 @@ class SignalValidationExpert(BaseLLMExpert):
     def build_instructions(self, target_lang: str, **kwargs: Any) -> str:
         return get_prompt(target_lang)
 
+    def build_llm_input(self, query_obj: Dict[str, Any], **kwargs: Any) -> Any:
+        trade_core = query_obj.get("trade", {})
+        context_data = query_obj.get("structure_context", {})
+        return {
+            "trade": trade_core,
+            "structure_context": context_data
+        }
+
     def build_fallback_result(self, error: Exception, query_obj: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         return {
             "dominant_cycle": "mid_term",
             "cycle_weights": {
                 "short_term": "low",
-                "mid_term": "high",
-                "long_term": "veto_only"
+                "mid_term": "low",
+                "long_term": "low"
             },
             "audit_breakdown": {
                 "directional_alignment": {
                     "short_term": "NEUTRAL",
-                    "mid_term": "CONFLICT",
-                    "long_term": "CONFLICT"
+                    "mid_term": "NEUTRAL",
+                    "long_term": "NEUTRAL"
                 },
                 "leverage_phase_match": {
-                    "short_term": "NOT_APPLICABLE",
-                    "mid_term": "NOT_APPLICABLE",
-                    "long_term": "NOT_APPLICABLE"
+                    "short_term": "NEUTRAL",
+                    "mid_term": "NEUTRAL",
+                    "long_term": "NEUTRAL"
                 }
             },
             "conflict_evidence": {
-                "directional_conflict": ["System Error Fallback"],
-                "leverage_conflict": []
+                "directional_conflict": ["System Error: Output validation failed"],
+                "leverage_conflict": [str(error)]
             },
-            "risk_exposure_flags": ["system_error"],
+            "risk_exposure_flags": ["system_error_fallback"],
             "audit_confidence": {
                 "level": "LOW",
                 "structural_clarity": "NOISE_DOMINATED"
@@ -129,8 +136,8 @@ class SignalValidationExpert(BaseLLMExpert):
         agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
 
         qobj = self._parse_query(query)
-        meta = qobj.pop("meta", {}) or {}
-        positions = qobj.pop("positions",  []) or []
+        meta = qobj.get("meta", {}) or {}
+        positions = qobj.get("positions",  []) or []
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
@@ -200,78 +207,59 @@ class SignalValidationExpert(BaseLLMExpert):
 
 if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
-    from agent_server.agents.experts.analysis.utils.signal_cropper import crop_signal
-    from agent_server.agent_context.builder import build_agent_context
     from agent_server.agent_context.market_structure.holding_context_from_positions import (
         build_holding_context_from_positions,
     )
-    from agent_server.utils.redis_client import RedisClient
+    from agent_server.agents.experts.analysis.utils.trade_core_data import abstract_trade_event
+    from agent_server.agent_context.builder import build_agent_context
 
-    final_signal = {"route": "mixed", "exchange": "binance", "symbol": "ETHUSDT", "final_priority": "low",
-                    "event_id": "ETHUSDT.final.1770290252305", "event_type": "market.structure",
-                    "timestamp": "1770290252305", "market_state": "momentum", "direction": "bullish",
-                    "confidence": "medium", "confidence_numeric": 0.5, "priority_weight": 10,
-                    "l1_total_score": 19.668839999999996, "tf_hint": ["15m", "30m", "1h"],
-                    "analysis_context": {"dominant_bucket": "mid", "supporting_buckets": ["mid"],
-                                         "tf_hint": ["15m", "30m", "1h"], "l1_total_score": 19.668839999999996,
-                                         "bias": {"short": False, "mid": True}, "reason_tags": ["high_structure_score"],
-                                         "lock_window_sec": 900, "provenance": {
-                            "origin_sources": ["alerts_consumer", "force_stats_consumer", "ind_event_engine"],
-                            "origin_source_hint": "mixed"}, "_debug": {
-                            "scores": {"bucket_short": "0.0", "bucket_mid": "19.668839999999996", "bucket_long": "0.0"},
-                            "dirs": {"short": "neutral", "mid": "bullish", "long": "neutral"},
-                            "component_scores": {"momentum": 19.668839999999996}, "indicators": [
-                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                 "score": 2.9599999999999995, "bucket": "mid", "priority": "medium"},
-                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                 "score": 2.7079999999999997, "bucket": "mid", "priority": "medium"},
-                                {"plugin": "depth.liquidity_collapse", "cls": "unknown", "dir": "neutral", "score": 4.0,
-                                 "bucket": "short", "priority": "low"},
-                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                 "score": 3.14, "bucket": "mid", "priority": "high"},
-                                {"plugin": "force_spike_sell", "cls": "unknown", "dir": "neutral",
-                                 "score": 0.3333333333333333, "bucket": "short", "priority": "low"},
-                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                 "score": 2.9672, "bucket": "mid", "priority": "medium"},
-                                {"plugin": "single_signal_williams_r", "cls": "momentum", "dir": "bullish",
-                                 "score": 3.0644, "bucket": "mid", "priority": "high"}]}},
-                    "meta": {"grader_version": "1.2.0",
-                             "source_event_id": "binance.binance_public.ETHUSDT.single_signal_williams_r.1770290252305",
-                             "ts_unit": "ms", "min_interval_sec": 900, "origin_source_hint": "mixed",
-                             "origin_sources": ["alerts_consumer", "force_stats_consumer", "ind_event_engine"]},
-                    "trade_details": {}}
-
-    # 信号裁剪
-    cropped_signal = crop_signal(final_signal)
-    # print(cropped_signal)
+    final_signal = {'route': 'trade', 'exchange': 'binance', 'symbol': 'ETHUSDT', 'final_priority': 'low',
+                    'event_id': 'binance.ETHUSDT.trade.increase.1768803852754', 'event_type': 'trade.open',
+                    'timestamp': '1768803852754', 'market_state': None, 'direction': None, 'confidence': None,
+                    'confidence_numeric': None, 'priority_weight': None, 'l1_total_score': None, 'tf_hint': None,
+                    'analysis_context': {}, 'meta': {'source_event_id': 'binance.ETHUSDT.trade.open.1768803852754',
+                                                     'origin_source_hint': 'trade', 'is_short_term': False},
+                    'trade_details': {'trade_id': 'e95cbad77cde4d8e80d405d1ff9a6f5f', 'position_side': 'SHORT',
+                                      'current_size': '-0.007', 'entry_price': '3193.0', 'mark_price': '3193.00000000',
+                                      'pnl_ratio': '0.0', 'action': 'INCREASE', 'change_amount': '-0.007', 'initialMargin': 2.5, "exchange": "binance"}}
 
     exchange = final_signal.get("exchange")
     symbol = final_signal.get("symbol")
     event_id = final_signal.get("event_id")
-    direction = final_signal.get("direction")
 
-    expert = SignalValidationExpert()
-
-    # 获取持仓，计算持仓时间，裁剪周期桶背景
+    trade_details = final_signal.get("trade_details")
+    trade_id = trade_details.get("trade_id")
     positions = get_position(exchange, symbol)
+    if len(positions) == 2:
+        # 如果是双开模式，根据 trade_id 找到对应的仓位记录
+        matched_positions = [p for p in positions if str(p.get("trade_id")) == str(trade_id)]
+        if matched_positions:
+            positions = matched_positions
+
     holding_context = build_holding_context_from_positions(positions)
     holding_horizon = holding_context.get("horizon")
+    # 给交易详情增加持仓周期
+    trade_details["holding_horizon"] = holding_horizon
+    
+    # Calculate direction
+    p_side = trade_details.get("position_side")
+    p_action = trade_details.get("action")
+    if p_side == "LONG":
+        direction = "bullish" if p_action == "OPEN" else "bearish"
+    else:  # SHORT
+        direction = "bearish" if p_action == "OPEN" else "bullish"
 
 
-    async def _read_market_state(ex: str, sym: str):
-        rc = RedisClient()
-        key = f"background:{ex}:{sym}:market_state"
-        v = await rc.get(key)
-        try:
-            return json.loads(v or "{}") if v else {}
-        except Exception:
-            return {}
+    async def _get_trade_core():
+        return await abstract_trade_event(trade_details)
 
+    trade_core = asyncio.run(_get_trade_core())
+
+    expert = TradeBehaviorExpert()
 
     async def _demo():
         full_context = await output.build_output("binance", symbol)
-        ctx = build_agent_context("signal_validation", full_context, horizon=holding_horizon)
-        # print(ctx)
+        ctx = build_agent_context("trade_behavior", full_context, horizon=holding_horizon)
 
         query = {
             "meta": {
@@ -281,10 +269,11 @@ if __name__ == "__main__":
                 "event_type": final_signal.get("route"),
                 "direction": direction
             },
-            "positions": positions,
-            "final_event": cropped_signal,
-            "context": ctx,
+            "trade": trade_core,
+            "structure_context": ctx,
+            "positions": positions
         }
+        # print(query)
         await expert.run(query)
 
 
