@@ -138,9 +138,9 @@ class ExecutionConstraintAggregator:
                 val = str(f.get("value", "")).lower()
                 if val == "high":
                     has_high_risk = True
-                
+
                 if f.get("type") == "liquidity_vacuum" and (
-                    f.get("value") is True or val == "true"
+                        f.get("value") is True or val == "true"
                 ):
                     has_vacuum = True
             elif isinstance(f, str):
@@ -281,38 +281,38 @@ if __name__ == "__main__":
     aggregator = ExecutionConstraintAggregator()
 
     # V2 Test Data
-    signal_validation = {"dominant_cycle": "mid_term",
-                         "cycle_weights": {"short_term": "low", "mid_term": "high", "long_term": "veto_only"},
-                         "audit_breakdown": {"directional_alignment": {"short_term": "CONFLICT", "mid_term": "CONFLICT",
-                                                                       "long_term": "NEUTRAL"},
-                                             "leverage_phase_match": {"short_term": "MATCH", "mid_term": "MISMATCH",
-                                                                      "long_term": "NOT_APPLICABLE"}},
-                         "conflict_evidence": {"directional_conflict": [
-                             "交易方向为向下（SHORT），但中期价格趋势为上涨（price_trend=up）且参与者行为推断为对冲（behavior=hedging），表明市场中期结构不支持主动做空。",
-                             "短期价格趋势为下跌（price_trend=down），但主动买卖盘偏差为多头（taker_bias=long），与交易方向（SHORT）存在结构性背离。"],
-                                               "leverage_conflict": [
-                                                   "中期市场处于杠杆扩张阶段（oi_acceleration=accelerating_up，positioning_mode=neutral），而交易行为为增加向下敞口（exposure_change=INCREASE），与当前风险扩张（risk_regime=EXPANSION）下的杠杆周期不匹配。"]},
-                         "risk_exposure_flags": ["crowding_risk_high", "structure_divergence"],
-                         "audit_confidence": {"level": "MEDIUM", "structural_clarity": "RISK_CLUSTER_PRESENT"},
-                         "meta": {"symbol": "ETHUSDT", "exchange": "binance",
-                                  "event_id": "binance.ETHUSDT.trade.decrease.1770982287012",
-                                  "event_type": "trade.decrease", "trade_id": "654b1eaf03bd4cc2bd09cc62ce879596",
-                                  "direction": "bullish", "ts": 1770982298766, "version": "v1.2",
-                                  "name": "trade_behavior"}, "positions": [
-            {"symbol": "ETHUSDT", "position_side": "SHORT", "size": "-0.037", "notional": "-72.13335000",
-             "pnl_ratio": 0.0028889099147620346, "open_time": 1770969387424,
-             "trade_id": "654b1eaf03bd4cc2bd09cc62ce879596", "initialMargin": "14.42667000"}]}
+    signal_validation = {'dominant_cycle': 'mid_term',
+                         'cycle_weights': {'short_term': 'low', 'mid_term': 'high', 'long_term': 'veto_only'},
+                         'audit_breakdown': {'directional_alignment': {'short_term': 'CONFLICT', 'mid_term': 'CONFLICT',
+                                                                       'long_term': 'NEUTRAL'},
+                                             'leverage_phase_match': {'short_term': 'MATCH', 'mid_term': 'MATCH',
+                                                                      'long_term': 'NOT_APPLICABLE'}},
+                         'conflict_evidence': {'directional_conflict': [
+                             '交易方向为向下（SHORT），但中期价格趋势为上涨（price_trend=up）且中期参与者行为为做多建仓（behavior=directional_building），构成方向性冲突',
+                             '短期价格趋势为下跌（price_trend=down），但短期主动买卖盘偏差为中性（taker_bias=neutral），而交易行为仍选择增加空头敞口，与短期结构缺乏明确支持信号形成张力'],
+                                               'leverage_conflict': []}, 'risk_exposure_flags': ['crowding_risk_high'],
+                         'audit_confidence': {'level': 'MEDIUM', 'structural_clarity': 'DOMINANT_CONFLICT'},
+                         'meta': {'symbol': 'ETHUSDT', 'exchange': 'binance',
+                                  'event_id': 'binance.ETHUSDT.trade.decrease.1770992681156',
+                                  'event_type': 'trade.decrease', 'trade_id': '654b1eaf03bd4cc2bd09cc62ce879596',
+                                  'direction': 'bullish', 'ts': 1770992695078, 'version': 'v1.2',
+                                  'name': 'trade_behavior'}, 'positions': [
+            {'symbol': 'ETHUSDT', 'position_side': 'SHORT', 'size': '-0.031', 'notional': '-60.99865626',
+             'pnl_ratio': -0.043254017547924246, 'open_time': 1770969387424,
+             'trade_id': '654b1eaf03bd4cc2bd09cc62ce879596', 'initialMargin': '12.19973126', 'leverage': 5}]}
 
     decision_output = {"trade_intent_range": {"allowed_actions": ["hold", "reduce"],
-                                              "forbidden_actions": ["aggressive_add", "scale_in_small",
-                                                                    "reverse_position"], "risk_bias": "defensive"},
+                                              "forbidden_actions": ["aggressive_add", "reverse_position",
+                                                                    "scale_in_small"], "risk_bias": "defensive"},
                        "reasoning": [
-                           "Signal Validation Expert 指出存在 'crowding_risk' 高风险标记（重复出现），根据约束规则，必须将 risk_bias 设为 defensive 或 conservative；结合当前已有亏损的空头仓位，优先选择 defensive。",
-                           "尽管 dominant_cycle 为 short_term 且 directional_alignment 为 ALIGNED，但 cycle_weights 显示 short_term 权重为 low，而 mid_term 权重为 high 且处于 NEUTRAL 状态，缺乏结构强化支持，不构成激进操作依据。",
-                           "audit_confidence.level 为 MEDIUM，structural_clarity 为 RISK_CLUSTER_PRESENT，表明信号虽非无效，但伴随显著风险聚集，禁止任何加仓行为（包括 scale_in_small）。",
-                           "当前持仓为 small 规模的亏损空单，position_state 显示 holding_bias 为 neutral，无反转或加仓动机；在 crowding_risk 和 risk_cluster 共存下，最优策略是保持或减仓，避免扩大风险暴露。"],
-                       "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770981758365",
-                                "trade_id": "654b1eaf03bd4cc2bd09cc62ce879596", "ts": 1770981806056, "version": "v1.0"}}
+                           "根据 Trade Behavior Audit Expert 输入，dominant_cycle 为 mid_term 且处于 CONFLICT 状态（directional_alignment.mid_term = CONFLICT），依据约束‘若 dominant_cycle 处于 CONFLICT 状态，禁止激进追涨杀跌’，应禁止任何加仓行为，包括 small scale-in。",
+                           "cycle_weights 显示 long_term 为 veto_only，且 directional_alignment.long_term = NEUTRAL，虽未直接否决，但结合 mid_term 高权重且存在方向性冲突（中期趋势上涨但当前持仓为 SHORT），构成结构性逆势，依据‘high 权重周期 veto_only 且 directional_alignment 为 CONFLICT 时禁止同向开仓’的保守原则，进一步限制新增空头暴露。",
+                           "audit_confidence.structural_clarity = DOMINANT_CONFLICT，触发‘应触发防御性策略’的规则；同时 risk_exposure_flags 包含 crowding_risk_high，强化了收缩风险敞口的必要性。",
+                           "position_state 显示当前为 small 规模的亏损空头持仓（pnl_state: loss, holding_bias: against），在结构冲突与高拥挤风险下，最优动作为减仓或持有观望，而非维持或扩大暴露。因此 allowed_actions 仅保留 hold 与 reduce，明确排除 scale_in_small。"],
+                       "meta": {"symbol": "ETHUSDT", "exchange": "binance",
+                                "event_id": "binance.ETHUSDT.trade.decrease.1770992681156",
+                                "trade_id": "654b1eaf03bd4cc2bd09cc62ce879596", "ts": 1770992695086, "version": "v1.0",
+                                "name": "decision"}}
 
     result = aggregator.aggregate(signal_validation, decision_output)
     print(result)

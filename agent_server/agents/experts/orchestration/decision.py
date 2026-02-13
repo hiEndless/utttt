@@ -51,7 +51,7 @@ class DecisionExpert:
         self.validator = LLMOutputValidator(self.SCHEMA)
 
     async def _get_llm_result(self, query_payload: Dict[str, Any]) -> Any:
-        query_payload.pop("meta")
+        query_payload.pop("meta", {})
 
         cfg = get_agent_config(self.name)
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")

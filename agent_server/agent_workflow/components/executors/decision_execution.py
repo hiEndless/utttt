@@ -26,19 +26,15 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
 
         print(f"--- 决策层执行：{symbol} ---")
 
-        sv_output = prev_result.get("sv_output", None)
-        if sv_output is None:
-            sv_output = prev_result.get("output", {})
-        if not isinstance(sv_output, dict):
-            sv_output = {"raw": sv_output}
+        output = prev_result.get("output", {})
 
         route = str(event_data.get("route") or "").lower()
         event_type = str(event_data.get("event_type") or "").lower()
         expert_key = "trade_behavior" if (route == "trade" or event_type.startswith("trade.")) else "signal_verdict"
 
-        sv_output_meta = sv_output.get("meta", {}) if isinstance(sv_output.get("meta", {}), dict) else {}
+        sv_output_meta = output.get("meta", {}) if isinstance(output.get("meta", {}), dict) else {}
 
-        positions = sv_output.get("positions") or prev_result.get("positions")
+        positions = output.get("positions") or prev_result.get("positions")
         if not positions:
             positions = get_position(exchange, symbol)
         if not positions:
@@ -47,7 +43,7 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
                 "skipped": True,
                 "reason": "no_positions",
                 "event_data": event_data,
-                "sv_output": sv_output,
+                "output": output,
                 "full_context": full_context,
                 "positions": [],
             })
@@ -65,7 +61,7 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
         # 3. Transform Positions
         position_context = transform_positions_to_decision_context(
             positions,
-            signal=sv_output,  # signal_verdict from SV
+            signal=output,  # signal_verdict from 工作流发起的agent
             market_structure=market_structure,
         )
 
@@ -79,7 +75,7 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
                 "ts": int(time.time() * 1000)
             },
             "market_structure": market_structure,
-            expert_key: sv_output,
+            expert_key: output,
             "position_state": position_context,
             "positions": positions,
         }
@@ -95,7 +91,7 @@ class DecisionExecutionComponent(BaseWorkflowComponent):
 
         return self._safe_json_dumps({
             "event_data": event_data,
-            "sv_output": sv_output,
+            "output": output,
             "decision_output": decision_output,
             "full_context": full_context,
             "positions": positions

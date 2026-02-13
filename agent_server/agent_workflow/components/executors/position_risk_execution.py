@@ -27,9 +27,9 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         event_data = prev_result.get("event_data", {})
         # 支持从 SignalValidation 直接过来，或者从 DecisionComponent 过来
-        # 如果从 DecisionComponent 过来，sv_output 在 sv_output 字段
-        # 如果从 SignalValidation 过来，output 就是 sv_output
-        sv_output = prev_result.get("sv_output") or prev_result.get("output", {})
+        # 统一使用 output 字段
+        output = prev_result.get("output", {})
+        print(f"pos_risk::{output}")
         decision_output = prev_result.get("decision_output", {})  # Optional from DecisionComponent
 
         full_context = prev_result.get("full_context")
@@ -102,11 +102,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
             # 使用 ExecutionConstraintAggregator 将 SV 输出和 Decision 输出合并
             aggregator = ExecutionConstraintAggregator()
 
-            # 提取 data 部分（如果是 {data: ..., meta: ...} 结构）
-            d_out_data = my_decision.get("data", my_decision) if isinstance(my_decision, dict) else {}
-            sv_output_data = sv_output.get("data", sv_output) if isinstance(sv_output, dict) else {}
-
-            agg_result = aggregator.aggregate(sv_output_data, d_out_data)
+            agg_result = aggregator.aggregate(output, decision_output)
             execution_constraint = agg_result.get("execution_constraint", {})
 
             # 获取账户风险状态
