@@ -439,7 +439,16 @@ class TradeEventRecorder:
             ]
             
             # 并发保存
-            await asyncio.gather(*save_tasks, return_exceptions=True)
+            results = await asyncio.gather(*save_tasks, return_exceptions=True)
+            errors = [r for r in results if isinstance(r, Exception)]
+            if errors:
+                logger.error(
+                    f"事件入库存在失败项: exchange={exchange}, symbol={symbol}, trade_ids={trade_ids}, "
+                    f"errors_count={len(errors)}"
+                )
+                for idx, err in enumerate(errors[:5]):
+                    logger.error(f"入库异常[{idx}]: {err}", exc_info=err)
+                return False
             
             logger.info(
                 f"事件已保存到 {len(trade_ids)} 个持仓: "
