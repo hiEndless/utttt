@@ -44,6 +44,23 @@ class BinanceAnalysisService:
                 p['pnl_ratio'] = ratio
         return positions
 
+    def add_leverage(self, positions):
+        if isinstance(positions, list):
+            for p in positions:
+                try:
+                    notional = abs(float(p.get('notional', 0)))
+                    initial_margin = p.get('positionInitialMargin', None)
+                    if initial_margin is None:
+                        initial_margin = p.get('initialMargin', 0)
+                    initial_margin = abs(float(initial_margin))
+                    if initial_margin > 0:
+                        p['leverage'] = int(round(notional / initial_margin))
+                    else:
+                        p['leverage'] = 1
+                except Exception:
+                    p['leverage'] = 1
+        return positions
+
     def apply_trade_ids(self, old_data, new_data):
         old_iter = old_data if isinstance(old_data, list) else []
         # 按 (symbol, positionSide) 维度继承 trade_id / open_time，保证同一笔持仓在多次推送中保持一致
@@ -151,6 +168,7 @@ class BinanceAnalysisService:
     def analysis(self, new_data):
         new_data = self.data_clean(new_data)
         new_data = self.add_pnl_ratio(new_data)
+        new_data = self.add_leverage(new_data)
         old_data = self.get_old_data()
 
         if old_data is None:

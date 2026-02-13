@@ -64,7 +64,8 @@ def get_position(exchange: str, symbol: str) -> list[dict]:
                 "pnl_ratio": p.get("pnl_ratio"),
                 "open_time": p.get("open_time"),
                 "trade_id": p.get("trade_id"),
-                "initialMargin": p.get("initialMargin")  # 占用保证金
+                "initialMargin": p.get("initialMargin"),  # 占用保证金
+                "leverage": p.get("leverage")
             }
         )
     return out
