@@ -135,6 +135,29 @@ class SignalValidationExpert(BaseLLMExpert):
         llm_query_obj = dict(qobj)
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
 
+        # 中文注释：优先从 positions 推导 trade_id；单持仓返回字符串，双持仓返回字符串列表，便于下游按 trade_id 分别存储
+        trade_ids: list[str] = []
+        seen_trade_ids: set[str] = set()
+        for p in positions:
+            if not isinstance(p, dict):
+                continue
+            tid = p.get("trade_id")
+            if tid is None:
+                continue
+            tid_s = str(tid).strip()
+            if not tid_s or tid_s in seen_trade_ids:
+                continue
+            seen_trade_ids.add(tid_s)
+            trade_ids.append(tid_s)
+
+        if len(trade_ids) == 1:
+            trade_id: str | list[str] | None = trade_ids[0]
+        elif len(trade_ids) >= 2:
+            trade_id = trade_ids
+        else:
+            trade_id = qobj.get("trade_id") or meta.get("trade_id")
+        # print("trade_id:", trade_id)
+
         try:
             final_result = await self._run_validated(
                 agent=agent,
@@ -151,10 +174,9 @@ class SignalValidationExpert(BaseLLMExpert):
         except Exception:
             pass
 
-        symbol = qobj.get("symbol") or meta.get("symbol") or "UNKNOWN"
-        exchange = qobj.get("exchange") or meta.get("exchange") or "binance"
-        event_id = qobj.get("event_id") or meta.get("event_id")
-        trade_id = qobj.get("trade_id") or meta.get("trade_id")
+        symbol = meta.get("symbol") or "UNKNOWN"
+        exchange = meta.get("exchange") or "binance"
+        event_id = meta.get("event_id")
         meta["ts"] = int(time.time() * 1000)
         meta["version"] = self.version
         meta["name"] = self.name
