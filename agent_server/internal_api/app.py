@@ -10,8 +10,8 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="agent_server_internal_api",
         docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        redoc_url=None,
+        openapi_url=None,
     )
     app.include_router(router)
     return app
