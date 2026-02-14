@@ -8,6 +8,12 @@ class Settings:
     redis_port: int = int(os.environ.get('REDIS_PORT', 6379))
     redis_db: int = int(os.environ.get('REDIS_DB', 1))
     api_base_url: str = os.environ.get('API_BASE_URL', 'http://localhost:9931/api')
+
+    # 中文注释：agent_server 内部 FastAPI 服务，仅供后端服务层调用
+    internal_agent_api_host: str = os.environ.get("INTERNAL_AGENT_API_HOST", "127.0.0.1")
+    internal_agent_api_port: int = int(os.environ.get("INTERNAL_AGENT_API_PORT", 9941))
+    internal_agent_token: str = os.environ.get("INTERNAL_AGENT_TOKEN", "")
+
     rate_limits_seconds: dict = {
         '1m': 60,
         '5m': 150,
@@ -26,4 +32,3 @@ class Settings:
 
 
 settings = Settings()
-
