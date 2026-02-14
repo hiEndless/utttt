@@ -33,7 +33,7 @@ EXPERT_REGISTRY = {
             "audit_breakdown.directional_alignment 显示各周期的方向一致性，CONFLICT 暗示逆势风险。",
             "audit_breakdown.leverage_phase_match 显示杠杆周期匹配度，MISMATCH 暗示动能衰竭或反转风险。",
             "risk_exposure_flags 列出了具体的风险点（如 liquidity_vacuum），需在执行中规避。",
-            "audit_confidence.structural_clarity 描述结构清晰度，DOMINANT_CONFLICT 或 RISK_CLUSTER_PRESENT 应触发防御性策略。"
+            "audit_confidence.structural_clarity 描述结构清晰度。注意：CLEAR_DOMINANT_CYCLE ≠ trend_opportunity（仅表示结构清晰，不代表无风险）；DOMINANT_CONFLICT 或 RISK_CLUSTER_PRESENT 应触发防御性策略。"
         ],
         "constraints": [
             "若 dominant_cycle 处于 CONFLICT 状态，禁止激进追涨杀跌",
@@ -61,6 +61,7 @@ _prompt_template = """
 2. 不制造方向性确定性，只定义“允许 / 禁止 / 收缩 / 扩展”的决策空间
 3. 当专家意见冲突时，采取保守收敛原则
 4. 缺失的专家输入不得被视为隐含利多或利空
+5. 【语义映射规则】CLEAR_DOMINANT_CYCLE ≠ trend_opportunity。仅表示“结构主导清晰”，不代表“风险低”。
 
 你将收到若干专家输入，每个专家输入都包含：
 - 专家角色说明
