@@ -1,9 +1,12 @@
 import asyncio
 import json
+import os
 import websockets
 import logging
 import ssl
 import time
+
+import requests
 
 from data_server.binance.ws_binance.utils.force_order import handle_force_order
 from data_server.binance.ws_binance.utils.reids_connect import RedisClient
@@ -11,6 +14,44 @@ from data_server.binance.ws_binance.utils.spike_trigger import SpikeDetector
 from data_server.binance.ws_binance.utils.depth import update_depth
 
 redis_client = RedisClient()
+
+# REST ticker 写入 price:binance（替代 WS aggTrade 写价，避免延迟）
+BINANCE_TICKER_URL_MAIN = "https://fapi.binance.com/fapi/v1/ticker/price"
+BINANCE_TICKER_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/ticker/price"
+
+
+async def _rest_ticker_write_loop(interval_s: float = 0.8):
+    """定时从 REST ticker 拉取价格并写入 Redis price:binance:{symbol}。"""
+    use_testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() in ("1", "true", "yes", "on")
+    base_url = BINANCE_TICKER_URL_TEST if use_testnet else BINANCE_TICKER_URL_MAIN
+
+    def fetch_price(symbol: str):
+        try:
+            r = requests.get(base_url, params={"symbol": symbol}, timeout=5)
+            if r.status_code == 200:
+                d = r.json()
+                if isinstance(d, dict) and "price" in d:
+                    return float(d["price"])
+        except Exception as e:
+            logging.warning(f"[REST ticker] {symbol} error: {e}")
+        return None
+
+    while True:
+        try:
+            symbols = redis_client.conn.smembers("symbol:binance")
+            symbols = {str(s) for s in symbols} if symbols else set()
+            for sym in symbols:
+                price = await asyncio.to_thread(fetch_price, sym)
+                if price is not None and price > 0:
+                    key = f"price:binance:{sym}"
+                    ts_ms = int(time.time() * 1000)
+                    redis_client.set_hash(key, {"ts": ts_ms, "price": price}, check_type=True)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.warning(f"[REST ticker] loop error: {e}")
+        await asyncio.sleep(interval_s)
+
 
 # ---- SpikeDetector integration state ----
 # 使用更稳健的触发器参数，降低高频误报：
@@ -322,8 +363,7 @@ async def on_msg(msg):
             logging.warning(f"[WS] detector depth feed error: {e}")
     elif "e" in msg and msg["e"] == "aggTrade":
         symbol = msg["s"]
-        # Consolidate price/ts extraction, then write hash and feed detector
-        key = f"price:binance:{symbol}"
+        # price:binance 由 REST ticker 定时任务写入，不再用 WS 价格（避免延迟）
         stream_key = f"aggtrades:binance:{symbol}"
         ts_raw = msg.get("T")
         ts_ms = int(float(ts_raw)) if isinstance(
@@ -339,16 +379,6 @@ async def on_msg(msg):
         is_buyer_maker = bool(msg.get("m"))  # Binance 字段：买方是否为 maker
 
         if price_val is not None:
-            # Update price in Redis as hash via RedisClient
-            try:
-                redis_client.set_hash(key, {
-                    "ts": ts_ms,
-                    "price": price_val
-                },
-                                      check_type=True)
-            except Exception as e:
-                logging.warning(f"redis write error on HSET key={key}: {e}")
-
             # 将成交行为所需字段落入 Stream，供行为窗口聚合使用
             try:
                 if qty_val is not None:
@@ -390,8 +420,9 @@ async def main():
     try:
         await detector.start()
         await ws.start()
-        print("已启动")
+        asyncio.create_task(_rest_ticker_write_loop(0.8))
         asyncio.create_task(monitor_symbols(ws))
+        print("已启动")
         while True:
             await asyncio.sleep(1)
     except Exception as e:
