@@ -21,6 +21,19 @@ execution_state（只描述 “当前与未来一段时间允许做什么”）
 
 用于：
 Order Executor / Trade Router（执行层）：校验账户级是否允许
+
+自动交易场景：
+必须接入 execution_boundary_with_position_time.py 输出到 position_state_aggregator。
+理由：
+Execution Aggregator 的 cooldown 只针对 exit 类型或历史冷却，对“持仓时间红线”无法覆盖。
+execution_boundary_with_position_time.py 可以提供 风险扩张类动作的禁止信息（open/add/scale_in），保证自动交易不会违反时间红线约束。
+实现方式：
+把 execution_constraint['forbidden_actions'] 作为 execution_constraint 参数传入 position_state_aggregator。
+position_state_aggregator 在生成 action_allowance 时，可以额外剔除这些 forbidden_actions。
+
+仅风控/人工交易场景：
+可选接入，主要用于日志记录或提示。
+position_state_aggregator 已经可以生成允许动作和 cooldown 信息，即使不接入，也不会影响人工决策安全。
 """
 import time
 import asyncio

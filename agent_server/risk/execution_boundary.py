@@ -21,6 +21,10 @@ class ExecutionBoundary:
     1. 硬性门控 (Gating) : 当信号验证判定市场结构存在严重冲突时，直接阻断 (BLOCK) 任何开仓或加仓行为。
     2. 信心降权 (Confidence Attenuation) : 当信号质量一般或存在风险时，降低执行置信度，从而触发“减半执行”或“更严格的止损”策略。
     3. 意图修正 (Intent Bias) : 确保交易意图（如“做多”）与大周期方向一致。
+
+    功能更偏向 信号与决策的聚合、生成约束边界。
+    输出不仅有 forbidden_actions，还有 allowed_actions、intent_bias、reason_tags。
+    主要是 面向风控系统、人工操作，强调可解释性和信号对齐。
     """
 
     # ------------------------
