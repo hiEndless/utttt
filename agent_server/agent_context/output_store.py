@@ -1,6 +1,6 @@
 """
 提供封装与保存专家 Agent 产出物的系统层能力，结构为：
-- _context_meta ：来自 AGENT_REGISTRY 的合约元信息
+- _context_meta ：用于标识数据来源的最小元信息
 - agent_output ：专家 Agent 的原始 JSON 产出物
 {
 "_context_meta": { ... },
@@ -20,9 +20,6 @@ def build_meta(agent: str) -> Dict[str, Any]:
         raise ValueError(f"Unknown agent: {agent}")
     return {
         "agent": a,
-        "role": AGENT_REGISTRY[a]["role"],
-        "scope": AGENT_REGISTRY[a]["scope"],
-        "uses_crowd_state": AGENT_REGISTRY[a]["uses_crowd_state"],
     }
 
 

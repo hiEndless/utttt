@@ -6,10 +6,6 @@ from .contracts import AgentContextContract
 AGENT_REGISTRY: dict[str, AgentContextContract] = {
     "signal_validation": {
         "agent": "signal_validation",
-        "role": "technical_signal",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -46,10 +42,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
 
     "decision": {
         "agent": "decision",
-        "role": "decision",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "ts",
             "candidate_horizons",
@@ -88,10 +80,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
 
     "position_risk": {
         "agent": "position_risk",
-        "role": "risk_management",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -126,10 +114,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
 
     "trade_behavior": {
         "agent": "trade_behavior",
-        "role": "trade_behavior_analysis",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": True,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -155,10 +139,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
 
     "market_structure": {
         "agent": "market_structure",
-        "role": "market_regime",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": False,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
@@ -178,10 +158,6 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
 
     "human_market_narrator": {
         "agent": "human_market_narrator",
-        "role": "market_regime",
-        "scope": ["short", "mid", "long"],
-        "uses_crowd_state": False,
-        "allows_cross_timeframe_inference": False,
         "forbidden_paths": [
             "pre_decision_structure.short_term.participant_positioning.oi_state",
             "pre_decision_structure.short_term.participant_positioning.oi_delta",
