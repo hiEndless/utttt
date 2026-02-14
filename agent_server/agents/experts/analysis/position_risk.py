@@ -151,7 +151,7 @@ if __name__ == "__main__":
     from agent_server.agent_context.market_structure.holding_context import build_holding_context
     from agent_server.agents.experts.analysis.utils.execution_boundary import ExecutionBoundary
     import asyncio
-    from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
+    from agent_server.risk.position_state_aggregator import aggregate_execution_state_and_store
     from agent_server.tools.get_time_semantics import get_position_time_semantics
 
     sv_out = {'verdict': 'ATTENUATE', 'structural_alignment': 'PARTIAL_CONFLICT', 'risk_implication': 'elevated'}

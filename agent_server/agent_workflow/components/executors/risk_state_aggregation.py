@@ -4,7 +4,7 @@ import time
 from typing import Dict, Any, List, Optional
 from agno.workflow import StepInput
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store, key as get_execution_key
+from agent_server.risk.position_state_aggregator import aggregate_execution_state_and_store, key as get_execution_key
 from agent_server.risk.global_overlay import aggregate_and_store_global_overlay
 from agent_server.utils.redis_client import RedisClient
 
