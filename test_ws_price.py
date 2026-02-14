@@ -1,10 +1,10 @@
 """
 对比 Redis 中 price:binance:{symbol} 与 Binance 合约 REST 价格。
 
-- Redis：由 market_ws 的 REST ticker 定时任务写入（约 0.8s 间隔），与 REST /fapi/v1/ticker/price 同源。
-  ts 为写入时本机时间（ms）。正常时「数据滞后」应 ≤ 约 1 秒。
-- 若滞后持续很大（如 >10s）：说明 Redis 未持续更新，请检查 market_ws 是否常驻、REST 任务是否正常。
-- 本脚本用 REST 拉 ticker/price 与 markPrice 做对比；Redis 价与 ticker/price 应非常接近（同源）。
+- Redis：由 market_ws 的 REST 任务写入（约 0.8s 间隔），取 /fapi/v1/trades?limit=1 的第一条（最新一笔成交价），
+  与页面「最新成交」一致。ts 为交易所该笔成交时间（ms）。正常时「数据滞后」应 ≤ 约 1 秒。
+- 若滞后很大：说明 Redis 未持续更新，请重启 market_ws 并确认 REST 任务正常。
+- 校验：Redis 价应与「最近 5 笔成交」的第一条一致或非常接近。
 """
 import os
 import time
@@ -34,7 +34,7 @@ def get_redis_client():
 def read_ws_price(symbol: str):
     """
     从 Redis 读取 price:binance:{symbol}（Hash: price, ts）。
-    现由 market_ws 的 REST ticker 任务写入，与 /fapi/v1/ticker/price 同源；ts 为写入时间 ms。
+    由 market_ws 用 /fapi/v1/trades 第一条（最新成交）写入；ts 为交易所该笔成交时间 ms。
     """
     r = get_redis_client()
     key = f"price:binance:{symbol}"
@@ -127,36 +127,35 @@ def run_once(symbol: str, verbose_header: bool = True):
     if verbose_header:
         base = _rest_base_url()
         print("========== 数据来源说明 ==========")
-        print("[Redis] price:binance:{symbol} = market_ws 用 REST ticker 定时写入（约 0.8s），与 ticker/price 同源")
-        print(f"[EXCH]  REST = {base}：ticker/price=最新价，markPrice=标记价")
-        print("正常时 Redis 与 ticker/price 应非常接近，滞后 ≤ 约 1 秒；若滞后很大请检查 market_ws。")
+        print("[Redis] price:binance:{symbol} = market_ws 用 /fapi/v1/trades 第一条（最新一笔成交）写入（约 0.8s）")
+        print(f"[EXCH]  REST = {base}：最近 5 笔成交的第一条=最新成交价，与页面一致")
+        print("正常时 Redis 与「最近 5 笔成交」第一条一致，滞后 ≤ 约 1 秒。")
         print()
 
     print("========== 对比结果 ==========")
     if ws_ts:
         ts_readable = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ws_ts / 1000))
-        print(f"[Redis] price: {ws_price:.4f}   ts(ms): {ws_ts}  写入时间: {ts_readable}")
+        print(f"[Redis] price: {ws_price:.4f}   ts(ms): {ws_ts}  该笔成交时间: {ts_readable}")
         if delay_s is not None:
-            print(f"[Redis] 数据滞后: {delay_s:.2f} 秒（本机 now - 写入时间，正常应 ≤ 约 1s）")
+            print(f"[Redis] 数据滞后: {delay_s:.2f} 秒（本机 now - 该笔成交时间，正常应 ≤ 约 1s）")
             if delay_s > 120:
-                print("       ⚠ 滞后>2分钟：Redis 未持续更新，请检查 market_ws 是否常驻、REST ticker 任务是否正常。")
+                print("       ⚠ 滞后>2分钟：Redis 未持续更新，请重启 market_ws、确认 REST 任务正常。")
             elif delay_s > 5:
-                print("       提示: 滞后>5秒说明写入间隔异常，请检查 market_ws。")
+                print("       提示: 滞后>5秒说明未及时更新，请重启 market_ws。")
     else:
         print(f"[Redis] price: {ws_price:.4f}   ts: <None>")
 
     print(f"[EXCH] ticker/price(最新价): {ticker_price:.4f}  markPrice(标记价): {mark_price:.4f}")
-    print(f"[EXCH] 最近 {len(last_trade_prices)} 笔成交价: {[round(p, 4) for p in last_trade_prices]}")
+    print(f"[EXCH] 最近 {len(last_trade_prices)} 笔成交价(第一条=最新): {[round(p, 4) for p in last_trade_prices]}")
 
-    # Redis 与 ticker/price 同源，差值应很小
-    if abs(diff_pct) < 0.001:
-        print("[校验] Redis 与 ticker/price 一致（同源），更新正常。")
-    else:
-        print(f"[校验] Redis 与 ticker/price 差值: {diff_ticker:.4f} ({diff_pct:.4f}%)")
+    # Redis 存的是「最新一笔成交」，应与最近 5 笔的第一条一致
     if last_trade_prices and ws_price is not None:
-        min_dist = min(abs(ws_price - p) for p in last_trade_prices)
-        print(f"[参考] Redis 与最近 {len(last_trade_prices)} 笔成交最小差: {min_dist:.4f}")
-
+        first_trade_price = last_trade_prices[0]
+        diff_first = ws_price - first_trade_price
+        if abs(diff_first) < 0.01:
+            print("[校验] Redis 与最近一笔成交(第一条)一致，更新正常。")
+        else:
+            print(f"[校验] Redis 与最近一笔成交(第一条)差值: {diff_first:.4f}")
     print(f"差值( ticker - Redis ): {diff_ticker:.4f} ({diff_pct:.4f}%)")
     print("================================")
     return True

@@ -15,41 +15,51 @@ from data_server.binance.ws_binance.utils.depth import update_depth
 
 redis_client = RedisClient()
 
-# REST ticker 写入 price:binance（替代 WS aggTrade 写价，避免延迟）
-BINANCE_TICKER_URL_MAIN = "https://fapi.binance.com/fapi/v1/ticker/price"
-BINANCE_TICKER_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/ticker/price"
+# REST 最新成交写入 price:binance（用 /fapi/v1/trades 第一条，与页面显示一致）
+BINANCE_TRADES_URL_MAIN = "https://fapi.binance.com/fapi/v1/trades"
+BINANCE_TRADES_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/trades"
 
 
 async def _rest_ticker_write_loop(interval_s: float = 0.8):
-    """定时从 REST ticker 拉取价格并写入 Redis price:binance:{symbol}。"""
+    """定时从 REST /fapi/v1/trades 取最新一笔成交（第一条）写入 Redis price:binance:{symbol}。"""
     use_testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() in ("1", "true", "yes", "on")
-    base_url = BINANCE_TICKER_URL_TEST if use_testnet else BINANCE_TICKER_URL_MAIN
+    base_url = BINANCE_TRADES_URL_TEST if use_testnet else BINANCE_TRADES_URL_MAIN
 
-    def fetch_price(symbol: str):
+    def fetch_latest_trade_price(symbol: str):
+        """拉取 limit=1 的最近一笔成交，返回 (price, time_ms)；与页面「最新成交价」一致。"""
         try:
-            r = requests.get(base_url, params={"symbol": symbol}, timeout=5)
-            if r.status_code == 200:
-                d = r.json()
-                if isinstance(d, dict) and "price" in d:
-                    return float(d["price"])
+            r = requests.get(base_url, params={"symbol": symbol, "limit": 1}, timeout=5)
+            if r.status_code != 200:
+                return None, None
+            data = r.json()
+            if not isinstance(data, list) or len(data) == 0:
+                return None, None
+            first = data[0]
+            # 合约 trades 返回字段为 "price"（字符串）
+            p = first.get("price") or first.get("p")
+            t = first.get("time") or first.get("T")
+            if p is not None:
+                price = float(p)
+                ts_ms = int(t) if t is not None else int(time.time() * 1000)
+                return price, ts_ms
         except Exception as e:
-            logging.warning(f"[REST ticker] {symbol} error: {e}")
-        return None
+            logging.warning(f"[REST trades] {symbol} error: {e}")
+        return None, None
 
     while True:
         try:
             symbols = redis_client.conn.smembers("symbol:binance")
             symbols = {str(s) for s in symbols} if symbols else set()
             for sym in symbols:
-                price = await asyncio.to_thread(fetch_price, sym)
+                price, ts_ms = await asyncio.to_thread(fetch_latest_trade_price, sym)
                 if price is not None and price > 0:
                     key = f"price:binance:{sym}"
-                    ts_ms = int(time.time() * 1000)
+                    # 使用交易所该笔成交时间，与页面一致
                     redis_client.set_hash(key, {"ts": ts_ms, "price": price}, check_type=True)
         except asyncio.CancelledError:
             break
         except Exception as e:
-            logging.warning(f"[REST ticker] loop error: {e}")
+            logging.warning(f"[REST trades] loop error: {e}")
         await asyncio.sleep(interval_s)
 
 
