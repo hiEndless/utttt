@@ -149,7 +149,7 @@ if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.agent_context.market_structure.holding_context import build_holding_context
-    from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+    from agent_server.agents.experts.analysis.utils.execution_boundary import ExecutionBoundary
     import asyncio
     from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
     from agent_server.tools.get_time_semantics import get_position_time_semantics
@@ -162,7 +162,7 @@ if __name__ == "__main__":
              'meta': {'symbol': 'ETHUSDT', 'exchange': 'binance', 'event_id': 'ETHUSDT.final.1770290252305',
                       'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '1f9d3feb1dff4fda9c4462eb71e2f21f'}}
 
-    execution_constraint = ExecutionConstraintAggregator().aggregate(sv_out, d_out).get("execution_constraint")
+    execution_constraint = ExecutionBoundary().aggregate(sv_out, d_out).get("execution_constraint")
     meta = d_out.get("meta")
     trade_id = meta.get("trade_id")
     exchange = meta.get("exchange")

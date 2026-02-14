@@ -8,7 +8,7 @@ from agent_server.agent_context.builder import build_agent_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.utils.account import account_state
-from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+from agent_server.agents.experts.analysis.utils.execution_boundary import ExecutionBoundary
 from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission, get_global_risk_narrative
 from agent_server.tools.get_time_semantics import get_position_time_semantics
 
@@ -100,10 +100,10 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                     my_decision = decision_output
 
             # 聚合 Execution Constraints
-            # 使用 ExecutionConstraintAggregator 将 SV 输出和 Decision 输出合并
-            aggregator = ExecutionConstraintAggregator()
+            # 使用 ExecutionBoundary 将 SV 输出和 Decision 输出合并
+            boundary = ExecutionBoundary()
 
-            agg_result = aggregator.aggregate(output, decision_output)
+            agg_result = boundary.aggregate(output, decision_output)
             execution_constraint = agg_result.get("execution_constraint", {})
 
             # 获取 Position Time Semantics

@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple, Any
 
 
-class ExecutionConstraintAggregator:
+class ExecutionBoundary:
     """
     确定性聚合器
     提供给持仓风控agent
@@ -199,7 +199,7 @@ class ExecutionConstraintAggregator:
 
 
 if __name__ == "__main__":
-    aggregator = ExecutionConstraintAggregator()
+    aggregator = ExecutionBoundary()
 
     # V2 Test Data
     signal_validation = {'dominant_cycle': 'mid_term',
