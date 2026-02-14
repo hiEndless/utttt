@@ -1,12 +1,10 @@
 """
 对比 Redis 中 price:binance:{symbol} 与 Binance 合约 REST 价格。
 
-- 数据源：WS 与 REST 均为同一市场（wss://fstream.binance.com + https://fapi.binance.com，USDT 永续），接口无误。
-- Redis：来自 market_ws 的 aggTrade 最新一笔成交价 (msg["p"])，ts 为交易所该笔成交时间 msg["T"]（ms）。
-- 若「数据滞后」持续增大（如 200s→300s）、且 Redis 里 ts 一直是一小段旧时间：
-  说明 Redis 未持续更新，可能 (1) market_ws 断线/未写入  (2) 本机时间比交易所快很多。
-  请：同步服务器时间（NTP），并确认 market_ws 常驻、连的是 fstream.binance.com。
-- 滞后计算用本机 time.time()，本机时间不准会导致滞后显示偏大或偏小。
+- Redis：由 market_ws 的 REST ticker 定时任务写入（约 0.8s 间隔），与 REST /fapi/v1/ticker/price 同源。
+  ts 为写入时本机时间（ms）。正常时「数据滞后」应 ≤ 约 1 秒。
+- 若滞后持续很大（如 >10s）：说明 Redis 未持续更新，请检查 market_ws 是否常驻、REST 任务是否正常。
+- 本脚本用 REST 拉 ticker/price 与 markPrice 做对比；Redis 价与 ticker/price 应非常接近（同源）。
 """
 import os
 import time
@@ -35,8 +33,8 @@ def get_redis_client():
 
 def read_ws_price(symbol: str):
     """
-    从 market_ws 写入的 Redis 读取: key=price:binance:{symbol}, field: price, ts.
-    price 来自 WebSocket aggTrade 的 msg["p"], ts 来自 msg["T"]（该笔成交时间 ms）。
+    从 Redis 读取 price:binance:{symbol}（Hash: price, ts）。
+    现由 market_ws 的 REST ticker 任务写入，与 /fapi/v1/ticker/price 同源；ts 为写入时间 ms。
     """
     r = get_redis_client()
     key = f"price:binance:{symbol}"
@@ -61,25 +59,31 @@ def read_ws_price(symbol: str):
     return price, ts_ms
 
 
+def _rest_base_url():
+    """与 market_ws 一致：按 BINANCE_TESTNET 选择 REST 根地址。"""
+    use_testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() in ("1", "true", "yes", "on")
+    return "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
+
+
 def read_binance_ticker_price(symbol: str):
-    """REST: 合约最新价（/fapi/v1/ticker/price）。"""
-    url = "https://fapi.binance.com/fapi/v1/ticker/price"
+    """REST: 合约最新价（/fapi/v1/ticker/price），与写入 Redis 的 market_ws 同源。"""
+    url = f"{_rest_base_url()}/fapi/v1/ticker/price"
     resp = requests.get(url, params={"symbol": symbol}, timeout=5)
     resp.raise_for_status()
     return float(resp.json()["price"])
 
 
 def read_binance_last_trades(symbol: str, limit: int = 5):
-    """REST: 合约最近几笔成交（/fapi/v1/trades），用于交叉验证 Redis 价格是否来自真实成交。"""
-    url = "https://fapi.binance.com/fapi/v1/trades"
+    """REST: 合约最近几笔成交（/fapi/v1/trades），供参考。"""
+    url = f"{_rest_base_url()}/fapi/v1/trades"
     resp = requests.get(url, params={"symbol": symbol, "limit": limit}, timeout=5)
     resp.raise_for_status()
     return resp.json()
 
 
 def read_binance_mark_price(symbol: str):
-    """REST: 合约标记价格（/fapi/v1/premiumIndex），用于与「当前市场价格」对比。"""
-    url = "https://fapi.binance.com/fapi/v1/premiumIndex"
+    """REST: 合约标记价格（/fapi/v1/premiumIndex）。"""
+    url = f"{_rest_base_url()}/fapi/v1/premiumIndex"
     resp = requests.get(url, params={"symbol": symbol}, timeout=5)
     resp.raise_for_status()
     return float(resp.json()["markPrice"])
@@ -93,8 +97,8 @@ def run_once(symbol: str, verbose_header: bool = True):
 
     ws_price, ws_ts = read_ws_price(symbol)
     if ws_price is None:
-        print(f"[WS] Redis 中没有找到 key=price:binance:{symbol}")
-        print("请确认：1) market_ws 已启动  2) redis-cli SADD symbol:binance", symbol)
+        print(f"[Redis] 中没有找到 key=price:binance:{symbol}")
+        print("请确认：1) market_ws 已启动（REST ticker 任务会写入）  2) redis-cli SADD symbol:binance", symbol)
         return False
 
     now = time.time()
@@ -121,39 +125,39 @@ def run_once(symbol: str, verbose_header: bool = True):
     diff_pct = diff_ticker / ticker_price * 100 if ticker_price else 0
 
     if verbose_header:
+        base = _rest_base_url()
         print("========== 数据来源说明 ==========")
-        print("[WS]   Redis = market_ws 写入的 aggTrade 最新一笔成交价 (wss://fstream.binance.com)")
-        print("[EXCH] REST = 当前市场价格 (https://fapi.binance.com)：ticker/price=最新价，markPrice=标记价")
-        print("同一市场；若滞后持续增大、Redis 里 ts 一直是一小段旧时间，说明数据未持续更新，请查 NTP 与 market_ws 连接。")
+        print("[Redis] price:binance:{symbol} = market_ws 用 REST ticker 定时写入（约 0.8s），与 ticker/price 同源")
+        print(f"[EXCH]  REST = {base}：ticker/price=最新价，markPrice=标记价")
+        print("正常时 Redis 与 ticker/price 应非常接近，滞后 ≤ 约 1 秒；若滞后很大请检查 market_ws。")
         print()
 
     print("========== 对比结果 ==========")
     if ws_ts:
         ts_readable = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ws_ts / 1000))
-        print(f"[WS]   price: {ws_price:.4f}   ts(ms): {ws_ts}  时间: {ts_readable}")
+        print(f"[Redis] price: {ws_price:.4f}   ts(ms): {ws_ts}  写入时间: {ts_readable}")
         if delay_s is not None:
-            print(f"[WS]   数据滞后: {delay_s:.2f} 秒（本机 now - 该笔成交时间）")
+            print(f"[Redis] 数据滞后: {delay_s:.2f} 秒（本机 now - 写入时间，正常应 ≤ 约 1s）")
             if delay_s > 120:
-                print("       ⚠ 滞后>2分钟：Redis 可能未持续更新，请检查 (1) 服务器时间 NTP 同步  (2) market_ws 是否常驻并连接 fstream.binance.com")
+                print("       ⚠ 滞后>2分钟：Redis 未持续更新，请检查 market_ws 是否常驻、REST ticker 任务是否正常。")
             elif delay_s > 5:
-                print("       提示: 滞后>5秒时，与当前价差几十属正常；或检查本机时间是否与网络同步。")
+                print("       提示: 滞后>5秒说明写入间隔异常，请检查 market_ws。")
     else:
-        print(f"[WS]   price: {ws_price:.4f}   ts: <None>")
+        print(f"[Redis] price: {ws_price:.4f}   ts: <None>")
 
     print(f"[EXCH] ticker/price(最新价): {ticker_price:.4f}  markPrice(标记价): {mark_price:.4f}")
     print(f"[EXCH] 最近 {len(last_trade_prices)} 笔成交价: {[round(p, 4) for p in last_trade_prices]}")
 
-    # Redis 价格应等于「最近成交」中的某一笔（或非常接近），说明写入无误
+    # Redis 与 ticker/price 同源，差值应很小
+    if abs(diff_pct) < 0.001:
+        print("[校验] Redis 与 ticker/price 一致（同源），更新正常。")
+    else:
+        print(f"[校验] Redis 与 ticker/price 差值: {diff_ticker:.4f} ({diff_pct:.4f}%)")
     if last_trade_prices and ws_price is not None:
         min_dist = min(abs(ws_price - p) for p in last_trade_prices)
-        if min_dist < 0.01:
-            print("[校验] Redis 价格与交易所最近成交中的一笔一致（误差<0.01），写入正确。")
-        else:
-            print(f"[校验] Redis 与最近几笔成交最小差: {min_dist:.4f}（滞后大时可能都不在最近 5 笔内，属正常）")
-    elif not last_trade_prices:
-        print("[校验] 未获取到最近成交，跳过校验。")
+        print(f"[参考] Redis 与最近 {len(last_trade_prices)} 笔成交最小差: {min_dist:.4f}")
 
-    print(f"差值( ticker - ws ): {diff_ticker:.4f} ({diff_pct:.4f}%)")
+    print(f"差值( ticker - Redis ): {diff_ticker:.4f} ({diff_pct:.4f}%)")
     print("================================")
     return True
 
