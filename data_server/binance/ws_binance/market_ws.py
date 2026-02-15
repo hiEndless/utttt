@@ -371,16 +371,28 @@ async def on_msg(msg):
             bid_liq, ask_liq = _depth_liq_cache.get(symbol, (0.0, 0.0))
 
         update_depth(symbol, {"bids": msg["b"], "asks": msg["a"]}, ts)
-        # Feed detector using latest price cache if available
+        # Feed detector：优先用 Redis price:binance（REST），缺失时用 _price_cache 或 depth 中间价
         try:
-            if detector is not None and symbol in _price_cache:
-                p = _price_cache[symbol]
-                # 传递毫秒整数，让写入统一
-                ts_ms = int(float(ts)) if isinstance(
-                    ts, (int, float)) else int(time.time() * 1000)
-                asyncio.create_task(
-                    detector.add_tick_and_persist(symbol, p, bid_liq, ask_liq,
-                                                  ts_ms))
+            if detector is not None:
+                p = None
+                try:
+                    pv = redis_client.conn.hget(f"price:binance:{symbol}", "price")
+                    if pv:
+                        p = float(pv)
+                except Exception:
+                    pass
+                if p is None and symbol in _price_cache:
+                    p = _price_cache[symbol]
+                if p is None:
+                    bids, asks = msg.get("b", []), msg.get("a", [])
+                    if bids and asks:
+                        try:
+                            p = (float(bids[0][0]) + float(asks[0][0])) / 2.0
+                        except Exception:
+                            pass
+                if p is not None and p > 0:
+                    ts_ms = int(float(ts)) if isinstance(ts, (int, float)) else int(time.time() * 1000)
+                    asyncio.create_task(detector.add_tick_and_persist(symbol, p, bid_liq, ask_liq, ts_ms))
         except Exception as e:
             logging.warning(f"[WS] detector depth feed error: {e}")
     elif "e" in msg and msg["e"] == "aggTrade":
