@@ -7,6 +7,7 @@ from agent_server.config import settings
 from agent_server.utils.redis_client import get_verified_redis_client
 from agent_server.utils.watchers.exchanges import RedisExchangeWatcher
 from agent_server.risk.global_overlay import aggregate_and_store_global_overlay
+from agent_server.risk.position_time_semantics import process_positions
 
 logger = logging.getLogger("risk_state_cron")
 
@@ -27,6 +28,13 @@ async def _risk_update_loop(exchange: str, stop_event: asyncio.Event, redis_clie
     while not stop_event.is_set():
         try:
             logger.debug(f"正在更新 {exchange} 的全局叠加层...")
+            
+            # 更新 Position Time Semantics (每分钟)
+            try:
+                await process_positions(exchange=exchange, redis_client=redis_client)
+            except Exception as e:
+                logger.error(f"更新 {exchange} Position Time Semantics 时出错: {e}", exc_info=True)
+
             # 聚合当前所有仓位的执行状态，生成并存储全局风控状态
             overlay = await aggregate_and_store_global_overlay(exchange, redis_client=redis_client)
             

@@ -1,15 +1,15 @@
 import asyncio
 import json
 import time
-from typing import Dict, Optional, List, Any
+from typing import Dict
 from agno.workflow import StepInput
 from agent_server.tools.get_position import get_position
 from agent_server.agent_context.builder import build_agent_context
 from agent_server.agents.experts.analysis.position_risk import PositionRiskExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.account import account_state
-from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+from agent_server.risk.execution_boundary import ExecutionBoundary
 from agent_server.risk.global_overlay import _read_global_overlay_raw, check_global_permission, get_global_risk_narrative
+from agent_server.tools.get_time_semantics import get_position_time_semantics
 
 
 class PositionRiskExecutionComponent(BaseWorkflowComponent):
@@ -27,9 +27,9 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
 
         event_data = prev_result.get("event_data", {})
         # 支持从 SignalValidation 直接过来，或者从 DecisionComponent 过来
-        # 如果从 DecisionComponent 过来，sv_output 在 sv_output 字段
-        # 如果从 SignalValidation 过来，output 就是 sv_output
-        sv_output = prev_result.get("sv_output") or prev_result.get("output", {})
+        # 统一使用 output 字段
+        output = prev_result.get("output", {})
+        # print(f"pos_risk::{output}")
         decision_output = prev_result.get("decision_output", {})  # Optional from DecisionComponent
 
         full_context = prev_result.get("full_context")
@@ -99,21 +99,14 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                     my_decision = decision_output
 
             # 聚合 Execution Constraints
-            # 使用 ExecutionConstraintAggregator 将 SV 输出和 Decision 输出合并
-            aggregator = ExecutionConstraintAggregator()
+            # 使用 ExecutionBoundary 将 SV 输出和 Decision 输出合并
+            boundary = ExecutionBoundary()
 
-            # 提取 data 部分（如果是 {data: ..., meta: ...} 结构）
-            d_out_data = my_decision.get("data", my_decision) if isinstance(my_decision, dict) else {}
-            sv_output_data = sv_output.get("data", sv_output) if isinstance(sv_output, dict) else {}
-
-            agg_result = aggregator.aggregate(sv_output_data, d_out_data)
+            agg_result = boundary.aggregate(output, decision_output)
             execution_constraint = agg_result.get("execution_constraint", {})
 
-            # 获取账户风险状态
-            account_risk_state = await account_state(exchange)
-            initialMargin = float(position_snapshot.get("initialMargin", 0))
-            leverage = str(position_snapshot.get("leverage", ""))
-            account_risk_state["position_occupancy_ratio"] = initialMargin / (account_risk_state.get("balance", 1) * float(leverage))
+            # 获取 Position Time Semantics
+            position_time_semantics = await get_position_time_semantics(exchange, symbol, trade_id)
             
             # [NEW] 获取 Global Risk Overlay (Cognitive Layer)
             # 同样使用 Internal Raw API + Narrative Adapter
@@ -131,7 +124,7 @@ class PositionRiskExecutionComponent(BaseWorkflowComponent):
                 },
                 "market_structure": pr_ctx,  # 注意：这里用 build_agent_context 的结果
                 "position": position_snapshot,
-                "account_risk_state": account_risk_state,
+                "position_time_semantics": position_time_semantics,
                 "global_risk_overlay": global_risk_desc,
                 "execution_constraint": execution_constraint,
             }

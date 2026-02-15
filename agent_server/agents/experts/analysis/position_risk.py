@@ -4,15 +4,11 @@ import time
 from typing import Any, Dict
 
 from agent_server.agents.experts.base_llm_expert import BaseLLMExpert, QueryInput
-from agent_server.utils.account import account_state
 from agent_server.agent_context.market_structure import output
 from agent_server.configs.source import get_agent_config
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.agents.utils import (
-    _ensure_json_serializable,
     _json_dumps_safe,
-    LLMOutputValidator,
-    validate_with_retry,
 )
 
 
@@ -103,6 +99,7 @@ class PositionRiskExpert(BaseLLMExpert):
         trade_id = qobj.get("trade_id") or meta.get("trade_id")
         meta["ts"] = int(time.time() * 1000)
         meta["version"] = self.version
+        meta["name"] = self.name
 
         payload_obj: Dict[str, Any]
         try:
@@ -148,9 +145,10 @@ if __name__ == "__main__":
     from agent_server.tools.get_position import get_position
     from agent_server.agent_context.builder import build_agent_context
     from agent_server.agent_context.market_structure.holding_context import build_holding_context
-    from agent_server.agents.experts.analysis.utils.execution_constraint_aggregator import ExecutionConstraintAggregator
+    from agent_server.risk.execution_boundary import ExecutionBoundary
     import asyncio
-    from agent_server.risk.execution_state_aggregator import aggregate_execution_state_and_store
+    from agent_server.risk.position_state_aggregator import aggregate_execution_state_and_store
+    from agent_server.tools.get_time_semantics import get_position_time_semantics
 
     sv_out = {'verdict': 'ATTENUATE', 'structural_alignment': 'PARTIAL_CONFLICT', 'risk_implication': 'elevated'}
 
@@ -158,9 +156,9 @@ if __name__ == "__main__":
                                     'forbidden_actions': ['aggressive_add', 'reverse_position'],
                                     'risk_bias': 'conservative'},
              'meta': {'symbol': 'ETHUSDT', 'exchange': 'binance', 'event_id': 'ETHUSDT.final.1770290252305',
-                      'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '9cedf3d0770041c8b11856c35ef664a2'}}
+                      'ts': 1770675469101, 'version': 'v1.0', 'trade_id': '1f9d3feb1dff4fda9c4462eb71e2f21f'}}
 
-    execution_constraint = ExecutionConstraintAggregator().aggregate(sv_out, d_out).get("execution_constraint")
+    execution_constraint = ExecutionBoundary().aggregate(sv_out, d_out).get("execution_constraint")
     meta = d_out.get("meta")
     trade_id = meta.get("trade_id")
     exchange = meta.get("exchange")
@@ -197,18 +195,17 @@ if __name__ == "__main__":
         # last_suggestion_key = f"agent_output:{exchange}:{symbol}:position_risk:latest"
         # last_suggestion_str = await rc.get(last_suggestion_key)
 
-        # 获取账户余额计算可用仓位比例
-        account_risk_state = await account_state(exchange)
-        account_risk_state["position_occupancy_ratio"] = initialMargin / (account_risk_state.get("balance", 1) * float(leverage))
+        # 获取 Position Time Semantics
+        position_time_semantics = await get_position_time_semantics(exchange, symbol, trade_id)
 
         query = {
             "meta": meta,
             "market_structure": market_structure,
             "position": position,
-            "account_risk_state": account_risk_state,
+            "position_time_semantics": position_time_semantics,
             "execution_constraint": execution_constraint,
         }
-        # print( query)
+        print( query)
 
         # print("\n=== Agent Input Query ===")
         # print(json.dumps(query, indent=2, ensure_ascii=False))

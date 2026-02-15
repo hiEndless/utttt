@@ -21,6 +21,19 @@ execution_state（只描述 “当前与未来一段时间允许做什么”）
 
 用于：
 Order Executor / Trade Router（执行层）：校验账户级是否允许
+
+自动交易场景：
+必须接入 execution_boundary_with_position_time.py 输出到 position_state_aggregator。
+理由：
+Execution Aggregator 的 cooldown 只针对 exit 类型或历史冷却，对“持仓时间红线”无法覆盖。
+execution_boundary_with_position_time.py 可以提供 风险扩张类动作的禁止信息（open/add/scale_in），保证自动交易不会违反时间红线约束。
+实现方式：
+把 execution_constraint['forbidden_actions'] 作为 execution_constraint 参数传入 position_state_aggregator。
+position_state_aggregator 在生成 action_allowance 时，可以额外剔除这些 forbidden_actions。
+
+仅风控/人工交易场景：
+可选接入，主要用于日志记录或提示。
+position_state_aggregator 已经可以生成允许动作和 cooldown 信息，即使不接入，也不会影响人工决策安全。
 """
 import time
 import asyncio
@@ -31,7 +44,7 @@ from agent_server.utils.redis_client import RedisClient
 COOLDOWN_SECONDS = 15 * 60  # 15 分钟
 
 # --------------------------------------------
-# risk_action → action_allowance(确定性映射表)
+# risk_action → action_allowance（确定性映射）
 # --------------------------------------------
 RISK_ACTION_TO_ALLOWANCE = {
     "exit": {
@@ -64,54 +77,78 @@ RISK_ACTION_TO_ALLOWANCE = {
     }
 }
 
+# 哪些 exit 类型需要冷却
+COOLDOWN_EXIT_TYPES = {"risk", "emergency", "constraint_violation"}
+
 
 def aggregate_execution_state(
-        risk_action_output: Dict[str, Any],
-        signal_validation_output: Optional[Dict[str, Any]] = None,
-        previous_execution_state: Optional[Dict[str, Any]] = None,
-        now_ts: Optional[int] = None
+    risk_action_output: Dict[str, Any],
+    signal_validation_output: Optional[Dict[str, Any]] = None,
+    previous_execution_state: Optional[Dict[str, Any]] = None,
+    execution_constraint: Optional[Dict[str, Any]] = None,
+    decision_output: Optional[Dict[str, Any]] = None,
+    now_ts: Optional[int] = None
 ) -> Dict[str, Any]:
     now_ts = now_ts or int(time.time())
 
     risk_action = risk_action_output["risk_action"]
+    meta = risk_action_output.get("meta", {}) or {}
 
-    # ---------- 基于 risk_action 的基础权限 ----------
+    # ---------- exit 类型（新增） ----------
+    # 默认认为是结构性 exit（不惩罚）
+    exit_type = meta.get("exit_type", "structural")
+
+    # ---------- 基础权限 ----------
     allowance = RISK_ACTION_TO_ALLOWANCE.get(risk_action, {}).copy()
 
-    # ---------- 冷却处理 ----------
+    system_info: Dict[str, Any] = {}
+
+
+
+    # ---------- 冷却与执行态 ----------
+    execution_regime = "normal"
     in_cooldown = False
     cooldown_until = None
 
-    # 继承先前的冷却状态
+    # 继承历史冷却
     if previous_execution_state:
-        prev_cd = previous_execution_state.get("cooldown_state", {})
+        prev_exec = previous_execution_state.get("execution_state", {})
+        prev_cd = prev_exec.get("cooldown_state", {})
         if prev_cd.get("in_cooldown") and prev_cd.get("until_ts", 0) > now_ts:
             in_cooldown = True
             cooldown_until = prev_cd["until_ts"]
+            execution_regime = "cooldown"
 
-    # 退出操作触发新的冷却
-    if risk_action == "exit":
+    # 本次 exit 是否触发冷却
+    if risk_action == "exit" and exit_type in COOLDOWN_EXIT_TYPES:
         in_cooldown = True
         cooldown_until = now_ts + COOLDOWN_SECONDS
+        execution_regime = "cooldown"
+        system_info["cooldown_trigger"] = {
+            "exit_type": exit_type,
+            "duration_sec": COOLDOWN_SECONDS
+        }
 
-    # 应用冷却约束
+    # 冷却期限制（只限制开仓 / 加仓）
     if in_cooldown:
         allowance["allow_open"] = False
         allowance["allow_add"] = False
 
-    # ---------- 风险体制标签（弱语义，仅解释） ----------
+    # ---------- 结构性风险语义（只读） ----------
     risk_regime = None
     if signal_validation_output:
         risk_regime = signal_validation_output.get("risk_implication")
 
     return {
         "execution_state": {
-            "risk_regime": risk_regime,
+            "risk_regime": risk_regime,              # 结构语义（不可被 aging 改）
+            "execution_regime": execution_regime,    # 执行态（可 aging）
             "action_allowance": allowance,
             "cooldown_state": {
                 "in_cooldown": in_cooldown,
                 "until_ts": cooldown_until
-            }
+            },
+            "system_info": system_info
         }
     }
 
@@ -121,73 +158,44 @@ def age_execution_state(
     now_ts: Optional[int] = None
 ) -> Dict[str, Any]:
     """
-    对 execution_state 进行“时间老化”处理：
-    1. 检查冷却是否过期。如果过期，重置冷却状态并解除限制。
-    2. 如果冷却已结束，将 risk_regime 下调为 'normal' (如果没有新的风控输入)。
-    
-    返回:
-        新的状态载荷（可能已修改），如果不需要更改则返回原始值。
+    仅对执行态进行老化：
+    - 冷却结束 → 解除冷却限制
+    - 不修改 risk_regime
     """
     now_ts = now_ts or int(time.time())
-    
-    # 深拷贝以避免修改输入
+
     new_payload = json.loads(json.dumps(execution_state_payload))
     exec_state = new_payload.get("execution_state", {})
     cooldown = exec_state.get("cooldown_state", {})
-    
+    allowance = exec_state.get("action_allowance", {})
+
     changed = False
-    
-    # 1. 检查冷却过期
+
     if cooldown.get("in_cooldown"):
         until = cooldown.get("until_ts", 0)
         if until and now_ts > until:
-            # 冷却过期
             cooldown["in_cooldown"] = False
             cooldown["until_ts"] = None
+            exec_state["execution_regime"] = "normal"
+
+            # 只解除冷却带来的限制
+            allowance["allow_open"] = True
+            allowance["allow_add"] = True
+
             changed = True
-            
-            # 重置权限为默认开放状态（因为我们不知道原始意图，且 'normal' 意味着限制解除）
-            # 或者更安全地，仅解除特定阻断？
-            # 用户表示“同时降低风控行为等级”。如果我们降级为 normal，应该允许操作。
-            exec_state["action_allowance"] = {
-                "allow_open": True,
-                "allow_add": True,
-                "allow_hold": True,
-                "allow_reduce": True,
-                "allow_close": True
-            }
-            
-            # 2. 风控等级降级
-            # 仅当刚刚退出冷却时降级。
-            # 如果之前不在冷却中但处于 elevated 状态，是否降级？
-            # 用户暗示了联动：“更新冷却时间，同时降低风控等级”
-            # 注意：
-            # 在 v1 中，risk_regime 被视为与冷却耦合。
-            # 一旦冷却过期且没有新的风控输入，execution_state 回归中性基线（"normal"）。
-            # 这避免了陈旧的 elevated 标签泄漏到 Global Overlay 中。
-            # 
-            # ⚠️ 修正 (2025-02): 仅重置由冷却/退出操作引起的 elevated 状态。
-            # 防止错误覆盖由外部或更高层级（如账户风控、交易所熔断）设置的 "critical" 状态。
-            if exec_state.get("risk_regime") in ("cooldown", "elevated"):
-                exec_state["risk_regime"] = "normal"
-            
+
     if changed:
+        exec_state["action_allowance"] = allowance
+        exec_state["cooldown_state"] = cooldown
         new_payload["execution_state"] = exec_state
-        # 如果存在 meta，更新时间戳
+
         if "meta" in new_payload:
-            # 仅表示被触碰过，虽然 'ts' 通常指事件时间。
-            # 也许添加一个 'updated_at' 字段？
             new_payload["meta"]["updated_at"] = now_ts
 
     return new_payload
 
 
-def key(
-        exchange: str,
-        trade_id: str,
-        symbol: str
-) -> str:
-    # 中文注释：逐仓位“时间状态/执行状态”的 Redis Key（按交易账户 + 标的 + trade_id 分桶）
+def key(exchange: str, trade_id: str, symbol: str) -> str:
     return (
         f"risk:execution:"
         f"{(exchange or '').lower()}:"
@@ -197,18 +205,14 @@ def key(
 
 
 async def store_aggregate_execution_state(
-        *,
-        exchange: str,
-        trade_id: str,
-        symbol: str,
-        execution_state: Dict[str, Any],
-        redis_db: int | None = None,
-        ttl_seconds: int | None = None,
+    *,
+    exchange: str,
+    trade_id: str,
+    symbol: str,
+    execution_state: Dict[str, Any],
+    redis_db: int | None = None,
+    ttl_seconds: int | None = None,
 ) -> str:
-    """
-    将 aggregate_execution_state 的结果写入 Redis（覆盖写）。
-    - ttl_seconds: 可选 TTL（秒），用于避免旧状态长期残留
-    """
     rc = RedisClient(db=redis_db)
     k = key(exchange=exchange, trade_id=trade_id, symbol=symbol)
     await rc.set_json(k, execution_state, ex=ttl_seconds)
@@ -216,31 +220,29 @@ async def store_aggregate_execution_state(
 
 
 async def aggregate_execution_state_and_store(
-        risk_action_output: Dict[str, Any],
-        signal_validation_output: Optional[Dict[str, Any]] = None,
-        previous_execution_state: Optional[Dict[str, Any]] = None,
-        now_ts: Optional[int] = None,
-        *,
-        exchange: str | None = None,
-        trade_id: str | None = None,
-        symbol: str | None = None,
-        redis_db: int | None = None,
-        ttl_seconds: int = 900,
+    risk_action_output: Dict[str, Any],
+    signal_validation_output: Optional[Dict[str, Any]] = None,
+    previous_execution_state: Optional[Dict[str, Any]] = None,
+    execution_constraint: Optional[Dict[str, Any]] = None,
+    decision_output: Optional[Dict[str, Any]] = None,
+    now_ts: Optional[int] = None,
+    *,
+    exchange: str | None = None,
+    trade_id: str | None = None,
+    symbol: str | None = None,
+    redis_db: int | None = None,
+    ttl_seconds: int = 900,
 ) -> Dict[str, Any]:
-    """
-    生成 execution_state 并落库到 Redis。
-    - exchange/trade_id/symbol：若未显式传入，会尝试从 risk_action_output["meta"] 取值
-    """
     execution_state = aggregate_execution_state(
         risk_action_output=risk_action_output,
         signal_validation_output=signal_validation_output,
         previous_execution_state=previous_execution_state,
+        execution_constraint=execution_constraint,
+        decision_output=decision_output,
         now_ts=now_ts,
     )
 
-    meta = risk_action_output.get("meta") if isinstance(risk_action_output, dict) else None
-    if not isinstance(meta, dict):
-        meta = {}
+    meta = risk_action_output.get("meta") if isinstance(risk_action_output, dict) else {}
     ex = exchange if exchange is not None else meta.get("exchange")
     td = trade_id if trade_id is not None else meta.get("trade_id")
     sym = symbol if symbol is not None else meta.get("symbol")

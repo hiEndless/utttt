@@ -13,6 +13,7 @@ from data_server.binance.ws_binance.utils.redis_client import get_async_redis
 from data_server.binance.ws_binance.utils.binance_pos_analysis import BinanceAnalysisService
 
 redis_client = get_async_redis()
+analysis_service = BinanceAnalysisService()
 
 
 class BinanceUserWS:
@@ -145,7 +146,7 @@ async def user_callback(data):
         positions = result
         print("持仓:", positions)
         try:
-            BinanceAnalysisService().analysis(positions)
+            analysis_service.analysis(positions)
         except Exception as e:
             print(f"分析错误: {e}，{traceback.print_exc()}")
 

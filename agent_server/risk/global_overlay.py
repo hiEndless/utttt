@@ -25,7 +25,7 @@ import asyncio
 import json
 from typing import List, Dict, Optional
 import time
-from agent_server.risk.execution_state_aggregator import age_execution_state
+from agent_server.risk.position_state_aggregator import age_execution_state
 from agent_server.utils.redis_client import get_verified_redis_client
 from redis.asyncio import Redis
 
@@ -244,7 +244,7 @@ async def _read_and_maintain_execution_states(exchange: str, redis_client: Optio
     1. 续期 TTL（保证常驻）。
     2. 执行状态老化（Aging）：检查冷却过期、风控等级降级。
     3. 如果状态发生变化，写回 Redis。
-    
+
     兼容两种存储形态：
     1) 多个 string key：risk:execution:{exchange}:* (主要路径)
     2) 单个 hash key：risk:execution:{exchange}（field->json） (Legacy, not actively maintained here)
@@ -377,7 +377,7 @@ async def aggregate_and_store_global_overlay(exchange: str, redis_client: Option
     """
     聚合当前交易所下所有持仓的执行状态，并生成/存储全局风控状态。
     这是供外部组件调用的主要接口。
-    
+
     同时会执行“维护”逻辑（TTL续期、冷却检查）。
 
     NOTE: aggregate_and_store_global_overlay must NOT create new redis clients internally.
@@ -409,12 +409,12 @@ async def _read_global_overlay_raw(exchange: str, redis_client: Optional[Redis] 
 def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
     """
     [认知层] 将结构化风控状态转换为 Agent 可理解的自然语言描述。
-    
+
     原则：
     - 软性语言：使用“不建议”而非“禁止”，作为环境上下文而非指令。
     - 解释性：告知 Agent “为什么”。
     - 可讨论性：允许 Agent 在推理中权衡。
-    
+
     Designed for: Signal Validation Agent, Position Risk Agent
     """
     if not overlay:
