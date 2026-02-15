@@ -7,6 +7,12 @@ class Settings:
     redis_password: str = os.environ.get('REDIS_PASSWORD', None)
     redis_port: int = int(os.environ.get('REDIS_PORT', 6379))
     redis_db: int = int(os.environ.get('REDIS_DB', 1))
+
+    # 交易 Redis（推送 TASK_ADD_TRADE，默认与主 Redis 同机，db=8）
+    trade_redis_host: str = os.environ.get('TRADE_REDIS_HOST', None)  # None 则用 redis_host
+    trade_redis_port: int = int(os.environ.get('TRADE_REDIS_PORT', 6379))
+    trade_redis_password: str = os.environ.get('TRADE_REDIS_PASSWORD', None)  # None 则用 redis_password
+    trade_redis_db: int = int(os.environ.get('TRADE_REDIS_DB', 8))
     api_base_url: str = os.environ.get('API_BASE_URL', 'http://localhost:8000/api')
 
     # 中文注释：agent_server 内部 FastAPI 服务，仅供后端服务层调用

@@ -119,6 +119,10 @@ class PostgresDB:
             self.cursor.close()
             self.cursor = None
         if self.conn:
+            try:
+                self.conn.rollback()
+            except Exception as e:
+                logger.debug(f"rollback 时忽略异常: {e}")
             if PostgresDB._pool:
                 PostgresDB._pool.putconn(self.conn)
             else:
@@ -196,6 +200,11 @@ class PostgresDB:
         try:
             return self._retry_operation(_fetch_all_operation)
         except Exception as e:
+            if self.conn:
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
             logger.error(f"查询执行失败: {e}")
             print(f"查询执行失败: {e}")
             raise

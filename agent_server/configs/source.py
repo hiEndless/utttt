@@ -69,6 +69,13 @@ def query_db_env():
             "llm_api_key": "sk-67f7879452d92f3b4f56e530ce7b46b9",
             "a2a_url": "http://localhost:10007/",
         },
+        "trade_decision": {
+            "language": "zh",
+            "model_id": "qwen3-max",
+            "llm_base_url": "https://apis.iflow.cn/v1/chat/completions",
+            "llm_api_key": "sk-67f7879452d92f3b4f56e530ce7b46b9",
+            "theory_type": None,
+        },
     }
 
 

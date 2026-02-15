@@ -156,6 +156,33 @@ AGENT_REGISTRY: dict[str, AgentContextContract] = {
         ],
     },
 
+    "trade_decision": {
+        "agent": "trade_decision",
+        "forbidden_paths": [
+            "pre_decision_structure.short_term.participant_positioning.oi_state",
+            "pre_decision_structure.short_term.participant_positioning.oi_delta",
+            "pre_decision_structure.short_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.short_term.participant_positioning.coupling",
+            "pre_decision_structure.short_term.participant_positioning.participant_inference",
+            "pre_decision_structure.short_term.participant_positioning.meta",
+            "pre_decision_structure.short_term.participant_positioning.risk_flags",
+            "pre_decision_structure.short_term.micro_liquidity",
+            # 保留 behavioral_intent（taker_bias 买卖方数据）供开仓决策使用
+
+            "pre_decision_structure.mid_term.participant_positioning.oi_state",
+            "pre_decision_structure.mid_term.participant_positioning.oi_delta",
+            "pre_decision_structure.mid_term.participant_positioning.oi_dynamics",
+            "pre_decision_structure.mid_term.participant_positioning.coupling",
+            "pre_decision_structure.mid_term.participant_positioning.participant_inference",
+            "pre_decision_structure.mid_term.participant_positioning.meta",
+            "pre_decision_structure.mid_term.participant_positioning.risk_flags",
+            # 保留 behavioral_intent（taker_bias 买卖方数据）
+
+            "pre_decision_structure.long_term.structural_context.crowding_percentile.value",
+            "pre_decision_structure.long_term.confidence",
+        ],
+    },
+
     "human_market_narrator": {
         "agent": "human_market_narrator",
         "forbidden_paths": [
