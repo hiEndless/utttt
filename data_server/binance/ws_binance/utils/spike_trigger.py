@@ -219,10 +219,9 @@ class SpikeDetector:
         buf["asks"].append(float(ask_liq))
         buf["times"].append(float(ts_s))
 
-        # persist to redis stream（XADD）
+        # persist to redis stream（XADD）；不写 price:binance:{symbol}，该 key 仅由 market_ws 的 REST 任务写入
         stream_key = self.stream_key_template.format(symbol=symbol)
-        latest_key = self.latest_key_template.format(symbol=symbol)
-        
+
         # 使用批量写入器，减少连接数
         if self._batch_writer:
             try:
@@ -234,23 +233,11 @@ class SpikeDetector:
                     "ask": float(ask_liq)
                 }, maxlen=self.max_stream_len, approximate=True)
             except Exception as e:
-                # 打印出错的键与其当前类型
                 try:
                     ktype = await self.redis.type(stream_key)
                 except Exception:
                     ktype = "unknown"
                 print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
-
-            try:
-                # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
-                await self._batch_writer.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
-            except Exception as e:
-                # 打印出错的键与其当前类型
-                try:
-                    ktype = await self.redis.type(latest_key)
-                except Exception:
-                    ktype = "unknown"
-                print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
         else:
             # 降级到直接写入（如果批量写入器未初始化）
             try:
@@ -266,15 +253,6 @@ class SpikeDetector:
                 except Exception:
                     ktype = "unknown"
                 print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
-
-            try:
-                await self.redis.hset(latest_key, mapping={"ts": str(ts_ms), "price": str(price), "bid": str(bid_liq), "ask": str(ask_liq)})
-            except Exception as e:
-                try:
-                    ktype = await self.redis.type(latest_key)
-                except Exception:
-                    ktype = "unknown"
-                print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
 
         # 非阻塞触发检测
         asyncio.create_task(self._evaluate(symbol))
