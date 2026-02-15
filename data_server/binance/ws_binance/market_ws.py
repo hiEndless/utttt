@@ -16,8 +16,20 @@ from data_server.binance.ws_binance.utils.depth import update_depth
 redis_client = RedisClient()
 
 # REST 最新成交写入 price:binance（用 /fapi/v1/trades 第一条，与页面显示一致）
+# 直接 conn.hset 写入，不经过 batch writer，避免 Too many connections 等导致写入失败
 BINANCE_TRADES_URL_MAIN = "https://fapi.binance.com/fapi/v1/trades"
 BINANCE_TRADES_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/trades"
+
+
+def _write_price_direct(key: str, ts_ms: int, price: float):
+    """直接写入 Redis，绕过 batch writer，确保 price:binance 能成功更新。"""
+    try:
+        ktype = redis_client.conn.type(key)
+        if ktype and ktype != "hash" and ktype != "none":
+            redis_client.conn.delete(key)
+        redis_client.conn.hset(key, mapping={"ts": str(ts_ms), "price": str(price)})
+    except Exception as e:
+        logging.warning(f"[REST trades] Redis HSET key={key} error: {e}")
 
 
 async def _rest_ticker_write_loop(interval_s: float = 0.8):
@@ -35,7 +47,6 @@ async def _rest_ticker_write_loop(interval_s: float = 0.8):
             if not isinstance(data, list) or len(data) == 0:
                 return None, None
             first = data[0]
-            # 合约 trades 返回字段为 "price"（字符串）
             p = first.get("price") or first.get("p")
             t = first.get("time") or first.get("T")
             if p is not None:
@@ -46,16 +57,16 @@ async def _rest_ticker_write_loop(interval_s: float = 0.8):
             logging.warning(f"[REST trades] {symbol} error: {e}")
         return None, None
 
+    logging.info("[REST trades] price:binance 写入任务已启动，间隔 %.1fs", interval_s)
     while True:
         try:
-            symbols = redis_client.conn.smembers("symbol:binance")
-            symbols = {str(s) for s in symbols} if symbols else set()
+            raw = redis_client.conn.smembers("symbol:binance")
+            symbols = {str(s).upper() for s in raw} if raw else set()
             for sym in symbols:
                 price, ts_ms = await asyncio.to_thread(fetch_latest_trade_price, sym)
                 if price is not None and price > 0:
                     key = f"price:binance:{sym}"
-                    # 使用交易所该笔成交时间，与页面一致
-                    redis_client.set_hash(key, {"ts": ts_ms, "price": price}, check_type=True)
+                    _write_price_direct(key, ts_ms, price)
         except asyncio.CancelledError:
             break
         except Exception as e:
