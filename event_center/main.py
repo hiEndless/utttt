@@ -3,9 +3,9 @@ import os
 from event_center.pipeline.l0_processor import L0Processor
 from event_center.pipeline.l1_aggregator import L1Aggregator
 from event_center.pipeline.final_grader import FinalGrader
-from alerts_consumer import AlertsConsumer
-from force_stats_consumer import ForceStatsConsumer
-from ind_envent_generator import run_loop as ind_event_run_loop
+from event_center.alerts_consumer import AlertsConsumer
+from event_center.force_stats_consumer import ForceStatsConsumer
+from event_center.ind_envent_generator import run_loop as ind_event_run_loop
 from event_center.config import cfg
 from redis import asyncio as aioredis
 
