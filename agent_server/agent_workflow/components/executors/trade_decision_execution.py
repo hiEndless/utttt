@@ -28,6 +28,7 @@ except ImportError:
     redis = None
 
 trade_logger = logging.getLogger("trade_decision")
+ai_reasoning_logger = logging.getLogger("trade_ai_reasoning")
 
 
 def _resolve_sv_output(prev_result: Dict) -> Dict:
@@ -140,25 +141,68 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 elif order_type == "close":
                     await rc.client.srem(f"trading:open_positions:{exchange}", symbol)
                 trade_logger.info(f"订单已推送: {order_id} | {symbol}")
+                trade_logger.info(f"[推送记录] trade_json={json.dumps(trade_json, ensure_ascii=False)}")
                 return True
             return False
         except Exception as e:
             trade_logger.error(f"推送交易失败: {e}")
             return False
 
-    def _format_quantity(self, quantity, symbol: str, step_size: float = 0.001) -> str:
+    # Binance 合约 LOT_SIZE：不同 symbol 的 stepSize 不同，超精度会报 -1111
+    _SYMBOL_STEP = {
+        "BTCUSDT": 0.001, "ETHUSDT": 0.001, "BNBUSDT": 0.01,
+        "SOLUSDT": 0.01, "XRPUSDT": 0.1, "DOGEUSDT": 1,
+        "ADAUSDT": 0.1, "AVAXUSDT": 0.01, "LINKUSDT": 0.01,
+        "1000PEPEUSDT": 1, "PEPEUSDT": 1, "WIFUSDT": 0.1,
+        "VVVUSDT": 1, "TAKEUSDT": 1, "NOTUSDT": 1, "BONKUSDT": 1,
+        "FLOKIUSDT": 1, "SHIBUSDT": 1, "1000SHIBUSDT": 1,
+        "1000FLOKIUSDT": 1, "MEMEUSDT": 1, "TURBOUSDT": 1,
+    }
+
+    def _get_step_size(self, symbol: str, mark_price: float = 0) -> float:
+        """按 symbol 或价格推断 step_size，避免 Precision over maximum"""
+        s = (symbol or "").upper()
+        if s in self._SYMBOL_STEP:
+            return self._SYMBOL_STEP[s]
+        # 未知 symbol 按价格推断：低价 meme 多为 step 1
+        if mark_price >= 1000:
+            return 0.001
+        if mark_price >= 1:
+            return 0.01
+        if mark_price >= 0.1:
+            return 0.1
+        if mark_price >= 0.01:
+            return 0.1
+        return 1  # 极低价币（<0.01）多为 step 1
+
+    def _format_quantity(self, quantity, symbol: str, step_size: float = None, mark_price: float = 0) -> str:
         try:
             from decimal import Decimal, ROUND_DOWN
+            step = step_size if step_size is not None else self._get_step_size(symbol, mark_price)
             q = Decimal(str(float(quantity)))
-            step = Decimal(str(step_size))
-            rounded = (q // step) * step
-            rounded = rounded.quantize(Decimal(str(step_size)), rounding=ROUND_DOWN)
+            step_d = Decimal(str(step))
+            rounded = (q // step_d) * step_d
+            rounded = rounded.quantize(step_d, rounding=ROUND_DOWN)
             if rounded <= 0:
-                rounded = step
+                rounded = step_d
             s = str(rounded)
             return s.rstrip("0").rstrip(".") if "." in s else s
         except Exception:
             return str(quantity)
+
+    def _format_price(self, price: float, symbol: str = "") -> float:
+        """按价格区间截断小数位，避免 Binance tickSize 超精度 -1111"""
+        if price <= 0:
+            return price
+        if price >= 1000:
+            return round(price, 1)
+        if price >= 1:
+            return round(price, 2)
+        if price >= 0.1:
+            return round(price, 3)
+        if price >= 0.01:
+            return round(price, 4)
+        return round(price, 5)
 
     def _build_trade_json(
         self, decision: Dict, event_data: Dict, mark_price: float
@@ -181,7 +225,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 margin = float(decision.get("margin", 200.0))
                 quantity = margin * leverage / mark_price if mark_price > 0 else 0.01
 
-            qty_str = self._format_quantity(quantity, symbol)
+            qty_str = self._format_quantity(quantity, symbol, mark_price=mark_price)
+            open_px = self._format_price(mark_price, symbol)
 
             # 价格转百分比：下游队列使用百分比
             if tp_px > 0 and sl_px > 0 and mark_price > 0:
@@ -203,7 +248,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 "side": side,
                 "leverage": leverage,
                 "sums": qty_str,
-                "openAvgPx": float(mark_price),
+                "quantity": qty_str,  # 兼容 crawler 可能使用的字段名
+                "openAvgPx": open_px,
                 "task_id": 23,
                 "user_id": 2,
                 "api_id": 0,
@@ -321,6 +367,11 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             global_risk_desc=global_risk_desc,
         )
 
+        ai_reasoning_logger.info(
+            f"[推理开始] event_id={event_id} symbol={symbol} direction={direction} l1_score={l1_score:.2f}"
+        )
+        ai_reasoning_logger.info(f"[推理输入] query={json.dumps(query, ensure_ascii=False)}")
+
         try:
             td_output_str = await asyncio.wait_for(
                 self.expert.run(query),
@@ -329,10 +380,13 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         except asyncio.TimeoutError:
             td_output = {"decision": "NO_ACTION", "should_execute": False, "error": "LLM 超时"}
             trade_logger.warning(f"TradeDecisionExpert 超时 | {symbol} | {event_id}")
+            ai_reasoning_logger.warning(f"[推理异常] event_id={event_id} symbol={symbol} error=LLM超时")
         except Exception as e:
             trade_logger.error(f"TradeDecisionExpert 调用失败 | {symbol} | {event_id} | error={e}", exc_info=True)
             td_output = {"decision": "NO_ACTION", "should_execute": False, "error": str(e)}
+            ai_reasoning_logger.error(f"[推理异常] event_id={event_id} symbol={symbol} error={e}")
         else:
+            ai_reasoning_logger.info(f"[推理原始输出] event_id={event_id} raw={td_output_str}")
             try:
                 parsed = json.loads(td_output_str) if isinstance(td_output_str, str) else td_output_str
                 if not isinstance(parsed, dict):
@@ -376,6 +430,14 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         fallback = td_output.get("error", "") or reason_preview
         trade_logger.info(
             f"=== 交易决策完成 === | {symbol} | {decision} | pushed={trade_pushed} | reason={fallback[:100]}"
+        )
+
+        ai_reasoning_logger.info(
+            f"[推理完成] event_id={event_id} symbol={symbol} decision={decision} "
+            f"should_execute={should_execute} trade_pushed={trade_pushed}"
+        )
+        ai_reasoning_logger.info(
+            f"[推理结果] parsed_output={json.dumps(td_output, ensure_ascii=False)}"
         )
 
         out = {

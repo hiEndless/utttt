@@ -239,7 +239,27 @@ class TradeEventRecorder:
         except Exception as e:
             logger.error(f"查询 trade_id 失败: {e}")
             return []
-    
+
+    PRE_TRADE_SYSTEM = "pre_trade_system"
+
+    def _get_or_create_pre_trade(self, exchange: str, symbol: str) -> str:
+        """
+        获取或创建 pre-trade 占位符，用于无持仓时的指标事件（如 L1 开仓前信号）
+        """
+        try:
+            from datetime import datetime
+            with PostgresDB() as db:
+                sql = """
+                    INSERT INTO trades (trade, symbol, exchange, position_side, entry_time, size, max_size, closed_size)
+                    VALUES (%s, %s, %s, 'NONE', %s, 0, 0, 0)
+                    ON CONFLICT (trade) DO NOTHING
+                """
+                db.execute(sql, [self.PRE_TRADE_SYSTEM, symbol, exchange, datetime.now()])
+            return self.PRE_TRADE_SYSTEM
+        except Exception as e:
+            logger.warning(f"创建 pre_trade 占位失败: {e}, 仍尝试使用占位符")
+            return self.PRE_TRADE_SYSTEM
+
     def _save_event_sync(self, trade_id: str, event_info: Dict[str, Any], mark_price: Optional[float] = None):
         """
         同步保存事件到数据库 (内部方法，由线程池执行)
@@ -251,8 +271,14 @@ class TradeEventRecorder:
             symbol = event_info.get("symbol", "")
             
             # 时间戳转换为毫秒（如果不是）
-            event_at = int(event_info.get("timestamp", 0))
-            if event_at < 10**12:  # 如果是秒级时间戳，转为毫秒
+            try:
+                event_at = int(event_info.get("timestamp") or 0)
+            except (ValueError, TypeError):
+                event_at = 0
+            if event_at <= 0:
+                import time
+                event_at = int(time.time() * 1000)
+            elif event_at < 10**12:  # 如果是秒级时间戳，转为毫秒
                 event_at = event_at * 1000
             direction = self._extract_direction(event_info)
             
@@ -291,12 +317,12 @@ class TradeEventRecorder:
                     event_summary = "系统策略：短线高频交易不进行分析"
 
             # 插入 trade_events 表
-            # 注意：外键字段名是 trade_id (对应 Trade 模型的 trade 字段)
-            # 多空双开场景：同一 event_id 可能对应多个 trade_id
-            # 通过 (event_id, trade_id) 联合唯一来区分不同持仓的事件
+            # 注意：trade_events 表列名为 trade (对应 Trade 模型的 trade 字段)
+            # 多空双开场景：同一 event_id 可能对应多个 trade
+            # 通过 (event_id, trade) 联合唯一来区分不同持仓的事件
             
             with PostgresDB() as db:
-                check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade_id = %s LIMIT 1"
+                check_sql = "SELECT id, is_verified FROM trade_events WHERE event_id = %s AND trade = %s LIMIT 1"
                 existing = db.fetch_one(check_sql, [event_id, trade_id])
                 
                 if existing:
@@ -334,7 +360,7 @@ class TradeEventRecorder:
                         update_sql += ", event_summary = %s"
                         update_params.append(event_summary)
                         
-                    update_sql += " WHERE event_id = %s AND trade_id = %s"
+                    update_sql += " WHERE event_id = %s AND trade = %s"
                     update_params.extend([event_id, trade_id])
                     
                     db.execute(update_sql, update_params)
@@ -343,7 +369,7 @@ class TradeEventRecorder:
                     # 不存在，插入新记录
                     sql = """
                         INSERT INTO trade_events (
-                            trade_id, event_id, event_type, event_at,
+                            trade, event_id, event_type, event_at,
                             direction, mark_price,
                             market_context, event_data, indicators_snapshot,
                             is_verified, verification_at,
@@ -422,9 +448,17 @@ class TradeEventRecorder:
                 )
             
             if not trade_ids:
-                logger.warning(f"无法关联 trade_id，跳过入库: exchange={exchange}, symbol={symbol}")
-                return False
-            
+                # 无持仓时使用 pre_trade 占位符，支持开仓前指标事件入库
+                loop = asyncio.get_event_loop()
+                pre_trade = await loop.run_in_executor(
+                    self.executor,
+                    self._get_or_create_pre_trade,
+                    exchange,
+                    symbol,
+                )
+                trade_ids = [pre_trade]
+                logger.debug(f"无持仓，使用 pre_trade 占位符: exchange={exchange}, symbol={symbol}")
+
             # 3. 为每个 trade_id 保存事件（多空双开时会保存多条记录）
             loop = asyncio.get_event_loop()
             save_tasks = [
@@ -584,7 +618,7 @@ class TradeEventRecorder:
                     params = [event_id]
                     
                     if trade_id:
-                        sql += " AND trade_id = %s"
+                        sql += " AND trade = %s"
                         params.append(trade_id)
                     
                     event_rows = db.fetch_all(sql, params)

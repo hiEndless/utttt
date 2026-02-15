@@ -18,13 +18,16 @@ def setup_logging():
     logging.getLogger("httpcore").setLevel(logging.ERROR)
     logging.getLogger("agno").setLevel(logging.CRITICAL)
     logging.getLogger("trade_decision").setLevel(logging.INFO)
+    logging.getLogger("trade_ai_reasoning").setLevel(logging.INFO)
 
 
 def main():
     setup_logging()
     print("[TradeDecision] 启动交易决策服务")
     print(f"[TradeDecision] 监听流: l1_events")
-    print(f"[TradeDecision] 日志目录: {os.path.join(os.path.dirname(__file__), 'logs')}")
+    log_dir = os.path.join(os.path.dirname(__file__), "logs")
+    print(f"[TradeDecision] 日志目录: {log_dir}")
+    print(f"[TradeDecision] 交易日志: trade_decision_YYYYMMDD.log | AI推理日志: trade_ai_reasoning_YYYYMMDD.log")
     asyncio.run(run_trade_listen())
 
 

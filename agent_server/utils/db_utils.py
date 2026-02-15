@@ -65,7 +65,7 @@ class PostgresDB:
         print(f"数据库连接失败 - 主机: {db_host}:{db_port}, 错误: {str(error)}")
 
     def _retry_operation(self, operation, *args, **kwargs):
-        """重试机制装饰器"""
+        """重试机制装饰器。失败时先 rollback 再重试，避免连接处于 aborted 状态。"""
         last_exception = None
 
         for attempt in range(self.max_retries + 1):
@@ -73,6 +73,11 @@ class PostgresDB:
                 return operation(*args, **kwargs)
             except Exception as e:
                 last_exception = e
+                if self.conn and not self.conn.closed:
+                    try:
+                        self.conn.rollback()
+                    except Exception:
+                        pass
                 if attempt < self.max_retries:
                     logger.warning(f"操作失败，第 {attempt + 1} 次重试，{self.retry_delay}秒后重试: {str(e)}")
                     time.sleep(self.retry_delay)
