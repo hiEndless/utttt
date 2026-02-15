@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import threading
 import websockets
 import logging
 import ssl
@@ -32,13 +33,15 @@ def _write_price_direct(key: str, ts_ms: int, price: float):
         logging.warning(f"[REST trades] Redis HSET key={key} error: {e}")
 
 
-async def _rest_ticker_write_loop(interval_s: float = 0.8):
-    """定时从 REST /fapi/v1/trades 取最新一笔成交（第一条）写入 Redis price:binance:{symbol}。"""
+def _rest_ticker_write_loop_thread(interval_s: float = 0.8):
+    """
+    在独立线程中运行，定时从 REST 拉取最新成交写入 Redis。
+    不依赖 asyncio 事件循环，避免 WS 消息高峰时被阻塞导致写入间隔拉长。
+    """
     use_testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() in ("1", "true", "yes", "on")
     base_url = BINANCE_TRADES_URL_TEST if use_testnet else BINANCE_TRADES_URL_MAIN
 
     def fetch_latest_trade_price(symbol: str):
-        """拉取 limit=1 的最近一笔成交，返回 (price, time_ms)；与页面「最新成交价」一致。"""
         try:
             r = requests.get(base_url, params={"symbol": symbol, "limit": 1}, timeout=5)
             if r.status_code != 200:
@@ -57,21 +60,19 @@ async def _rest_ticker_write_loop(interval_s: float = 0.8):
             logging.warning(f"[REST trades] {symbol} error: {e}")
         return None, None
 
-    logging.info("[REST trades] price:binance 写入任务已启动，间隔 %.1fs", interval_s)
+    logging.info("[REST trades] price:binance 写入任务已启动（独立线程），间隔 %.1fs", interval_s)
     while True:
         try:
             raw = redis_client.conn.smembers("symbol:binance")
             symbols = {str(s).upper() for s in raw} if raw else set()
             for sym in symbols:
-                price, ts_ms = await asyncio.to_thread(fetch_latest_trade_price, sym)
+                price, ts_ms = fetch_latest_trade_price(sym)
                 if price is not None and price > 0:
                     key = f"price:binance:{sym}"
                     _write_price_direct(key, ts_ms, price)
-        except asyncio.CancelledError:
-            break
         except Exception as e:
             logging.warning(f"[REST trades] loop error: {e}")
-        await asyncio.sleep(interval_s)
+        time.sleep(interval_s)
 
 
 # ---- SpikeDetector integration state ----
@@ -441,7 +442,8 @@ async def main():
     try:
         await detector.start()
         await ws.start()
-        asyncio.create_task(_rest_ticker_write_loop(0.8))
+        t = threading.Thread(target=_rest_ticker_write_loop_thread, args=(0.8,), daemon=True)
+        t.start()
         asyncio.create_task(monitor_symbols(ws))
         print("已启动")
         while True:
