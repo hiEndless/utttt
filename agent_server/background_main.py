@@ -49,13 +49,12 @@ async def _run(stop_event: asyncio.Event = None):
     redis = aioredis.Redis(connection_pool=pool)
     ex_watcher = RedisExchangeWatcher(redis)
 
-    if stop_event is None:
-        stop = asyncio.Event()
-        loop = asyncio.get_running_loop()
+    stop = stop_event if stop_event is not None else asyncio.Event()
+    loop = asyncio.get_running_loop()
 
-        def _on_sig(*_):
-            logging.getLogger("background").info("received_stop_signal")
-            stop.set()
+    def _on_sig(*_):
+        logging.getLogger("background").info("received_stop_signal")
+        stop.set()
 
     # Windows 不支持 add_signal_handler，使用 try-except 处理
     try:
