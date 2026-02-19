@@ -9,6 +9,18 @@ class Trade(models.Model):
     trade = fields.CharField(max_length=64, unique=True, description="交易ID (UUID)")
     symbol = fields.CharField(max_length=32, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, description="交易所 (e.g. binance)")
+    user = fields.ForeignKeyField(
+        "models.User",
+        related_name="trades",
+        null=True,
+        description="关联用户(冗余，便于过滤/索引)",
+    )
+    exchange_account = fields.ForeignKeyField(
+        "models.ExchangeAccount",
+        related_name="trades",
+        null=True,
+        description="关联交易所账户",
+    )
     position_side = fields.CharField(max_length=16, description="方向 (LONG/SHORT)")
     leverage = fields.IntField(null=True, description="杠杆倍数")
     size = fields.DecimalField(max_digits=20, decimal_places=8, description="持仓量 (positionAmt)")
@@ -39,7 +51,11 @@ class Trade(models.Model):
     
     class Meta:
         table = "trades"
-        indexes = (("symbol", "close_time"),)
+        indexes = (
+            ("symbol", "close_time"),
+            ("exchange_account", "symbol", "close_time"),
+            ("user", "symbol", "close_time"),
+        )
 
 
 class TradeAction(models.Model):
@@ -54,6 +70,18 @@ class TradeAction(models.Model):
     symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
     position_side = fields.CharField(max_length=16, null=True, description="方向 (LONG/SHORT)")
+    user = fields.ForeignKeyField(
+        "models.User",
+        related_name="trade_actions",
+        null=True,
+        description="关联用户(冗余，便于过滤/索引)",
+    )
+    exchange_account = fields.ForeignKeyField(
+        "models.ExchangeAccount",
+        related_name="trade_actions",
+        null=True,
+        description="关联交易所账户(冗余，便于过滤/索引)",
+    )
 
     # 核心数据
     amount = fields.DecimalField(max_digits=20, decimal_places=8, description="变动数量 (positionAmt)")
@@ -86,7 +114,7 @@ class TradeAction(models.Model):
 
     class Meta:
         table = "trade_actions"
-        indexes = (("trade", "action_at"),)
+        indexes = (("trade", "action_at"), ("exchange_account", "action_at"), ("user", "action_at"))
 
 
 class TradeEvent(models.Model):
@@ -103,6 +131,18 @@ class TradeEvent(models.Model):
     # 冗余字段方便查询
     symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
+    user = fields.ForeignKeyField(
+        "models.User",
+        related_name="trade_events",
+        null=True,
+        description="关联用户(冗余，便于过滤/索引)",
+    )
+    exchange_account = fields.ForeignKeyField(
+        "models.ExchangeAccount",
+        related_name="trade_events",
+        null=True,
+        description="关联交易所账户(冗余，便于过滤/索引)",
+    )
 
     direction = fields.CharField(max_length=16, description="方向 (bullish/bearish/neutral)")
     mark_price = fields.DecimalField(max_digits=20, decimal_places=8, null=True, description="事件发生时的价格")
@@ -122,7 +162,7 @@ class TradeEvent(models.Model):
 
     class Meta:
         table = "trade_events"
-        indexes = (("trade", "event_at"),)
+        indexes = (("trade", "event_at"), ("exchange_account", "event_at"), ("user", "event_at"))
 
 
 class AgentAnalysis(models.Model):
@@ -167,6 +207,18 @@ class AgentAnalysis(models.Model):
     # 冗余字段方便查询
     symbol = fields.CharField(max_length=32, null=True, description="交易对 (e.g. ETHUSDT)")
     exchange = fields.CharField(max_length=32, null=True, description="交易所 (e.g. binance)")
+    user = fields.ForeignKeyField(
+        "models.User",
+        related_name="agent_analyses",
+        null=True,
+        description="关联用户(冗余，便于过滤/索引)",
+    )
+    exchange_account = fields.ForeignKeyField(
+        "models.ExchangeAccount",
+        related_name="agent_analyses",
+        null=True,
+        description="关联交易所账户(冗余，便于过滤/索引)",
+    )
 
     agent_name = fields.CharField(max_length=32, description="Agent 名称 (e.g. signal_validation, position_risk)")
     model_version = fields.CharField(max_length=64, null=True, description="模型版本 (e.g. gpt-4-turbo, llama-3-70b)")
@@ -199,5 +251,4 @@ class AgentAnalysis(models.Model):
 
     class Meta:
         table = "agent_analyses"
-
-
+        indexes = (("exchange_account", "created_at"), ("user", "created_at"))
