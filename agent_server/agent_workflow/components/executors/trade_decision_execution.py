@@ -6,13 +6,11 @@
 import asyncio
 import json
 import time
-import hashlib
 import logging
 from typing import Dict, Optional, List, Any
 from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.trade_decision import TradeDecisionExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
-from agent_server.utils.redis_client import RedisClient
 from agent_server.tools.price_fetcher import get_mark_price_from_redis
 from agent_server.risk.global_overlay import (
     _read_global_overlay_raw,
@@ -21,11 +19,6 @@ from agent_server.risk.global_overlay import (
 )
 from agent_server.risk.execution_boundary import ExecutionBoundary
 from agent_server.agent_context.builder import build_agent_context
-
-try:
-    import redis
-except ImportError:
-    redis = None
 
 trade_logger = logging.getLogger("trade_decision")
 ai_reasoning_logger = logging.getLogger("trade_ai_reasoning")
@@ -91,62 +84,12 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         }
 
     async def _push_to_trade_queue(self, trade_json: Dict) -> bool:
-        if not redis:
-            trade_logger.error("redis 模块未安装，无法推送交易")
-            return False
-        try:
-            symbol = trade_json.get("symbol", "")
-            order_type = trade_json.get("order_type", "open")
-            exchange = "binance"
-
-            timestamp = int(time.time() * 1000)
-            trade_str = json.dumps(trade_json, sort_keys=True, ensure_ascii=False)
-            trade_hash = hashlib.md5(trade_str.encode()).hexdigest()[:8]
-            order_id = f"{symbol}_{timestamp}_{order_type}_{trade_hash}"
-
-            rc = RedisClient()
-            order_key = f"trading:orders:{exchange}"
-            if await rc.client.sismember(order_key, order_id):
-                trade_logger.warning(f"订单已存在，跳过: {order_id} | {symbol}")
-                return False
-
-            if order_type == "open":
-                position_key = f"trading:open_positions:{exchange}"
-                if await rc.client.sismember(position_key, symbol):
-                    trade_logger.warning(f"交易对已开仓，跳过: {symbol}")
-                    return False
-
-            cfg = self._get_trade_redis_config()
-            password = cfg.get("password")
-            if isinstance(password, str) and password.strip().lower() in ("none", "null", ""):
-                password = None
-
-            r = redis.Redis(
-                host=cfg["host"],
-                port=cfg["port"],
-                password=password,
-                db=cfg["db"],
-                decode_responses=cfg.get("decode_responses", False),
-                socket_connect_timeout=10,
-                socket_timeout=10,
-            )
-            json_str = json.dumps(trade_json, ensure_ascii=False)
-            result = r.lpush(self.trade_queue_name, json_str)
-            r.close()
-
-            if result:
-                await rc.client.sadd(order_key, order_id)
-                if order_type == "open":
-                    await rc.client.sadd(f"trading:open_positions:{exchange}", symbol)
-                elif order_type == "close":
-                    await rc.client.srem(f"trading:open_positions:{exchange}", symbol)
-                trade_logger.info(f"订单已推送: {order_id} | {symbol}")
-                trade_logger.info(f"[推送记录] trade_json={json.dumps(trade_json, ensure_ascii=False)}")
-                return True
-            return False
-        except Exception as e:
-            trade_logger.error(f"推送交易失败: {e}")
-            return False
+        from agent_server.utils.trade_push import push_trade_to_redis
+        return await push_trade_to_redis(
+            trade_json,
+            queue_name=self.trade_queue_name,
+            redis_config=self._get_trade_redis_config(),
+        )
 
     # Binance 合约 LOT_SIZE：不同 symbol 的 stepSize 不同，超精度会报 -1111
     _SYMBOL_STEP = {
@@ -228,7 +171,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             qty_str = self._format_quantity(quantity, symbol, mark_price=mark_price)
             open_px = self._format_price(mark_price, symbol)
 
-            # 价格转百分比：下游队列使用百分比
+            # 价格转百分比：下游队列使用百分比，截断精度避免 Binance -1111
             if tp_px > 0 and sl_px > 0 and mark_price > 0:
                 if position_side == "LONG":
                     tp_pct = (tp_px - mark_price) / mark_price * 100
@@ -240,6 +183,14 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                     tp_pct, sl_pct = 3.0, 2.0
             else:
                 tp_pct, sl_pct = 3.0, 2.0
+
+            # 止盈止损百分比保留 2 位小数，避免下游计算触发 Binance tickSize 超精度
+            tp_pct = round(float(tp_pct), 2)
+            sl_pct = round(float(sl_pct), 2)
+
+            # 同时提供已格式化的价格，crawler 可直接用于 Binance 下单，避免 -1111
+            tp_price_fmt = self._format_price(tp_px, symbol) if tp_px > 0 else 0.0
+            sl_price_fmt = self._format_price(sl_px, symbol) if sl_px > 0 else 0.0
 
             return {
                 "order_type": order_type,
@@ -254,8 +205,10 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 "user_id": 2,
                 "api_id": 0,
                 "trade_trigger_mode": 1,
-                "tp_trigger_px": float(tp_pct),
-                "sl_trigger_px": float(sl_pct),
+                "tp_trigger_px": tp_pct,
+                "sl_trigger_px": sl_pct,
+                "tp_trigger_price": tp_price_fmt,
+                "sl_trigger_price": sl_price_fmt,
                 "acc": {"key": "", "secret": "", "passphrase": "", "proxies": {}, "exchange": 2},
                 "flag": "1",
                 "uniqueName": "ai_trading_system",

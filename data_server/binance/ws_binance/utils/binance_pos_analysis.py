@@ -1,4 +1,5 @@
 from data_server.binance.ws_binance.utils.reids_connect import RedisClient
+from data_server.binance.ws_binance.utils.redis_client import get_trade_sync_redis
 from data_server.binance.ws_binance.utils.trade_recorder import TradeRecorder
 import uuid
 import datetime
@@ -9,6 +10,7 @@ previous_data = None
 class BinanceAnalysisService:
     def __init__(self):
         self.redis_client = RedisClient()
+        self.trade_conn = get_trade_sync_redis()  # trading:* 在 trade_redis db8，与 agent 同库
         self.trade_recorder = TradeRecorder(exchange="binance")
         self.previous_data = None
 
@@ -175,6 +177,9 @@ class BinanceAnalysisService:
             new_data = self.apply_trade_ids([], new_data)
             self.set_old_data(new_data)
             self.redis_client.set_json("positions:binance", new_data)
+            if not new_data:
+                self.trade_conn.delete("trading:open_positions:binance")
+                self.trade_conn.delete("trading:orders:binance")
             return
 
         # 先补齐 trade_id/open_time，再做对比，避免历史缓存缺字段导致无法补齐并写回 Redis
@@ -203,16 +208,26 @@ class BinanceAnalysisService:
                 
                 for item in removed_items:
                     # 只有当该 symbol 不在当前的 symbol 集合中时，才从 redis 中删除
-                    if item.get('symbol') not in current_symbols:
-                        self.redis_client.conn.srem("symbol:binance", f"{item.get('symbol')}")
+                    symbol = item.get('symbol')
+                    if symbol not in current_symbols:
+                        self.redis_client.conn.srem("symbol:binance", f"{symbol}")
+                        self.trade_conn.srem("trading:open_positions:binance", symbol)
                     print("存入数据库：", item)
                     self.trade_recorder.close_trade(item, current_time_ms)
 
             changed_items = self.find_changed_items(old_data, new_data)
             if changed_items:
                 for item in changed_items:
+                    old_amt = item.get('old_position_amt', 0) or 0
+                    new_amt = item.get('new_position_amt', 0) or 0
+                    if old_amt != 0 and new_amt == 0:
+                        self.trade_conn.srem("trading:open_positions:binance", item.get('symbol'))
                     print("变化的数据：", item)
                     self.trade_recorder.update_trade(item)
+        # 无持仓时统一清理 trading:*（含 old_data=[] 且 new_data=[] 的重复推送）
+        if not new_data:
+            self.trade_conn.delete("trading:open_positions:binance")
+            self.trade_conn.delete("trading:orders:binance")
         return
 
 

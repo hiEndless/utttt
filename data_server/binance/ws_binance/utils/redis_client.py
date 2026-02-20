@@ -101,6 +101,21 @@ def get_sync_redis(host=None, port=None, password=None, db=None, decode_response
     return client
 
 
+def get_trade_sync_redis():
+    """
+    获取交易 Redis 客户端（用于 trading:* 等键，与 agent trade_redis 同库）
+    环境变量: TRADE_REDIS_HOST, TRADE_REDIS_PORT, TRADE_REDIS_DB(默认8), TRADE_REDIS_PASSWORD
+    未设置时回退到 REDIS_*，但 db 默认 8
+    """
+    host = os.environ.get("TRADE_REDIS_HOST") or os.environ.get("REDIS_HOST", "127.0.0.1")
+    port = int(os.environ.get("TRADE_REDIS_PORT") or os.environ.get("REDIS_PORT", 6379))
+    db = int(os.environ.get("TRADE_REDIS_DB", 8))
+    password = os.environ.get("TRADE_REDIS_PASSWORD")
+    if password is None:
+        password = os.environ.get("REDIS_PASSWORD")
+    return get_sync_redis(host=host, port=port, password=password, db=db)
+
+
 async def safe_hset_async(client, key: str, mapping: dict):
     try:
         ktype = await client.type(key)
