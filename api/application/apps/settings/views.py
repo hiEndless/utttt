@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from ..account.views import get_current_user_id
 from .models import AgentModelConfig, ExchangeAccount, ModelProvider, NotificationChannel
 
+from ...common.status_codes import StatusCode, BaseResponse, BusinessException, success_response, error_response
+
 app = APIRouter()
 
 
@@ -70,7 +72,7 @@ class ExchangeAccountOut(BaseModel):
     updated_at: datetime
 
 
-@app.post("/settings/exchange_accounts", response_model=ExchangeAccountOut)
+@app.post("/settings/exchange_accounts", response_model=BaseResponse[ExchangeAccountOut])
 async def create_exchange_account(
     body: ExchangeAccountCreateIn,
     user_id: str = Depends(get_current_user_id),
@@ -78,7 +80,7 @@ async def create_exchange_account(
     """新增交易所账户绑定信息（只返回脱敏信息）。"""
     existing = await ExchangeAccount.get_or_none(user_id=user_id, exchange=body.exchange)
     if existing and not existing.is_deleted:
-        raise HTTPException(status_code=400, detail="该交易所已绑定，请先删除后再绑定")
+        raise BusinessException(code=StatusCode.ACCOUNT_ALREADY_BOUND)
 
     if existing and existing.is_deleted:
         existing.api_key = body.api_key
@@ -103,7 +105,7 @@ async def create_exchange_account(
             is_active=body.is_active,
         )
 
-    return ExchangeAccountOut(
+    return success_response(ExchangeAccountOut(
         id=str(obj.id),
         exchange=obj.exchange,
         api_key_masked=_mask_string(obj.api_key),
@@ -114,17 +116,17 @@ async def create_exchange_account(
         has_api_passphrase=bool(obj.api_passphrase),
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
-@app.get("/settings/exchange_accounts", response_model=list[ExchangeAccountOut])
+@app.get("/settings/exchange_accounts", response_model=BaseResponse[list[ExchangeAccountOut]])
 async def list_exchange_accounts(user_id: str = Depends(get_current_user_id)):
     """读取当前用户的交易所账户绑定列表（只返回脱敏信息）。"""
     items = (
         await ExchangeAccount.filter(user_id=user_id, is_deleted=False)
         .order_by("-created_at", "exchange")
     )
-    return [
+    return success_response([
         ExchangeAccountOut(
             id=str(obj.id),
             exchange=obj.exchange,
@@ -138,16 +140,16 @@ async def list_exchange_accounts(user_id: str = Depends(get_current_user_id)):
             updated_at=obj.updated_at,
         )
         for obj in items
-    ]
+    ])
 
 
-@app.get("/settings/exchange_accounts/{account_id}", response_model=ExchangeAccountOut)
+@app.get("/settings/exchange_accounts/{account_id}", response_model=BaseResponse[ExchangeAccountOut])
 async def get_exchange_account(account_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
     """读取单个交易所账户绑定（只返回脱敏信息）。"""
     obj = await ExchangeAccount.get_or_none(id=account_id, user_id=user_id, is_deleted=False)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
-    return ExchangeAccountOut(
+        raise BusinessException(code=StatusCode.NOT_FOUND)
+    return success_response(ExchangeAccountOut(
         id=str(obj.id),
         exchange=obj.exchange,
         api_key_masked=_mask_string(obj.api_key),
@@ -158,7 +160,7 @@ async def get_exchange_account(account_id: uuid.UUID, user_id: str = Depends(get
         has_api_passphrase=bool(obj.api_passphrase),
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
 class ExchangeAccountUpdateIn(BaseModel):
@@ -166,7 +168,7 @@ class ExchangeAccountUpdateIn(BaseModel):
     api_label: Optional[str] = Field(default=None, max_length=64)
 
 
-@app.patch("/settings/exchange_accounts/{account_id}", response_model=ExchangeAccountOut)
+@app.patch("/settings/exchange_accounts/{account_id}", response_model=BaseResponse[ExchangeAccountOut])
 async def update_exchange_account(
     account_id: uuid.UUID,
     body: ExchangeAccountUpdateIn,
@@ -175,7 +177,7 @@ async def update_exchange_account(
     """更新交易所账户状态（如启用/禁用）。"""
     obj = await ExchangeAccount.get_or_none(id=account_id, user_id=user_id, is_deleted=False)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise BusinessException(code=StatusCode.NOT_FOUND)
 
     if body.is_active is not None:
         if body.is_active:
@@ -188,7 +190,7 @@ async def update_exchange_account(
 
     await obj.save()
     
-    return ExchangeAccountOut(
+    return success_response(ExchangeAccountOut(
         id=str(obj.id),
         exchange=obj.exchange,
         api_key_masked=_mask_string(obj.api_key),
@@ -199,22 +201,22 @@ async def update_exchange_account(
         has_api_passphrase=bool(obj.api_passphrase),
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
-@app.delete("/settings/exchange_accounts/{account_id}")
+@app.delete("/settings/exchange_accounts/{account_id}", response_model=BaseResponse[dict])
 async def delete_exchange_account(account_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
     """删除交易所账户绑定信息。"""
     obj = await ExchangeAccount.get_or_none(id=account_id, user_id=user_id, is_deleted=False)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise BusinessException(code=StatusCode.NOT_FOUND)
     
     # 执行软删除
     obj.is_deleted = True
     obj.deleted_at = datetime.now()
     await obj.save()
     
-    return {"message": "Exchange account deleted successfully"}
+    return success_response({"message": "Exchange account deleted successfully"})
 
 
 class ModelProviderCreateIn(BaseModel):
@@ -239,17 +241,17 @@ class ModelProviderOut(BaseModel):
     updated_at: datetime
 
 
-@app.post("/settings/model_providers", response_model=ModelProviderOut)
+@app.post("/settings/model_providers", response_model=BaseResponse[ModelProviderOut])
 async def create_model_provider(
     body: ModelProviderCreateIn,
     user_id: str = Depends(get_current_user_id),
 ):
     """新增模型供应商配置（只返回脱敏信息）。"""
     existing = await ModelProvider.get_or_none(
-        user_id=user_id, provider=body.provider, is_active=True, deleted_at__isnull=True
+        user_id=user_id, provider=body.provider, deleted_at__isnull=True
     )
     if existing:
-        raise HTTPException(status_code=400, detail="该供应商已存在启用配置")
+        raise BusinessException(code=StatusCode.PROVIDER_ALREADY_EXISTS)
 
     obj = await ModelProvider.create(
         user_id=user_id,
@@ -258,7 +260,7 @@ async def create_model_provider(
         api_key=body.api_key,
         is_active=body.is_active,
     )
-    return ModelProviderOut(
+    return success_response(ModelProviderOut(
         id=str(obj.id),
         provider=obj.provider,
         base_url=obj.base_url,
@@ -271,17 +273,17 @@ async def create_model_provider(
         has_api_key=bool(obj.api_key),
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
-@app.get("/settings/model_providers", response_model=list[ModelProviderOut])
+@app.get("/settings/model_providers", response_model=BaseResponse[list[ModelProviderOut]])
 async def list_model_providers(user_id: str = Depends(get_current_user_id)):
     """读取模型供应商配置列表（只返回脱敏信息）。"""
     items = (
         await ModelProvider.filter(user_id=user_id, deleted_at__isnull=True)
         .order_by("-created_at", "provider")
     )
-    return [
+    return success_response([
         ModelProviderOut(
             id=str(obj.id),
             provider=obj.provider,
@@ -297,16 +299,16 @@ async def list_model_providers(user_id: str = Depends(get_current_user_id)):
             updated_at=obj.updated_at,
         )
         for obj in items
-    ]
+    ])
 
 
-@app.get("/settings/model_providers/{provider_id}", response_model=ModelProviderOut)
+@app.get("/settings/model_providers/{provider_id}", response_model=BaseResponse[ModelProviderOut])
 async def get_model_provider(provider_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
     """读取单个模型供应商配置（只返回脱敏信息）。"""
     obj = await ModelProvider.get_or_none(id=provider_id, user_id=user_id, deleted_at__isnull=True)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
-    return ModelProviderOut(
+        raise BusinessException(code=StatusCode.NOT_FOUND)
+    return success_response(ModelProviderOut(
         id=str(obj.id),
         provider=obj.provider,
         base_url=obj.base_url,
@@ -319,7 +321,74 @@ async def get_model_provider(provider_id: uuid.UUID, user_id: str = Depends(get_
         has_api_key=bool(obj.api_key),
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
+
+
+class ModelProviderUpdateIn(BaseModel):
+    is_active: Optional[bool] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = Field(default=None, max_length=512)
+
+
+@app.patch("/settings/model_providers/{provider_id}", response_model=BaseResponse[ModelProviderOut])
+async def update_model_provider(
+    provider_id: uuid.UUID,
+    body: ModelProviderUpdateIn,
+    user_id: str = Depends(get_current_user_id),
+):
+    """更新模型供应商配置（如启用/禁用、更新Key）。"""
+    obj = await ModelProvider.get_or_none(id=provider_id, user_id=user_id, deleted_at__isnull=True)
+    if not obj:
+        raise BusinessException(code=StatusCode.NOT_FOUND)
+
+    if body.is_active is not None:
+        if body.is_active:
+            # 检查是否有重复的同名供应商（包括已删除但未物理删除的）
+            existing = await ModelProvider.get_or_none(
+                user_id=user_id, provider=obj.provider, deleted_at__isnull=True
+            )
+            if existing and existing.id != obj.id:
+                raise BusinessException(code=StatusCode.PROVIDER_ALREADY_EXISTS)
+        obj.is_active = body.is_active
+
+    if body.api_key is not None:
+        obj.api_key = body.api_key
+    
+    if body.base_url is not None:
+        obj.base_url = body.base_url
+
+    await obj.save()
+    
+    return success_response(ModelProviderOut(
+        id=str(obj.id),
+        provider=obj.provider,
+        base_url=obj.base_url,
+        is_active=obj.is_active,
+        availability_status=obj.availability_status,
+        unavailable_reason=obj.unavailable_reason,
+        unavailable_until=obj.unavailable_until,
+        last_check_at=obj.last_check_at,
+        last_error_at=obj.last_error_at,
+        has_api_key=bool(obj.api_key),
+        created_at=obj.created_at,
+        updated_at=obj.updated_at,
+    ))
+
+
+@app.delete("/settings/model_providers/{provider_id}", response_model=BaseResponse[dict])
+async def delete_model_provider(provider_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
+    """删除模型供应商配置。"""
+    obj = await ModelProvider.get_or_none(id=provider_id, user_id=user_id, deleted_at__isnull=True)
+    if not obj:
+        raise BusinessException(code=StatusCode.NOT_FOUND)
+    
+    # 执行软删除
+    obj.deleted_at = datetime.now()
+    obj.is_active = False  # 同时禁用，防止唯一索引冲突
+    await obj.save()
+    
+    return success_response({"message": "Model provider deleted successfully"})
+
 
 
 class AgentModelConfigCreateIn(BaseModel):
@@ -345,7 +414,7 @@ class AgentModelConfigOut(BaseModel):
     updated_at: datetime
 
 
-@app.post("/settings/agent_model_configs", response_model=AgentModelConfigOut)
+@app.post("/settings/agent_model_configs", response_model=BaseResponse[AgentModelConfigOut])
 async def create_agent_model_config(
     body: AgentModelConfigCreateIn,
     user_id: str = Depends(get_current_user_id),
@@ -355,11 +424,11 @@ async def create_agent_model_config(
         id=body.provider_id, deleted_at__isnull=True, is_active=True
     )
     if not provider or (provider.user_id is not None and str(provider.user_id) != user_id):
-        raise HTTPException(status_code=400, detail="provider not found or not allowed")
+        raise BusinessException(code=StatusCode.PARAM_ERROR, message="provider not found or not allowed")
 
     existing = await AgentModelConfig.get_or_none(user_id=user_id, agent_name=body.agent_name)
     if existing and existing.deleted_at is None:
-        raise HTTPException(status_code=400, detail="该 Agent 已存在配置")
+        raise BusinessException(code=StatusCode.AGENT_CONFIG_EXISTS)
 
     if existing and existing.deleted_at is not None:
         existing.provider = provider
@@ -377,7 +446,7 @@ async def create_agent_model_config(
             is_active=body.is_active,
         )
 
-    return AgentModelConfigOut(
+    return success_response(AgentModelConfigOut(
         id=str(obj.id),
         agent_name=obj.agent_name,
         provider_id=str(provider.id),
@@ -391,10 +460,10 @@ async def create_agent_model_config(
         last_error_at=obj.last_error_at,
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
-@app.get("/settings/agent_model_configs", response_model=list[AgentModelConfigOut])
+@app.get("/settings/agent_model_configs", response_model=BaseResponse[list[AgentModelConfigOut]])
 async def list_agent_model_configs(user_id: str = Depends(get_current_user_id)):
     """读取 Agent 模型配置列表。"""
     items = (
@@ -422,10 +491,10 @@ async def list_agent_model_configs(user_id: str = Depends(get_current_user_id)):
                 updated_at=obj.updated_at,
             )
         )
-    return out
+    return success_response(out)
 
 
-@app.get("/settings/agent_model_configs/{config_id}", response_model=AgentModelConfigOut)
+@app.get("/settings/agent_model_configs/{config_id}", response_model=BaseResponse[AgentModelConfigOut])
 async def get_agent_model_config(config_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
     """读取单个 Agent 模型配置。"""
     obj = (
@@ -434,9 +503,9 @@ async def get_agent_model_config(config_id: uuid.UUID, user_id: str = Depends(ge
         .first()
     )
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise BusinessException(code=StatusCode.NOT_FOUND)
     provider = obj.provider
-    return AgentModelConfigOut(
+    return success_response(AgentModelConfigOut(
         id=str(obj.id),
         agent_name=obj.agent_name,
         provider_id=str(provider.id),
@@ -450,7 +519,7 @@ async def get_agent_model_config(config_id: uuid.UUID, user_id: str = Depends(ge
         last_error_at=obj.last_error_at,
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
 class NotificationChannelCreateIn(BaseModel):
@@ -470,7 +539,7 @@ class NotificationChannelOut(BaseModel):
     updated_at: datetime
 
 
-@app.post("/settings/notification_channels", response_model=NotificationChannelOut)
+@app.post("/settings/notification_channels", response_model=BaseResponse[NotificationChannelOut])
 async def create_notification_channel(
     body: NotificationChannelCreateIn,
     user_id: str = Depends(get_current_user_id),
@@ -483,7 +552,7 @@ async def create_notification_channel(
         config=body.config,
         is_active=body.is_active,
     )
-    return NotificationChannelOut(
+    return success_response(NotificationChannelOut(
         id=str(obj.id),
         channel_type=obj.channel_type,
         name=obj.name,
@@ -491,17 +560,17 @@ async def create_notification_channel(
         is_active=obj.is_active,
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))
 
 
-@app.get("/settings/notification_channels", response_model=list[NotificationChannelOut])
+@app.get("/settings/notification_channels", response_model=BaseResponse[list[NotificationChannelOut]])
 async def list_notification_channels(user_id: str = Depends(get_current_user_id)):
     """读取消息通知渠道列表（配置字段会脱敏）。"""
     items = (
         await NotificationChannel.filter(user_id=user_id, is_deleted=False)
         .order_by("-created_at", "channel_type")
     )
-    return [
+    return success_response([
         NotificationChannelOut(
             id=str(obj.id),
             channel_type=obj.channel_type,
@@ -512,18 +581,18 @@ async def list_notification_channels(user_id: str = Depends(get_current_user_id)
             updated_at=obj.updated_at,
         )
         for obj in items
-    ]
+    ])
 
 
-@app.get("/settings/notification_channels/{channel_id}", response_model=NotificationChannelOut)
+@app.get("/settings/notification_channels/{channel_id}", response_model=BaseResponse[NotificationChannelOut])
 async def get_notification_channel(channel_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
     """读取单个消息通知渠道（配置字段会脱敏）。"""
     obj = await NotificationChannel.get_or_none(
         id=channel_id, user_id=user_id, is_deleted=False
     )
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
-    return NotificationChannelOut(
+        raise BusinessException(code=StatusCode.NOT_FOUND)
+    return success_response(NotificationChannelOut(
         id=str(obj.id),
         channel_type=obj.channel_type,
         name=obj.name,
@@ -531,4 +600,4 @@ async def get_notification_channel(channel_id: uuid.UUID, user_id: str = Depends
         is_active=obj.is_active,
         created_at=obj.created_at,
         updated_at=obj.updated_at,
-    )
+    ))

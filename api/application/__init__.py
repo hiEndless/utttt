@@ -10,12 +10,24 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 
+from .common.status_codes import BusinessException, error_response
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
 def create_app() -> FastAPI:
     """工厂函数：创建App对象"""
     app = FastAPI()
     # 读取环境配置文件的信息，加载到环境变量
     load_dotenv()
     
+    # 注册业务异常处理器
+    @app.exception_handler(BusinessException)
+    async def business_exception_handler(request: Request, exc: BusinessException):
+        return JSONResponse(
+            status_code=200,
+            content=error_response(code=exc.code, message=exc.message, data=exc.data).dict()
+        )
+
     # 配置CORS中间件
     app.add_middleware(
         CORSMiddleware,

@@ -15,6 +15,8 @@ from pydantic import BaseModel, Field
 
 from .models import OAuthLoginSession, OAuthToken, User, UserIdentity
 
+from ...common.status_codes import StatusCode, BaseResponse, BusinessException, success_response, error_response
+
 load_dotenv()
 
 app = APIRouter()
@@ -287,7 +289,7 @@ def _decode_provider_access_token(access_token: str) -> dict:
     return payload
 
 
-@app.post("/auth/login-session", response_model=CreateLoginSessionResponse)
+@app.post("/auth/login-session", response_model=BaseResponse[CreateLoginSessionResponse])
 async def create_login_session(req: CreateLoginSessionRequest):
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     try:
@@ -300,15 +302,15 @@ async def create_login_session(req: CreateLoginSessionRequest):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to create login session: {str(e)}")
-    return CreateLoginSessionResponse(login_id=str(session.id))
+        raise BusinessException(code=StatusCode.SERVER_ERROR, message=f"Failed to create login session: {str(e)}")
+    return success_response(CreateLoginSessionResponse(login_id=str(session.id)))
 
 
-@app.post("/auth/exchange", response_model=ExchangeResponse)
+@app.post("/auth/exchange", response_model=BaseResponse[ExchangeResponse])
 async def exchange(req: ExchangeRequest):
     session = await OAuthLoginSession.get_or_none(id=req.login_id)
     if not session:
-        raise HTTPException(status_code=400, detail="invalid login_id")
+        raise BusinessException(code=StatusCode.PARAM_ERROR, message="invalid login_id")
 
     now = datetime.now(timezone.utc)
     expires_at = session.expires_at
@@ -316,14 +318,14 @@ async def exchange(req: ExchangeRequest):
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at <= now:
         await session.delete()
-        raise HTTPException(status_code=400, detail="login session expired")
+        raise BusinessException(code=StatusCode.AUTH_SESSION_EXPIRED)
 
     token_data = await _provider_exchange_code(req.code, session.code_verifier, session.redirect_uri)
     await session.delete()
 
     provider_access_token = token_data.get("access_token")
     if not provider_access_token:
-        raise HTTPException(status_code=400, detail="missing provider access_token")
+        raise BusinessException(code=StatusCode.AUTH_TOKEN_INVALID, message="missing provider access_token")
 
     provider_payload = _decode_provider_access_token(provider_access_token)
 
@@ -357,7 +359,7 @@ async def exchange(req: ExchangeRequest):
             await user.save(update_fields=["avatar_url", "updated_at"])
     else:
         if not provider_email:
-            raise HTTPException(status_code=400, detail="missing email from provider")
+            raise BusinessException(code=StatusCode.AUTH_TOKEN_INVALID, message="missing email from provider")
         if not provider_name:
             provider_name = provider_email.split("@", 1)[0]
 
@@ -443,14 +445,14 @@ async def exchange(req: ExchangeRequest):
         await user.save(update_fields=["plan", "updated_at"])
 
     my_jwt = create_access_token(str(user.id))
-    return ExchangeResponse(access_token=my_jwt, refresh_token=app_refresh_token)
+    return success_response(ExchangeResponse(access_token=my_jwt, refresh_token=app_refresh_token))
 
 
-@app.post("/auth/refresh", response_model=ExchangeResponse)
+@app.post("/auth/refresh", response_model=BaseResponse[ExchangeResponse])
 async def refresh_token(req: RefreshTokenRequest):
     token_record = await OAuthToken.get_or_none(app_refresh_token=req.refresh_token).prefetch_related("user")
     if not token_record:
-        raise HTTPException(status_code=401, detail="invalid refresh token")
+        raise BusinessException(code=StatusCode.AUTH_TOKEN_INVALID, message="invalid refresh token")
 
     # Optional: Check if provider token is expired and refresh it here
     # For now, we just refresh the app token
@@ -463,14 +465,14 @@ async def refresh_token(req: RefreshTokenRequest):
     await token_record.save(update_fields=["app_refresh_token", "updated_at"])
 
     new_jwt = create_access_token(str(token_record.user.id))
-    return ExchangeResponse(access_token=new_jwt, refresh_token=new_refresh_token)
+    return success_response(ExchangeResponse(access_token=new_jwt, refresh_token=new_refresh_token))
 
 
-@app.get("/me", response_model=MeResponse)
+@app.get("/me", response_model=BaseResponse[MeResponse])
 async def me(user_id: str = Depends(get_current_user_id)):
     user = await User.get(id=user_id)
     user = await ensure_plan_not_expired(user)
-    return MeResponse(
+    return success_response(MeResponse(
         user={
             "id": str(user.id),
             "email": user.email,
@@ -480,15 +482,15 @@ async def me(user_id: str = Depends(get_current_user_id)):
             "plan_expires_at": user.plan_expires_at.isoformat() if user.plan_expires_at else None,
             "features": sorted(features_for_plan(user.plan)),
         }
-    )
+    ))
 
 
-@app.get("/export")
+@app.get("/export", response_model=BaseResponse[dict])
 async def export_data(user: User = Depends(require_feature("feature:export"))):
-    return {"ok": True, "plan": user.plan}
+    return success_response({"ok": True, "plan": user.plan})
 
 
-@app.post("/auth/logout")
+@app.post("/auth/logout", response_model=BaseResponse[dict])
 async def logout(user_id: str = Depends(get_current_user_id)):
     """
     登出接口：
@@ -498,7 +500,7 @@ async def logout(user_id: str = Depends(get_current_user_id)):
     """
     user = await User.get_or_none(id=user_id)
     if not user:
-        return {"ok": True}
+        return success_response({"ok": True})
 
     provider = "utaker-provider"
     oauth_token = await OAuthToken.get_or_none(user=user, provider=provider)
@@ -523,4 +525,4 @@ async def logout(user_id: str = Depends(get_current_user_id)):
         # 可选：删除本地存储的 Provider Token
         await oauth_token.delete()
 
-    return {"ok": True}
+    return success_response({"ok": True})
