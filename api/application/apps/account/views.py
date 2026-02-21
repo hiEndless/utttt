@@ -31,7 +31,7 @@ PROVIDER_JWT_ISSUER = os.getenv("PROVIDER_JWT_ISSUER",
 
 JWT_ISSUER = os.getenv("JWT_ISSUER", "utaker-myapi")
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "utaker-web")
-JWT_SIGNING_KEY = os.getenv("JWT_SIGNING_KEY", os.getenv("JWT_SECRET", "utaker-dev-signing-key"))
+JWT_SIGNING_KEY = os.getenv("JWT_SIGNING_KEY", "utaker-dev-signing-key")
 JWT_ALG = os.getenv("JWT_ALG", "HS256")
 
 PLAN_FREE = "free"

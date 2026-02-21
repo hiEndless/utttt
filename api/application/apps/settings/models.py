@@ -29,8 +29,8 @@ class ExchangeAccount(models.Model):
 
     class Meta:
         table = "exchange_accounts"
-        unique_together = (("user", "exchange"),)
-        indexes = (("user", "exchange"), ("exchange", "is_active"))
+        # unique_together = (("user", "exchange"),)
+        indexes = ("user", "exchange", "is_active")
 
 
 class ModelProvider(models.Model):
