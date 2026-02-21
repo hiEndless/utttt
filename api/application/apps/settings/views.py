@@ -202,6 +202,21 @@ async def update_exchange_account(
     )
 
 
+@app.delete("/settings/exchange_accounts/{account_id}")
+async def delete_exchange_account(account_id: uuid.UUID, user_id: str = Depends(get_current_user_id)):
+    """删除交易所账户绑定信息。"""
+    obj = await ExchangeAccount.get_or_none(id=account_id, user_id=user_id, is_deleted=False)
+    if not obj:
+        raise HTTPException(status_code=404, detail="not found")
+    
+    # 执行软删除
+    obj.is_deleted = True
+    obj.deleted_at = datetime.now()
+    await obj.save()
+    
+    return {"message": "Exchange account deleted successfully"}
+
+
 class ModelProviderCreateIn(BaseModel):
     provider: str = Field(..., max_length=64)
     base_url: str = Field(..., max_length=512)
