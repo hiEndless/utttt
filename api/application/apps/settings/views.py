@@ -540,18 +540,39 @@ class NotificationChannelOut(BaseModel):
 
 
 @app.post("/settings/notification_channels", response_model=BaseResponse[NotificationChannelOut])
-async def create_notification_channel(
+async def upsert_notification_channel(
     body: NotificationChannelCreateIn,
     user_id: str = Depends(get_current_user_id),
 ):
-    """新增消息通知渠道（配置字段会在读取时脱敏）。"""
-    obj = await NotificationChannel.create(
-        user_id=user_id,
-        channel_type=body.channel_type,
-        name=body.name,
-        config=body.config,
-        is_active=body.is_active,
+    """创建或更新消息通知渠道（配置字段会在读取时脱敏）。
+    
+    如果用户已存在相同 channel_type 的渠道，则更新该渠道；
+    否则，创建一个新渠道。
+    """
+    # Check if a channel with the same type already exists for the user
+    existing_channel = await NotificationChannel.get_or_none(
+        user_id=user_id, 
+        channel_type=body.channel_type, 
+        is_deleted=False
     )
+    
+    if existing_channel:
+        # Update existing channel
+        existing_channel.name = body.name
+        existing_channel.config = body.config
+        existing_channel.is_active = body.is_active
+        await existing_channel.save()
+        obj = existing_channel
+    else:
+        # Create new channel
+        obj = await NotificationChannel.create(
+            user_id=user_id,
+            channel_type=body.channel_type,
+            name=body.name,
+            config=body.config,
+            is_active=body.is_active,
+        )
+    
     return success_response(NotificationChannelOut(
         id=str(obj.id),
         channel_type=obj.channel_type,
