@@ -419,7 +419,7 @@ async def create_agent_model_config(
     body: AgentModelConfigCreateIn,
     user_id: str = Depends(get_current_user_id),
 ):
-    """新增 Agent 模型配置。"""
+    """新增或更新 Agent 模型配置（UPSERT 操作）。"""
     provider = await ModelProvider.get_or_none(
         id=body.provider_id, deleted_at__isnull=True, is_active=True
     )
@@ -427,17 +427,17 @@ async def create_agent_model_config(
         raise BusinessException(code=StatusCode.PARAM_ERROR, message="provider not found or not allowed")
 
     existing = await AgentModelConfig.get_or_none(user_id=user_id, agent_name=body.agent_name)
-    if existing and existing.deleted_at is None:
-        raise BusinessException(code=StatusCode.AGENT_CONFIG_EXISTS)
-
-    if existing and existing.deleted_at is not None:
+    
+    if existing:
+        # 如果配置存在（无论是否被软删除），都进行更新
         existing.provider = provider
         existing.model_id = body.model_id
         existing.is_active = body.is_active
-        existing.deleted_at = None
+        existing.deleted_at = None  # 确保配置是激活状态
         await existing.save()
         obj = existing
     else:
+        # 如果配置不存在，创建新配置
         obj = await AgentModelConfig.create(
             user_id=user_id,
             agent_name=body.agent_name,
