@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TORTOISE_ORM = {
     "connections": {
@@ -20,6 +23,7 @@ TORTOISE_ORM = {
         'models': {  # 数据模型的分组名
             'models': [
                 'application.apps.account.models',
+                'application.apps.settings.models',
                 'application.apps.trade_data.models',
                 'aerich.models'
             ],  # 模型所在目录文件的导包路径[字符串格式]

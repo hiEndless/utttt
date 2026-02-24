@@ -3,11 +3,16 @@ from dotenv import load_dotenv
 from tortoise.contrib.fastapi import register_tortoise
 from .apps.account.views import app as account_app
 from .apps.background.views import app as indicators_app
+from .apps.settings.views import app as settings_app
 
 from . import settings
 from fastapi.middleware.cors import CORSMiddleware
 
 
+
+from .common.status_codes import BusinessException, error_response
+from fastapi.responses import JSONResponse
+from fastapi import Request
 
 def create_app() -> FastAPI:
     """工厂函数：创建App对象"""
@@ -15,6 +20,14 @@ def create_app() -> FastAPI:
     # 读取环境配置文件的信息，加载到环境变量
     load_dotenv()
     
+    # 注册业务异常处理器
+    @app.exception_handler(BusinessException)
+    async def business_exception_handler(request: Request, exc: BusinessException):
+        return JSONResponse(
+            status_code=200,
+            content=error_response(code=exc.code, message=exc.message, data=exc.data).dict()
+        )
+
     # 配置CORS中间件
     app.add_middleware(
         CORSMiddleware,
@@ -35,5 +48,6 @@ def create_app() -> FastAPI:
     # 注册各个分组应用中的视图接口代码到App应用对象中
     app.include_router(account_app, prefix='/api', tags=['注册登录接口'])  # prefix url路径前缀，
     app.include_router(indicators_app, prefix='/api', tags=['指标分析接口'])
+    app.include_router(settings_app, prefix='/api', tags=['系统设置接口'])
 
     return app

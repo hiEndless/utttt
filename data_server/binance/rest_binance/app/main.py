@@ -94,12 +94,12 @@ FETCH_PLAN = [
         "interval": settings.rate_limits_seconds["4h"]
     },
     {
-        "name": "spider_4h",
+        "name": "spider_6h",
         "fn": make_spider("6h"),
         "interval": settings.rate_limits_seconds["6h"]
     },
     {
-        "name": "spider_4h",
+        "name": "spider_12h",
         "fn": make_spider("12h"),
         "interval": settings.rate_limits_seconds["12h"]
     },
