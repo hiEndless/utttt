@@ -12,6 +12,7 @@ from agno.workflow import StepInput
 from agent_server.agents.experts.analysis.trade_decision import TradeDecisionExpert
 from agent_server.agent_workflow.components.base import BaseWorkflowComponent
 from agent_server.tools.price_fetcher import get_mark_price_from_redis
+from agent_server.utils.trade_precision import format_price, format_quantity
 from agent_server.risk.global_overlay import (
     _read_global_overlay_raw,
     check_global_permission,
@@ -71,7 +72,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         if self._trade_redis_config:
             return self._trade_redis_config
         from agent_server.config import settings
-        host = getattr(settings, "trade_redis_host", None) or settings.redis_host
+        host = getattr(settings, "trade_redis_host",
+                       None) or settings.redis_host
         password = getattr(settings, "trade_redis_password", None)
         if password is None:
             password = settings.redis_password
@@ -91,66 +93,16 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             redis_config=self._get_trade_redis_config(),
         )
 
-    # Binance 合约 LOT_SIZE：不同 symbol 的 stepSize 不同，超精度会报 -1111
-    _SYMBOL_STEP = {
-        "BTCUSDT": 0.001, "ETHUSDT": 0.001, "BNBUSDT": 0.01,
-        "SOLUSDT": 0.01, "XRPUSDT": 0.1, "DOGEUSDT": 1,
-        "ADAUSDT": 0.1, "AVAXUSDT": 0.01, "LINKUSDT": 0.01,
-        "1000PEPEUSDT": 1, "PEPEUSDT": 1, "WIFUSDT": 0.1,
-        "VVVUSDT": 1, "TAKEUSDT": 1, "NOTUSDT": 1, "BONKUSDT": 1,
-        "FLOKIUSDT": 1, "SHIBUSDT": 1, "1000SHIBUSDT": 1,
-        "1000FLOKIUSDT": 1, "MEMEUSDT": 1, "TURBOUSDT": 1,
-    }
+    def _build_trade_json(self, decision: Dict, event_data: Dict,
+                          mark_price: float) -> Optional[Dict]:
+        """
+        根据决策构建交易 JSON。
 
-    def _get_step_size(self, symbol: str, mark_price: float = 0) -> float:
-        """按 symbol 或价格推断 step_size，避免 Precision over maximum"""
-        s = (symbol or "").upper()
-        if s in self._SYMBOL_STEP:
-            return self._SYMBOL_STEP[s]
-        # 未知 symbol 按价格推断：低价 meme 多为 step 1
-        if mark_price >= 1000:
-            return 0.001
-        if mark_price >= 1:
-            return 0.01
-        if mark_price >= 0.1:
-            return 0.1
-        if mark_price >= 0.01:
-            return 0.1
-        return 1  # 极低价币（<0.01）多为 step 1
-
-    def _format_quantity(self, quantity, symbol: str, step_size: float = None, mark_price: float = 0) -> str:
-        try:
-            from decimal import Decimal, ROUND_DOWN
-            step = step_size if step_size is not None else self._get_step_size(symbol, mark_price)
-            q = Decimal(str(float(quantity)))
-            step_d = Decimal(str(step))
-            rounded = (q // step_d) * step_d
-            rounded = rounded.quantize(step_d, rounding=ROUND_DOWN)
-            if rounded <= 0:
-                rounded = step_d
-            s = str(rounded)
-            return s.rstrip("0").rstrip(".") if "." in s else s
-        except Exception:
-            return str(quantity)
-
-    def _format_price(self, price: float, symbol: str = "") -> float:
-        """按价格区间截断小数位，避免 Binance tickSize 超精度 -1111"""
-        if price <= 0:
-            return price
-        if price >= 1000:
-            return round(price, 1)
-        if price >= 1:
-            return round(price, 2)
-        if price >= 0.1:
-            return round(price, 3)
-        if price >= 0.01:
-            return round(price, 4)
-        return round(price, 5)
-
-    def _build_trade_json(
-        self, decision: Dict, event_data: Dict, mark_price: float
-    ) -> Optional[Dict]:
-        """根据决策构建交易 JSON，tp/sl 支持价格或百分比"""
+        约定（与 trade 服务 & 测试脚本保持一致）：
+        - order_type 仅使用业务含义: "open" / "close" / "reduce"
+        - tp_trigger_px / sl_trigger_px **始终为具体价格，不再转换为百分比**
+        - price / quantity 会按本地规则做精度截断，避免触发 Binance -1111
+        """
         try:
             order_type = decision.get("order_type")
             if not order_type or order_type not in ("open", "close", "reduce"):
@@ -161,36 +113,37 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             side = decision.get("side", "BUY")
             leverage = float(decision.get("leverage", 20.0))
             quantity = decision.get("quantity", "0")
-            tp_px = float(decision.get("tp_trigger_px", 0) or 0)
-            sl_px = float(decision.get("sl_trigger_px", 0) or 0)
+            # LLM 按 prompt 约定返回的就是价格，这里仅做 float 转换 & 精度格式化
+            tp_px_raw = float(decision.get("tp_trigger_px", 0) or 0)
+            sl_px_raw = float(decision.get("sl_trigger_px", 0) or 0)
 
             if not quantity or quantity in ("0", 0):
                 margin = float(decision.get("margin", 200.0))
                 quantity = margin * leverage / mark_price if mark_price > 0 else 0.01
 
-            qty_str = self._format_quantity(quantity, symbol, mark_price=mark_price)
-            open_px = self._format_price(mark_price, symbol)
+            # 与交易服务统一的数量/价格精度处理
+            fmt_order_type = "open" if order_type == "open" else "close"
+            qty_str = format_quantity(
+                quantity,
+                symbol,
+                order_type=fmt_order_type,
+                price=mark_price,
+            )
+            open_px = float(format_price(mark_price,
+                                         symbol)) if mark_price > 0 else 0.0
 
-            # 价格转百分比：下游队列使用百分比，截断精度避免 Binance -1111
-            if tp_px > 0 and sl_px > 0 and mark_price > 0:
-                if position_side == "LONG":
-                    tp_pct = (tp_px - mark_price) / mark_price * 100
-                    sl_pct = (mark_price - sl_px) / mark_price * 100
-                else:
-                    tp_pct = (mark_price - tp_px) / mark_price * 100
-                    sl_pct = (sl_px - mark_price) / mark_price * 100
-                if tp_pct <= 0 or sl_pct <= 0:
-                    tp_pct, sl_pct = 3.0, 2.0
-            else:
-                tp_pct, sl_pct = 3.0, 2.0
+            # 止盈止损：直接使用价格模式（与 trade 服务脚本保持一致）
+            tp_price_fmt = float(format_price(
+                tp_px_raw, symbol)) if tp_px_raw > 0 else 0.0
+            sl_price_fmt = float(format_price(
+                sl_px_raw, symbol)) if sl_px_raw > 0 else 0.0
 
-            # 止盈止损百分比保留 2 位小数，避免下游计算触发 Binance tickSize 超精度
-            tp_pct = round(float(tp_pct), 2)
-            sl_pct = round(float(sl_pct), 2)
-
-            # 同时提供已格式化的价格，crawler 可直接用于 Binance 下单，避免 -1111
-            tp_price_fmt = self._format_price(tp_px, symbol) if tp_px > 0 else 0.0
-            sl_price_fmt = self._format_price(sl_px, symbol) if sl_px > 0 else 0.0
+            # trade_trigger_mode：若上游未显式给出，则有价格时默认开启，否则关闭
+            trade_trigger_mode = int(
+                decision.get(
+                    "trade_trigger_mode",
+                    1 if (tp_price_fmt > 0 or sl_price_fmt > 0) else 0,
+                ))
 
             return {
                 "order_type": order_type,
@@ -204,12 +157,17 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 "task_id": 23,
                 "user_id": 2,
                 "api_id": 0,
-                "trade_trigger_mode": 1,
-                "tp_trigger_px": tp_pct,
-                "sl_trigger_px": sl_pct,
-                "tp_trigger_price": tp_price_fmt,
-                "sl_trigger_price": sl_price_fmt,
-                "acc": {"key": "", "secret": "", "passphrase": "", "proxies": {}, "exchange": 2},
+                "trade_trigger_mode": trade_trigger_mode,
+                # 与 trade 服务保持一致：这里直接传「价格」而非百分比
+                "tp_trigger_px": tp_price_fmt,
+                "sl_trigger_px": sl_price_fmt,
+                "acc": {
+                    "key": "",
+                    "secret": "",
+                    "passphrase": "",
+                    "proxies": {},
+                    "exchange": 2
+                },
                 "flag": "1",
                 "uniqueName": "ai_trading_system",
             }
@@ -234,9 +192,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         ac = event_data.get("analysis_context") or {}
         l1_score = float(
             event_data.get("confidence_numeric")
-            or event_data.get("l1_total_score")
-            or ac.get("l1_total_score", 0)
-        )
+            or event_data.get("l1_total_score") or ac.get("l1_total_score", 0))
         tf_hint = event_data.get("tf_hint") or ac.get("tf_hint") or []
 
         return {
@@ -257,7 +213,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 "dominant_cycle": sv_output.get("dominant_cycle"),
                 "cycle_weights": sv_output.get("cycle_weights", {}),
                 "audit_breakdown": sv_output.get("audit_breakdown", {}),
-                "risk_exposure_flags": sv_output.get("risk_exposure_flags", []),
+                "risk_exposure_flags": sv_output.get("risk_exposure_flags",
+                                                     []),
                 "audit_confidence": sv_output.get("audit_confidence", {}),
             },
             "execution_constraint": execution_constraint,
@@ -267,10 +224,16 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
     async def execute(self, ctx: StepInput) -> str:
         prev_result = self._parse_step_content(ctx.previous_step_content)
-        event_data = prev_result.get("event_data") or prev_result.get("step2_result", {}).get("event_data") or {}
+        event_data = prev_result.get("event_data") or prev_result.get(
+            "step2_result", {}).get("event_data") or {}
         if not event_data:
             trade_logger.warning("无 event_data，跳过交易决策")
-            return self._safe_json_dumps({"trade_decision": {"decision": "NO_ACTION", "reason": "missing_event_data"}})
+            return self._safe_json_dumps({
+                "trade_decision": {
+                    "decision": "NO_ACTION",
+                    "reason": "missing_event_data"
+                }
+            })
 
         symbol = event_data.get("symbol")
         exchange = event_data.get("exchange", "binance")
@@ -279,17 +242,28 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
         if not symbol:
             trade_logger.warning("无法获取 symbol，跳过交易决策")
-            return self._safe_json_dumps({"trade_decision": {"decision": "NO_ACTION", "reason": "missing_symbol"}})
+            return self._safe_json_dumps({
+                "trade_decision": {
+                    "decision": "NO_ACTION",
+                    "reason": "missing_symbol"
+                }
+            })
 
-        if route == "trade" or "trade." in str(event_data.get("event_type", "")):
+        if route == "trade" or "trade." in str(event_data.get(
+                "event_type", "")):
             trade_logger.debug(f"交易事件类型，不执行开仓决策: {symbol}")
-            return self._safe_json_dumps({"trade_decision": {"decision": "NO_ACTION", "reason": "trade_event"}})
+            return self._safe_json_dumps({
+                "trade_decision": {
+                    "decision": "NO_ACTION",
+                    "reason": "trade_event"
+                }
+            })
 
         direction = (event_data.get("direction") or "neutral").strip().lower()
         l1_score = float(
             event_data.get("l1_total_score")
-            or (event_data.get("analysis_context") or {}).get("l1_total_score", 0)
-        )
+            or (event_data.get("analysis_context") or {}).get(
+                "l1_total_score", 0))
         trade_logger.info(
             f"=== 交易决策开始 === | {symbol} | {event_id} | direction={direction} | l1_score={l1_score:.2f}"
         )
@@ -323,7 +297,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         ai_reasoning_logger.info(
             f"[推理开始] event_id={event_id} symbol={symbol} direction={direction} l1_score={l1_score:.2f}"
         )
-        ai_reasoning_logger.info(f"[推理输入] query={json.dumps(query, ensure_ascii=False)}")
+        ai_reasoning_logger.info(
+            f"[推理输入] query={json.dumps(query, ensure_ascii=False)}")
 
         try:
             td_output_str = await asyncio.wait_for(
@@ -331,19 +306,38 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
                 timeout=60.0,
             )
         except asyncio.TimeoutError:
-            td_output = {"decision": "NO_ACTION", "should_execute": False, "error": "LLM 超时"}
-            trade_logger.warning(f"TradeDecisionExpert 超时 | {symbol} | {event_id}")
-            ai_reasoning_logger.warning(f"[推理异常] event_id={event_id} symbol={symbol} error=LLM超时")
+            td_output = {
+                "decision": "NO_ACTION",
+                "should_execute": False,
+                "error": "LLM 超时"
+            }
+            trade_logger.warning(
+                f"TradeDecisionExpert 超时 | {symbol} | {event_id}")
+            ai_reasoning_logger.warning(
+                f"[推理异常] event_id={event_id} symbol={symbol} error=LLM超时")
         except Exception as e:
-            trade_logger.error(f"TradeDecisionExpert 调用失败 | {symbol} | {event_id} | error={e}", exc_info=True)
-            td_output = {"decision": "NO_ACTION", "should_execute": False, "error": str(e)}
-            ai_reasoning_logger.error(f"[推理异常] event_id={event_id} symbol={symbol} error={e}")
+            trade_logger.error(
+                f"TradeDecisionExpert 调用失败 | {symbol} | {event_id} | error={e}",
+                exc_info=True)
+            td_output = {
+                "decision": "NO_ACTION",
+                "should_execute": False,
+                "error": str(e)
+            }
+            ai_reasoning_logger.error(
+                f"[推理异常] event_id={event_id} symbol={symbol} error={e}")
         else:
-            ai_reasoning_logger.info(f"[推理原始输出] event_id={event_id} raw={td_output_str}")
+            ai_reasoning_logger.info(
+                f"[推理原始输出] event_id={event_id} raw={td_output_str}")
             try:
-                parsed = json.loads(td_output_str) if isinstance(td_output_str, str) else td_output_str
+                parsed = json.loads(td_output_str) if isinstance(
+                    td_output_str, str) else td_output_str
                 if not isinstance(parsed, dict):
-                    parsed = {"decision": "NO_ACTION", "should_execute": False, "error": "LLM 返回非 dict"}
+                    parsed = {
+                        "decision": "NO_ACTION",
+                        "should_execute": False,
+                        "error": "LLM 返回非 dict"
+                    }
                 td_output = parsed
                 if isinstance(td_output, dict) and "raw" in td_output:
                     from agent_server.agents.utils import _extract_json_from_text
@@ -353,10 +347,18 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             except json.JSONDecodeError:
                 from agent_server.agents.utils import _extract_json_from_text
                 ext = _extract_json_from_text(td_output_str)
-                td_output = ext if ext else {"raw": td_output_str, "decision": "NO_ACTION", "should_execute": False}
+                td_output = ext if ext else {
+                    "raw": td_output_str,
+                    "decision": "NO_ACTION",
+                    "should_execute": False
+                }
 
         if not isinstance(td_output, dict):
-            td_output = {"decision": "NO_ACTION", "should_execute": False, "error": "解析结果非 dict"}
+            td_output = {
+                "decision": "NO_ACTION",
+                "should_execute": False,
+                "error": "解析结果非 dict"
+            }
         decision = td_output.get("decision", "NO_ACTION")
         should_execute = td_output.get("should_execute", False)
 
@@ -367,7 +369,8 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
         trade_pushed = False
         if should_execute and decision in ("OPEN_LONG", "OPEN_SHORT"):
-            trade_json = self._build_trade_json(td_output, event_data, mark_price)
+            trade_json = self._build_trade_json(td_output, event_data,
+                                                mark_price)
             if trade_json:
                 trade_pushed = await self._push_to_trade_queue(trade_json)
                 td_output["trade_pushed"] = trade_pushed
@@ -387,8 +390,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
 
         ai_reasoning_logger.info(
             f"[推理完成] event_id={event_id} symbol={symbol} decision={decision} "
-            f"should_execute={should_execute} trade_pushed={trade_pushed}"
-        )
+            f"should_execute={should_execute} trade_pushed={trade_pushed}")
         ai_reasoning_logger.info(
             f"[推理结果] parsed_output={json.dumps(td_output, ensure_ascii=False)}"
         )
