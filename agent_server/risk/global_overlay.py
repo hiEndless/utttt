@@ -542,9 +542,9 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    overlay = {"global_risk_regime": "normal",
-               "global_action_allowance": {"allow_open": True, "allow_add": True, "allow_hold": True,
-                                           "allow_reduce": True, "allow_close": True},
-               "global_cooldown_state": {"in_cooldown": False, "until_ts": None}, "meta": {"updated_at": 1770757423}}
-    print(get_global_risk_narrative(overlay))
+    asyncio.run(main())
+    # overlay = {"global_risk_regime": "normal",
+    #            "global_action_allowance": {"allow_open": True, "allow_add": True, "allow_hold": True,
+    #                                        "allow_reduce": True, "allow_close": True},
+    #            "global_cooldown_state": {"in_cooldown": False, "until_ts": None}, "meta": {"updated_at": 1770757423}}
+    # print(get_global_risk_narrative(overlay))

@@ -35,9 +35,6 @@ position_state_aggregator 在生成 action_allowance 时，可以额外剔除这
 可选接入，主要用于日志记录或提示。
 position_state_aggregator 已经可以生成允许动作和 cooldown 信息，即使不接入，也不会影响人工决策安全。
 """
-"""
-逐仓位的风控状态生成（跟随事件分析一起落库）
-"""
 import time
 import asyncio
 import json
@@ -260,10 +257,9 @@ async def store_aggregate_execution_state(
         trade_id: str,
         symbol: str,
         execution_state: Dict[str, Any],
-        redis_db: int | None = None,
         ttl_seconds: int | None = None,
 ) -> str:
-    rc = RedisClient(db=redis_db)
+    rc = RedisClient()
     k = key(exchange=exchange, trade_id=trade_id, symbol=symbol)
     await rc.set_json(k, execution_state, ex=ttl_seconds)
     return k
@@ -279,7 +275,6 @@ async def aggregate_execution_state_and_store(
         exchange: str | None = None,
         trade_id: str | None = None,
         symbol: str | None = None,
-        redis_db: int | None = None,
         ttl_seconds: int = 900,
 ) -> Dict[str, Any]:
     execution_state = aggregate_execution_state(
@@ -300,7 +295,6 @@ async def aggregate_execution_state_and_store(
         trade_id=str(td or "default"),
         symbol=str(sym or ""),
         execution_state=execution_state,
-        redis_db=redis_db,
         ttl_seconds=ttl_seconds,
     )
     return execution_state
@@ -334,10 +328,18 @@ if __name__ == "__main__":
         "constraint_reason_tags": ["dominant_structural_conflict"]
     }
 
-    result = aggregate_execution_state(
-        risk_action_output=risk_action_output,
-        execution_constraint=execution_constraint,
-        now_ts=now
-    )
+    async def _execution():
+        # 生成仓位风控状态
+        execution_state = await aggregate_execution_state_and_store(
+                risk_action_output=risk_action_output,
+                execution_constraint=execution_constraint,
+                now_ts=now,
+                exchange='binance',
+                symbol='ETHUSDT',
+                trade_id='e6e3faa2bc58409bbcaa554953dc3df5',
+            )
+        print(json.dumps(execution_state, ensure_ascii=False))
 
-    print(json.dumps(result, indent=2))
+
+    asyncio.run(_execution())
+
