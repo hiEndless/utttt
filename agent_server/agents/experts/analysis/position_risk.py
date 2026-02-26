@@ -279,6 +279,7 @@ if __name__ == "__main__":
         # 生成仓位风控状态
         execution_state = await aggregate_execution_state_and_store(
             risk_action_output=out_put,
+            signal_validation_output=sv_out,
             previous_execution_state=None,
             now_ts=int(time.time() * 1000),
             exchange=exchange,

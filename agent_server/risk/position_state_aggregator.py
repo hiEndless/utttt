@@ -139,6 +139,7 @@ def _apply_execution_constraint(
 
 def aggregate_execution_state(
         risk_action_output: Dict[str, Any],
+        signal_validation_output: Optional[Dict[str, Any]] = None,
         previous_execution_state: Optional[Dict[str, Any]] = None,
         execution_constraint: Optional[Dict[str, Any]] = None,
         now_ts: Optional[int] = None
@@ -193,7 +194,10 @@ def aggregate_execution_state(
     # ------------------------------
     # 风险语义（constraint 优先）
     # ------------------------------
-    risk_regime = execution_constraint["risk_bias"]
+    if execution_constraint and execution_constraint.get("risk_bias"):
+        risk_regime = execution_constraint["risk_bias"]
+    else:
+        risk_regime = _derive_risk_regime(signal_validation_output)
 
     return {
         "execution_state": {
@@ -267,6 +271,7 @@ async def store_aggregate_execution_state(
 
 async def aggregate_execution_state_and_store(
         risk_action_output: Dict[str, Any],
+        signal_validation_output: Optional[Dict[str, Any]] = None,
         previous_execution_state: Optional[Dict[str, Any]] = None,
         execution_constraint: Optional[Dict[str, Any]] = None,
         now_ts: Optional[int] = None,
@@ -279,6 +284,7 @@ async def aggregate_execution_state_and_store(
 ) -> Dict[str, Any]:
     execution_state = aggregate_execution_state(
         risk_action_output=risk_action_output,
+        signal_validation_output=signal_validation_output,
         previous_execution_state=previous_execution_state,
         execution_constraint=execution_constraint,
         now_ts=now_ts,
