@@ -309,57 +309,23 @@ async def aggregate_execution_state_and_store(
 if __name__ == "__main__":
     now = int(time.time())
 
-    # -------------------------------
-    # 1️⃣ 普通 exit（无冷却）
-    # -------------------------------
     risk_action_output = {
         "risk_action": "exit",
-        "meta": {"exit_type": "structural"}
+        "exposure_delta": {
+            "type": "percentage",
+            "value": -1.0
+        },
+        "rationale": [
+            "长期结构明确为‘否决型’，表明当前持仓方向在宏观尺度上不具备持续合理性 。",
+            "持仓已处于长期持有状态，但浮盈极低，未实现有效风险回报补偿，继续占用 敞口性价比不足。",
+            "执行约束显示风险偏好保守，且置信度偏低，叠加结构冲突与风险升高标签， 强化退出必要性。",
+            "当前仓位占用账户资金比例极低，平仓后对整体账户影响可控，符合风险控制 优先原则。"
+        ],
+        "meta": {"symbol": "ETHUSDT", "exchange": "binance", "event_id": "ETHUSDT.final.1770290252305",
+                 "event_type": "mixed", "ts": 1770627390376, "version": "v1.0", "direction": "bullish",
+                 "trade_id": "9cedf3d0770041c8b11856c35ef664a2"}
     }
 
-    result1 = aggregate_execution_state(
-        risk_action_output=risk_action_output,
-        now_ts=now
-    )
-    print("\n[CASE 1] Structural Exit")
-    print(json.dumps(result1, indent=2))
-
-    # -------------------------------
-    # 2️⃣ 风险 exit（触发冷却）
-    # -------------------------------
-    risk_action_output2 = {
-        "risk_action": "exit",
-        "meta": {"exit_type": "risk"}
-    }
-
-    result2 = aggregate_execution_state(
-        risk_action_output=risk_action_output2,
-        now_ts=now
-    )
-    print("\n[CASE 2] Risk Exit → Cooldown")
-    print(json.dumps(result2, indent=2))
-
-    # -------------------------------
-    # 3️⃣ 冷却继承
-    # -------------------------------
-    result3 = aggregate_execution_state(
-        risk_action_output={"risk_action": "hold"},
-        previous_execution_state=result2,
-        now_ts=now + 60
-    )
-    print("\n[CASE 3] Inherited Cooldown")
-    print(json.dumps(result3, indent=2))
-
-    # -------------------------------
-    # 4️⃣ 冷却老化
-    # -------------------------------
-    aged = age_execution_state(result2, now_ts=now + COOLDOWN_SECONDS + 10)
-    print("\n[CASE 4] Cooldown Aged")
-    print(json.dumps(aged, indent=2))
-
-    # -------------------------------
-    # 5️⃣ execution_constraint 生效
-    # -------------------------------
     execution_constraint = {
         "intent_bias": "bullish",
         "allowed_actions": ["hold", "reduce"],
@@ -368,10 +334,10 @@ if __name__ == "__main__":
         "constraint_reason_tags": ["dominant_structural_conflict"]
     }
 
-    result5 = aggregate_execution_state(
-        risk_action_output={"risk_action": "scale_in_small"},
+    result = aggregate_execution_state(
+        risk_action_output=risk_action_output,
         execution_constraint=execution_constraint,
         now_ts=now
     )
-    print("\n[CASE 5] Constraint Applied")
-    print(json.dumps(result5, indent=2))
+
+    print(json.dumps(result, indent=2))
