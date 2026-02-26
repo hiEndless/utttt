@@ -55,9 +55,9 @@ class RiskStateAggregationComponent(BaseWorkflowComponent):
 
         # Get Signal Validation Output (needed for risk regime label)
         # It is inside step2_result -> output
-        step2_result = prev_result.get("step2_result", {})
-        sv_output = step2_result.get("output")
-        decision_output = step2_result.get("decision_output")
+        # step2_result = prev_result.get("step2_result", {})
+        # sv_output = step2_result.get("output")
+        # decision_output = step2_result.get("decision_output")
 
         # 1. Generate & Store Execution State for each position
         generated_states = []
@@ -95,10 +95,8 @@ class RiskStateAggregationComponent(BaseWorkflowComponent):
             # Note: signal_validation_output is optional but recommended
             exec_state = await aggregate_execution_state_and_store(
                 risk_action_output=risk_action_output,
-                signal_validation_output=sv_output,
                 previous_execution_state=prev_state,
                 execution_constraint=execution_constraint,
-                decision_output=decision_output,
                 exchange=exchange,
                 trade_id=trade_id,
                 symbol=symbol

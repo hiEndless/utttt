@@ -150,7 +150,56 @@ if __name__ == "__main__":
     from agent_server.risk.position_state_aggregator import aggregate_execution_state_and_store
     from agent_server.tools.get_time_semantics import get_position_time_semantics
 
-    sv_out = {'verdict': 'ATTENUATE', 'structural_alignment': 'PARTIAL_CONFLICT', 'risk_implication': 'elevated'}
+    sv_out = {
+        "dominant_cycle": "mid_term",
+        "cycle_weights": {
+            "short_term": "low",
+            "mid_term": "high",
+            "long_term": "veto_only"
+        },
+        "audit_breakdown": {
+            "directional_alignment": {
+                "short_term": "NEUTRAL",
+                "mid_term": "CONFLICT",
+                "long_term": "CONFLICT"
+            },
+            "leverage_phase_match": {
+                "short_term": "NOT_APPLICABLE",
+                "mid_term": "NOT_APPLICABLE",
+                "long_term": "NOT_APPLICABLE"
+            }
+        },
+        "conflict_evidence": {
+            "directional_conflict": ["Mid-term structure shows clear resistance", "Long-term trend is bearish"],
+            "leverage_conflict": []
+        },
+        "risk_exposure_flags": ["crowding_risk"],
+        "audit_confidence": {
+            "level": "MEDIUM",
+            "structural_clarity": "DOMINANT_CONFLICT"
+        },
+        "meta": {
+            "symbol": "ETHUSDT",
+            "exchange": "binance",
+            "event_id": "ETHUSDT.final.1770290252305",
+            "event_type": "mixed",
+            "ts": 1770304117868,
+            "version": "v1.0",
+            "direction": "bullish"
+        },
+        "positions": [
+            {
+                "symbol": "ETHUSDT",
+                "position_side": "LONG",
+                "size": "0.010",
+                "notional": "21.73535821",
+                "pnl_ratio": 0.004305523686720178,
+                "open_time": 1770237903887,
+                "trade_id": "9cedf3d0770041c8b11856c35ef664a2",
+                "initialMargin": "2.17353583"
+            }
+        ]
+    }
 
     d_out = {'trade_intent_range': {'allowed_actions': ['hold', 'reduce', 'scale_in_small'],
                                     'forbidden_actions': ['aggressive_add', 'reverse_position'],
@@ -217,13 +266,19 @@ if __name__ == "__main__":
 
 
     # out_put = asyncio.run(_demo())
+    execution_constraint = {
+        "intent_bias": "bullish",
+        "allowed_actions": ["hold", "reduce"],
+        "forbidden_actions": ["open", "scale_in_small"],
+        "risk_bias": "defensive",
+        "constraint_reason_tags": ["dominant_structural_conflict"]
+    }
 
     async def _execution():
         out_put = await _demo()
         # 生成仓位风控状态
         execution_state = await aggregate_execution_state_and_store(
             risk_action_output=out_put,
-            signal_validation_output=sv_out,
             previous_execution_state=None,
             now_ts=int(time.time() * 1000),
             exchange=exchange,
