@@ -4,6 +4,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from .apps.account.views import app as account_app
 from .apps.background.views import app as indicators_app
 from .apps.settings.views import app as settings_app
+from .apps.dashboard.views import app as dashboard_app
 
 from . import settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,5 +50,6 @@ def create_app() -> FastAPI:
     app.include_router(account_app, prefix='/api', tags=['注册登录接口'])  # prefix url路径前缀，
     app.include_router(indicators_app, prefix='/api', tags=['指标分析接口'])
     app.include_router(settings_app, prefix='/api', tags=['系统设置接口'])
+    app.include_router(dashboard_app, prefix='/api', tags=['仪表盘接口'])
 
     return app

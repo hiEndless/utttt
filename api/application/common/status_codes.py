@@ -1,11 +1,10 @@
 # 状态码定义
 from typing import Generic, TypeVar, Optional, Any
 from pydantic import BaseModel
-from pydantic.generics import GenericModel
 
 T = TypeVar("T")
 
-class BaseResponse(GenericModel, Generic[T]):
+class BaseResponse(BaseModel, Generic[T]):
     code: int
     message: str
     data: Optional[T] = None
