@@ -25,6 +25,8 @@ class PositionItem(BaseModel):
     trade_id: str
     initialMargin: str
     leverage: str
+    markPrice: str
+    entryPrice: str
 
 
 class PositionResponse(BaseModel):
@@ -98,7 +100,9 @@ async def get_user_positions(
                         open_time=str(p.get("open_time", "")),
                         trade_id=str(p.get("trade_id", "")),
                         initialMargin=str(p.get("initialMargin", "")),
-                        leverage=str(p.get("leverage", ""))
+                        leverage=str(p.get("leverage", "")),
+                        markPrice=str(p.get("markPrice", "")),
+                        entryPrice=str(p.get("entryPrice", ""))
                     ))
         
         if filtered_positions:
@@ -153,7 +157,9 @@ async def get_exchange_positions(
                         open_time=str(p.get("open_time", "")),
                         trade_id=str(p.get("trade_id", "")),
                         initialMargin=str(p.get("initialMargin", "")),
-                        leverage=str(p.get("leverage", ""))
+                        leverage=str(p.get("leverage", "")),
+                        markPrice=str(p.get("markPrice", "")),
+                        entryPrice=str(p.get("entryPrice", ""))
                     ))
     
     return success_response(PositionResponse(
