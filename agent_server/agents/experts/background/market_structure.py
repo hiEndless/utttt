@@ -50,6 +50,7 @@ class MarketStructureExpert:
         meta = {
             "symbol": query["symbol"],
             "ts": query["ts"],
+            "name": self.name,
             "version": self.version,
           }
 
