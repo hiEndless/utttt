@@ -13,6 +13,9 @@ from .api.l1_stream import router as l1_stream_router
 from .api.trade_events import router as trade_events_router
 from .api.klines import router as klines_router
 from .api.background_read import router as background_router
+from .api.risk_global import router as risk_global_router
+from .api.risk_execution import router as risk_execution_router
+from .api.risk_time_semantics import router as risk_time_semantics_router
 
 # 创建主路由
 app = APIRouter()
@@ -25,6 +28,9 @@ app.include_router(l1_stream_router)
 app.include_router(trade_events_router)
 app.include_router(klines_router)
 app.include_router(background_router)
+app.include_router(risk_global_router)
+app.include_router(risk_execution_router)
+app.include_router(risk_time_semantics_router)
 
 # 如果有其他功能模块，可以在这里继续添加
 # app.include_router(other_router)
