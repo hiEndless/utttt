@@ -1,5 +1,21 @@
+import os
+import sys
+
+if __name__ == "__main__" and __package__ is None:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(base_dir, "../../.."))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=os.path.abspath(os.path.join(base_dir, "../.env")))
+    except Exception:
+        pass
+
 import asyncio
 import traceback
+import uuid
+import inspect
 
 import websockets
 import json
@@ -11,8 +27,152 @@ import ssl
 from data_server.binance.ws_binance.utils.redis_client import get_async_redis
 from data_server.binance.ws_binance.utils.binance_pos_analysis import BinanceAnalysisService
 
-redis_client = get_async_redis()
 analysis_service = BinanceAnalysisService()
+
+
+class ExchangeSession:
+    """
+    中文注释：单个交易所账号的一次 WS 会话（连接 + 监听 + 周期请求）。
+    - 负责资源生命周期：start/stop
+    - 负责内部任务：listen_task/request_task
+    - 连接异常/任务异常交由上层 BinanceUserWS 负责重连
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        api_secret: str,
+        ws_url: str,
+        ssl_context: ssl.SSLContext,
+        request_interval_s: float = 4.0,
+        callback=None,
+    ):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.ws_url = ws_url
+        self.ssl_context = ssl_context
+        self.request_interval_s = float(request_interval_s)
+        self.callback = callback
+
+        self.ws = None
+        self.running = False
+        self.listen_task: asyncio.Task | None = None
+        self.request_task: asyncio.Task | None = None
+
+    def _sign_params(self, params: dict) -> str:
+        query_string = urlencode(sorted(params.items()))
+        signature = hmac.new(
+            self.api_secret.encode(),
+            query_string.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+        return signature
+
+    def _build_request(self, method: str) -> dict:
+        timestamp = int(time.time() * 1000)
+        params = {"apiKey": self.api_key, "timestamp": timestamp}
+        params["signature"] = self._sign_params(params)
+        return {
+            "id": uuid.uuid4().hex,
+            "method": method,
+            "params": params,
+        }
+
+    async def _connect(self):
+        return await websockets.connect(
+            self.ws_url,
+            ping_interval=20,
+            ssl=self.ssl_context,
+            max_queue=None,
+        )
+
+    async def start(self) -> None:
+        self.running = True
+        self.ws = await self._connect()
+
+        # 中文注释：先发一次请求，避免等到第一个周期才有数据。
+        await self._safe_send(self._build_request("v2/account.status"))
+        await self._safe_send(self._build_request("v2/account.position"))
+
+        self.listen_task = asyncio.create_task(self._listen())
+        self.request_task = asyncio.create_task(self._request_loop())
+
+    async def stop(self) -> None:
+        self.running = False
+
+        tasks = [t for t in [self.listen_task, self.request_task] if t is not None]
+        for t in tasks:
+            t.cancel()
+        for t in tasks:
+            try:
+                await t
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+
+        self.listen_task = None
+        self.request_task = None
+
+        if self.ws:
+            try:
+                await self.ws.close()
+            except Exception:
+                pass
+            self.ws = None
+
+    async def wait(self) -> None:
+        tasks = [t for t in [self.listen_task, self.request_task] if t is not None]
+        if not tasks:
+            return
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+        for d in done:
+            exc = d.exception()
+            if exc:
+                raise exc
+        for p in pending:
+            try:
+                await p
+            except asyncio.CancelledError:
+                pass
+
+    async def _safe_send(self, payload: dict) -> None:
+        if not self.ws or not self.running:
+            return
+        try:
+            await self.ws.send(json.dumps(payload))
+        except Exception:
+            raise
+
+    async def _request_loop(self) -> None:
+        try:
+            while self.running:
+                await asyncio.sleep(self.request_interval_s)
+                await self._safe_send(self._build_request("v2/account.status"))
+                await self._safe_send(self._build_request("v2/account.position"))
+        except asyncio.CancelledError:
+            pass
+
+    async def _listen(self) -> None:
+        try:
+            async for msg in self.ws:
+                if not self.running:
+                    break
+                await self._handle(msg)
+        except asyncio.CancelledError:
+            pass
+
+    async def _handle(self, msg: str) -> None:
+        try:
+            data = json.loads(msg)
+        except Exception:
+            return
+        if not self.callback:
+            return
+        if inspect.iscoroutinefunction(self.callback):
+            await self.callback(data)
+        else:
+            self.callback(data)
 
 
 class BinanceUserWS:
@@ -30,15 +190,18 @@ class BinanceUserWS:
             ws_url: str = "wss://ws-fapi.binance.com/ws-fapi/v1",
             ping_interval: int = 20,
             reconnect_delay: int = 5,
+            request_interval_s: float = 4.0,
     ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.ws_url = ws_url
         self.ping_interval = ping_interval
         self.reconnect_delay = reconnect_delay
+        self.request_interval_s = float(request_interval_s)
         self._ws = None
         self._running = False
         self._callback = None
+        self._session: ExchangeSession | None = None
 
         # SSL context（可解决 self-signed 证书问题）
         self.ssl_context = ssl.create_default_context()
@@ -54,70 +217,43 @@ class BinanceUserWS:
         """
         self._callback = cb
 
-    def _sign_params(self, params: dict) -> str:
-        """HMAC-SHA256 签名"""
-        query_string = urlencode(sorted(params.items()))
-        signature = hmac.new(
-            self.api_secret.encode(),
-            query_string.encode(),
-            hashlib.sha256
-        ).hexdigest()
-        return signature
-
-    def _request(self, method="v2/account.status"):
-        timestamp = int(time.time() * 1000)
-        params = {"apiKey": self.api_key, "timestamp": timestamp}
-        signature = self._sign_params(params)
-        params["signature"] = signature
-
-        request = {
-            "id": f"605a6d20-6588-4cb9-afa0-b0ab087507ba",
-            "method": method,
-            "params": params
-        }
-        return request
-
-    async def _connect(self):
-        async with websockets.connect(
-                self.ws_url,
-                ping_interval=20,  # 底层 WebSocket 自动 ping
-                ssl=self.ssl_context
-        ) as ws:
-            self._ws = ws
-            # 发送初始请求
-            await ws.send(json.dumps(self._request("v2/account.status")))
-            await ws.send(json.dumps(self._request("v2/account.position")))
-
-            while self._running:
-                try:
-                    message = await asyncio.wait_for(ws.recv(), timeout=4)  # 主动超时实现每秒请求
-                    data = json.loads(message)
-                    if self._callback:
-                        if asyncio.iscoroutinefunction(self._callback):
-                            await self._callback(data)
-                        else:
-                            self._callback(data)
-                except asyncio.TimeoutError:
-                    # 超时发送两个请求
-                    await ws.send(json.dumps(self._request("v2/account.status")))
-                    await ws.send(json.dumps(self._request("v2/account.position")))
-                except websockets.ConnectionClosed as e:
-                    print(f"⚠️ WS 已关闭: {e}")
-                    break
-                except Exception as e:
-                    print(f"❌ 消息处理错误: {e}")
-
     async def run(self):
         self._running = True
         while self._running:
             try:
-                await self._connect()
+                self._session = ExchangeSession(
+                    api_key=self.api_key,
+                    api_secret=self.api_secret,
+                    ws_url=self.ws_url,
+                    ssl_context=self.ssl_context,
+                    request_interval_s=self.request_interval_s,
+                    callback=self._callback,
+                )
+                await self._session.start()
+                await self._session.wait()
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 print(f"❌ WS 连接错误: {e}, {self.reconnect_delay}秒后重连")
+            finally:
+                if self._session:
+                    try:
+                        await self._session.stop()
+                    except Exception:
+                        pass
+                    self._session = None
+                self._ws = None
+            if self._running:
                 await asyncio.sleep(self.reconnect_delay)
 
     async def stop(self):
         self._running = False
+        if self._session:
+            try:
+                await self._session.stop()
+            except Exception:
+                pass
+            self._session = None
         if self._ws:
             try:
                 await self._ws.close()
@@ -148,16 +284,111 @@ async def user_callback(data):
         print("账户余额:", balance)
         print("账户可用余额:", availableBalance)
         try:
+            redis_client = get_async_redis()
             await redis_client.set("balance:binance", json.dumps({"balance": balance, "availableBalance": availableBalance}))
         except Exception as e:
             print(f"Redis 写入错误: {e}")
 
 
 if __name__ == "__main__":
-    api_key = "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0"
-    api_secret = "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B"
+    import os
+    import signal
 
-    ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
-    ws_client.register_callback(user_callback)
+    def _load_from_env():
+        api_key = str(os.getenv("BINANCE_API_KEY", "") or "").strip()
+        api_secret = str(os.getenv("BINANCE_API_SECRET", "") or "").strip()
+        if api_key and api_secret:
+            return api_key, api_secret
+        return None
 
-    asyncio.run(ws_client.run())
+    async def _load_from_redis(redis_client):
+        try:
+            raw = await redis_client.get("exchange_account:binance:active")
+        except Exception:
+            return None
+        if not raw:
+            return None
+        try:
+            obj = json.loads(raw)
+        except Exception:
+            return None
+        api_key = str(obj.get("api_key") or "").strip()
+        api_secret = str(obj.get("api_secret") or "").strip()
+        if api_key and api_secret:
+            return api_key, api_secret
+        return None
+
+    async def _standalone_main():
+        stop_evt = asyncio.Event()
+        loop = asyncio.get_running_loop()
+
+        def _on_stop(*_):
+            stop_evt.set()
+
+        try:
+            loop.add_signal_handler(signal.SIGINT, _on_stop)
+            loop.add_signal_handler(signal.SIGTERM, _on_stop)
+        except Exception:
+            pass
+
+        poll_s = float(os.getenv("EXCHANGE_ACTIVE_WATCH_INTERVAL_S", "1.0") or "1.0")
+        current = None
+        ws_client: BinanceUserWS | None = None
+        ws_task: asyncio.Task | None = None
+        redis_client = get_async_redis()
+        print(f"[user_ws] watching exchange_account:binance:active redis_db={os.getenv('REDIS_DB', '')} redis_host={os.getenv('REDIS_HOST', '')} redis_port={os.getenv('REDIS_PORT', '')}")
+
+        try:
+            while not stop_evt.is_set():
+                cfg = await _load_from_redis(redis_client)
+                if cfg is None:
+                    cfg = _load_from_env()
+
+                if cfg != current:
+                    current = cfg
+                    if ws_task:
+                        ws_task.cancel()
+                        try:
+                            await ws_task
+                        except asyncio.CancelledError:
+                            pass
+                        except Exception:
+                            pass
+                        ws_task = None
+                    if ws_client:
+                        try:
+                            await ws_client.stop()
+                        except Exception:
+                            pass
+                        ws_client = None
+
+                    if cfg:
+                        api_key, api_secret = cfg
+                        ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
+                        ws_client.register_callback(user_callback)
+                        ws_task = asyncio.create_task(ws_client.run())
+                        print("[user_ws] config applied, ws task started")
+                    else:
+                        print("[user_ws] config cleared, ws stopped")
+
+                await asyncio.sleep(max(0.2, poll_s))
+        finally:
+            if ws_task:
+                ws_task.cancel()
+                try:
+                    await ws_task
+                except asyncio.CancelledError:
+                    pass
+                except Exception:
+                    pass
+            if ws_client:
+                try:
+                    await ws_client.stop()
+                except Exception:
+                    pass
+            try:
+                await redis_client.aclose()
+            except Exception:
+                pass
+
+    asyncio.run(_standalone_main())

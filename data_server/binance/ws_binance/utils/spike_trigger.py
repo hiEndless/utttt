@@ -148,6 +148,14 @@ class SpikeDetector:
         # redis client
         self.redis = get_async_redis(self.redis_url)
 
+        # 中文注释：写入限频 + 并发保护，避免高频 create_task 抢占连接池导致 "Too many connections"
+        self._ticks_write_interval_ms = int(os.getenv("SPIKE_TICKS_WRITE_INTERVAL_MS", "1000") or "1000")
+        self._latest_write_interval_ms = int(os.getenv("SPIKE_LATEST_WRITE_INTERVAL_MS", "1000") or "1000")
+        self._redis_write_concurrency = int(os.getenv("SPIKE_REDIS_WRITE_CONCURRENCY", "20") or "20")
+        self._redis_write_sem = asyncio.Semaphore(max(1, self._redis_write_concurrency))
+        self._last_stream_write_ms: dict[str, int] = {}
+        self._last_latest_write_ms: dict[str, int] = {}
+
         # control
         self._running = False
 
@@ -215,33 +223,57 @@ class SpikeDetector:
         # persist to redis stream（XADD）
         stream_key = self.stream_key_template.format(symbol=symbol)
         latest_key = self.latest_key_template.format(symbol=symbol)
-        # 分开捕获，便于定位具体错误键
-        try:
-            # XADD: 支持 capped stream（字段统一：ts,bid,ask,price；ts 为毫秒整数）
-            await self.redis.xadd(stream_key, {
-                "ts": ts_ms,
-                "price": float(price),
-                "bid": float(bid_liq),
-                "ask": float(ask_liq)
-            }, maxlen=self.max_stream_len, approximate=True)
-        except Exception as e:
-            # 打印出错的键与其当前类型
-            try:
-                ktype = await self.redis.type(stream_key)
-            except Exception:
-                ktype = "unknown"
-            print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+        last_stream_ms = self._last_stream_write_ms.get(symbol, 0)
+        last_latest_ms = self._last_latest_write_ms.get(symbol, 0)
+        should_xadd = (ts_ms - last_stream_ms) >= self._ticks_write_interval_ms
+        should_hset = (ts_ms - last_latest_ms) >= self._latest_write_interval_ms
 
-        try:
-            # 也保持一个最新值，便于快速查询（Hash）ts 使用毫秒整数
-            await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
-        except Exception as e:
-            # 打印出错的键与其当前类型
+        if should_xadd or should_hset:
+            acquired = False
             try:
-                ktype = await self.redis.type(latest_key)
+                await asyncio.wait_for(self._redis_write_sem.acquire(), timeout=0)
+                acquired = True
             except Exception:
-                ktype = "unknown"
-            print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
+                acquired = False
+
+            if acquired:
+                try:
+                    if should_xadd:
+                        try:
+                            await self.redis.xadd(
+                                stream_key,
+                                {
+                                    "ts": ts_ms,
+                                    "price": float(price),
+                                    "bid": float(bid_liq),
+                                    "ask": float(ask_liq),
+                                },
+                                maxlen=self.max_stream_len,
+                                approximate=True,
+                            )
+                            self._last_stream_write_ms[symbol] = ts_ms
+                        except Exception as e:
+                            try:
+                                ktype = await self.redis.type(stream_key)
+                            except Exception:
+                                ktype = "unknown"
+                            print(f"redis write error on XADD key={stream_key} type={ktype}: {e}")
+
+                    if should_hset:
+                        try:
+                            await self.redis.hset(latest_key, mapping={"ts": ts_ms, "price": price, "bid": bid_liq, "ask": ask_liq})
+                            self._last_latest_write_ms[symbol] = ts_ms
+                        except Exception as e:
+                            try:
+                                ktype = await self.redis.type(latest_key)
+                            except Exception:
+                                ktype = "unknown"
+                            print(f"redis write error on HSET key={latest_key} type={ktype}: {e}")
+                finally:
+                    try:
+                        self._redis_write_sem.release()
+                    except Exception:
+                        pass
 
         # 非阻塞触发检测
         asyncio.create_task(self._evaluate(symbol))

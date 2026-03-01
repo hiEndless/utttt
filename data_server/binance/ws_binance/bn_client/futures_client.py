@@ -373,8 +373,10 @@ class BinanceFuturesClient:
 
 
 if __name__ == "__main__":
-    API_KEY = os.getenv("BINANCE_API_KEY", "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0")
-    API_SECRET = os.getenv("BINANCE_API_SECRET", "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B")
+    API_KEY = str(os.getenv("BINANCE_API_KEY", "") or "").strip()
+    API_SECRET = str(os.getenv("BINANCE_API_SECRET", "") or "").strip()
+    if not API_KEY or not API_SECRET:
+        raise RuntimeError("缺少 BINANCE_API_KEY / BINANCE_API_SECRET")
 
     symbol = "ETHUSDT"
 

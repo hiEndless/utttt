@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from ...account.views import get_current_user_id
 from ..models import ExchangeAccount
+from ....common.redis_client import get_async_redis_client
 from ....common.status_codes import StatusCode, BaseResponse, BusinessException, success_response
 
 # 创建带有标签的路由
@@ -142,6 +144,10 @@ class ExchangeAccountUpdateIn(BaseModel):
     api_label: Optional[str] = Field(default=None, max_length=64)
 
 
+def _active_exchange_key(exchange: str) -> str:
+    return f"exchange_account:{str(exchange).strip().lower()}:active"
+
+
 @router.patch("/settings/exchange_accounts/{account_id}", response_model=BaseResponse[ExchangeAccountOut])
 async def update_exchange_account(
     account_id: uuid.UUID,
@@ -155,14 +161,64 @@ async def update_exchange_account(
 
     if body.is_active is not None:
         if body.is_active:
-            # 如果启用当前账户，需禁用该用户其他所有账户
-            await ExchangeAccount.filter(user_id=user_id, is_deleted=False).update(is_active=False)
+            # 中文注释：多交易所并行采集场景下，仅需保证“同一交易所”只有一个激活账户
+            await ExchangeAccount.filter(user_id=user_id, exchange=obj.exchange, is_deleted=False).update(is_active=False)
         obj.is_active = body.is_active
 
     if body.api_label is not None:
         obj.api_label = body.api_label
 
     await obj.save()
+
+    if body.is_active is not None:
+        redis_client = get_async_redis_client()
+
+        exchange_key = _active_exchange_key(obj.exchange)
+        redis_changed = False
+
+        try:
+            before_raw = await redis_client.get(exchange_key)
+        except Exception:
+            before_raw = None
+
+        if obj.is_active:
+            if not obj.api_key or not obj.api_secret:
+                raise BusinessException(code=StatusCode.PARAM_ERROR, message="激活失败：缺少 API Key 或 API Secret")
+
+            payload = {
+                "account_id": str(obj.id),
+                "exchange": obj.exchange,
+                "api_key": obj.api_key,
+                "api_secret": obj.api_secret,
+                "is_read_only": bool(obj.is_read_only),
+            }
+            value = json.dumps(payload, sort_keys=True)
+            try:
+                await redis_client.set(exchange_key, value)
+            except Exception:
+                raise BusinessException(code=StatusCode.SERVER_ERROR, message="更新 Redis 失败，请稍后重试")
+            redis_changed = before_raw != value
+        else:
+            try:
+                cur = await redis_client.get(exchange_key)
+            except Exception:
+                cur = None
+
+            should_delete = True
+            if cur:
+                try:
+                    cur_obj = json.loads(cur)
+                    if cur_obj.get("account_id") and str(cur_obj.get("account_id")) != str(obj.id):
+                        should_delete = False
+                except Exception:
+                    should_delete = True
+
+            if should_delete:
+                try:
+                    await redis_client.delete(exchange_key)
+                except Exception:
+                    pass
+                redis_changed = bool(before_raw)
     
     return success_response(ExchangeAccountOut(
         id=str(obj.id),

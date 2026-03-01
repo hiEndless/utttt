@@ -2,6 +2,7 @@ import asyncio
 import signal
 import logging
 import time
+import json
 import redis.asyncio as aioredis
 from config import settings
 from manager import SymbolTaskManager
@@ -68,6 +69,20 @@ FETCH_PLAN = [
 ]
 
 
+async def _heartbeat(redis: aioredis.Redis, stop: asyncio.Event):
+    # 中文注释：写入 rest_binance 心跳，供运维接口判断服务是否存活
+    interval_s = float(getattr(settings, "health_heartbeat_interval_s", 2.0) or 2.0)
+    ttl_s = int(float(getattr(settings, "health_heartbeat_ttl_s", 10) or 10))
+    key = "health:binance:rest_binance"
+    while not stop.is_set():
+        ts_ms = int(time.time() * 1000)
+        try:
+            await redis.set(key, json.dumps({"ts": ts_ms, "running": True}), ex=ttl_s)
+        except Exception:
+            pass
+        await asyncio.sleep(max(0.5, interval_s))
+
+
 async def _run():
     redis = aioredis.Redis(host=settings.redis_host, password=settings.redis_password, port=settings.redis_port,
                            db=settings.redis_db, decode_responses=True)
@@ -75,6 +90,7 @@ async def _run():
     manager = SymbolTaskManager()
     loop = asyncio.get_running_loop()
     stop = asyncio.Event()
+    heartbeat_task = asyncio.create_task(_heartbeat(redis, stop))
 
     def _on_sig(*_):
         logger.info("received_stop_signal")
@@ -94,6 +110,12 @@ async def _run():
                 break
             await asyncio.sleep(0.1)
     finally:
+        stop.set()
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except Exception:
+            pass
         for s in manager.list_symbols():
             await manager.stop_symbol(s)
         await http_client.close()

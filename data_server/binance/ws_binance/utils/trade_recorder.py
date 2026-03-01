@@ -12,8 +12,8 @@ class TradeRecorder:
         self.publisher = TradeEventPublisher(exchange=self.exchange)
         
         # 初始化 Binance API Client
-        api_key = os.getenv("BINANCE_API_KEY", "gldbpuTRjjrsN2B3MZUYIfAKFAhPNytPIoKForPJ2E79U2aHfcCbI786RmMlAvq0")
-        api_secret = os.getenv("BINANCE_API_SECRET", "yKLTQO0mb22PSiGNlT39LO2nVybDAktGIBXX3NfWjflxrR4pm8wady2Dy2LBdg6B")
+        api_key = os.getenv("BINANCE_API_KEY", None)
+        api_secret = os.getenv("BINANCE_API_SECRET", None)
         self.bn_client = None
         if api_key and api_secret:
             self.bn_client = BinanceFuturesClient(api_key, api_secret)

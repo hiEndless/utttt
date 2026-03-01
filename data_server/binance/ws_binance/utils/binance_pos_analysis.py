@@ -175,6 +175,15 @@ class BinanceAnalysisService:
             new_data = self.apply_trade_ids([], new_data)
             self.set_old_data(new_data)
             self.redis_client.set_json("positions:binance", new_data)
+            try:
+                symbols = {str(i.get("symbol")) for i in (new_data or []) if i.get("symbol")}
+                pipe = self.redis_client.conn.pipeline(transaction=False)
+                pipe.delete("symbol:binance")
+                for s in symbols:
+                    pipe.sadd("symbol:binance", s)
+                pipe.execute()
+            except Exception:
+                pass
             return
 
         # 先补齐 trade_id/open_time，再做对比，避免历史缓存缺字段导致无法补齐并写回 Redis
