@@ -186,7 +186,8 @@ async def update_exchange_account(
                 raise BusinessException(code=StatusCode.PARAM_ERROR, message="激活失败：缺少 API Key 或 API Secret")
 
             payload = {
-                "account_id": str(obj.id),
+                "exchange_account_id": str(obj.id),
+                "user_id": str(obj.user_id),
                 "exchange": obj.exchange,
                 "api_key": obj.api_key,
                 "api_secret": obj.api_secret,
@@ -208,7 +209,7 @@ async def update_exchange_account(
             if cur:
                 try:
                     cur_obj = json.loads(cur)
-                    if cur_obj.get("account_id") and str(cur_obj.get("account_id")) != str(obj.id):
+                    if cur_obj.get("exchange_account_id") and str(cur_obj.get("exchange_account_id")) != str(obj.id):
                         should_delete = False
                 except Exception:
                     should_delete = True

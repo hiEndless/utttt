@@ -17,6 +17,12 @@ class TradeEventPublisher:
         # 复用已有的 RedisClient (基于 sync redis)
         self.redis_client = RedisClient()
         self.exchange = exchange.lower()
+        self.user_id: str | None = None
+        self.exchange_account_id: str | None = None
+
+    def set_account_context(self, user_id: str | None, exchange_account_id: str | None) -> None:
+        self.user_id = str(user_id).strip() if user_id else None
+        self.exchange_account_id = str(exchange_account_id).strip() if exchange_account_id else None
 
     def publish_trade_event(self, event_type: str, item: dict, extra_data: dict = None, is_short_term: bool = False):
         """
@@ -62,6 +68,9 @@ class TradeEventPublisher:
                 "stage": "execution",  # 区别于 "final" (market analysis)
                 "event_type": event_type,  # 具体交易动作
                 "account_id": account_id,
+                "exchange": self.exchange,
+                "user_id": self.user_id or "",
+                "exchange_account_id": self.exchange_account_id or "",
                 "symbol": symbol,
                 "timestamp": str(ts_ms),
                 "is_short_term": "true" if is_short_term else "false",  # 显式标记短线交易

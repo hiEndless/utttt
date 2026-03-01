@@ -226,107 +226,77 @@ class BinanceFuturesClient:
         """
         trades = sorted(trades, key=lambda x: x["time"])
 
-        position_qty = 0.0  # + = Long, - = Short
+        position_sides = {str(t.get("positionSide", "") or "").upper() for t in trades}
+        if ("LONG" in position_sides) or ("SHORT" in position_sides):
+            closed_positions: List[Dict] = []
+            long_trades = [t for t in trades if str(t.get("positionSide", "") or "").upper() == "LONG"]
+            short_trades = [t for t in trades if str(t.get("positionSide", "") or "").upper() == "SHORT"]
+            if long_trades:
+                closed_positions.extend(BinanceFuturesClient._calculate_closed_positions_hedge_one_side(
+                    long_trades, symbol, position_side="LONG"
+                ))
+            if short_trades:
+                closed_positions.extend(BinanceFuturesClient._calculate_closed_positions_hedge_one_side(
+                    short_trades, symbol, position_side="SHORT"
+                ))
+            return sorted(closed_positions, key=lambda x: x.get("close_time") or 0)
+
+        return BinanceFuturesClient._calculate_closed_positions_one_way(trades, symbol)
+
+    @staticmethod
+    def _calculate_closed_positions_hedge_one_side(trades: List[Dict], symbol: str, position_side: str) -> List[Dict]:
+        eps = 1e-12
+        position_side = str(position_side or "").upper()
+
+        position_qty = 0.0
         avg_open_price = 0.0
-
         open_time = None
-        side = None  # 'LONG' or 'SHORT'
 
-        # Accumulators for the current closing sequence
         close_qty_sum = 0.0
         close_amount_sum = 0.0
         realized_pnl_sum = 0.0
+        commission_usdt_sum = 0.0
 
-        closed_positions = []
+        closed_positions: List[Dict] = []
 
         for t in trades:
             qty = float(t["qty"])
             price = float(t["price"])
             realized_pnl = float(t["realizedPnl"])
+            commission = float(t.get("commission") or 0.0)
+            commission_asset = str(t.get("commissionAsset") or "").upper()
             ts = t["time"]
-            trade_side = t["side"]  # BUY or SELL
+            trade_side = str(t["side"]).upper()
 
-            if trade_side == "BUY":
-                # BUY implies: Closing Short OR Opening/Adding Long
-
-                if position_qty < 0:
-                    # We are Short. BUY means Closing Short.
-                    # How much are we closing?
-                    # Either the full trade qty, or just enough to reach 0 (if flipping)
-
-                    qty_closing = min(qty, abs(position_qty))
-
-                    close_qty_sum += qty_closing
-                    close_amount_sum += qty_closing * price
-                    realized_pnl_sum += realized_pnl  # Assumes PnL is fully attributed to this close
-
-                    position_qty += qty_closing
-
-                    if position_qty == 0:
-                        # Fully closed the short position
-                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0
-                        notional = avg_open_price * close_qty_sum
-
-                        closed_positions.append({
-                            "symbol": symbol,
-                            "side": "SHORT",  # The position that was closed
-                            "qty": round(close_qty_sum, 6),
-                            "entry_time": open_time,
-                            "close_time": ts,
-                            "entry_price": round(avg_open_price, 6),
-                            "close_price": round(close_price, 6),
-                            "gross_pnl": round(realized_pnl_sum, 6),
-                            "notional": round(notional, 6),
-                            "return_pct": round(realized_pnl_sum / notional * 100, 4) if notional else 0,
-                            "holding_seconds": int((ts - (open_time or ts)) / 1000)
-                        })
-
-                        # Reset accumulators
-                        avg_open_price = 0.0
-                        open_time = None
-                        side = None
+            if position_side == "LONG":
+                if trade_side == "BUY":
+                    if abs(position_qty) <= eps:
+                        open_time = ts
+                        position_qty = qty
+                        avg_open_price = price
                         close_qty_sum = 0.0
                         close_amount_sum = 0.0
                         realized_pnl_sum = 0.0
-
-                        # Handle remaining qty if any (Flip to Long)
-                        remaining_qty = qty - qty_closing
-                        if remaining_qty > 0:
-                            position_qty = remaining_qty
-                            avg_open_price = price
-                            open_time = ts
-                            side = "LONG"
-
-                else:
-                    # We are Flat or Long. BUY means Opening/Adding Long.
-                    if position_qty == 0:
-                        open_time = ts
-                        side = "LONG"
-
-                    # Weighted Average Entry Price
-                    new_qty = position_qty + qty
-                    avg_open_price = (position_qty * avg_open_price + qty * price) / new_qty
-                    position_qty = new_qty
-
-            else:  # SELL
-                # SELL implies: Closing Long OR Opening/Adding Short
-
-                if position_qty > 0:
-                    # We are Long. SELL means Closing Long.
-
+                        commission_usdt_sum = 0.0
+                    else:
+                        new_qty = position_qty + qty
+                        avg_open_price = (position_qty * avg_open_price + qty * price) / new_qty
+                        position_qty = new_qty
+                    if commission_asset == "USDT":
+                        commission_usdt_sum += commission
+                elif trade_side == "SELL":
                     qty_closing = min(qty, position_qty)
-
                     close_qty_sum += qty_closing
                     close_amount_sum += qty_closing * price
                     realized_pnl_sum += realized_pnl
-
+                    if commission_asset == "USDT":
+                        commission_usdt_sum += commission
                     position_qty -= qty_closing
 
-                    if position_qty == 0:
-                        # Fully closed the long position
-                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0
+                    if abs(position_qty) <= eps:
+                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0.0
                         notional = avg_open_price * close_qty_sum
-
+                        net_pnl = realized_pnl_sum - commission_usdt_sum
                         closed_positions.append({
                             "symbol": symbol,
                             "side": "LONG",
@@ -336,54 +306,255 @@ class BinanceFuturesClient:
                             "entry_price": round(avg_open_price, 6),
                             "close_price": round(close_price, 6),
                             "gross_pnl": round(realized_pnl_sum, 6),
+                            "commission": round(commission_usdt_sum, 6),
+                            "net_pnl": round(net_pnl, 6),
                             "notional": round(notional, 6),
                             "return_pct": round(realized_pnl_sum / notional * 100, 4) if notional else 0,
+                            "net_return_pct": round(net_pnl / notional * 100, 4) if notional else 0,
                             "holding_seconds": int((ts - (open_time or ts)) / 1000)
                         })
+                        position_qty = 0.0
+                        avg_open_price = 0.0
+                        open_time = None
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
 
-                        # Reset
+            elif position_side == "SHORT":
+                if trade_side == "SELL":
+                    if abs(position_qty) <= eps:
+                        open_time = ts
+                        position_qty = qty
+                        avg_open_price = price
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
+                    else:
+                        new_qty = position_qty + qty
+                        avg_open_price = (position_qty * avg_open_price + qty * price) / new_qty
+                        position_qty = new_qty
+                    if commission_asset == "USDT":
+                        commission_usdt_sum += commission
+                elif trade_side == "BUY":
+                    qty_closing = min(qty, position_qty)
+                    close_qty_sum += qty_closing
+                    close_amount_sum += qty_closing * price
+                    realized_pnl_sum += realized_pnl
+                    if commission_asset == "USDT":
+                        commission_usdt_sum += commission
+                    position_qty -= qty_closing
+
+                    if abs(position_qty) <= eps:
+                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0.0
+                        notional = avg_open_price * close_qty_sum
+                        net_pnl = realized_pnl_sum - commission_usdt_sum
+                        closed_positions.append({
+                            "symbol": symbol,
+                            "side": "SHORT",
+                            "qty": round(close_qty_sum, 6),
+                            "entry_time": open_time,
+                            "close_time": ts,
+                            "entry_price": round(avg_open_price, 6),
+                            "close_price": round(close_price, 6),
+                            "gross_pnl": round(realized_pnl_sum, 6),
+                            "commission": round(commission_usdt_sum, 6),
+                            "net_pnl": round(net_pnl, 6),
+                            "notional": round(notional, 6),
+                            "return_pct": round(realized_pnl_sum / notional * 100, 4) if notional else 0,
+                            "net_return_pct": round(net_pnl / notional * 100, 4) if notional else 0,
+                            "holding_seconds": int((ts - (open_time or ts)) / 1000)
+                        })
+                        position_qty = 0.0
+                        avg_open_price = 0.0
+                        open_time = None
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
+
+        return closed_positions
+
+    @staticmethod
+    def _calculate_closed_positions_one_way(trades: List[Dict], symbol: str) -> List[Dict]:
+        eps = 1e-12
+
+        position_qty = 0.0
+        avg_open_price = 0.0
+        open_time = None
+        side = None
+
+        close_qty_sum = 0.0
+        close_amount_sum = 0.0
+        realized_pnl_sum = 0.0
+        commission_usdt_sum = 0.0
+
+        closed_positions: List[Dict] = []
+
+        for t in trades:
+            qty = float(t["qty"])
+            price = float(t["price"])
+            realized_pnl = float(t["realizedPnl"])
+            commission = float(t.get("commission") or 0.0)
+            commission_asset = str(t.get("commissionAsset") or "").upper()
+            ts = t["time"]
+            trade_side = t["side"]
+
+            if trade_side == "BUY":
+                if position_qty < -eps:
+                    qty_closing = min(qty, abs(position_qty))
+                    close_qty_sum += qty_closing
+                    close_amount_sum += qty_closing * price
+                    realized_pnl_sum += realized_pnl
+                    if commission_asset == "USDT" and qty > 0:
+                        commission_usdt_sum += commission * (qty_closing / qty)
+                    position_qty += qty_closing
+
+                    if abs(position_qty) <= eps:
+                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0.0
+                        notional = avg_open_price * close_qty_sum
+                        net_pnl = realized_pnl_sum - commission_usdt_sum
+                        closed_positions.append({
+                            "symbol": symbol,
+                            "side": "SHORT",
+                            "qty": round(close_qty_sum, 6),
+                            "entry_time": open_time,
+                            "close_time": ts,
+                            "entry_price": round(avg_open_price, 6),
+                            "close_price": round(close_price, 6),
+                            "gross_pnl": round(realized_pnl_sum, 6),
+                            "commission": round(commission_usdt_sum, 6),
+                            "net_pnl": round(net_pnl, 6),
+                            "notional": round(notional, 6),
+                            "return_pct": round(realized_pnl_sum / notional * 100, 4) if notional else 0,
+                            "net_return_pct": round(net_pnl / notional * 100, 4) if notional else 0,
+                            "holding_seconds": int((ts - (open_time or ts)) / 1000)
+                        })
                         avg_open_price = 0.0
                         open_time = None
                         side = None
                         close_qty_sum = 0.0
                         close_amount_sum = 0.0
                         realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
 
-                        # Handle flip
                         remaining_qty = qty - qty_closing
-                        if remaining_qty > 0:
-                            position_qty = -remaining_qty  # Short
+                        if remaining_qty > eps:
+                            position_qty = remaining_qty
+                            avg_open_price = price
+                            open_time = ts
+                            side = "LONG"
+                            if commission_asset == "USDT" and qty > 0:
+                                commission_usdt_sum = commission * (remaining_qty / qty)
+
+                else:
+                    if abs(position_qty) <= eps:
+                        open_time = ts
+                        side = "LONG"
+                        position_qty = qty
+                        avg_open_price = price
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
+                        if commission_asset == "USDT":
+                            commission_usdt_sum += commission
+                    else:
+                        new_qty = position_qty + qty
+                        avg_open_price = (position_qty * avg_open_price + qty * price) / new_qty
+                        position_qty = new_qty
+                        if commission_asset == "USDT":
+                            commission_usdt_sum += commission
+
+            else:
+                if position_qty > eps:
+                    qty_closing = min(qty, position_qty)
+                    close_qty_sum += qty_closing
+                    close_amount_sum += qty_closing * price
+                    realized_pnl_sum += realized_pnl
+                    if commission_asset == "USDT" and qty > 0:
+                        commission_usdt_sum += commission * (qty_closing / qty)
+                    position_qty -= qty_closing
+
+                    if abs(position_qty) <= eps:
+                        close_price = close_amount_sum / close_qty_sum if close_qty_sum > 0 else 0.0
+                        notional = avg_open_price * close_qty_sum
+                        net_pnl = realized_pnl_sum - commission_usdt_sum
+                        closed_positions.append({
+                            "symbol": symbol,
+                            "side": "LONG",
+                            "qty": round(close_qty_sum, 6),
+                            "entry_time": open_time,
+                            "close_time": ts,
+                            "entry_price": round(avg_open_price, 6),
+                            "close_price": round(close_price, 6),
+                            "gross_pnl": round(realized_pnl_sum, 6),
+                            "commission": round(commission_usdt_sum, 6),
+                            "net_pnl": round(net_pnl, 6),
+                            "notional": round(notional, 6),
+                            "return_pct": round(realized_pnl_sum / notional * 100, 4) if notional else 0,
+                            "net_return_pct": round(net_pnl / notional * 100, 4) if notional else 0,
+                            "holding_seconds": int((ts - (open_time or ts)) / 1000)
+                        })
+                        avg_open_price = 0.0
+                        open_time = None
+                        side = None
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
+
+                        remaining_qty = qty - qty_closing
+                        if remaining_qty > eps:
+                            position_qty = -remaining_qty
                             avg_open_price = price
                             open_time = ts
                             side = "SHORT"
+                            if commission_asset == "USDT" and qty > 0:
+                                commission_usdt_sum = commission * (remaining_qty / qty)
 
                 else:
-                    # We are Flat or Short. SELL means Opening/Adding Short.
-                    if position_qty == 0:
+                    if abs(position_qty) <= eps:
                         open_time = ts
                         side = "SHORT"
-
-                    # Weighted Average Entry Price (using absolute quantities)
-                    current_abs_qty = abs(position_qty)
-                    new_abs_qty = current_abs_qty + qty
-                    avg_open_price = (current_abs_qty * avg_open_price + qty * price) / new_abs_qty
-                    position_qty -= qty
+                        position_qty = -qty
+                        avg_open_price = price
+                        close_qty_sum = 0.0
+                        close_amount_sum = 0.0
+                        realized_pnl_sum = 0.0
+                        commission_usdt_sum = 0.0
+                        if commission_asset == "USDT":
+                            commission_usdt_sum += commission
+                    else:
+                        current_abs_qty = abs(position_qty)
+                        new_abs_qty = current_abs_qty + qty
+                        avg_open_price = (current_abs_qty * avg_open_price + qty * price) / new_abs_qty
+                        position_qty -= qty
+                        if commission_asset == "USDT":
+                            commission_usdt_sum += commission
 
         return closed_positions
 
 
 if __name__ == "__main__":
+    import os
+    import dotenv
+    
+    dotenv.load_dotenv()
+
     API_KEY = str(os.getenv("BINANCE_API_KEY", "") or "").strip()
     API_SECRET = str(os.getenv("BINANCE_API_SECRET", "") or "").strip()
     if not API_KEY or not API_SECRET:
         raise RuntimeError("缺少 BINANCE_API_KEY / BINANCE_API_SECRET")
 
-    symbol = "ETHUSDT"
+    symbol = "RIVERUSDT"
 
     try:
         client = BinanceFuturesClient(API_KEY, API_SECRET)
         print(f"Fetching trades for {symbol}...")
         trades = client.get_user_trades(symbol)
+        print(trades)
 
         print(f"Fetched {len(trades)} trades.")
 
@@ -399,8 +570,9 @@ if __name__ == "__main__":
         closed_positions = client.calculate_closed_positions(trades, symbol)
 
         if closed_positions:
-            # df = pd.DataFrame(closed_positions)
-            # pd.set_option("display.max_columns", None)
+            df = pd.DataFrame(closed_positions)
+            pd.set_option("display.max_columns", None)
+            print(df)
             print(closed_positions)
         else:
             print("No closed positions found.")

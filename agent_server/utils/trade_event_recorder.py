@@ -249,6 +249,8 @@ class TradeEventRecorder:
             event_type = self._extract_event_type(event_info)
             exchange = event_info.get("exchange", "").lower()
             symbol = event_info.get("symbol", "")
+            user_id = str(event_info.get("user_id") or "").strip() or None
+            exchange_account_id = str(event_info.get("exchange_account_id") or "").strip() or None
             
             # 时间戳转换为毫秒（如果不是）
             event_at = int(event_info.get("timestamp", 0))
@@ -316,6 +318,8 @@ class TradeEventRecorder:
                             indicators_snapshot = %s,
                             symbol = %s,
                             exchange = %s,
+                            user_id = COALESCE(user_id, %s),
+                            exchange_account_id = COALESCE(exchange_account_id, %s),
                             is_verified = %s
                     """
                     update_params = [
@@ -326,6 +330,8 @@ class TradeEventRecorder:
                         json.dumps(indicators_snapshot, ensure_ascii=False) if indicators_snapshot else None,
                         symbol,
                         exchange,
+                        user_id,
+                        exchange_account_id,
                         final_is_verified
                     ]
                     
@@ -348,11 +354,13 @@ class TradeEventRecorder:
                             market_context, event_data, indicators_snapshot,
                             is_verified, verification_at,
                             symbol, exchange,
+                            user_id, exchange_account_id,
                             event_summary
                         ) VALUES (
                             %s, %s, %s, %s,
                             %s, %s,
                             %s, %s, %s,
+                            %s, %s,
                             %s, %s,
                             %s, %s,
                             %s
@@ -373,6 +381,8 @@ class TradeEventRecorder:
                         None,   # verification_at
                         symbol,
                         exchange,
+                        user_id,
+                        exchange_account_id,
                         event_summary
                     ]
                     
@@ -580,7 +590,7 @@ class TradeEventRecorder:
             def _save_sync():
                 with PostgresDB() as db:
                     # 1. 找到关联的 trade_events
-                    sql = "SELECT id FROM trade_events WHERE event_id = %s"
+                    sql = "SELECT id, user_id, exchange_account_id FROM trade_events WHERE event_id = %s"
                     params = [event_id]
                     
                     if trade_id:
@@ -593,7 +603,24 @@ class TradeEventRecorder:
                         logger.warning(f"无法保存分析结果: 未找到对应的事件记录, event_id={event_id}, trade_id={trade_id}")
                         return False
                     
-                    event_db_ids = [row[0] if isinstance(row, tuple) else row["id"] for row in event_rows]
+                    event_db_items = []
+                    for row in event_rows:
+                        if isinstance(row, tuple):
+                            event_db_items.append(
+                                {
+                                    "id": row[0],
+                                    "user_id": row[1],
+                                    "exchange_account_id": row[2],
+                                }
+                            )
+                        else:
+                            event_db_items.append(
+                                {
+                                    "id": row.get("id"),
+                                    "user_id": row.get("user_id"),
+                                    "exchange_account_id": row.get("exchange_account_id"),
+                                }
+                            )
                     
                     # 2. 提取通用字段
                     # agent_analyses 表已移除 verdict 字段，这里不再单独落库 verdict
@@ -615,18 +642,20 @@ class TradeEventRecorder:
                             event_id, agent_name, model_version,
                             risk_action, mark_price,
                             reasoning, full_output, created_at,
-                            symbol, exchange
+                            symbol, exchange,
+                            user_id, exchange_account_id
                         ) VALUES (
                             %s, %s, %s,
                             %s, %s,
                             %s, %s, NOW(),
+                            %s, %s,
                             %s, %s
                         )
                     """
                     
-                    for event_db_id in event_db_ids:
+                    for item in event_db_items:
                         db.execute(insert_sql, [
-                            event_db_id,
+                            item.get("id"),
                             agent_name,
                             final_model_version,
                             risk_action,
@@ -634,10 +663,12 @@ class TradeEventRecorder:
                             json.dumps(reasoning, ensure_ascii=False) if reasoning else None,
                             json.dumps(full_output, ensure_ascii=False),
                             symbol,
-                            exchange
+                            exchange,
+                            item.get("user_id"),
+                            item.get("exchange_account_id"),
                         ])
                     
-                    logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_ids)}")
+                    logger.info(f"Agent分析结果已保存: {agent_name}, event_id={event_id}, 关联记录数={len(event_db_items)}")
                     return True
 
             # 异步执行

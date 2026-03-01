@@ -124,15 +124,19 @@ class RouterFinalListener:
                     "origin_source_hint") or "unknown"
 
                 # 4. 提取交易所信息 (exchange)
-                # 尝试从多个位置获取，如果没有明确指定，尝试从 account_id 或 source_event_id 推断
-                account_id = ev.get("account_id") or ""
-                exchange = account_id.split("_")[0].lower() if account_id else ""
-                
+                # 中文注释：优先使用生产方显式写入的 exchange，其次再从 account_id / source_event_id / event_id 推断。
+                exchange = str(ev.get("exchange") or "").lower()
                 if not exchange:
-                    # 尝试从 source_event_id 解析 (例如: binance.BTCUSDT.trade... -> binance)
+                    account_id = ev.get("account_id") or ""
+                    exchange = account_id.split("_")[0].lower() if account_id else ""
+                if not exchange:
                     se_id = meta.get("source_event_id") or ""
                     if se_id:
                         exchange = se_id.split(".")[0].lower()
+                if not exchange:
+                    eid = ev.get("event_id") or ""
+                    if eid:
+                        exchange = eid.split(".")[0].lower()
 
                 symbol = ev.get("symbol") or ""
                 fp = ev.get("final_priority") or "low"
@@ -147,6 +151,8 @@ class RouterFinalListener:
                     "event_id": ev.get("event_id") or "",
                     "event_type": event_type,
                     "timestamp": ev.get("timestamp"),
+                    "user_id": ev.get("user_id") or "",
+                    "exchange_account_id": ev.get("exchange_account_id") or "",
                     
                     # 分析数据
                     "market_state": st.get("market_state"),

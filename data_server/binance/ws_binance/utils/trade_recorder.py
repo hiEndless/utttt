@@ -4,12 +4,18 @@ from data_server.binance.ws_binance.bn_client.futures_client import BinanceFutur
 import datetime
 
 import os
+import json
+from data_server.binance.ws_binance.utils.reids_connect import RedisClient
+from decimal import Decimal, InvalidOperation
 
 class TradeRecorder:
     def __init__(self, exchange="binance"):
         self.db = PostgresDB()
         self.exchange = exchange
         self.publisher = TradeEventPublisher(exchange=self.exchange)
+        self.user_id = None
+        self.exchange_account_id = None
+        self._bn_client_api_key = None
         
         # 初始化 Binance API Client
         api_key = os.getenv("BINANCE_API_KEY", None)
@@ -17,6 +23,7 @@ class TradeRecorder:
         self.bn_client = None
         if api_key and api_secret:
             self.bn_client = BinanceFuturesClient(api_key, api_secret)
+            self._bn_client_api_key = api_key
         
         # 防抖配置
         # 默认开启，阈值3分钟
@@ -25,6 +32,46 @@ class TradeRecorder:
             self.debounce_minutes = float(os.getenv("TRADE_DEBOUNCE_MINUTES", "3.0"))
         except Exception:
             self.debounce_minutes = 3.0
+
+    def set_account_context(self, user_id: str | None, exchange_account_id: str | None) -> None:
+        self.user_id = str(user_id).strip() if user_id else None
+        self.exchange_account_id = str(exchange_account_id).strip() if exchange_account_id else None
+        try:
+            self.publisher.set_account_context(self.user_id, self.exchange_account_id)
+        except Exception:
+            pass
+
+    def _ensure_bn_client(self) -> bool:
+        if self.bn_client is not None:
+            return True
+
+        api_key = str(os.getenv("BINANCE_API_KEY", "") or "").strip()
+        api_secret = str(os.getenv("BINANCE_API_SECRET", "") or "").strip()
+        if api_key and api_secret:
+            self.bn_client = BinanceFuturesClient(api_key, api_secret)
+            self._bn_client_api_key = api_key
+            return True
+
+        try:
+            rc = RedisClient()
+            raw = rc.get_raw(f"exchange_account:{str(self.exchange).strip().lower()}:active")
+        except Exception:
+            raw = None
+        if not raw:
+            return False
+        try:
+            obj = json.loads(raw)
+        except Exception:
+            return False
+        if self.exchange_account_id and str(obj.get("exchange_account_id") or "").strip() != str(self.exchange_account_id):
+            return False
+        api_key = str(obj.get("api_key") or "").strip()
+        api_secret = str(obj.get("api_secret") or "").strip()
+        if not api_key or not api_secret:
+            return False
+        self.bn_client = BinanceFuturesClient(api_key, api_secret)
+        self._bn_client_api_key = api_key
+        return True
 
     def _to_datetime(self, ts):
         if not ts:
@@ -56,7 +103,7 @@ class TradeRecorder:
 
     def _sync_last_trade_details(self, trade_id, symbol):
         """调用 REST API 获取最近一笔交易的详细信息并更新数据库"""
-        if not self.bn_client:
+        if not self._ensure_bn_client():
             return
 
         try:
@@ -91,10 +138,12 @@ class TradeRecorder:
     def _sync_closed_trade_pnl(self, trade_id, symbol, position_side, entry_time, leverage):
         """
         平仓后同步计算 PnL 和 PnL Ratio
-        pnl = gross_pnl
+        pnl = net_pnl
         pnl_ratio = return_pct * leverage
         """
-        if not self.bn_client or not entry_time:
+        if not entry_time:
+            return
+        if not self._ensure_bn_client():
             return
 
         try:
@@ -118,8 +167,8 @@ class TradeRecorder:
                     break
             
             if matched_cp:
-                gross_pnl = matched_cp.get('gross_pnl', 0)
-                return_pct = matched_cp.get('return_pct', 0)
+                net_pnl = matched_cp.get('net_pnl', 0)
+                return_pct = matched_cp.get('net_return_pct', 0)
                 pnl_ratio = return_pct * leverage
                 close_time_ms = matched_cp.get('close_time')
                 close_time = self._to_datetime(close_time_ms) if close_time_ms else None
@@ -137,8 +186,8 @@ class TradeRecorder:
                         updated_at = NOW()
                     WHERE trade = %s
                 """
-                self.db.execute(sql, (gross_pnl, pnl_ratio, close_time, entry_price, close_price, trade_id))
-                print(f"同步平仓PnL成功: {trade_id}, pnl={gross_pnl}, pnl_ratio={pnl_ratio}, close_time={close_time}, entry_price={entry_price}, close_price={close_price}")
+                self.db.execute(sql, (net_pnl, pnl_ratio, close_time, entry_price, close_price, trade_id))
+                print(f"同步平仓PnL成功: {trade_id}, pnl={net_pnl}, pnl_ratio={pnl_ratio}, close_time={close_time}, entry_price={entry_price}, close_price={close_price}")
             else:
                 print(f"未找到匹配的平仓记录: {trade_id}, symbol={symbol}, side={position_side}")
                 
@@ -155,6 +204,11 @@ class TradeRecorder:
             entry_price = item.get('entryPrice', 0)
             update_time = item.get('updateTime')
             entry_time = self._to_datetime(update_time)
+            try:
+                size_value = Decimal(str(size))
+            except (InvalidOperation, TypeError):
+                size_value = Decimal("0")
+            max_size_value = abs(size_value)
             
             # 计算杠杆
             leverage = self._calculate_leverage(item)
@@ -165,15 +219,18 @@ class TradeRecorder:
             # 初始化时 pnl, net_pnl, total_commission, pnl_ratio 均为 0
             sql_trade = """
                 INSERT INTO trades (
-                    trade, symbol, exchange, position_side, leverage, size, max_size, 
+                    trade, symbol, exchange, position_side, leverage, size, max_size,
+                    user_id, exchange_account_id,
                     entry_time, created_at, updated_at, 
                     pnl, pnl_ratio, entry_price
                 )
-                VALUES (%s, %s, 'binance', %s, %s, %s, %s, %s, NOW(), NOW(), 0, 0, %s)
+                VALUES (%s, %s, 'binance', %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), 0, 0, %s)
                 ON CONFLICT (trade) DO NOTHING
             """
             self.db.execute(sql_trade, (
-                trade_id, symbol, position_side, leverage, size, size, entry_time, entry_price
+                trade_id, symbol, position_side, leverage, size_value, max_size_value,
+                self.user_id, self.exchange_account_id,
+                entry_time, entry_price
             ))
 
             # 插入 TradeAction 表 (OPEN)
@@ -183,11 +240,16 @@ class TradeRecorder:
                     trade_id, action_type, amount, price, size, 
                     realized_pnl, order_id,
                     action_at, created_at,
-                    symbol, exchange, position_side
+                    symbol, exchange, position_side,
+                    user_id, exchange_account_id
                 )
-                VALUES (%s, 'OPEN', %s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s)
+                VALUES (%s, 'OPEN', %s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, size, entry_price, size, None, None, update_time, symbol, self.exchange, position_side))
+            self.db.execute(sql_action, (
+                trade_id, size_value, entry_price, size_value, None, None, update_time,
+                symbol, self.exchange, position_side,
+                self.user_id, self.exchange_account_id,
+            ))
             print(f"数据库记录新增交易: {trade_id} (Leverage: {leverage})")
             
             # 推送事件
@@ -254,11 +316,16 @@ class TradeRecorder:
                     trade_id, action_type, amount, price, size, 
                     realized_pnl, order_id,
                     action_at, created_at,
-                    symbol, exchange, position_side
+                    symbol, exchange, position_side,
+                    user_id, exchange_account_id
                 )
-                VALUES (%s, 'CLOSE', %s, %s, 0, %s, %s, %s, NOW(), %s, %s, %s)
+                VALUES (%s, 'CLOSE', %s, %s, 0, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, action_amount, close_price, None, None, current_time_ms, symbol, self.exchange, position_side))
+            self.db.execute(sql_action, (
+                trade_id, action_amount, close_price, None, None, current_time_ms,
+                symbol, self.exchange, position_side,
+                self.user_id, self.exchange_account_id,
+            ))
             print(f"数据库记录平仓交易: {trade_id}")
             
             # 推送事件
@@ -291,6 +358,11 @@ class TradeRecorder:
             # 计算变动数量
             old_size = float(item.get('old_position_amt', 0))
             amount = new_size - old_size
+            try:
+                new_size_value = Decimal(str(new_size))
+            except (InvalidOperation, TypeError):
+                new_size_value = Decimal("0")
+            max_size_value = abs(new_size_value)
             
             symbol = item.get('symbol')
             position_side = item.get('positionSide')
@@ -318,7 +390,7 @@ class TradeRecorder:
                         updated_at = NOW() 
                     WHERE trade = %s
                 """
-                self.db.execute(sql_trade, (new_size, new_size, leverage, trade_id))
+                self.db.execute(sql_trade, (new_size_value, max_size_value, leverage, trade_id))
             else:
                 # 减仓：更新 size，增加 closed_size
                 # 减仓量是负的 amount (因为 amount = new - old < 0)，所以 closed_size 增加 -amount
@@ -331,17 +403,22 @@ class TradeRecorder:
                         updated_at = NOW() 
                     WHERE trade = %s
                 """
-                self.db.execute(sql_trade, (new_size, decreased_amount, leverage, trade_id))
+                self.db.execute(sql_trade, (new_size_value, decreased_amount, leverage, trade_id))
 
             # 插入 TradeAction 表
             sql_action = """
                 INSERT INTO trade_actions (
                     trade_id, action_type, amount, price, size, action_at, created_at,
-                    symbol, exchange, position_side
+                    symbol, exchange, position_side,
+                    user_id, exchange_account_id
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
             """
-            self.db.execute(sql_action, (trade_id, change_type, amount, price, new_size, update_time, symbol, self.exchange, position_side))
+            self.db.execute(sql_action, (
+                trade_id, change_type, amount, price, new_size, update_time,
+                symbol, self.exchange, position_side,
+                self.user_id, self.exchange_account_id,
+            ))
             print(f"数据库记录交易变更: {trade_id} {change_type}")
             
             # 推送事件

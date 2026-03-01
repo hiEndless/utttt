@@ -187,6 +187,8 @@ class BinanceUserWS:
             self,
             api_key: str,
             api_secret: str,
+            user_id: str | None = None,
+            exchange_account_id: str | None = None,
             ws_url: str = "wss://ws-fapi.binance.com/ws-fapi/v1",
             ping_interval: int = 20,
             reconnect_delay: int = 5,
@@ -194,6 +196,8 @@ class BinanceUserWS:
     ):
         self.api_key = api_key
         self.api_secret = api_secret
+        self.user_id = str(user_id).strip() if user_id else None
+        self.exchange_account_id = str(exchange_account_id).strip() if exchange_account_id else None
         self.ws_url = ws_url
         self.ping_interval = ping_interval
         self.reconnect_delay = reconnect_delay
@@ -219,6 +223,10 @@ class BinanceUserWS:
 
     async def run(self):
         self._running = True
+        try:
+            analysis_service.set_account_context(self.user_id, self.exchange_account_id)
+        except Exception:
+            pass
         while self._running:
             try:
                 self._session = ExchangeSession(
@@ -260,6 +268,10 @@ class BinanceUserWS:
             except Exception:
                 pass
             self._ws = None
+        try:
+            analysis_service.set_account_context(None, None)
+        except Exception:
+            pass
 
 
 async def user_callback(data):
@@ -298,7 +310,7 @@ if __name__ == "__main__":
         api_key = str(os.getenv("BINANCE_API_KEY", "") or "").strip()
         api_secret = str(os.getenv("BINANCE_API_SECRET", "") or "").strip()
         if api_key and api_secret:
-            return api_key, api_secret
+            return api_key, api_secret, None, None
         return None
 
     async def _load_from_redis(redis_client):
@@ -314,8 +326,10 @@ if __name__ == "__main__":
             return None
         api_key = str(obj.get("api_key") or "").strip()
         api_secret = str(obj.get("api_secret") or "").strip()
-        if api_key and api_secret:
-            return api_key, api_secret
+        user_id = str(obj.get("user_id") or "").strip()
+        exchange_account_id = str(obj.get("exchange_account_id") or "").strip()
+        if api_key and api_secret and user_id and exchange_account_id:
+            return api_key, api_secret, user_id, exchange_account_id
         return None
 
     async def _standalone_main():
@@ -363,8 +377,13 @@ if __name__ == "__main__":
                         ws_client = None
 
                     if cfg:
-                        api_key, api_secret = cfg
-                        ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret)
+                        api_key, api_secret, user_id, exchange_account_id = cfg
+                        ws_client = BinanceUserWS(
+                            api_key=api_key,
+                            api_secret=api_secret,
+                            user_id=user_id,
+                            exchange_account_id=exchange_account_id,
+                        )
                         ws_client.register_callback(user_callback)
                         ws_task = asyncio.create_task(ws_client.run())
                         print("[user_ws] config applied, ws task started")

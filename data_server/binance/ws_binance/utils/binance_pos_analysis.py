@@ -11,6 +11,16 @@ class BinanceAnalysisService:
         self.redis_client = RedisClient()
         self.trade_recorder = TradeRecorder(exchange="binance")
         self.previous_data = None
+        self.user_id = None
+        self.exchange_account_id = None
+
+    def set_account_context(self, user_id: str | None, exchange_account_id: str | None) -> None:
+        self.user_id = str(user_id).strip() if user_id else None
+        self.exchange_account_id = str(exchange_account_id).strip() if exchange_account_id else None
+        try:
+            self.trade_recorder.set_account_context(self.user_id, self.exchange_account_id)
+        except Exception:
+            pass
 
     def data_clean(self, new_data):
         filtered = []

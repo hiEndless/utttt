@@ -16,6 +16,8 @@ from data_server.binance.ws_binance.utils.redis_client import get_async_redis
 
 @dataclass(frozen=True)
 class BinanceAccountConfig:
+    exchange_account_id: str
+    user_id: str
     api_key: str
     api_secret: str
 
@@ -111,7 +113,7 @@ class BinanceWSSupervisor:
             return {"ok": True, "action": "restarted"}
 
     async def apply_account(self, api_key: str, api_secret: str, reset_state: bool = True) -> dict[str, Any]:
-        cfg = BinanceAccountConfig(api_key=api_key, api_secret=api_secret)
+        cfg = BinanceAccountConfig(exchange_account_id="", user_id="", api_key=api_key, api_secret=api_secret)
         async with self._lock:
             await self._apply_account_locked(cfg, reset_state=reset_state)
             return {"ok": True, "action": "applied"}
@@ -125,6 +127,8 @@ class BinanceWSSupervisor:
         if (
             cfg
             and self._user_config
+            and cfg.exchange_account_id == self._user_config.exchange_account_id
+            and cfg.user_id == self._user_config.user_id
             and cfg.api_key == self._user_config.api_key
             and cfg.api_secret == self._user_config.api_secret
         ):
@@ -178,7 +182,12 @@ class BinanceWSSupervisor:
     async def _start_user_ws(self, cfg: BinanceAccountConfig) -> None:
         if self._user_started:
             return
-        self._user_ws = BinanceSignedUserWS(api_key=cfg.api_key, api_secret=cfg.api_secret)
+        self._user_ws = BinanceSignedUserWS(
+            api_key=cfg.api_key,
+            api_secret=cfg.api_secret,
+            user_id=cfg.user_id,
+            exchange_account_id=cfg.exchange_account_id,
+        )
         self._user_ws.register_callback(user_callback)
         self._user_task = asyncio.create_task(self._user_ws.run())
         self._user_started = True
@@ -252,11 +261,18 @@ class BinanceWSSupervisor:
             obj = json.loads(raw)
         except Exception:
             return None
+        exchange_account_id = str(obj.get("exchange_account_id") or "").strip()
+        user_id = str(obj.get("user_id") or "").strip()
         api_key = str(obj.get("api_key") or "").strip()
         api_secret = str(obj.get("api_secret") or "").strip()
-        if not api_key or not api_secret:
+        if not exchange_account_id or not user_id or not api_key or not api_secret:
             return None
-        return BinanceAccountConfig(api_key=api_key, api_secret=api_secret)
+        return BinanceAccountConfig(
+            exchange_account_id=exchange_account_id,
+            user_id=user_id,
+            api_key=api_key,
+            api_secret=api_secret,
+        )
 
     async def _heartbeat_loop(self) -> None:
         # 中文注释：定期写入本进程内 WS 服务心跳，供 internal_api/status 监控。
@@ -327,4 +343,3 @@ class BinanceWSSupervisor:
         if len(v) <= 8:
             return "*" * len(v)
         return f"{v[:4]}********{v[-4:]}"
-
