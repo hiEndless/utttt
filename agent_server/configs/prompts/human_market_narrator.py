@@ -1,4 +1,4 @@
-prompt = """
+_prompt_template = """
 你是 **Human Market Narrator Agent（人类市场叙事代理）**。
 你的职责是：基于系统已计算完成的多周期市场分析数据，生成一段连贯、自然、偏口语但专业的人类可读市场叙事，用于复盘、解释、展示与用户理解。
 你不是交易决策系统的一部分；你不为任何下游 Agent（Signal / Risk / Execution）提供输入依据。
@@ -139,4 +139,93 @@ reading_bias_overlay 表达的是：人在读完这段叙事后，可能形成�
 - JSON 结构完整、字段不缺失
 
 你不是市场的裁判，你是市场的讲述者。
+
+{language_instruction}
 """
+
+
+def get_prompt(language: str = "zh") -> str:
+    def _normalize_lang_code(value: str) -> str:
+        s = str(value or "").strip()
+        if not s:
+            return "zh"
+        low = s.lower()
+        if low.startswith("zh-") or low.startswith("zh_"):
+            if "tw" in low or "hk" in low or "hant" in low:
+                return "zh-TW"
+            return "zh"
+        if low.startswith("en"):
+            return "en"
+        if low.startswith("pt"):
+            return "pt"
+        if low.startswith("ja"):
+            return "ja"
+        if low.startswith("ko"):
+            return "ko"
+        if low.startswith("es"):
+            return "es"
+        if low.startswith("ar"):
+            return "ar"
+        if low.startswith("de"):
+            return "de"
+        if low.startswith("ru"):
+            return "ru"
+        if low.startswith("fr"):
+            return "fr"
+        if low.startswith("it"):
+            return "it"
+        return s
+
+    def _lang_display_name(lang: str) -> str:
+        code = _normalize_lang_code(lang)
+        mapping = {
+            "zh": "简体中文",
+            "en": "English",
+            "zh-TW": "繁體中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "es": "Español",
+            "pt": "Português",
+            "ar": "العربية",
+            "de": "Deutsch",
+            "ru": "Русский",
+            "fr": "Français",
+            "it": "Italiano",
+        }
+        return mapping.get(code, code)
+
+    lang = _normalize_lang_code(language)
+    lang_name = _lang_display_name(lang)
+
+    if lang == "zh":
+        instruction = """
+语言规范（强制）：
+- JSON 字段名与枚举值保持不变，其余文本（尤其是 market_story）必须使用简体中文。
+- 严禁中英混杂。
+"""
+    elif lang == "zh-TW":
+        instruction = """
+語言規範（強制）：
+- JSON 欄位名與枚舉值保持不變，其餘文本（尤其是 market_story）必須使用繁體中文。
+- 嚴禁中英混雜。
+"""
+    elif lang == "en":
+        instruction = """
+Language Specification (Mandatory):
+- JSON field names and enum values must stay unchanged; all other text (especially market_story) MUST be written in English.
+- Do not mix languages.
+- Do not use Chinese characters.
+"""
+    else:
+        instruction = f"""
+Language Specification (Mandatory):
+- JSON field names and enum values must stay unchanged; all other text (especially market_story) MUST be written in {lang_name} (language code: {lang}).
+- Do not mix languages.
+"""
+        if lang not in {"zh", "zh-TW"}:
+            instruction += "- Do not use Chinese characters.\n"
+
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+prompt = get_prompt("zh")

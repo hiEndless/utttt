@@ -205,24 +205,87 @@ exit 时必须为 -1.0
 
 
 def get_prompt(language="zh") -> str:
-    if language == "zh":
+    def _normalize_lang_code(value: str) -> str:
+        s = str(value or "").strip()
+        if not s:
+            return "zh"
+        low = s.lower()
+        if low.startswith("zh-") or low.startswith("zh_"):
+            if "tw" in low or "hk" in low or "hant" in low:
+                return "zh-TW"
+            return "zh"
+        if low.startswith("en"):
+            return "en"
+        if low.startswith("pt"):
+            return "pt"
+        if low.startswith("ja"):
+            return "ja"
+        if low.startswith("ko"):
+            return "ko"
+        if low.startswith("es"):
+            return "es"
+        if low.startswith("ar"):
+            return "ar"
+        if low.startswith("de"):
+            return "de"
+        if low.startswith("ru"):
+            return "ru"
+        if low.startswith("fr"):
+            return "fr"
+        if low.startswith("it"):
+            return "it"
+        return s
+
+    def _lang_display_name(lang: str) -> str:
+        code = _normalize_lang_code(lang)
+        mapping = {
+            "zh": "简体中文",
+            "en": "English",
+            "zh-TW": "繁體中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "es": "Español",
+            "pt": "Português",
+            "ar": "العربية",
+            "de": "Deutsch",
+            "ru": "Русский",
+            "fr": "Français",
+            "it": "Italiano",
+        }
+        return mapping.get(code, code)
+
+    lang = _normalize_lang_code(language)
+    lang_name = _lang_display_name(lang)
+
+    if lang == "zh":
         instruction = """
-  - 除 JSON schema 规定的字段名与枚举值外，其余文本（尤其是 rationale）必须使用中文表达。
-  - rationale 不要直接引用输入中的英文标签/枚举值（例如："veto_only"），需要用自然语言解释其含义与影响。
+  - 除 JSON schema 规定的字段名与枚举值外，其余文本（尤其是 reasoning）必须使用简体中文表达。
+  - reasoning 不要直接引用输入中的英文标签/枚举值（例如："veto_only"），需要用自然语言解释其含义与影响。
   - 严禁输出目标价、涨跌预测、情绪化词汇或“建议观望”等模糊表述。
+  - 严禁中英混杂。
 """
-    elif language == "en":
+    elif lang == "zh-TW":
         instruction = """
-  - MUST use English tags/descriptions.
+  - 除 JSON schema 規定的欄位名與枚舉值外，其餘文本（尤其是 reasoning）必須使用繁體中文表達。
+  - reasoning 不要直接引用輸入中的英文標籤/枚舉值（例如："veto_only"），需要用自然語言解釋其含義與影響。
+  - 嚴禁輸出目標價、漲跌預測、情緒化詞彙或模糊表述。
+  - 嚴禁中英混雜。
+"""
+    elif lang == "en":
+        instruction = """
+  - All free-text fields (especially reasoning) MUST be written in English.
   - Do not use Chinese characters.
-  - Example: "liquidity_vacuum", "structural_weight", "crowding_risk"
+  - Do not output price targets or direction predictions.
 """
     else:
-        # 默认使用中文规则
-        instruction = """
-  - 除 JSON schema 规定的字段名与枚举值外，其余文本（尤其是 rationale）必须使用中文表达。
+        instruction = f"""
+  - All free-text fields (especially reasoning) MUST be written in {lang_name} (language code: {lang}).
+  - Do not mix languages.
+  - Do not output price targets or direction predictions.
 """
-    
+        if lang not in {"zh", "zh-TW"}:
+            instruction += "  - Do not use Chinese characters.\n"
+
     return _prompt_template.replace("{language_instruction}", instruction)
 
 

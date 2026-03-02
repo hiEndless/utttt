@@ -1,77 +1,355 @@
-def query_db_env():
-    return {
-        "news": {
-            "model_id": "deepseek-ai/DeepSeek-V3",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10002/",
-        },
-        "kline": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10006/",
-        },
-        "market_structure": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "human_market_narrator": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "signal_validation": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "position_risk": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "event_summary": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "trade_summary": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "trade_behavior": {
-            "language": "zh",
-            "model_id": "qwen3-max",
-            "llm_base_url": "https://apis.iflow.cn/v1/chat/completions",
-            "llm_api_key": "sk-7fa436a33422b57263eaf7dd2a321c42",
-            "a2a_url": "http://localhost:10007/",
-        },
-        "decision": {
-            "language": "zh",
-            "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "llm_base_url": "https://api.siliconflow.cn/v1",
-            "llm_api_key": "sk-kfbnznycbjvseqxfqbthkytcwquklptyastuhzjcdutnvbfa",
-            "a2a_url": "http://localhost:10007/",
-        },
+from __future__ import annotations
+
+import logging
+import os
+import time
+from typing import Any, Dict, Optional
+
+from agent_server.utils.db_utils import PostgresDB
+
+
+logger = logging.getLogger(__name__)
+
+ENV_USER_ID = "UTAKER_USER_ID"
+ENV_DEFAULT_LLM_BASE_URL = "UTAKER_DEFAULT_LLM_BASE_URL"
+ENV_DEFAULT_LLM_API_KEY = "UTAKER_DEFAULT_LLM_API_KEY"
+
+_CACHE_CHECK_INTERVAL_SEC = 2.0
+_cache_checked_at: dict[str | None, float] = {}
+_cache_version_ts: dict[str | None, float] = {}
+_cache_configs: dict[str | None, dict[str, dict[str, Any]]] = {}
+_prefs_cache_checked_at: dict[str | None, float] = {}
+_prefs_cache_version_ts: dict[str | None, float] = {}
+_prefs_cache: dict[str | None, dict[str, Any]] = {}
+_db_available_until: float = 0.0
+
+
+DEFAULT_AGENT_CONFIGS: dict[str, dict[str, Any]] = {
+    "news": {"model_id": "deepseek-ai/DeepSeek-V3", "language": "zh"},
+    "kline": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "market_structure": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "human_market_narrator": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "signal_validation": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "position_risk": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "event_summary": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "trade_summary": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+    "trade_behavior": {"model_id": "qwen3-max", "language": "zh"},
+    "decision": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
+}
+
+
+def _resolve_user_id(user_id: Optional[str]) -> Optional[str]:
+    if user_id:
+        return user_id
+    v = os.getenv(ENV_USER_ID)
+    return v.strip() if v and v.strip() else None
+
+
+def _default_llm_base_url() -> Optional[str]:
+    v = os.getenv(ENV_DEFAULT_LLM_BASE_URL)
+    return v.strip() if v and v.strip() else None
+
+
+def _default_llm_api_key() -> Optional[str]:
+    v = os.getenv(ENV_DEFAULT_LLM_API_KEY)
+    if v and v.strip():
+        return v.strip()
+    v2 = os.getenv("SILICONFLOW_TOKEN")
+    return v2.strip() if v2 and v2.strip() else None
+
+
+def _db_enabled() -> bool:
+    required = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_DATABASE"]
+    return all(os.getenv(k) and str(os.getenv(k)).strip() for k in required)
+
+
+def _should_skip_db() -> bool:
+    global _db_available_until
+    if not _db_enabled():
+        return True
+    now = time.time()
+    return now < _db_available_until
+
+
+def _mark_db_temporarily_unavailable(seconds: float = 30.0) -> None:
+    global _db_available_until
+    _db_available_until = max(_db_available_until, time.time() + float(seconds))
+
+
+def _normalize_lang(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        for k in ("locale", "language", "lang", "value"):
+            if k in value:
+                return _normalize_lang(value.get(k))
+        return None
+    s = str(value).strip()
+    if not s:
+        return None
+    low = s.lower()
+    supported = {
+        "zh": "zh",
+        "en": "en",
+        "zh-tw": "zh-TW",
+        "ja": "ja",
+        "ko": "ko",
+        "es": "es",
+        "pt": "pt",
+        "ar": "ar",
+        "de": "de",
+        "ru": "ru",
+        "fr": "fr",
+        "it": "it",
     }
+    if low in supported:
+        return supported[low]
+
+    if low.startswith("zh-") or low.startswith("zh_"):
+        if "tw" in low or "hk" in low or "hant" in low:
+            return "zh-TW"
+        return "zh"
+    if low.startswith("en-") or low.startswith("en_"):
+        return "en"
+    if low.startswith("pt-") or low.startswith("pt_"):
+        return "pt"
+
+    return s
 
 
-def get_agent_config(name: str):
-    data = query_db_env()
-    return data.get(name, {})
+def _get_config_version_ts(user_id: Optional[str]) -> float:
+    uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return 0.0
+    sql = """
+    SELECT EXTRACT(EPOCH FROM GREATEST(
+      COALESCE(MAX(c.updated_at), TO_TIMESTAMP(0)),
+      COALESCE(MAX(p.updated_at), TO_TIMESTAMP(0))
+    )) AS version_ts
+    FROM agent_model_configs c
+    LEFT JOIN model_providers p ON p.id = c.provider_id
+    WHERE c.deleted_at IS NULL
+      AND c.is_active = TRUE
+      AND (
+        (%(uid)s IS NULL AND c.user_id IS NULL)
+        OR (%(uid)s IS NOT NULL AND (c.user_id = (%(uid)s)::uuid OR c.user_id IS NULL))
+      )
+      AND (
+        p.id IS NULL OR (
+          p.deleted_at IS NULL
+          AND p.is_active = TRUE
+          AND (
+            (%(uid)s IS NULL AND p.user_id IS NULL)
+            OR (%(uid)s IS NOT NULL AND (p.user_id = (%(uid)s)::uuid OR p.user_id IS NULL))
+          )
+        )
+      )
+    """
+    try:
+        db = PostgresDB()
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, {"uid": uid})
+                row = cur.fetchone()
+                if not row:
+                    return 0.0
+                try:
+                    return float(row[0] or 0.0)
+                except Exception:
+                    return 0.0
+    except Exception as e:
+        _mark_db_temporarily_unavailable()
+        logger.warning(f"读取 Agent 模型配置版本失败，将使用回退配置：{e}")
+        return 0.0
+
+
+def _load_configs_from_db(user_id: Optional[str]) -> dict[str, dict[str, Any]]:
+    uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return {}
+    sql = """
+    SELECT DISTINCT ON (c.agent_name)
+      c.agent_name AS agent_name,
+      c.model_id AS model_id,
+      p.base_url AS llm_base_url,
+      p.api_key AS llm_api_key,
+      p.provider AS provider
+    FROM agent_model_configs c
+    JOIN model_providers p ON p.id = c.provider_id
+    WHERE c.deleted_at IS NULL
+      AND c.is_active = TRUE
+      AND p.deleted_at IS NULL
+      AND p.is_active = TRUE
+      AND (
+        (%(uid)s IS NULL AND c.user_id IS NULL)
+        OR (%(uid)s IS NOT NULL AND (c.user_id = (%(uid)s)::uuid OR c.user_id IS NULL))
+      )
+      AND (
+        (%(uid)s IS NULL AND p.user_id IS NULL)
+        OR (%(uid)s IS NOT NULL AND (p.user_id = (%(uid)s)::uuid OR p.user_id IS NULL))
+      )
+    ORDER BY
+      c.agent_name,
+      (c.user_id IS NULL) ASC,
+      c.updated_at DESC,
+      (p.user_id IS NULL) ASC,
+      p.updated_at DESC
+    """
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        db = PostgresDB()
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, {"uid": uid})
+                rows = cur.fetchall() or []
+                for r in rows:
+                    agent_name = str(r[0] or "").strip()
+                    if not agent_name:
+                        continue
+                    out[agent_name] = {
+                        "model_id": r[1],
+                        "llm_base_url": r[2],
+                        "llm_api_key": r[3],
+                        "provider": r[4],
+                    }
+    except Exception as e:
+        _mark_db_temporarily_unavailable()
+        raise e
+    return out
+
+
+def _get_prefs_version_ts(user_id: Optional[str]) -> float:
+    uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return 0.0
+    sql = """
+    SELECT EXTRACT(EPOCH FROM COALESCE(MAX(sp.updated_at), TO_TIMESTAMP(0))) AS version_ts
+    FROM system_preferences sp
+    WHERE (
+      (%(uid)s IS NULL AND sp.user_id IS NULL)
+      OR (%(uid)s IS NOT NULL AND (sp.user_id = (%(uid)s)::uuid OR sp.user_id IS NULL))
+    )
+    """
+    try:
+        db = PostgresDB()
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, {"uid": uid})
+                row = cur.fetchone()
+                if not row:
+                    return 0.0
+                try:
+                    return float(row[0] or 0.0)
+                except Exception:
+                    return 0.0
+    except Exception as e:
+        _mark_db_temporarily_unavailable()
+        logger.warning(f"读取系统偏好版本失败，将使用回退偏好：{e}")
+        return 0.0
+
+
+def _load_prefs_from_db(user_id: Optional[str]) -> dict[str, Any]:
+    uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return {}
+    sql = """
+    SELECT DISTINCT ON (sp.key)
+      sp.key AS key,
+      sp.value AS value
+    FROM system_preferences sp
+    WHERE (
+      (%(uid)s IS NULL AND sp.user_id IS NULL)
+      OR (%(uid)s IS NOT NULL AND (sp.user_id = (%(uid)s)::uuid OR sp.user_id IS NULL))
+    )
+    ORDER BY
+      sp.key,
+      (sp.user_id IS NULL) ASC,
+      sp.updated_at DESC
+    """
+    out: dict[str, Any] = {}
+    try:
+        db = PostgresDB()
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, {"uid": uid})
+                rows = cur.fetchall() or []
+                for r in rows:
+                    k = str(r[0] or "").strip()
+                    if not k:
+                        continue
+                    out[k] = r[1]
+    except Exception as e:
+        _mark_db_temporarily_unavailable()
+        raise e
+    return out
+
+
+def _get_cached_prefs(user_id: Optional[str]) -> dict[str, Any]:
+    uid = _resolve_user_id(user_id)
+    now = time.time()
+    last_checked = _prefs_cache_checked_at.get(uid, 0.0)
+    if (now - last_checked) < _CACHE_CHECK_INTERVAL_SEC and uid in _prefs_cache:
+        return _prefs_cache.get(uid, {})
+
+    _prefs_cache_checked_at[uid] = now
+    version_ts = _get_prefs_version_ts(uid)
+    cached_version = _prefs_cache_version_ts.get(uid, -1.0)
+    if uid in _prefs_cache and version_ts == cached_version:
+        return _prefs_cache.get(uid, {})
+
+    try:
+        prefs = _load_prefs_from_db(uid)
+        _prefs_cache[uid] = prefs
+        _prefs_cache_version_ts[uid] = version_ts
+        return prefs
+    except Exception as e:
+        logger.warning(f"读取系统偏好失败，将使用回退偏好：{e}")
+        return _prefs_cache.get(uid, {})
+
+
+def _get_cached_db_configs(user_id: Optional[str]) -> dict[str, dict[str, Any]]:
+    uid = _resolve_user_id(user_id)
+    now = time.time()
+    last_checked = _cache_checked_at.get(uid, 0.0)
+    if (now - last_checked) < _CACHE_CHECK_INTERVAL_SEC and uid in _cache_configs:
+        return _cache_configs.get(uid, {})
+
+    _cache_checked_at[uid] = now
+    version_ts = _get_config_version_ts(uid)
+    cached_version = _cache_version_ts.get(uid, -1.0)
+    if uid in _cache_configs and version_ts == cached_version:
+        return _cache_configs.get(uid, {})
+
+    try:
+        cfg = _load_configs_from_db(uid)
+        _cache_configs[uid] = cfg
+        _cache_version_ts[uid] = version_ts
+        return cfg
+    except Exception as e:
+        logger.warning(f"读取 Agent 模型配置失败，将使用回退配置：{e}")
+        return _cache_configs.get(uid, {})
+
+
+def get_agent_config(name: str, *, user_id: Optional[str] = None) -> dict[str, Any]:
+    base = dict(DEFAULT_AGENT_CONFIGS.get(name, {}))
+    db_cfg = _get_cached_db_configs(user_id).get(name, {})
+    base.update({k: v for k, v in db_cfg.items() if v is not None})
+
+    prefs = _get_cached_prefs(user_id)
+    lang = _normalize_lang(prefs.get("agent_language"))
+    if not lang:
+        lang = _normalize_lang(prefs.get("ui_locale"))
+    if lang:
+        base["language"] = lang
+
+    if not base.get("llm_base_url"):
+        base["llm_base_url"] = _default_llm_base_url()
+    if not base.get("llm_api_key"):
+        base["llm_api_key"] = _default_llm_api_key()
+    return base
+
+
+if __name__ == "__main__":
+    user_id = "09bcc454-3855-4be1-a5cf-66bdeae42ae0"
+    name = "signal_validation"
+    print(get_agent_config(name=name, user_id=user_id))

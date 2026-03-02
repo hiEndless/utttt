@@ -106,27 +106,91 @@ _prompt_template = """
 
 
 def get_prompt(language="zh") -> str:
-    if language == "zh":
+    def _normalize_lang_code(value: str) -> str:
+        s = str(value or "").strip()
+        if not s:
+            return "zh"
+        low = s.lower()
+        if low.startswith("zh-") or low.startswith("zh_"):
+            if "tw" in low or "hk" in low or "hant" in low:
+                return "zh-TW"
+            return "zh"
+        if low.startswith("en"):
+            return "en"
+        if low.startswith("pt"):
+            return "pt"
+        if low.startswith("ja"):
+            return "ja"
+        if low.startswith("ko"):
+            return "ko"
+        if low.startswith("es"):
+            return "es"
+        if low.startswith("ar"):
+            return "ar"
+        if low.startswith("de"):
+            return "de"
+        if low.startswith("ru"):
+            return "ru"
+        if low.startswith("fr"):
+            return "fr"
+        if low.startswith("it"):
+            return "it"
+        return s
+
+    def _lang_display_name(lang: str) -> str:
+        code = _normalize_lang_code(lang)
+        mapping = {
+            "zh": "简体中文",
+            "en": "English",
+            "zh-TW": "繁體中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "es": "Español",
+            "pt": "Português",
+            "ar": "العربية",
+            "de": "Deutsch",
+            "ru": "Русский",
+            "fr": "Français",
+            "it": "Italiano",
+        }
+        return mapping.get(code, code)
+
+    lang = _normalize_lang_code(language)
+    lang_name = _lang_display_name(lang)
+
+    if lang == "zh":
         instruction = """
 语言规范（强制）：
-- background_summary 必须使用纯中文描述。
-- 严禁直接使用输入中的英文术语（如 bullish, bearish, ranging 等），必须将其转化为准确的中文描述。
+- background_summary 必须使用简体中文描述。
+- 严禁直接使用输入中的英文术语（如 bullish, bearish, ranging 等）作为描述文本，必须用中文解释其含义。
+- 严禁中英混杂。
 """
-    elif language == "en":
+    elif lang == "zh-TW":
+        instruction = """
+語言規範（強制）：
+- background_summary 必須使用繁體中文描述。
+- 嚴禁直接使用輸入中的英文術語（如 bullish, bearish, ranging 等）作為描述文本，必須用繁體中文解釋其含義。
+- 嚴禁中英混雜。
+"""
+    elif lang == "en":
         instruction = """
 Language Specification (Mandatory):
 - background_summary content MUST be written in English.
+- Do not mix languages.
 - Do not use Chinese characters.
 """
     else:
-        # Default to Chinese
-        instruction = """
-语言规范（强制）：
-- background_summary 必须使用纯中文描述。
+        instruction = f"""
+Language Specification (Mandatory):
+- background_summary content MUST be written in {lang_name} (language code: {lang}).
+- Do not mix languages.
 """
-    
+        if lang not in {"zh", "zh-TW"}:
+            instruction += "- Do not use Chinese characters.\n"
+
     return _prompt_template.replace("{language_instruction}", instruction)
 
 
-# Backward compatibility
 prompt = get_prompt("zh")
+
+

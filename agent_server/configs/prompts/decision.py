@@ -95,6 +95,10 @@ _prompt_template = """
   ]
 }
 
+语言要求（必须遵守）：
+1. JSON 字段名保持不变（trade_intent_range / reasoning 等），仅改变文字内容的语言。
+2. reasoning 必须使用 {TARGET_LANG_NAME}（language code: {TARGET_LANG}）输出；不要混用多种语言。
+
 ==============================
 【Risk Bias Semantics（风险偏好语义锚点）】
 ==============================
@@ -115,6 +119,54 @@ def _format_list(items: List[str]) -> str:
         return "- None"
     return "\n".join([f"- {item}" for item in items])
 
+def _normalize_lang_code(value: str) -> str:
+    s = str(value or "").strip()
+    if not s:
+        return "zh"
+    low = s.lower()
+    if low.startswith("zh-") or low.startswith("zh_"):
+        if "tw" in low or "hk" in low or "hant" in low:
+            return "zh-TW"
+        return "zh"
+    if low.startswith("en"):
+        return "en"
+    if low.startswith("pt"):
+        return "pt"
+    if low.startswith("ja"):
+        return "ja"
+    if low.startswith("ko"):
+        return "ko"
+    if low.startswith("es"):
+        return "es"
+    if low.startswith("ar"):
+        return "ar"
+    if low.startswith("de"):
+        return "de"
+    if low.startswith("ru"):
+        return "ru"
+    if low.startswith("fr"):
+        return "fr"
+    if low.startswith("it"):
+        return "it"
+    return s
+
+def _lang_display_name(lang: str) -> str:
+    code = _normalize_lang_code(lang)
+    mapping = {
+        "zh": "简体中文",
+        "en": "English",
+        "zh-TW": "繁體中文",
+        "ja": "日本語",
+        "ko": "한국어",
+        "es": "Español",
+        "pt": "Português",
+        "ar": "العربية",
+        "de": "Deutsch",
+        "ru": "Русский",
+        "fr": "Français",
+        "it": "Italiano",
+    }
+    return mapping.get(code, code)
 
 def _build_expert_section(key: str, data: Any) -> str:
     spec = EXPERT_REGISTRY[key]
@@ -136,7 +188,7 @@ Input Data:
 """
 
 
-def build_decision_prompt(inputs: Dict[str, Any]) -> str:
+def build_decision_prompt(inputs: Dict[str, Any], *, target_lang: str = "zh") -> str:
     """
     inputs:
         {
@@ -165,6 +217,9 @@ def build_decision_prompt(inputs: Dict[str, Any]) -> str:
         "{EXPERT_INPUTS}",
         expert_inputs_block
     )
+    normalized_lang = _normalize_lang_code(target_lang)
+    final_prompt = final_prompt.replace("{TARGET_LANG}", normalized_lang)
+    final_prompt = final_prompt.replace("{TARGET_LANG_NAME}", _lang_display_name(normalized_lang))
 
     return final_prompt
 

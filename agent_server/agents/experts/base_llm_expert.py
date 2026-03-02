@@ -79,7 +79,12 @@ class BaseLLMExpert:
         )
 
     async def run(self, query: QueryInput, **kwargs: Any) -> str:
-        cfg = get_agent_config(self.name)
+        qobj = self._parse_query(query)
+        meta = qobj.pop("meta") or {}
+        positions = qobj.pop("positions",  []) or []
+        meta_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+
+        cfg = get_agent_config(self.name, user_id=meta_user_id)
         target_lang = cfg.get("language", self.language)
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
@@ -89,9 +94,6 @@ class BaseLLMExpert:
         instructions = self.build_instructions(target_lang, **kwargs)
         agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
 
-        qobj = self._parse_query(query)
-        meta = qobj.pop("meta") or {}
-        positions = qobj.pop("positions",  []) or []
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
         llm_query_obj["meta"] = dict(meta)

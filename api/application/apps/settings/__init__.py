@@ -10,6 +10,7 @@ from .api.exchange_accounts import router as exchange_accounts_router
 from .api.model_providers import router as model_providers_router
 from .api.agent_model_configs import router as agent_model_configs_router
 from .api.notification_channels import router as notification_channels_router
+from .api.system_preferences import router as system_preferences_router
 
 # 创建主路由
 app = APIRouter()
@@ -19,6 +20,7 @@ app.include_router(exchange_accounts_router)
 app.include_router(model_providers_router)
 app.include_router(agent_model_configs_router)
 app.include_router(notification_channels_router)
+app.include_router(system_preferences_router)
 
 # 如果有其他功能模块，可以在这里继续添加
 # app.include_router(other_router)

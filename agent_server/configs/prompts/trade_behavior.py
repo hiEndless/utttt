@@ -200,25 +200,91 @@ structural_clarity 规则：
 
 
 def get_prompt(language="zh") -> str:
-    if language == "zh":
-        instruction = """
+    def _normalize_lang_code(value: str) -> str:
+        s = str(value or "").strip()
+        if not s:
+            return "zh"
+        low = s.lower()
+        if low.startswith("zh-") or low.startswith("zh_"):
+            if "tw" in low or "hk" in low or "hant" in low:
+                return "zh-TW"
+            return "zh"
+        if low.startswith("en"):
+            return "en"
+        if low.startswith("pt"):
+            return "pt"
+        if low.startswith("ja"):
+            return "ja"
+        if low.startswith("ko"):
+            return "ko"
+        if low.startswith("es"):
+            return "es"
+        if low.startswith("ar"):
+            return "ar"
+        if low.startswith("de"):
+            return "de"
+        if low.startswith("ru"):
+            return "ru"
+        if low.startswith("fr"):
+            return "fr"
+        if low.startswith("it"):
+            return "it"
+        return s
+
+    def _lang_display_name(lang: str) -> str:
+        code = _normalize_lang_code(lang)
+        mapping = {
+            "zh": "简体中文",
+            "en": "English",
+            "zh-TW": "繁體中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "es": "Español",
+            "pt": "Português",
+            "ar": "العربية",
+            "de": "Deutsch",
+            "ru": "Русский",
+            "fr": "Français",
+            "it": "Italiano",
+        }
+        return mapping.get(code, code)
+
+    lang = _normalize_lang_code(language)
+    lang_name = _lang_display_name(lang)
+
+    if lang == "zh":
+        instruction = f"""
 - 语言规范（强制）：
+  - 除 JSON schema 规定的字段名与枚举值外，其余文本必须使用简体中文表达。
   - conflict_evidence 必须使用纯中文书写。
-  - 严禁直接使用输入中的英文术语（如 ALIGNED, CONFLICT 等），必须将其转化为准确的中文描述。
+  - 严禁直接使用输入中的英文术语/标签/枚举值（如 ALIGNED, CONFLICT 等）作为描述文本，必须用中文解释其含义。
+  - 严禁中英混杂。
 """
-    elif language == "en":
-        instruction = """
+    elif lang == "zh-TW":
+        instruction = f"""
+- 語言規範（強制）：
+  - 除 JSON schema 規定的欄位名與枚舉值外，其餘文本必須使用繁體中文表達。
+  - conflict_evidence 必須使用純繁體中文書寫。
+  - 嚴禁直接使用輸入中的英文術語/標籤/枚舉值（如 ALIGNED, CONFLICT 等）作為描述文本，必須用繁體中文解釋其含義。
+  - 嚴禁中英混雜。
+"""
+    elif lang == "en":
+        instruction = f"""
 - Language Specification (Mandatory):
-  - conflict_evidence must be written in English.
+  - All free-text fields (especially conflict_evidence) MUST be written in English.
+  - Do not mix languages.
+  - Do not copy enum tokens into prose; explain them in natural language.
 """
     else:
-        # Default to Chinese if unknown
-        instruction = """
-- 语言规范（强制）：
-  - conflict_evidence 必须使用纯中文书写。
+        instruction = f"""
+- Language Specification (Mandatory):
+  - All free-text fields (especially conflict_evidence) MUST be written in {lang_name} (language code: {lang}).
+  - Do not mix languages.
+  - Do not copy enum tokens into prose; explain them in natural language.
 """
-    
-    # 替换 prompt 模板中的对应部分
+        if lang not in {"zh", "zh-TW"}:
+            instruction += "  - Do not use Chinese characters.\n"
+
     return _prompt_template.replace("{language_instruction}", instruction)
 
 

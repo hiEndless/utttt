@@ -1,7 +1,7 @@
 
 
 
-prompt = """
+_prompt_template = """
 你是 **Market Structure Agent（市场结构投影解释器）**。
 
 你的核心职责是：
@@ -140,4 +140,92 @@ note 硬约束（必须严格遵守）：
 结构投影是系统记忆的一部分，
 而 interpretive_overlay 不是。
 
+{language_instruction}
 """
+
+
+def get_prompt(language: str = "zh") -> str:
+    def _normalize_lang_code(value: str) -> str:
+        s = str(value or "").strip()
+        if not s:
+            return "zh"
+        low = s.lower()
+        if low.startswith("zh-") or low.startswith("zh_"):
+            if "tw" in low or "hk" in low or "hant" in low:
+                return "zh-TW"
+            return "zh"
+        if low.startswith("en"):
+            return "en"
+        if low.startswith("pt"):
+            return "pt"
+        if low.startswith("ja"):
+            return "ja"
+        if low.startswith("ko"):
+            return "ko"
+        if low.startswith("es"):
+            return "es"
+        if low.startswith("ar"):
+            return "ar"
+        if low.startswith("de"):
+            return "de"
+        if low.startswith("ru"):
+            return "ru"
+        if low.startswith("fr"):
+            return "fr"
+        if low.startswith("it"):
+            return "it"
+        return s
+
+    def _lang_display_name(lang: str) -> str:
+        code = _normalize_lang_code(lang)
+        mapping = {
+            "zh": "简体中文",
+            "en": "English",
+            "zh-TW": "繁體中文",
+            "ja": "日本語",
+            "ko": "한국어",
+            "es": "Español",
+            "pt": "Português",
+            "ar": "العربية",
+            "de": "Deutsch",
+            "ru": "Русский",
+            "fr": "Français",
+            "it": "Italiano",
+        }
+        return mapping.get(code, code)
+
+    lang = _normalize_lang_code(language)
+    lang_name = _lang_display_name(lang)
+
+    if lang == "zh":
+        instruction = """
+语言规范（强制）：
+- JSON 字段名与枚举值保持不变，其余文本（尤其是 narrative / interpretive_overlay.note）必须使用简体中文。
+- 严禁中英混杂。
+"""
+    elif lang == "zh-TW":
+        instruction = """
+語言規範（強制）：
+- JSON 欄位名與枚舉值保持不變，其餘文本（尤其是 narrative / interpretive_overlay.note）必須使用繁體中文。
+- 嚴禁中英混雜。
+"""
+    elif lang == "en":
+        instruction = """
+Language Specification (Mandatory):
+- JSON field names and enum values must stay unchanged; all other text (especially narrative and interpretive_overlay.note) MUST be written in English.
+- Do not mix languages.
+- Do not use Chinese characters.
+"""
+    else:
+        instruction = f"""
+Language Specification (Mandatory):
+- JSON field names and enum values must stay unchanged; all other text (especially narrative and interpretive_overlay.note) MUST be written in {lang_name} (language code: {lang}).
+- Do not mix languages.
+"""
+        if lang not in {"zh", "zh-TW"}:
+            instruction += "- Do not use Chinese characters.\n"
+
+    return _prompt_template.replace("{language_instruction}", instruction)
+
+
+prompt = get_prompt("zh")

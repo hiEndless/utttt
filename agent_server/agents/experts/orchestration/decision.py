@@ -50,16 +50,16 @@ class DecisionExpert:
     def __init__(self):
         self.validator = LLMOutputValidator(self.SCHEMA)
 
-    async def _get_llm_result(self, query_payload: Dict[str, Any]) -> Any:
+    async def _get_llm_result(self, query_payload: Dict[str, Any], *, user_id: Optional[str], target_lang: str) -> Any:
         query_payload.pop("meta", {})
 
-        cfg = get_agent_config(self.name)
+        cfg = get_agent_config(self.name, user_id=user_id)
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
         api_key = cfg.get("llm_api_key")
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
-        prompt = build_decision_prompt(query_payload)
+        prompt = build_decision_prompt(query_payload, target_lang=target_lang)
 
         agent = Agent(
             model=model,
@@ -137,15 +137,17 @@ class DecisionExpert:
         return None
 
     async def run(self, query: dict) -> str:
-        cfg = get_agent_config(self.name)
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-
         # 确保 query 是字典
         query = query or {}
 
         # 1. 构建 LLM 请求用的 query_local (需要移除 meta 和 positions)
         query_local = dict(query)
         meta = query_local.pop("meta", {}) or {}
+        meta_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+
+        cfg = get_agent_config(self.name, user_id=meta_user_id)
+        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
+        target_lang = cfg.get("language", "zh")
 
         # 不将原始 positions 透传给 LLM（仅用于本地提取 trade_id）
         query_local.pop("positions", None)
@@ -165,7 +167,7 @@ class DecisionExpert:
                 payload = dict(query_local)
                 payload["position_state"] = self._filter_position_state(position_state, side)
                 try:
-                    result = await self._get_llm_result(payload)
+                    result = await self._get_llm_result(payload, user_id=meta_user_id, target_lang=target_lang)
                 except Exception as e:
                     print(f"[DecisionExpert] failed after retries ({side}): {e}")
                     result = {"data": "No data available"}
@@ -189,7 +191,7 @@ class DecisionExpert:
             return output_text
 
         try:
-            final_result = await self._get_llm_result(query_local)
+            final_result = await self._get_llm_result(query_local, user_id=meta_user_id, target_lang=target_lang)
         except Exception as e:
             print(f"[DecisionExpert] failed after retries: {e}")
             final_result = {"data": "No data available"}

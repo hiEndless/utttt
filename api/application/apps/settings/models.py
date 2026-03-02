@@ -110,6 +110,30 @@ class AgentModelConfig(models.Model):
         indexes = (("user", "agent_name", "is_active"), ("agent_name", "is_active"), ("provider", "is_active"))
 
 
+class SystemPreference(models.Model):
+    """
+    系统偏好配置表：存储用户级别的通用偏好设置（例如语言、时区、主题等）。
+    说明：使用 key/value(JSON) 结构，便于后续扩展而无需频繁改表结构。
+    """
+
+    id = fields.UUIDField(pk=True, description="偏好ID")
+    user = fields.ForeignKeyField(
+        "models.User",
+        related_name="system_preferences",
+        null=True,
+        description="关联用户(为空表示全局默认)",
+    )
+    key = fields.CharField(max_length=64, description="偏好键 (e.g. ui_locale, agent_language, notification_language)")
+    value = fields.JSONField(null=True, description="偏好值(JSON)")
+    created_at = fields.DatetimeField(auto_now_add=True, description="创建时间")
+    updated_at = fields.DatetimeField(auto_now=True, description="更新时间")
+
+    class Meta:
+        table = "system_preferences"
+        unique_together = (("user", "key"),)
+        indexes = (("user", "key"), ("key",), ("updated_at",))
+
+
 class NotificationChannel(models.Model):
     """
     消息通知渠道配置表：用于存储各类通知渠道的参数。

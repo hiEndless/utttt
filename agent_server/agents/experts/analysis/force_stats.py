@@ -1,7 +1,7 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
-from agent_server.configs.prompts.kline import prompt
+from agent_server.configs.prompts.kline import get_prompt
 from agno.models.message import Message
 import json
 from agent_server.agents.utils import (
@@ -26,7 +26,7 @@ class ForceStatsExpert:
 
         agent = Agent(
             model=model,
-            instructions=prompt,
+            instructions=get_prompt,
         )
 
         run_output = await agent.arun(

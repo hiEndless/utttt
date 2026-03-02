@@ -3,7 +3,7 @@ from agno.models.openai import OpenAILike
 from agent_server.configs.source import get_agent_config
 from agent_server.agent_context.market_structure import output
 from agent_server.agent_context.builder import build_agent_context
-from agent_server.configs.prompts.market_structure import prompt
+from agent_server.configs.prompts.market_structure import get_prompt
 from agno.models.message import Message
 import json
 import asyncio
@@ -55,6 +55,7 @@ class MarketStructureExpert:
           }
 
         cfg = get_agent_config(self.name)
+        target_lang = cfg.get("language", "zh")
 
         model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
         base_url = cfg.get("llm_base_url")
@@ -64,7 +65,7 @@ class MarketStructureExpert:
 
         agent = Agent(
             model=model,
-            instructions=prompt,
+            instructions=get_prompt(target_lang),
         )
 
         async def _run_llm():
