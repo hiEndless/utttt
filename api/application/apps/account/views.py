@@ -2,18 +2,19 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 import urllib.parse
 import urllib.request
 import uuid
 import jwt
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from .models import OAuthLoginSession, OAuthToken, User, UserIdentity
+from ..settings.models import SystemPreference
 
 from ...common.status_codes import StatusCode, BaseResponse, BusinessException, success_response, error_response
 
@@ -51,6 +52,51 @@ bearer = HTTPBearer(auto_error=False)
 
 def _normalize_email(email: str) -> str:
     return (email or "").strip().lower()
+
+
+def _coerce_json_value(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, (str, int, float, bool)):
+        return {"value": value}
+    return {"value": str(value)}
+
+
+def _guess_ui_locale(accept_language: Optional[str]) -> str:
+    if not accept_language:
+        return "en"
+    for raw in accept_language.split(","):
+        token = (raw or "").split(";", 1)[0].strip()
+        if not token or token == "*":
+            continue
+        token = token.replace("_", "-")
+        lower = token.lower()
+        if lower.startswith("zh"):
+            if "hant" in lower or lower.endswith("-tw") or "-tw-" in lower:
+                return "zh-TW"
+            return "zh"
+        return lower.split("-", 1)[0]
+    return "en"
+
+
+async def _ensure_default_language_preferences(user: User, request: Request):
+    ui_locale = _guess_ui_locale(request.headers.get("accept-language"))
+    defaults = {
+        "ui_locale": ui_locale,
+        "agent_language": ui_locale,
+        "notification_language": ui_locale,
+    }
+    for key, value in defaults.items():
+        existing = await SystemPreference.get_or_none(user_id=user.id, key=key)
+        if existing:
+            continue
+        try:
+            await SystemPreference.create(user_id=user.id, key=key, value=_coerce_json_value(value))
+        except Exception:
+            # 默认偏好写入失败不应阻断登录流程（可由前端设置页或默认兜底补齐）
+            pass
 
 
 async def _ensure_single_user_by_email(email: str) -> Optional[User]:
@@ -307,7 +353,7 @@ async def create_login_session(req: CreateLoginSessionRequest):
 
 
 @app.post("/auth/exchange", response_model=BaseResponse[ExchangeResponse])
-async def exchange(req: ExchangeRequest):
+async def exchange(req: ExchangeRequest, request: Request):
     session = await OAuthLoginSession.get_or_none(id=req.login_id)
     if not session:
         raise BusinessException(code=StatusCode.PARAM_ERROR, message="invalid login_id")
@@ -443,6 +489,8 @@ async def exchange(req: ExchangeRequest):
     if not user.plan:
         user.plan = PLAN_FREE
         await user.save(update_fields=["plan", "updated_at"])
+
+    await _ensure_default_language_preferences(user, request)
 
     my_jwt = create_access_token(str(user.id))
     return success_response(ExchangeResponse(access_token=my_jwt, refresh_token=app_refresh_token))
