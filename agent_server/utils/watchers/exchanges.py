@@ -31,11 +31,10 @@ class RedisExchangeWatcher:
             try:
                 cur = await self.list_exchanges()
                 if cur != prev:
-                    yield cur
                     prev = cur
+                yield cur
                 await asyncio.sleep(poll_interval)
             except asyncio.CancelledError:
                 break
             except Exception:
                 await asyncio.sleep(poll_interval)
-

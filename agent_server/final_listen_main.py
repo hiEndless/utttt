@@ -7,6 +7,7 @@ import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.agent_workflow.signal_validation_workflow import SignalValidationWorkflow
 from agent_server.agent_workflow.trade_event_workflow import TradeEventWorkflow
+from agent_server.utils.agent_status import get_agent_gate_snapshot, update_agent_status, update_agent_status_snapshot
 from agent_server.utils.trade_event_recorder import get_recorder
 from agent_server.utils.analysis_verifier import AnalysisVerifier
 from agent_server.tools.price_fetcher import get_mark_price
@@ -108,7 +109,24 @@ class RouterFinalListener:
                 for _stream_name, batch in res:
                     entries.extend(batch)
 
+            disabled_entry_ids: list[str] = []
             for entry_id, fields in entries:
+                # 中文注释：工作流入口闸——未启用或未就绪时也消费并丢弃，避免启用后瞬间处理历史堆积事件
+                raw_uid = fields.get("user_id") if isinstance(fields, dict) else None
+                uid = str(raw_uid).strip() if raw_uid is not None else ""
+                enabled, ready, _reasons = await get_agent_gate_snapshot(user_id=uid or None)
+                await update_agent_status_snapshot(
+                    self.redis,
+                    module="final_listener",
+                    user_id=uid or None,
+                    enabled=enabled,
+                    ready=ready,
+                    reasons=_reasons,
+                )
+                if not enabled or not ready:
+                    disabled_entry_ids.append(entry_id)
+                    continue
+
                 # 1. 基础字段解析
                 ev = {k: (v if isinstance(v, str) else str(v)) for k, v in fields.items()}
                 
@@ -218,6 +236,15 @@ class RouterFinalListener:
                     )
                     continue
 
+            if disabled_entry_ids:
+                try:
+                    await self.redis.xack(self.final_stream, self.group, *disabled_entry_ids)
+                except Exception as e:
+                    logging.getLogger("final").error(
+                        f"discard_ack_failed: count={len(disabled_entry_ids)}, err={e}", exc_info=True
+                    )
+                    continue
+
 
 async def _run(stop_event: asyncio.Event = None):
     password = settings.redis_password
@@ -250,6 +277,10 @@ async def _run(stop_event: asyncio.Event = None):
         stop = stop_event
         
     task = asyncio.create_task(listener.run(), name="final_events_router")
+    hb_task = asyncio.create_task(
+        _heartbeat(redis, stop, module="final_listener"),
+        name="final_listener_heartbeat",
+    )
     try:
         while not stop.is_set():
             await asyncio.sleep(0.3)
@@ -259,6 +290,12 @@ async def _run(stop_event: asyncio.Event = None):
             await asyncio.gather(task, return_exceptions=True)
         except Exception:
             pass
+        if hb_task is not None:
+            try:
+                hb_task.cancel()
+                await asyncio.gather(hb_task, return_exceptions=True)
+            except Exception:
+                pass
         # 关闭全局 HTTPClient（如果本进程内使用过），避免退出时资源泄漏警告
         # 仅在独立运行时关闭
         if stop_event is None:
@@ -266,6 +303,18 @@ async def _run(stop_event: asyncio.Event = None):
 
             await http_client.close()
         await redis.aclose()
+
+
+async def _heartbeat(redis: aioredis.Redis, stop: asyncio.Event, *, module: str):
+    while not stop.is_set():
+        try:
+            await update_agent_status(redis, module=module, user_id=None)
+        except Exception:
+            pass
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=5.0)
+        except asyncio.TimeoutError:
+            pass
 
 
 def main():

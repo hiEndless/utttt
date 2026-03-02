@@ -11,6 +11,7 @@ from agno.models.openai import OpenAILike
 from agent_server.agents.utils import LLMOutputValidator, _json_dumps_safe, validate_with_retry
 from agent_server.agent_context.output_store import save_agent_output
 from agent_server.configs.source import get_agent_config
+from agent_server.utils.agent_status import get_agent_gate_snapshot
 
 
 QueryInput = Union[str, Dict[str, Any]]
@@ -83,6 +84,20 @@ class BaseLLMExpert:
         meta = qobj.pop("meta") or {}
         positions = qobj.pop("positions",  []) or []
         meta_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+
+        enabled, ready, reasons = await get_agent_gate_snapshot(user_id=meta_user_id)
+        if not enabled or not ready:
+            meta["ts"] = int(time.time() * 1000)
+            meta["version"] = self.version
+            out = {
+                "error": "agent_disabled_or_not_ready",
+                "enabled": enabled,
+                "ready": ready,
+                "reasons": reasons,
+                "meta": meta,
+                "positions": positions,
+            }
+            return _json_dumps_safe(out)
 
         cfg = get_agent_config(self.name, user_id=meta_user_id)
         target_lang = cfg.get("language", self.language)

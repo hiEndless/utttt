@@ -5,6 +5,7 @@ import signal
 import redis.asyncio as aioredis
 from agent_server.config import settings
 from agent_server.utils.redis_client import get_verified_redis_client
+from agent_server.utils.agent_status import get_agent_gate_snapshot, update_agent_status_snapshot
 from agent_server.utils.watchers.exchanges import RedisExchangeWatcher
 from agent_server.risk.global_overlay import aggregate_and_store_global_overlay
 from agent_server.risk.position_time_semantics import process_positions
@@ -93,6 +94,26 @@ async def _run(stop_event: asyncio.Event = None):
 
     try:
         async for exchanges in ex_watcher.watch_changes():
+            enabled, ready, _reasons = await get_agent_gate_snapshot(user_id=None)
+            await update_agent_status_snapshot(
+                redis,
+                module="risk_cron",
+                user_id=None,
+                enabled=enabled,
+                ready=ready,
+                reasons=_reasons,
+            )
+            if not enabled or not ready:
+                for ex, info in list(exchange_tasks.items()):
+                    info["stop"].set()
+                    info["task"].cancel()
+                    await asyncio.gather(info["task"], return_exceptions=True)
+                    del exchange_tasks[ex]
+                await asyncio.sleep(0.2)
+                if stop.is_set():
+                    break
+                continue
+
             cur = set(exchange_tasks.keys())
             
             # 为新交易所启动循环

@@ -4,6 +4,7 @@ import os
 import signal
 import redis.asyncio as aioredis
 from agent_server.config import settings
+from agent_server.utils.agent_status import get_agent_gate_snapshot, update_agent_status_snapshot
 from agent_server.utils.watchers.symbols import RedisSymbolWatcher
 from agent_server.utils.watchers.exchanges import RedisExchangeWatcher
 from agent_server.utils.manager import SymbolTaskManager
@@ -63,6 +64,26 @@ async def _run(stop_event: asyncio.Event = None):
 
     try:
         async for exchanges in ex_watcher.watch_changes():
+            enabled, ready, _reasons = await get_agent_gate_snapshot(user_id=None)
+            await update_agent_status_snapshot(
+                redis,
+                module="background",
+                user_id=None,
+                enabled=enabled,
+                ready=ready,
+                reasons=_reasons,
+            )
+            if not enabled or not ready:
+                for ex, info in list(exchange_tasks.items()):
+                    info["stop"].set()
+                    info["task"].cancel()
+                    await asyncio.gather(info["task"], return_exceptions=True)
+                    del exchange_tasks[ex]
+                await asyncio.sleep(0.2)
+                if stop.is_set():
+                    break
+                continue
+
             cur = set(exchange_tasks.keys())
             # start new exchange loops
             for ex in exchanges - cur:

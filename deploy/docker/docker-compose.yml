@@ -1,0 +1,42 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    command: ["python", "api/main.py"]
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "1"
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+    depends_on:
+      - redis
+
+  agent_server:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    command: ["python", "-m", "agent_server.main"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "1"
+      API_BASE_URL: http://api:8000/api
+    depends_on:
+      - redis
+      - api
+
+volumes:
+  redis_data:
+

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import json
 import time
 from typing import Any, Dict, Optional
 
@@ -36,6 +37,16 @@ DEFAULT_AGENT_CONFIGS: dict[str, dict[str, Any]] = {
     "trade_behavior": {"model_id": "qwen3-max", "language": "zh"},
     "decision": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
 }
+
+REQUIRED_AGENT_NAMES: tuple[str, ...] = (
+    "kline",
+    "human_market_narrator",
+    "signal_validation",
+    "decision",
+    "position_risk",
+    "market_structure",
+    "trade_behavior",
+)
 
 
 def _resolve_user_id(user_id: Optional[str]) -> Optional[str]:
@@ -115,6 +126,33 @@ def _normalize_lang(value: Any) -> Optional[str]:
         return "pt"
 
     return s
+
+
+def _normalize_bool(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, dict):
+        for k in ("enabled", "value", "on", "flag"):
+            if k in value:
+                return _normalize_bool(value.get(k))
+        return None
+    s = str(value).strip()
+    if not s:
+        return None
+    low = s.lower()
+    if low in ("true", "1", "yes", "y", "on"):
+        return True
+    if low in ("false", "0", "no", "n", "off"):
+        return False
+    try:
+        obj = json.loads(s)
+        return _normalize_bool(obj)
+    except Exception:
+        return None
 
 
 def _get_config_version_ts(user_id: Optional[str]) -> float:
@@ -347,6 +385,66 @@ def get_agent_config(name: str, *, user_id: Optional[str] = None) -> dict[str, A
     if not base.get("llm_api_key"):
         base["llm_api_key"] = _default_llm_api_key()
     return base
+
+
+def get_agent_enabled(*, user_id: Optional[str] = None) -> bool:
+    """
+    中文注释：Agent 总开关。
+    - 优先读取 system_preferences.agent_enabled
+    - 若不存在则默认关闭（fail-close），避免配置未完成时误触发工作流/LLM
+    """
+    env_v = os.getenv("UTAKER_AGENT_ENABLED")
+    if env_v is not None:
+        b = _normalize_bool(env_v)
+        if b is not None:
+            return b
+    prefs = _get_cached_prefs(user_id)
+    b = _normalize_bool(prefs.get("agent_enabled"))
+    return bool(b) if b is not None else False
+
+
+def get_agent_readiness(
+    *,
+    user_id: Optional[str] = None,
+    required_agents: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    """
+    中文注释：Agent 就绪态（readiness）用于服务内 gating。
+    - DB 配置可用时：要求关键 agents 存在对应的激活模型配置（避免默认模型误跑）
+    - DB 配置不可用时：允许使用环境变量默认 LLM 配置兜底
+    """
+    uid = _resolve_user_id(user_id)
+    agents = required_agents or list(REQUIRED_AGENT_NAMES)
+    reasons: list[str] = []
+
+    db_required = _db_enabled()
+    if db_required:
+        db_cfg = _get_cached_db_configs(uid)
+        missing = [a for a in agents if not db_cfg.get(a)]
+        if missing:
+            reasons.append(f"missing_agent_model_configs:{','.join(missing)}")
+
+    base_url_missing: list[str] = []
+    api_key_missing: list[str] = []
+    model_missing: list[str] = []
+    for a in agents:
+        cfg = get_agent_config(a, user_id=uid)
+        if not str(cfg.get("model_id") or "").strip():
+            model_missing.append(a)
+        if not str(cfg.get("llm_base_url") or "").strip():
+            base_url_missing.append(a)
+        if not str(cfg.get("llm_api_key") or "").strip():
+            api_key_missing.append(a)
+
+    if model_missing:
+        reasons.append(f"missing_model_id:{','.join(model_missing)}")
+    if base_url_missing:
+        reasons.append(f"missing_llm_base_url:{','.join(base_url_missing)}")
+    if api_key_missing:
+        reasons.append(f"missing_llm_api_key:{','.join(api_key_missing)}")
+
+    ready = len(reasons) == 0
+    return {"ready": ready, "reasons": reasons, "required_agents": agents, "db_required": db_required}
 
 
 if __name__ == "__main__":
