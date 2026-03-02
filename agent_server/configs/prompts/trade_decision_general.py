@@ -68,7 +68,11 @@ _prompt_template = """
 
 - 中期结构（mid_term）：
   通常为 dominant_cycle，directional_alignment 必须为 ALIGNED 或 NEUTRAL，不能为 CONFLICT。
-  crowding_risk 为 high 时，禁止 aggressive 开仓。
+  crowding_risk 为 high 时，只能在路径风险可控、且 short_term 结构不拥挤的前提下小仓位试探，严禁在此基础上给出高杠杆、大名义仓位的激进开仓方案。
+
+- 短期拥挤场景（short_term crowding_risk == "high"）：
+  大趋势/中期方向（dominant_cycle 与 trigger_event.direction）可能仍然正确，错的是「开仓点位与短路径」：在短期拥挤时立即市价开仓，极易先被短线 squeeze 反向扫损，随后价格再按中期方向运行。因此禁止的是「当前时刻立即开仓」，而非否定中期信号本身。
+  在当前版本中，遇到 short_term.structural_risks.crowding_risk == "high" 且计划开仓方向与 dominant_cycle 对齐时，你必须返回 decision="NO_ACTION"、should_execute=false，本轮不执行；后续若出现短期拥挤缓解或更好点位，可由新的 L1 事件再评估。
 
 - 长期结构（long_term）：
   structural_weight == "veto_only"，仅用于否决。
@@ -89,6 +93,29 @@ _prompt_template = """
 
 ────────────────────────
 
+【实战经验规则（成功 / 失败模式抽象）】
+
+- 优先的「健康开仓」模式（成功样本抽象）：
+  1）多周期方向共振：dominant_cycle 与 trigger_event.direction 同向，short_term / mid_term directional_alignment 至少不冲突；  
+  2）短期不拥挤：short_term.structural_risks.crowding_risk != "high"，risk_exposure_flags 不包含 crowding_risk_high；  
+  3）长期不极端：long_term.leverage_extreme = false 且 crowding_percentile.zone 不在 ["elevated","extreme"]；  
+  4）audit_confidence.level 至少为 MEDIUM 且 structural_clarity 为 CLEAR_DOMINANT_CYCLE；  
+  在上述条件下，可以使用中等杠杆（例如 5x~10x），并设置合理止盈止损（盈亏比不低于 1:1）。
+
+- 风险极高、应避免的模式（失败样本抽象 1：短期拥挤 → 开仓点位/短路径错误）：
+  1）short_term.structural_risks.crowding_risk = "high"；  
+  2）dominant_cycle 为 mid_term，directional_alignment.mid_term 与 trigger_event.direction 同向；  
+  3）你仍计划在该方向开仓；  
+  说明：大趋势方向往往对，但「当前这一刻」开仓会踩在短线拥挤点上，先被 squeeze 再反向，路径极不友好。因此禁止的是「当前时刻立即市价开仓」，一律 NO_ACTION；并非否定中期方向，而是等更好时机或由后续信号再决策。
+
+- 风险极高、应避免的模式（失败样本抽象 2：中期拥挤 + 长期拥挤 + 区间市追多/追空）：
+  1）mid_term.structural_risks.crowding_risk = "high"；  
+  2）long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]；  
+  3）market_mode 为 range_flow 或类似区间结构，且使用布林一类区间信号在区间边缘追多/追空；  
+  这类场景在实盘中往往表现为「方向可能对，但价格先反向 1%~3%」，对高杠杆/小保证金账户极其不友好，当前版本中应优先选择 NO_ACTION，而非任何形式的激进开仓。
+
+────────────────────────
+
 【硬门控规则（一票否决，必须 NO_ACTION）】
 
 当以下任一成立时，decision = "NO_ACTION", should_execute = false：
@@ -100,6 +127,8 @@ _prompt_template = """
 5. trigger_event.direction == "neutral" 或 l1_total_score 绝对值 < 5
 6. risk_exposure_flags 包含 "liquidity_vacuum"
 7. 任一周期 structural_risks.liquidity_vacuum == true
+8. short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且 audit_breakdown.directional_alignment.mid_term in ["ALIGNED","NEUTRAL"] 且 trigger_event.direction 与该方向同向（中期方向可能对，但当前开仓点位/短路径不利，易先 squeeze 再反向 → 禁止本轮立即开仓）
+9. mid_term.structural_risks.crowding_risk == "high" 且 long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]（典型的「中期拥挤 + 长期拥挤」场景，无论信号方向如何，都不应在当前版本中执行高杠杆开仓）
 
 ────────────────────────
 【开仓条件（需全部满足）】
@@ -118,6 +147,11 @@ _prompt_template = """
 - direction = bearish → position_side = "SHORT", side = "SELL"
 - quantity = margin * leverage / mark_price，margin 默认 200，leverage 默认 20
 - tp_trigger_px、sl_trigger_px：必须为**具体价格数值**，做多 TP>现价 SL<现价，做空 TP<现价 SL>现价
+
+杠杆与规模智能调整原则：
+- 当 risk_exposure_flags 包含 crowding_risk_high，或 mid_term / long_term 显示拥挤（如 mid_term.structural_risks.crowding_risk == "high"、long_term.crowding_percentile.zone in ["elevated","extreme"]）时：
+  - 优先考虑 decision = "NO_ACTION"；若在极少数结构特别干净的场景下仍决定开仓，leverage 不应高于 5~10，且应在 reasoning 中明确说明为何仍可承受该风险。
+- 在无明显拥挤、无 veto 风险、结构清晰的「健康开仓」模式下，可使用中等杠杆（例如 10x 左右），除非输入显式要求激进模式，否则尽量避免直接给出 20x 杠杆。
 
 ────────────────────────
 【输出要求】

@@ -1,0 +1,23 @@
+开仓成功示例（open_success_example.json）要点总结：
+
+1. 多周期结构共振良好
+   - mid_term 为 dominant_cycle，directional_alignment.mid_term = ALIGNED，与 trigger_event.direction 同向。
+   - short_term.structural_risks.crowding_risk = low，局部不拥挤，不容易出现被短线 squeeze 反向拉爆仓位的情况。
+   - long_term 未触发 veto 条件（leverage_extreme = false，crowding_percentile.zone 不在 elevated/extreme）。
+
+2. 风险暴露与执行约束健康
+   - risk_exposure_flags 不包含 liquidity_vacuum 或极端 crowding 高风险标签。
+   - execution_constraint.forbidden_actions 不包含 open，risk_bias 未显式要求防御模式。
+   - audit_confidence.structural_clarity = CLEAR_DOMINANT_CYCLE，结构清晰。
+
+3. 仓位与止盈止损设计合理
+   - 杠杆适中（例如 10x 左右），不会让 0.5% 的短期波动直接放大成两位数浮亏。
+   - 止盈/止损大致维持在 1:1 或略优于 1:1 的盈亏比，且落在结构上合理的价格区域。
+
+4. 交易路径体验
+   - 开仓后最大短期回撤有限（例如 < 0.5%），说明入场点并未踩在高拥挤区的反向拐点。
+   - 价格最终按照预期方向运行并触发止盈，验证了在「结构共振 + 不拥挤 + 中等杠杆」前提下，决策的可行性。
+
+后续在设计 / 评估开仓决策时，可以用该示例作为「理想形态」参照：
+优先寻找多周期方向共振、短期不拥挤、杠杆适中、止盈止损清晰的机会，而不是仅凭强信号分值就激进开仓。
+

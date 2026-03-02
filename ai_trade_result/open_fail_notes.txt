@@ -1,0 +1,55 @@
+开仓失败示例（open_fail_example_takeusdt.json，TAKEUSDT 空单）要点总结：
+
+1. 表面条件「看起来很好」
+   - trigger_event.direction = bearish，l1_total_score ≈ -56.56，属于强烈空头信号。
+   - signal_validation.dominant_cycle = mid_term，directional_alignment 在 short_term、mid_term 上均为 ALIGNED。
+   - long_term.leverage_extreme = false，crowding_percentile.zone = low，长期没有否决信号。
+   → 在只看方向和中期结构时，这是一笔「逻辑自洽」的开空。
+
+2. 被忽略的关键风险：短期拥挤
+   - short_term.structural_risks.crowding_risk = high，意味着短期筹码结构拥挤，极易先出现向上的 squeeze 反抽。
+   - 当时的决策逻辑仅要求避免 liquidity_vacuum、长期极端杠杆等风险，对短期 crowding_risk=high 没有一票否决。
+   - 结果：开仓后价格从 0.0224 上涨到约 0.0226455，短线涨幅仅约 1.1%，却在保证金维度产生 -25% 级别浮亏体验。
+
+3. 杠杆与实际保证金错配
+   - 决策层默认使用 margin=200、leverage=20 进行 sizing，但实盘执行时，这笔单实际只占用约 0.25U 保证金（全仓模式）。
+   - 在 20x 杠杆 + 极小实盘保证金的前提下，任何 0.5%～1% 的正常噪音波动都会在保证金维度被放大成两位数的浮亏。
+   - 这导致账户层面的「体验风险」极高：看起来只是很小的价差，数字上却是 -10%～-25% 的波动。
+
+4. 经验教训（用于后续开仓决策参考）
+   - 只看「中期方向 + 强信号分值」是不够的，短期 crowding_risk 为 high 时，即使方向对，也要优先保护路径风险。
+   - 新规则：short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且方向 ALIGNED 时，本轮信号一律 NO_ACTION，不开仓。
+   - 对于高杠杆 + 小保证金的实盘使用场景，应单独在执行层加入「最小名义仓位 / 最大允许杠杆」等硬限制，避免微小波动放大为巨大浮亏体验。
+
+后续所有类似「中期方向看对但短期 crowding 极高」的场景，都应该直接参考此失败样本，将其归类为「结构方向正确但路径风险不可接受」，宁可放弃机会也不强行开仓。
+
+【事后验证】实盘 TAKEUSDT 该笔空单：价格先上后下，最终回落至约 0.02215，仓位由浮亏转为约 +22% 盈利。说明大趋势/中期方向是对的，错的是短趋势与开仓点位（在短期拥挤时立即开仓，先被 squeeze）。因此规则应理解为：禁止的是「当前时刻立即开仓」，而非否定中期方向；等短期拥挤缓解或出现更好点位时，可由新信号再评估。
+
+────────────────────────────────────────────────────────────────────────────
+开仓失败示例 2：POWERUSDT 开多（open_fail_example_powerusdt.json）
+────────────────────────────────────────────────────────────────────────────
+
+1. 表面条件
+   - 信号来源：single_signal_boll（布林），trigger_event.direction = bullish，l1_total_score = 24.7。
+   - short_term.structural_risks.crowding_risk = low；mid_term / short_term directional_alignment = ALIGNED。
+   - execution_constraint.forbidden_actions 为空，audit_confidence.structural_clarity = CLEAR_DOMINANT_CYCLE。
+   → 从「方向 + 短期不拥挤」看，似乎满足开多条件。
+
+2. 被忽略的风险
+   - mid_term.structural_risks.crowding_risk = "high"：中期已经拥挤，与同批 ETH（mid_term crowding high → NO_ACTION）应用标准不一致，此处却开了 20x 多单。
+   - long_term.structural_context.crowding_percentile.zone = "elevated"：长期已偏拥挤，上行空间与持续性存疑。
+   - short_term：dominant_flow = mixed、flow_confidence = low、range_stability = medium，即短期流向不明确、区间仅中等稳定；market_mode = range_flow，布林做多在区间上沿易假突破后回落。
+   - signal_validation.cycle_weights 三个周期均为 low，无强主导周期，结构共振弱。
+
+3. 结果
+   - 开仓价约 1.70778，随后价格回落至约 1.6700226，跌幅约 2.2%。
+   - 实盘保证金约 0.25U、20x，浮亏 -0.10 USDT，约 -42.55%（与 2.2% × 20 量级一致）。
+
+4. 经验教训（加入失败知识库）
+   - mid_term.structural_risks.crowding_risk == "high" 时，应一票否决开仓（或至少禁止高杠杆开多/开空），与 short_term crowding high 的否决逻辑保持一致。
+   - 布林/区间类信号在 range_flow + range_stability 非 high 时，开多需更谨慎，避免在区间上沿追多。
+   - long_term.crowding_percentile.zone == "elevated" 时，应提高开仓门槛（如降杠杆或 NO_ACTION），不宜 20x 激进开仓。
+   - 小保证金 + 20x 继续放大波动，同一规则下应限制杠杆或最小保证金。
+
+后续类似「中期拥挤 high + 长期 elevated + 区间市做多」的形态，应参考本失败样本，一律 NO_ACTION 或仅允许低杠杆试探。
+
