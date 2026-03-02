@@ -227,21 +227,23 @@ class TradeL1Listener:
                         trade_logger.info(f"[跳过] 去重 event_id={event_id} symbol={symbol}")
                         await self.redis.xack(self.L1_STREAM, self.group, entry_id)
                         continue
-                    if not await self._passes_cooldown(symbol):
-                        trade_logger.info(f"[跳过] 冷却中 symbol={symbol} event_id={event_id}")
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
-                        continue
+                    # 不再因「冷却」丢弃事件，所有 L1 信号都允许进入分析 / 决策流程
+                    # if not await self._passes_cooldown(symbol):
+                    #     trade_logger.info(f"[跳过] 冷却中 symbol={symbol} event_id={event_id}")
+                    #     await self.redis.xack(self.L1_STREAM, self.group, entry_id)
+                    #     continue
                     if await self._is_position_open(exchange, symbol):
                         trade_logger.info(f"[跳过] 已开仓 symbol={symbol} event_id={event_id}")
                         await self.redis.xack(self.L1_STREAM, self.group, entry_id)
                         continue
-                    if len(self.running_workflows) >= self.MAX_CONCURRENT:
+
+                    # 不再因「并发已满」直接丢弃事件，而是等待空位再继续处理
+                    while len(self.running_workflows) >= self.MAX_CONCURRENT:
                         trade_logger.info(
-                            f"[跳过] 并发已满({self.MAX_CONCURRENT}) symbol={symbol} "
+                            f"[等待] 并发已满({self.MAX_CONCURRENT}) symbol={symbol} "
                             f"event_id={event_id} running={list(self.running_workflows)[:3]}"
                         )
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
-                        continue
+                        await asyncio.sleep(0.1)
 
                     total_score = float(ev.get("total_score", 0))
                     direction = ev.get("direction", "")
