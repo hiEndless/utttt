@@ -7,7 +7,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from ...account.views import get_current_user_id
+from ...account.auth import get_current_user_id
 from ..models import SystemPreference
 from ....common.status_codes import StatusCode, BaseResponse, BusinessException, success_response
 
