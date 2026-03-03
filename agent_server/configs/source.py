@@ -451,4 +451,5 @@ if __name__ == "__main__":
     user_id = "09bcc454-3855-4be1-a5cf-66bdeae42ae0"
     name = "signal_validation"
     # print(get_agent_config(name=name, user_id=user_id))
-    print(get_agent_readiness(user_id=user_id))
+    # print(get_agent_readiness(user_id=user_id))
+    print(get_agent_enabled(user_id=user_id))
