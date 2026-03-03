@@ -195,6 +195,9 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             or event_data.get("l1_total_score") or ac.get("l1_total_score", 0))
         tf_hint = event_data.get("tf_hint") or ac.get("tf_hint") or []
 
+        # 提取realtime_market_data（如果存在）
+        realtime_data = market_structure.get("realtime_market_data", {})
+
         return {
             "meta": {
                 "symbol": symbol,
@@ -220,6 +223,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             "execution_constraint": execution_constraint,
             "global_risk_overlay": global_risk_desc,
             "mark_price": mark_price,
+            "realtime_market_data": realtime_data,  # 实时市场数据（大订单、爆仓）
         }
 
     async def execute(self, ctx: StepInput) -> str:

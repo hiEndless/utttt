@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import signal
+import time
 from datetime import datetime
 
 import redis.asyncio as aioredis
@@ -22,10 +23,13 @@ trade_logger = logging.getLogger("trade_decision")
 trade_logger.setLevel(logging.INFO)
 trade_logger.propagate = False
 trade_handler = logging.FileHandler(
-    os.path.join(TRADE_LOG_DIR, f"trade_decision_{datetime.now().strftime('%Y%m%d')}.log"),
+    os.path.join(TRADE_LOG_DIR,
+                 f"trade_decision_{datetime.now().strftime('%Y%m%d')}.log"),
     encoding="utf-8",
 )
-trade_handler.setFormatter(logging.Formatter("%(asctime)s [TRADE] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+trade_handler.setFormatter(
+    logging.Formatter("%(asctime)s [TRADE] %(message)s",
+                      datefmt="%Y-%m-%d %H:%M:%S"))
 trade_logger.addHandler(trade_handler)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("[TRADE] %(message)s"))
@@ -36,10 +40,14 @@ ai_reasoning_logger = logging.getLogger("trade_ai_reasoning")
 ai_reasoning_logger.setLevel(logging.INFO)
 ai_reasoning_logger.propagate = False
 ai_reasoning_handler = logging.FileHandler(
-    os.path.join(TRADE_LOG_DIR, f"trade_ai_reasoning_{datetime.now().strftime('%Y%m%d')}.log"),
+    os.path.join(
+        TRADE_LOG_DIR,
+        f"trade_ai_reasoning_{datetime.now().strftime('%Y%m%d')}.log"),
     encoding="utf-8",
 )
-ai_reasoning_handler.setFormatter(logging.Formatter("%(asctime)s [AI_REASONING] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+ai_reasoning_handler.setFormatter(
+    logging.Formatter("%(asctime)s [AI_REASONING] %(message)s",
+                      datefmt="%Y-%m-%d %H:%M:%S"))
 ai_reasoning_logger.addHandler(ai_reasoning_handler)
 
 
@@ -47,17 +55,25 @@ class TradeL1Listener:
     """监听 l1_events stream，触发交易决策工作流"""
 
     L1_STREAM = "l1_events"
-    DEDUP_TTL = int(os.environ.get("TRADE_L1_DEDUP_TTL", 300))  # 同一 event_id 去重秒数
-    COOLDOWN_TTL = int(os.environ.get("TRADE_L1_COOLDOWN_TTL", 3))  # 同一 symbol 冷却秒数，默认 3
-    MAX_CONCURRENT = int(os.environ.get("TRADE_L1_MAX_CONCURRENT", 8))  # 最大并发 workflow
-    PENDING_MIN_IDLE_MS = int(os.environ.get("TRADE_L1_PENDING_MIN_IDLE_MS", 30000))  # 30s 未 ack 则回收
+    DEDUP_TTL = int(os.environ.get("TRADE_L1_DEDUP_TTL",
+                                   300))  # 同一 event_id 去重秒数
+    COOLDOWN_TTL = int(os.environ.get("TRADE_L1_COOLDOWN_TTL",
+                                      3))  # 同一 symbol 冷却秒数，默认 3
+    MAX_CONCURRENT = int(os.environ.get("TRADE_L1_MAX_CONCURRENT",
+                                        20))  # 最大并发 workflow（默认 20）
+    PENDING_MIN_IDLE_MS = int(
+        os.environ.get("TRADE_L1_PENDING_MIN_IDLE_MS", 30000))  # 30s 未 ack 则回收
+    WORKFLOW_MAX_LIFETIME_SEC = int(
+        os.environ.get("TRADE_L1_WORKFLOW_MAX_LIFETIME_SEC",
+                       180))  # 单个 workflow 最长占用并发名额的时间，默认 180s，超时自动回收
 
     def __init__(self, redis_client: aioredis.Redis):
         self.redis = redis_client
         self.group = "trade_l1_group"
         self.consumer = "trade_l1_consumer"
         self.event_recorder = get_recorder()
-        self.running_workflows = set()
+        # 记录正在运行的 workflow：event_id -> start_ts
+        self.running_workflows = {}
 
     @staticmethod
     def _j(s):
@@ -80,7 +96,8 @@ class TradeL1Listener:
 
     async def _is_position_open(self, exchange: str, symbol: str) -> bool:
         try:
-            return bool(await self.redis.sismember(f"trading:open_positions:{exchange}", symbol))
+            return bool(await self.redis.sismember(
+                f"trading:open_positions:{exchange}", symbol))
         except Exception:
             return False
 
@@ -100,7 +117,8 @@ class TradeL1Listener:
         """启动时诊断 Redis 连接与 stream 状态"""
         try:
             stream_len = await self.redis.xlen(self.L1_STREAM)
-            trade_logger.info(f"[诊断] stream={self.L1_STREAM} 当前消息数 XLEN={stream_len}")
+            trade_logger.info(
+                f"[诊断] stream={self.L1_STREAM} 当前消息数 XLEN={stream_len}")
             try:
                 groups_info = await self.redis.xinfo_groups(self.L1_STREAM)
                 for g in (groups_info or []):
@@ -117,12 +135,15 @@ class TradeL1Listener:
                 trade_logger.warning(f"[诊断] XINFO GROUPS 失败: {ge}")
             # 已开仓集合：来自 Redis SET trading:open_positions:{exchange}，推送 open 时加入、close 时移除
             try:
-                for ex in ("binance",):
+                for ex in ("binance", ):
                     key = f"trading:open_positions:{ex}"
                     members = await self.redis.smembers(key)
                     if members:
-                        syms = sorted(m.decode() if isinstance(m, bytes) else str(m) for m in members)
-                        trade_logger.info(f"[诊断] {key} = {syms} (这些 symbol 的 L1 事件会被跳过)")
+                        syms = sorted(
+                            m.decode() if isinstance(m, bytes) else str(m)
+                            for m in members)
+                        trade_logger.info(
+                            f"[诊断] {key} = {syms} (这些 symbol 的 L1 事件会被跳过)")
                     else:
                         trade_logger.info(f"[诊断] {key} = 空 (无已开仓 symbol)")
             except Exception as oe:
@@ -134,7 +155,10 @@ class TradeL1Listener:
     def _fields_to_dict(fields) -> dict:
         """将 xreadgroup/xautoclaim 的 fields 转为 dict（兼容 list 格式）"""
         if isinstance(fields, dict):
-            return {k: (v.decode() if isinstance(v, bytes) else str(v)) for k, v in fields.items()}
+            return {
+                k: (v.decode() if isinstance(v, bytes) else str(v))
+                for k, v in fields.items()
+            }
         if isinstance(fields, (list, tuple)):
             d = {}
             for i in range(0, len(fields), 2):
@@ -143,6 +167,25 @@ class TradeL1Listener:
                     d[k] = v.decode() if isinstance(v, bytes) else str(v)
             return d
         return {}
+
+    def _cleanup_stale_workflows(self):
+        """
+        回收运行时间过长但仍占用并发名额的 workflow 槽位，防止异常任务永久占满并发。
+        注意：这不会主动取消正在运行的任务，只是从并发计数中移除。
+        """
+        if not self.WORKFLOW_MAX_LIFETIME_SEC:
+            return
+        now = time.time()
+        removed = []
+        for event_id, start_ts in list(self.running_workflows.items()):
+            if now - start_ts > self.WORKFLOW_MAX_LIFETIME_SEC:
+                removed.append(event_id)
+                self.running_workflows.pop(event_id, None)
+        if removed:
+            preview = removed[:3]
+            trade_logger.warning(
+                f"[回收] {len(removed)} 个 workflow 超过 {self.WORKFLOW_MAX_LIFETIME_SEC}s 未释放并发名额，"
+                f"已自动回收 slots: {preview}")
 
     async def _autoclaim_pending(self, count: int = 50) -> list:
         """回收超时未 ack 的 pending 消息，避免崩溃后卡在 PEL"""
@@ -158,7 +201,8 @@ class TradeL1Listener:
             if isinstance(res, (list, tuple)) and len(res) >= 2:
                 messages = res[1]
                 if messages:
-                    trade_logger.info(f"[autoclaim] 回收 {len(messages)} 条超时 pending")
+                    trade_logger.info(
+                        f"[autoclaim] 回收 {len(messages)} 条超时 pending")
                 return list(messages)
             return []
         except Exception as e:
@@ -174,7 +218,10 @@ class TradeL1Listener:
         await self._startup_diagnostic()
 
         try:
-            await self.redis.xgroup_create(self.L1_STREAM, self.group, id="0", mkstream=True)
+            await self.redis.xgroup_create(self.L1_STREAM,
+                                           self.group,
+                                           id="0",
+                                           mkstream=True)
             trade_logger.info(f"[启动] 消费组 {self.group} 已创建/已存在")
         except Exception as e:
             trade_logger.info(f"[启动] 消费组创建(可能已存在): {e}")
@@ -184,6 +231,9 @@ class TradeL1Listener:
 
         while True:
             try:
+                # 先清理运行过久的 workflow 槽位，防止异常任务长期占用并发名额
+                self._cleanup_stale_workflows()
+
                 # 优先回收超时 pending，避免崩溃后消息卡在 PEL
                 entries = await self._autoclaim_pending(count=50)
                 if not entries:
@@ -197,7 +247,9 @@ class TradeL1Listener:
                     if not res:
                         _empty_read_count += 1
                         if _empty_read_count % 12 == 1 and _empty_read_count > 1:
-                            trade_logger.info(f"[心跳] 持续监听中, 已 {_empty_read_count} 次 block 无新消息")
+                            trade_logger.info(
+                                f"[心跳] 持续监听中, 已 {_empty_read_count} 次 block 无新消息"
+                            )
                         continue
                     entries = []
                     for _stream, batch in res:
@@ -207,13 +259,16 @@ class TradeL1Listener:
                 if entries:
                     trade_logger.info(f"[读取] 本批收到 {len(entries)} 条消息")
                 for item in entries:
-                    entry_id = item[0] if isinstance(item, (list, tuple)) else item
-                    fields = item[1] if isinstance(item, (list, tuple)) and len(item) > 1 else {}
+                    entry_id = item[0] if isinstance(item,
+                                                     (list, tuple)) else item
+                    fields = item[1] if isinstance(
+                        item, (list, tuple)) and len(item) > 1 else {}
                     ev = self._fields_to_dict(fields)
                     symbol = ev.get("symbol", "").upper()
                     if not symbol:
                         trade_logger.debug(f"[跳过] 无symbol entry_id={entry_id}")
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
+                        await self.redis.xack(self.L1_STREAM, self.group,
+                                              entry_id)
                         continue
 
                     exchange = "binance"
@@ -224,8 +279,10 @@ class TradeL1Listener:
                             exchange = parts[0].lower()
 
                     if not await self._passes_dedup(event_id):
-                        trade_logger.info(f"[跳过] 去重 event_id={event_id} symbol={symbol}")
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
+                        trade_logger.info(
+                            f"[跳过] 去重 event_id={event_id} symbol={symbol}")
+                        await self.redis.xack(self.L1_STREAM, self.group,
+                                              entry_id)
                         continue
                     # 不再因「冷却」丢弃事件，所有 L1 信号都允许进入分析 / 决策流程
                     # if not await self._passes_cooldown(symbol):
@@ -233,16 +290,25 @@ class TradeL1Listener:
                     #     await self.redis.xack(self.L1_STREAM, self.group, entry_id)
                     #     continue
                     if await self._is_position_open(exchange, symbol):
-                        trade_logger.info(f"[跳过] 已开仓 symbol={symbol} event_id={event_id}")
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
+                        trade_logger.info(
+                            f"[跳过] 已开仓 symbol={symbol} event_id={event_id}")
+                        await self.redis.xack(self.L1_STREAM, self.group,
+                                              entry_id)
                         continue
 
                     # 不再因「并发已满」直接丢弃事件，而是等待空位再继续处理
+                    wait_count = 0
                     while len(self.running_workflows) >= self.MAX_CONCURRENT:
-                        trade_logger.info(
-                            f"[等待] 并发已满({self.MAX_CONCURRENT}) symbol={symbol} "
-                            f"event_id={event_id} running={list(self.running_workflows)[:3]}"
-                        )
+                        # 等待期间也定期清理超时的 workflow，避免被卡死任务永久占满
+                        if wait_count % 10 == 0:  # 每1秒清理一次（0.1s * 10）
+                            self._cleanup_stale_workflows()
+                        if wait_count % 50 == 0:  # 每5秒打印一次日志，避免刷屏
+                            trade_logger.info(
+                                f"[等待] 并发已满({self.MAX_CONCURRENT}) symbol={symbol} "
+                                f"event_id={event_id} running={len(self.running_workflows)}个 "
+                                f"预览={list(self.running_workflows.keys())[:3]}"
+                            )
+                        wait_count += 1
                         await asyncio.sleep(0.1)
 
                     total_score = float(ev.get("total_score", 0))
@@ -252,7 +318,8 @@ class TradeL1Listener:
                     tf_hint = ["15m", "30m", "1h"]
 
                     info = {
-                        "route": hint if hint in ("indicators", "mixed") else "indicators",
+                        "route": hint if hint in ("indicators",
+                                                  "mixed") else "indicators",
                         "exchange": exchange,
                         "symbol": symbol,
                         "final_priority": ev.get("result_priority", "low"),
@@ -261,7 +328,8 @@ class TradeL1Listener:
                         "timestamp": ev.get("timestamp", ""),
                         "market_state": market_state,
                         "direction": direction,
-                        "confidence": "medium" if abs(total_score) >= 1.5 else "low",
+                        "confidence":
+                        "medium" if abs(total_score) >= 1.5 else "low",
                         "confidence_numeric": total_score,
                         "priority_weight": 10,
                         "l1_total_score": total_score,
@@ -270,31 +338,67 @@ class TradeL1Listener:
                             "l1_total_score": total_score,
                             "tf_hint": tf_hint,
                         },
-                        "meta": {"origin_source_hint": hint, "source_event_id": event_id},
+                        "meta": {
+                            "origin_source_hint": hint,
+                            "source_event_id": event_id
+                        },
                         "trade_details": {},
                     }
 
-                    trade_logger.info(f"收到L1事件 | {symbol} | direction={direction} | score={total_score}")
+                    trade_logger.info(
+                        f"收到L1事件 | {symbol} | direction={direction} | score={total_score}"
+                    )
 
-                    mark_price = await get_mark_price_from_redis(exchange, symbol)
+                    mark_price = await get_mark_price_from_redis(
+                        exchange, symbol)
                     if mark_price:
                         info["mark_price"] = mark_price
 
                     # 先入库再跑工作流，确保 save_agent_analysis 能找到事件
-                    saved = await self.event_recorder.save_event(info, mark_price)
+                    saved = await self.event_recorder.save_event(
+                        info, mark_price)
                     if not saved:
-                        trade_logger.warning(f"L1 事件入库失败，跳过工作流: event_id={event_id}")
-                        await self.redis.xack(self.L1_STREAM, self.group, entry_id)
+                        trade_logger.warning(
+                            f"L1 事件入库失败，跳过工作流: event_id={event_id}")
+                        await self.redis.xack(self.L1_STREAM, self.group,
+                                              entry_id)
                         continue
 
-                    self.running_workflows.add(event_id)
+                    # 记录 workflow 开始时间，用于并发控制与超时回收
+                    start_ts = time.time()
+                    self.running_workflows[event_id] = start_ts
                     wf = SignalValidationWorkflow()
+                    trade_logger.info(
+                        f"[Workflow启动] event_id={event_id} symbol={symbol} 当前并发={len(self.running_workflows)}/{self.MAX_CONCURRENT}"
+                    )
 
                     async def _run_and_cleanup():
+                        workflow_timeout = self.WORKFLOW_MAX_LIFETIME_SEC or 180
                         try:
-                            await wf.arun(info)
+                            # 给整个 workflow 加上超时保护，防止某个步骤卡死导致并发名额永久占用
+                            await asyncio.wait_for(wf.arun(info),
+                                                   timeout=workflow_timeout)
+                            elapsed = time.time() - start_ts
+                            trade_logger.info(
+                                f"[Workflow完成] event_id={event_id} symbol={symbol} 耗时={elapsed:.2f}s"
+                            )
+                        except asyncio.TimeoutError:
+                            elapsed = time.time() - start_ts
+                            trade_logger.warning(
+                                f"[Workflow超时] event_id={event_id} symbol={symbol} 耗时={elapsed:.2f}s "
+                                f"超过{workflow_timeout}s，强制释放并发名额")
+                        except Exception as e:
+                            elapsed = time.time() - start_ts
+                            trade_logger.error(
+                                f"[Workflow异常] event_id={event_id} symbol={symbol} 耗时={elapsed:.2f}s 错误={e}",
+                                exc_info=True)
                         finally:
-                            self.running_workflows.discard(event_id)
+                            # 无论成功 / 失败 / 超时，均释放并发名额（若已被超时回收则为 no-op）
+                            if event_id in self.running_workflows:
+                                self.running_workflows.pop(event_id, None)
+                                trade_logger.debug(
+                                    f"[并发释放] event_id={event_id} 当前并发={len(self.running_workflows)}/{self.MAX_CONCURRENT}"
+                                )
 
                     asyncio.create_task(_run_and_cleanup())
                     await self.redis.xack(self.L1_STREAM, self.group, entry_id)
@@ -306,7 +410,9 @@ class TradeL1Listener:
 
 async def _run():
     password = settings.redis_password
-    if isinstance(password, str) and password.strip().lower() in ("none", "null", "undefined", ""):
+    if isinstance(password,
+                  str) and password.strip().lower() in ("none", "null",
+                                                        "undefined", ""):
         password = None
     max_conn = int(os.environ.get("REDIS_MAX_CONNECTIONS", 20))
     pool = aioredis.ConnectionPool(
@@ -347,7 +453,8 @@ async def _run():
 
 
 def main():
-    logging.basicConfig(level=getattr(logging, settings.log_level, logging.INFO))
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level, logging.INFO))
     logging.getLogger("httpx").setLevel(logging.ERROR)
     logging.getLogger("httpcore").setLevel(logging.ERROR)
     logging.getLogger("agno").setLevel(logging.CRITICAL)

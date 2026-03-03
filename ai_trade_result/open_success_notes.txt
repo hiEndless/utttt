@@ -21,3 +21,46 @@
 后续在设计 / 评估开仓决策时，可以用该示例作为「理想形态」参照：
 优先寻找多周期方向共振、短期不拥挤、杠杆适中、止盈止损清晰的机会，而不是仅凭强信号分值就激进开仓。
 
+────────────────────────────────────────────────────────────────────────────
+开仓成功示例 2：PIPPINUSDT 开空（2026-03-03 12:20:03）
+────────────────────────────────────────────────────────────────────────────
+
+1. 表面条件「优秀」
+   - trigger_event.direction = bearish，l1_total_score = -10.8，满足开仓阈值（绝对值 >= 10）。
+   - signal_validation.dominant_cycle = mid_term，directional_alignment.mid_term = ALIGNED，与信号方向一致。
+   - short_term.structural_risks.crowding_risk = low，短期不拥挤，避免了被短线 squeeze 的风险。
+   - mid_term.structural_risks.crowding_risk = low，中期也不拥挤。
+   - long_term.leverage_extreme = false，crowding_percentile.zone = elevated（但未达到否决阈值），长期结构可接受。
+   - audit_confidence.structural_clarity = CLEAR_DOMINANT_CYCLE，结构清晰。
+   - execution_constraint.forbidden_actions 不包含 "open"，无硬性禁止。
+
+2. 成功的关键因素
+   - **多周期共振**：中期方向与信号方向一致（ALIGNED），短期不拥挤（crowding_risk = low）。
+   - **结构清晰**：structural_clarity = CLEAR_DOMINANT_CYCLE，无结构冲突。
+   - **风险可控**：无 liquidity_vacuum，无极端拥挤风险，无硬性约束。
+   - **信号强度达标**：l1_total_score = -10.8，满足开仓阈值。
+
+3. 交易参数
+   - 开仓价：0.56569
+   - 止盈价：0.53569（-5.3%）
+   - 止损价：0.59569（+5.3%）
+   - 杠杆：20x
+   - 置信度：0.85（较高）
+   - 数量：9（实际执行）
+
+4. 经验总结（成功模式）
+   - **短期不拥挤是关键**：short_term.crowding_risk = low 使得开仓后不容易被短线反向 squeeze。
+   - **中期方向对齐是基础**：mid_term.directional_alignment = ALIGNED 确保大方向正确。
+   - **结构清晰是保障**：structural_clarity = CLEAR_DOMINANT_CYCLE 避免了结构冲突带来的风险。
+   - **信号强度达标**：l1_total_score 绝对值 >= 10 确保信号有足够强度。
+
+5. 与失败案例的对比
+   - **TAKEUSDT失败**：短期拥挤（crowding_risk = high）→ 先被 squeeze 再反向
+   - **PIPPINUSDT成功**：短期不拥挤（crowding_risk = low）→ 开仓后路径友好
+   - **关键差异**：短期拥挤风险是决定开仓后路径体验的关键因素
+
+后续在设计 / 评估开仓决策时，应优先考虑：
+1. 短期不拥挤（short_term.crowding_risk = low）是开仓的必要条件
+2. 中期方向对齐（mid_term.directional_alignment = ALIGNED）是基础
+3. 结构清晰（structural_clarity = CLEAR_DOMINANT_CYCLE）是保障
+4. 信号强度达标（l1_total_score 绝对值 >= 10）是门槛

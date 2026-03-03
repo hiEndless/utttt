@@ -40,6 +40,29 @@ _prompt_template = """
    - forbidden_actions：绝对禁止的动作（含 open、aggressive_add、scale_in_small 等）
    - 若 forbidden_actions 包含 "open"，你 绝不能 输出 OPEN_LONG / OPEN_SHORT
 
+5. realtime_market_data（实时市场行为数据，新增；数据源主要来自 Redis 的 force_stats:* 与 aggtrades:*）
+   - liquidation：爆仓统计数据
+     * liquidation_pressure：爆仓压力方向（"buy_dominant"空单爆仓多→上行压力，"sell_dominant"多单爆仓多→下行压力，"balanced"平衡，"none"无）
+     * liquidation_intensity：爆仓强度（"high"/"medium"/"low"/"none"）
+     * SELL/BUY：多单/空单爆仓次数，SELL_QTY/BUY_QTY：多单/空单爆仓总量
+   - large_orders：大订单数据（近1分钟窗口）
+     * large_buy_orders / large_sell_orders：大额买入/卖出订单列表
+     * total_buy_value / total_sell_value：总买入/卖出金额
+     * buy_sell_ratio：买卖比例（>1表示买入主导，<1表示卖出主导）
+     * large_order_intensity：大订单强度（"high"/"medium"/"low"/"none"）
+   - realtime_signals：综合实时信号
+     * buy_pressure / sell_pressure：买卖压力（"strong"/"moderate"/"weak"/"none"）
+     * liquidation_risk：爆仓风险（"high"/"medium"/"low"/"none"）
+   
+   **使用原则**：
+   - 实时市场行为数据用于**验证和增强**结构分析，而非替代结构分析
+   - 这些数据由 Redis 中的 `force_stats:binance:{symbol}` 与 `aggtrades:binance:{symbol}` 推导而来；如果这些 Key 不存在、或近期窗口内没有数据，属于**正常情况**
+   - 当 `force_stats` / `aggtrades` 没有可用数据时，你**必须继续**基于 market_structure + trigger_event + signal_validation 做完整推理，**不能**因为实时数据缺失而直接选择 NO_ACTION
+   - 如果实时大订单方向与信号方向一致，且强度为"high"或"medium"，可**增强开仓信心**
+   - 如果实时大订单方向与信号方向相反，且强度为"high"，应**降低开仓信心或选择NO_ACTION**
+   - 如果爆仓压力与信号方向一致，可能放大趋势，但需注意**爆仓风险**（liquidation_risk为"high"时需谨慎）
+   - 如果爆仓压力与信号方向相反，可能形成反转，应**优先选择NO_ACTION**
+
 ────────────────────────
 【你的职责边界（必须严格遵守）】
 
@@ -90,6 +113,12 @@ _prompt_template = """
   risk_exposure_flags 是否含 liquidity_vacuum、crowding_risk_high
   execution_constraint.risk_bias 与 audit_confidence.level 的匹配度
   behavioral_intent.taker_bias 与开仓方向是否同向
+  **实时市场行为数据**（如果可用；来自 force_stats / aggtrades 等 Redis 数据，但**不是必需条件**）：
+    * realtime_market_data.realtime_signals.buy_pressure/sell_pressure 是否与开仓方向一致
+    * realtime_market_data.large_orders.buy_sell_ratio 是否支持开仓方向
+    * realtime_market_data.realtime_signals.liquidation_risk 是否可接受
+    * 如果实时大订单方向与信号方向一致且强度高，可增强信心；如果相反，应降低信心或选择NO_ACTION
+    * **重要**：如果 realtime_market_data 为空或所有字段为默认值（large_order_intensity="none", buy_pressure="none"等），说明实时数据不可用（可能是 force_stats / aggtrades 暂时没有数据），此时**必须忽略实时数据相关判断**，仅基于结构分析与信号验证判断；**绝不能**因为这些 Redis 源数据缺失而直接否决开仓
 
 ────────────────────────
 
@@ -127,8 +156,12 @@ _prompt_template = """
 5. trigger_event.direction == "neutral" 或 l1_total_score 绝对值 < 5
 6. risk_exposure_flags 包含 "liquidity_vacuum"
 7. 任一周期 structural_risks.liquidity_vacuum == true
-8. short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且 audit_breakdown.directional_alignment.mid_term in ["ALIGNED","NEUTRAL"] 且 trigger_event.direction 与该方向同向（中期方向可能对，但当前开仓点位/短路径不利，易先 squeeze 再反向 → 禁止本轮立即开仓）
-9. mid_term.structural_risks.crowding_risk == "high" 且 long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]（典型的「中期拥挤 + 长期拥挤」场景，无论信号方向如何，都不应在当前版本中执行高杠杆开仓）
+8. short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且 audit_breakdown.directional_alignment.mid_term in ["ALIGNED","NEUTRAL"] 且 trigger_event.direction 与该方向同向，**且** realtime_market_data.realtime_signals.buy_pressure/sell_pressure 与信号方向不一致或为"none"（中期方向可能对，但当前开仓点位/短路径不利，且实时市场行为不支持 → 禁止本轮立即开仓）
+   **重要**：如果 realtime_market_data 为空或所有字段为默认值（large_order_intensity="none", buy_pressure="none"等），说明实时数据不可用，此时**应忽略实时数据相关判断**，仅基于结构分析判断。如果结构分析支持开仓（如信号强度>=10，中期对齐，短期拥挤但可通过降低杠杆缓解），可考虑降低杠杆（5x~10x）小仓位试探。
+   **例外**：如果实时大订单方向与信号方向一致，且 large_order_intensity 为 "high" 或 "medium"，且 buy_sell_ratio 明显偏向信号方向（>2.0或<0.5），可考虑降低杠杆（5x~10x）小仓位试探，但需在reasoning中明确说明
+9. mid_term.structural_risks.crowding_risk == "high" 且 long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]，**且** realtime_market_data.realtime_signals.liquidation_risk 为 "high"（典型的「中期拥挤 + 长期拥挤 + 高爆仓风险」场景，无论信号方向如何，都不应在当前版本中执行高杠杆开仓）
+   **重要**：如果 realtime_market_data 为空或 liquidation_risk="none"，说明实时数据不可用，此时**应忽略实时数据相关判断**，仅基于结构分析判断。
+   **例外**：如果实时大订单方向与信号方向一致，且 large_order_intensity 为 "high" 或 "medium"，且 liquidation_risk 仅为 "medium" 或 "low"，可考虑降低杠杆（5x~10x）小仓位试探
 
 ────────────────────────
 【开仓条件（需全部满足）】

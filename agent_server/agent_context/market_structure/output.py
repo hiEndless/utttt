@@ -23,6 +23,7 @@ if __package__:
     from .horizons.output import build_output as build_horizons_output
     from .open_interest.output import build_output as build_open_interest_output
     from .orderbook.output import build_output as build_orderbook_output
+    from .realtime_market_data import build_realtime_market_data
 else:
     # 兼容“直接 python 运行脚本”的场景：向上查找包含 agent_server/agent_context 的仓库根目录并加入 sys.path
     _root = None
@@ -367,12 +368,14 @@ async def build_output(
     oi_task = asyncio.create_task(build_open_interest_output(exchange, symbol))
     beh_task = asyncio.create_task(build_behavior_output(exchange, symbol))
     hz_task = asyncio.create_task(build_horizons_output(exchange, symbol))
+    realtime_task = asyncio.create_task(build_realtime_market_data(exchange, symbol))
 
-    orderbook_out, open_interest_out, behavior_out, horizons_out = await asyncio.gather(
+    orderbook_out, open_interest_out, behavior_out, horizons_out, realtime_out = await asyncio.gather(
         orderbook_task,
         oi_task,
         beh_task,
         hz_task,
+        realtime_task,
     )
 
     pre: Dict[str, Any] = {}
@@ -400,6 +403,7 @@ async def build_output(
         "ts": int(time.time() * 1000),
         "candidate_horizons": horizons,
         "pre_decision_structure": pre,
+        "realtime_market_data": _safe_dict(realtime_out),  # 实时市场数据（大订单、爆仓）
     }
 
     key = f"background:{exchange}:{symbol}:market_state"
