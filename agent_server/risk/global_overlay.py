@@ -39,10 +39,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+GLOBAL_OVERLAY_TTL_SECONDS = 300
+GLOBAL_OVERLAY_MAX_STALENESS_SECONDS = 180
+
 
 def now_ts() -> int:
     """返回当前 Unix 时间戳（秒）。"""
     return int(time.time())
+
+
+def is_global_overlay_fresh(overlay: Dict, current_ts: Optional[int] = None) -> bool:
+    if not isinstance(overlay, dict):
+        return False
+    current_ts = current_ts or now_ts()
+    updated_at = (overlay.get("meta", {}) or {}).get("updated_at")
+    if not isinstance(updated_at, int):
+        return False
+    return current_ts - updated_at <= GLOBAL_OVERLAY_MAX_STALENESS_SECONDS
 
 
 def aggregate_global_overlay(
@@ -219,7 +232,7 @@ def global_key(exchange: str) -> str:
     return f"risk:global:{(exchange or '').lower()}"
 
 
-async def read_global_overlay(exchange: str, redis_client: Optional[Redis] = None) -> Dict:
+async def read_global_overlay(exchange: str, redis_client: Optional[Redis] = None) -> Optional[Dict]:
     """
     [Public Interface] 读取当前的 Global Overlay 状态。
     此接口支持双向接入：
@@ -363,14 +376,26 @@ async def _read_prev_global_overlay(exchange: str, redis_client: Optional[Redis]
     if isinstance(raw, (bytes, bytearray)):
         raw = raw.decode("utf-8")
     try:
-        return json.loads(raw) if raw else None
+        overlay = json.loads(raw) if raw else None
     except Exception:
         return None
+
+    if not isinstance(overlay, dict):
+        return None
+
+    if not is_global_overlay_fresh(overlay, current_ts=now_ts()):
+        return None
+
+    return overlay
 
 
 async def _store_global_overlay(exchange: str, overlay: Dict, redis_client: Optional[Redis] = None) -> None:
     r = redis_client or await get_verified_redis_client()
-    await r.set(global_key(exchange), json.dumps(overlay, ensure_ascii=False))
+    await r.set(
+        global_key(exchange),
+        json.dumps(overlay, ensure_ascii=False),
+        ex=GLOBAL_OVERLAY_TTL_SECONDS,
+    )
 
 
 async def aggregate_and_store_global_overlay(exchange: str, redis_client: Optional[Redis] = None) -> Dict:
@@ -418,7 +443,7 @@ def get_global_risk_narrative(overlay: Optional[Dict]) -> str:
     Designed for: Signal Validation Agent, Position Risk Agent
     """
     if not overlay:
-        return "全局风控状态：未知（系统默认假设为正常运行）。"
+        return "全局风控状态：未知（可能未刷新或已过期；系统将采取保守执行策略）。"
 
     regime = overlay.get("global_risk_regime", "normal")
     allowance = overlay.get("global_action_allowance", {})

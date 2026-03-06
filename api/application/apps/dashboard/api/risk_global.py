@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -13,6 +14,17 @@ from ....common.status_codes import BaseResponse, BusinessException, StatusCode,
 
 router = APIRouter(tags=["Dashboard - Risk"])
 logger = logging.getLogger(__name__)
+
+GLOBAL_OVERLAY_MAX_STALENESS_SECONDS = 180
+
+
+def _is_fresh_global_overlay(payload: Any) -> bool:
+    if not isinstance(payload, dict):
+        return True
+    updated_at = (payload.get("meta", {}) or {}).get("updated_at")
+    if not isinstance(updated_at, int):
+        return False
+    return int(time.time()) - updated_at <= GLOBAL_OVERLAY_MAX_STALENESS_SECONDS
 
 
 def _try_parse_json(raw: Any) -> Any:
@@ -59,7 +71,10 @@ async def read_global_risk(exchange: str, user_id: str = Depends(get_current_use
 
     try:
         raw = await redis_client.get(key)
-        return success_response(_try_parse_json(raw))
+        payload = _try_parse_json(raw)
+        if not _is_fresh_global_overlay(payload):
+            payload = None
+        return success_response(payload)
     except BusinessException:
         raise
     except Exception:
