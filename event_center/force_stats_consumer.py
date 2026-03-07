@@ -52,6 +52,7 @@ class ForceStatsConsumer:
         self._rebound_streak: Dict[str, Dict[str, int]] = defaultdict(lambda: {"buy": 0, "sell": 0})
         self._price_cache: Dict[str, Tuple[float, int]] = {}  # symbol -> (price, fetched_at_ms)
         self.min_signal_strength = float(os.getenv("FORCE_MIN_SIGNAL_STRENGTH", "2.2"))
+        self.max_signal_strength = float(os.getenv("FORCE_MAX_SIGNAL_STRENGTH", "10"))
         self.strong_gate_min_session_ms = int(os.getenv("FORCE_STRONG_GATE_MIN_SESSION_MS", "500"))
         self.strong_gate_spike_mult = float(os.getenv("FORCE_STRONG_GATE_SPIKE_MULT", "1.5"))
         self.strong_gate_intensity_mult = float(os.getenv("FORCE_STRONG_GATE_INTENSITY_MULT", "2.0"))
@@ -315,17 +316,29 @@ class ForceStatsConsumer:
                 if t in ("force_spike_buy", "force_spike_sell"):
                     base_qty = d_sell_metric if t.endswith("sell") else d_buy_metric
                     base_cnt = d_sell if t.endswith("sell") else d_buy
-                    strength = max(base_qty / max(qty_thr, 1e-9), base_cnt / max(count_thr, 1e-9))
+                    cum_cnt = cur["SELL"] if t.endswith("sell") else cur["BUY"]
+                    cum_qty = tot_sell_metric if t.endswith("sell") else tot_buy_metric
+                    strength = max(
+                        base_qty / max(qty_thr, 1e-9),
+                        base_cnt / max(count_thr, 1e-9),
+                        cum_cnt / max(count_thr * 2, 1),
+                        cum_qty / max(qty_thr * 2, 1e-9),
+                    )
                 elif t == "force_intensity":
-                    strength = intensity / max(intensity_thr, 1e-9)
+                    strength = max(
+                        intensity / max(intensity_thr, 1e-9),
+                        (cur["SELL"] + cur["BUY"]) / max(intensity_thr * 2, 1),
+                    )
                 elif t in ("force_buy_dominance", "force_sell_dominance"):
                     ratio = (d_sell_metric / max(d_buy_metric, 1e-9)) if t.endswith("sell") else (d_buy_metric / max(d_sell_metric, 1e-9))
-                    strength = ratio / max(self.dominance_ratio, 1e-9)
+                    cum_ratio = (tot_sell_metric / max(tot_buy_metric, 1e-9)) if t.endswith("sell") else (tot_buy_metric / max(tot_sell_metric, 1e-9))
+                    strength = max(ratio, cum_ratio) / max(self.dominance_ratio, 1e-9)
                 else:
                     strength = 2.0
             except Exception:
                 strength = float(level)
             strength = max(float(strength), float(self.min_signal_strength))
+            strength = min(float(strength), float(self.max_signal_strength))
             payload = {
                 "summary": {
                     "direction": direction,
