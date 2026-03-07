@@ -16,6 +16,7 @@ from .api.background_read import router as background_router
 from .api.risk_global import router as risk_global_router
 from .api.risk_execution import router as risk_execution_router
 from .api.risk_time_semantics import router as risk_time_semantics_router
+from .api.agent_analyses import router as agent_analyses_router
 
 # 创建主路由
 app = APIRouter()
@@ -31,6 +32,7 @@ app.include_router(background_router)
 app.include_router(risk_global_router)
 app.include_router(risk_execution_router)
 app.include_router(risk_time_semantics_router)
+app.include_router(agent_analyses_router)
 
 # 如果有其他功能模块，可以在这里继续添加
 # app.include_router(other_router)
