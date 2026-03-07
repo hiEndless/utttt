@@ -12,10 +12,10 @@ logger = logging.getLogger("background")
 INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 SCHEDULE_SECONDS = {
     # "1m": 180,
-    "5m": 200,
-    "15m": 480,
-    "30m": 900,
-    "1h": 1000,
+    "5m": 150,
+    "15m": 90,
+    "30m": 600,
+    "1h": 900,
     "2h": 1500,
     "4h": 2000,
     "6h": 3500,

@@ -207,7 +207,7 @@ if __name__ == "__main__":
     API_KLINE_BACKGROUND = "/kline/background/read_multi"
     INDICATOR_INTERVALS = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 
-    symbol = "RIVERUSDT"
+    symbol = "ETHUSDT"
 
 
     async def read_kline_backgrounds(exchange: str, symbol: str, intervals: List[str]) -> Dict[str, Any]:
@@ -237,10 +237,11 @@ if __name__ == "__main__":
 
             full_context = await output.build_output("binance", symbol)
             market_structure = build_agent_context("human_market_narrator", full_context)
-            print(market_structure)
+            # print(market_structure)
 
             query = {
                 "symbol": market_structure["symbol"],
+                "exchange": "binance",
                 "ts": market_structure["ts"],
                 "market_structure": market_structure,
                 "kline_indicators": kline_indicators,
