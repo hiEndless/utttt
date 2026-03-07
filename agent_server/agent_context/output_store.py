@@ -60,6 +60,7 @@ async def save_agent_output(
 ) -> Dict[str, Any]:
     from agent_server.utils.redis_client import RedisClient
     from agent_server.utils.trade_event_recorder import get_recorder
+    from agent_server.utils.user_id import get_default_user_id
 
     payload = wrap_agent_output(agent, output, exchange=exchange, symbol=symbol, ts=ts, event_id=event_id)
     # print(payload)
@@ -86,6 +87,12 @@ async def save_agent_output(
 
     # 异步保存到数据库
     if event_id:
+        meta = output.get("meta") if isinstance(output, dict) else None
+        inferred_user_id = None
+        if isinstance(meta, dict):
+            inferred_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+        if not inferred_user_id:
+            inferred_user_id = get_default_user_id()
         for tid in trade_ids:
             try:
                 recorder = get_recorder()
@@ -96,7 +103,8 @@ async def save_agent_output(
                     analysis_data=output,
                     trade_id=tid,
                     exchange=exchange,
-                    symbol=symbol
+                    symbol=symbol,
+                    user_id=inferred_user_id,
                 )
             except Exception as e:
                 # 记录日志但不阻断主流程

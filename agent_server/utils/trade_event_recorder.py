@@ -573,7 +573,18 @@ class TradeEventRecorder:
             logger.error(f"更新市场结构失败: {e}, event_id={event_id}", exc_info=True)
             return False
 
-    async def save_agent_analysis(self, event_id: str, agent_name: str, analysis_data: Dict[str, Any], exchange: str, symbol: str, trade_id: Optional[str] = None, model_version: Optional[str] = None) -> bool:
+    async def save_agent_analysis(
+        self,
+        event_id: str,
+        agent_name: str,
+        analysis_data: Dict[str, Any],
+        exchange: str,
+        symbol: str,
+        trade_id: Optional[str] = None,
+        model_version: Optional[str] = None,
+        *,
+        user_id: Optional[str] = None,
+    ) -> bool:
         """
         保存 Agent 分析结果 (agent_analyses 表)
         
@@ -584,6 +595,7 @@ class TradeEventRecorder:
         :param analysis_data: 分析结果字典
         :param trade_id: 可选。如果指定，只保存到该交易关联的事件记录；否则保存到该 event_id 关联的所有记录。
         :param model_version: 模型版本
+        :param user_id: 可选。用于在 trade_events.user_id 缺失时的兜底写入
         :return: 是否成功
         """
         try:
@@ -627,6 +639,11 @@ class TradeEventRecorder:
                     risk_action = analysis_data.get("risk_action")
                     # 优先使用传入的 model_version 参数，如果没有则从 analysis_data 中获取
                     final_model_version = model_version or analysis_data.get("model_version")
+                    meta = analysis_data.get("meta") if isinstance(analysis_data, dict) else None
+                    meta_uid = None
+                    if isinstance(meta, dict):
+                        meta_uid = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+                    fallback_user_id = str(user_id or meta_uid or "").strip() or None
                     
                     # 获取实时 mark_price
                     mark_price = get_mark_price_sync({"symbol": symbol, "exchange": exchange}, exchange)
@@ -654,6 +671,8 @@ class TradeEventRecorder:
                     """
                     
                     for item in event_db_items:
+                        # 中文注释：优先使用事件记录上的 user_id；若缺失，则使用外部传入/analysis_data.meta 的 user_id 兜底
+                        final_user_id = item.get("user_id") or fallback_user_id
                         db.execute(insert_sql, [
                             item.get("id"),
                             agent_name,
@@ -664,7 +683,7 @@ class TradeEventRecorder:
                             json.dumps(full_output, ensure_ascii=False),
                             symbol,
                             exchange,
-                            item.get("user_id"),
+                            final_user_id,
                             item.get("exchange_account_id"),
                         ])
                     

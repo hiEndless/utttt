@@ -7,6 +7,7 @@ import time
 from typing import Any, Optional
 
 from agent_server.utils.db_utils import PostgresDB
+from agent_server.utils.user_id import get_default_user_id
 
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,6 @@ _prefs_cache_checked_at: dict[str | None, float] = {}
 _prefs_cache_version_ts: dict[str | None, float] = {}
 _prefs_cache: dict[str | None, dict[str, Any]] = {}
 _db_available_until: float = 0.0
-_first_user_id_cache: Optional[str] = None
-_first_user_id_checked_at: float = 0.0
 
 REQUIRED_AGENT_NAMES: tuple[str, ...] = (
     "kline",
@@ -36,43 +35,7 @@ REQUIRED_AGENT_NAMES: tuple[str, ...] = (
 def _resolve_user_id(user_id: Optional[str]) -> Optional[str]:
     if user_id:
         return user_id
-    return _get_first_user_id_from_db()
-
-
-def _get_first_user_id_from_db() -> Optional[str]:
-    """
-    中文注释：当外部未传入 user_id 时，默认从数据库读取第一个用户的 user_id。
-    适用于当前产品“单用户”规划；若未来需要多用户/全局配置，请改为显式传入 user_id 或使用 user_id IS NULL 的全局配置。
-    """
-    global _first_user_id_cache, _first_user_id_checked_at
-    if _should_skip_db():
-        return _first_user_id_cache
-    now = time.time()
-    if _first_user_id_cache and (now - _first_user_id_checked_at) < _CACHE_CHECK_INTERVAL_SEC:
-        return _first_user_id_cache
-    _first_user_id_checked_at = now
-
-    sql = """
-    SELECT id AS user_id
-    FROM "user"
-    ORDER BY created_at ASC, id ASC
-    LIMIT 1
-    """
-    try:
-        db = PostgresDB()
-        with db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(sql)
-                row = cur.fetchone()
-                uid = str(row[0]).strip() if row and row[0] else ""
-                _first_user_id_cache = uid or None
-                if not _first_user_id_cache:
-                    logger.warning("数据库未找到任何用户，无法推导默认 user_id")
-                return _first_user_id_cache
-    except Exception as e:
-        _mark_db_temporarily_unavailable()
-        logger.warning(f"读取默认 user_id 失败，将保持未指定 user_id：{e}")
-        return _first_user_id_cache
+    return get_default_user_id()
 
 
 def _db_enabled() -> bool:
