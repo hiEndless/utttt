@@ -160,7 +160,7 @@ class HumanMarketNarratorExpert:
             run_output = await agent.arun(
                 Message(role="user", content=json.dumps(query, ensure_ascii=False)),
                 stream=False,
-                debug_mode=False,
+                debug_mode=True,
             )
             return run_output.content
 
