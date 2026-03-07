@@ -7,16 +7,16 @@ class Settings:
     redis_port: int = int(os.environ.get('REDIS_PORT', 6379))
     redis_db: int = int(os.environ.get('REDIS_BD', 1))
     rate_limits_seconds: dict = {
-        '1m': 20,
-        '5m': 150,
-        '15m': 300,
-        '30m': 600,
-        '1h': 900,
-        '2h': 1800,
-        '4h': 3600,
-        '6h': 7200,
-        '12h': 10800,
-        '1d': 21600,
+        '1m': 10,
+        '5m': 10,
+        '15m': 25,
+        '30m': 25,
+        '1h': 40,
+        '2h': 40,
+        '4h': 50,
+        '6h': 50,
+        '12h': 60,
+        '1d': 60,
     }
     http_timeout_s: int = 10
     log_level: str = "INFO"
