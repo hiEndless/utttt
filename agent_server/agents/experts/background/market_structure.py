@@ -57,9 +57,18 @@ class MarketStructureExpert:
         cfg = get_agent_config(self.name)
         target_lang = cfg.get("language", "zh")
 
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
+        model_id = str(cfg.get("model_id") or "").strip()
+        base_url = str(cfg.get("llm_base_url") or "").strip() or None
+        api_key = str(cfg.get("llm_api_key") or "").strip() or None
+        missing_keys: list[str] = []
+        if not model_id:
+            missing_keys.append("model_id")
+        if not base_url:
+            missing_keys.append("llm_base_url")
+        if not api_key:
+            missing_keys.append("llm_api_key")
+        if missing_keys:
+            return _json_dumps_safe({"error": "agent_config_missing", "missing": missing_keys, "meta": meta})
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
 

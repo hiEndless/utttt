@@ -118,22 +118,36 @@ class SignalValidationExpert(BaseLLMExpert):
         }
 
     async def run(self, query: QueryInput, **kwargs: Any) -> str:
-        cfg = get_agent_config(self.name)
-        target_lang = cfg.get("language", self.language)
-
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
-
-        instructions = self.build_instructions(target_lang, **kwargs)
-        agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
-
         qobj = self._parse_query(query)
         meta = qobj.pop("meta", {}) or {}
         positions = qobj.pop("positions",  []) or []
+        meta_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
+
+        cfg = get_agent_config(self.name, user_id=meta_user_id)
+        target_lang = cfg.get("language", self.language)
+
+        model_id = str(cfg.get("model_id") or "").strip()
+        base_url = str(cfg.get("llm_base_url") or "").strip() or None
+        api_key = str(cfg.get("llm_api_key") or "").strip() or None
+        missing_keys: list[str] = []
+        if not model_id:
+            missing_keys.append("model_id")
+        if not base_url:
+            missing_keys.append("llm_base_url")
+        if not api_key:
+            missing_keys.append("llm_api_key")
+        if missing_keys:
+            meta["ts"] = int(time.time() * 1000)
+            meta["version"] = self.version
+            meta["name"] = self.name
+            return _json_dumps_safe({"error": "agent_config_missing", "missing": missing_keys, "meta": meta, "positions": positions})
+
+        instructions = self.build_instructions(target_lang, **kwargs)
+        agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)
         # 将 meta 也传递给 LLM，但仍保持 qobj 作为业务字段集合，便于后续落库与默认值回退
         llm_query_obj = dict(qobj)
         llm_input = self.build_llm_input(llm_query_obj, **kwargs)
+
 
         # 中文注释：优先从 positions 推导 trade_id；单持仓返回字符串，双持仓返回字符串列表，便于下游按 trade_id 分别存储
         trade_ids: list[str] = []

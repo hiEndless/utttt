@@ -6,14 +6,23 @@ class PortfolioExpert:
         from agno.models.openai import OpenAILike
         from agent_server.configs.source import get_agent_config
         from agent_server.agents.instructions import build_instruction
-        import os
+        import json
         from agent_server.tools import web_json, calc_rsi
 
         cfg = get_agent_config(self.name)
 
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key") or os.getenv("SILICONFLOW_TOKEN")
+        model_id = str(cfg.get("model_id") or "").strip()
+        base_url = str(cfg.get("llm_base_url") or "").strip() or None
+        api_key = str(cfg.get("llm_api_key") or "").strip() or None
+        missing_keys: list[str] = []
+        if not model_id:
+            missing_keys.append("model_id")
+        if not base_url:
+            missing_keys.append("llm_base_url")
+        if not api_key:
+            missing_keys.append("llm_api_key")
+        if missing_keys:
+            return json.dumps({"error": "agent_config_missing", "missing": missing_keys}, ensure_ascii=False)
 
         try:
             model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key) if (base_url or api_key) else OpenAILike(id=model_id)

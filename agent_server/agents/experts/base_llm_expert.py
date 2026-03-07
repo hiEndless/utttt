@@ -102,9 +102,26 @@ class BaseLLMExpert:
         cfg = get_agent_config(self.name, user_id=meta_user_id)
         target_lang = cfg.get("language", self.language)
 
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
+        model_id = str(cfg.get("model_id") or "").strip()
+        base_url = str(cfg.get("llm_base_url") or "").strip() or None
+        api_key = str(cfg.get("llm_api_key") or "").strip() or None
+        missing_keys: list[str] = []
+        if not model_id:
+            missing_keys.append("model_id")
+        if not base_url:
+            missing_keys.append("llm_base_url")
+        if not api_key:
+            missing_keys.append("llm_api_key")
+        if missing_keys:
+            meta["ts"] = int(time.time() * 1000)
+            meta["version"] = self.version
+            out = {
+                "error": "agent_config_missing",
+                "missing": missing_keys,
+                "meta": meta,
+                "positions": positions,
+            }
+            return _json_dumps_safe(out)
 
         instructions = self.build_instructions(target_lang, **kwargs)
         agent = self._build_agent(model_id=model_id, base_url=base_url, api_key=api_key, instructions=instructions)

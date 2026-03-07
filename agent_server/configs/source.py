@@ -12,8 +12,6 @@ from agent_server.utils.db_utils import PostgresDB
 logger = logging.getLogger(__name__)
 
 ENV_USER_ID = "UTAKER_USER_ID"
-ENV_DEFAULT_LLM_BASE_URL = "UTAKER_DEFAULT_LLM_BASE_URL"
-ENV_DEFAULT_LLM_API_KEY = "UTAKER_DEFAULT_LLM_API_KEY"
 
 _CACHE_CHECK_INTERVAL_SEC = 2.0
 _cache_checked_at: dict[str | None, float] = {}
@@ -23,20 +21,6 @@ _prefs_cache_checked_at: dict[str | None, float] = {}
 _prefs_cache_version_ts: dict[str | None, float] = {}
 _prefs_cache: dict[str | None, dict[str, Any]] = {}
 _db_available_until: float = 0.0
-
-
-DEFAULT_AGENT_CONFIGS: dict[str, dict[str, Any]] = {
-    "news": {"model_id": "deepseek-ai/DeepSeek-V3", "language": "zh"},
-    "kline": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "market_structure": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "human_market_narrator": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "signal_validation": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "position_risk": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "event_summary": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "trade_summary": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-    "trade_behavior": {"model_id": "qwen3-max", "language": "zh"},
-    "decision": {"model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct", "language": "zh"},
-}
 
 REQUIRED_AGENT_NAMES: tuple[str, ...] = (
     "kline",
@@ -54,19 +38,6 @@ def _resolve_user_id(user_id: Optional[str]) -> Optional[str]:
         return user_id
     v = os.getenv(ENV_USER_ID)
     return v.strip() if v and v.strip() else None
-
-
-def _default_llm_base_url() -> Optional[str]:
-    v = os.getenv(ENV_DEFAULT_LLM_BASE_URL)
-    return v.strip() if v and v.strip() else None
-
-
-def _default_llm_api_key() -> Optional[str]:
-    v = os.getenv(ENV_DEFAULT_LLM_API_KEY)
-    if v and v.strip():
-        return v.strip()
-    v2 = os.getenv("SILICONFLOW_TOKEN")
-    return v2.strip() if v2 and v2.strip() else None
 
 
 def _db_enabled() -> bool:
@@ -197,7 +168,7 @@ def _get_config_version_ts(user_id: Optional[str]) -> float:
                     return 0.0
     except Exception as e:
         _mark_db_temporarily_unavailable()
-        logger.warning(f"读取 Agent 模型配置版本失败，将使用回退配置：{e}")
+        logger.warning(f"读取 Agent 模型配置版本失败，将使用缓存/空配置：{e}")
         return 0.0
 
 
@@ -282,7 +253,7 @@ def _get_prefs_version_ts(user_id: Optional[str]) -> float:
                     return 0.0
     except Exception as e:
         _mark_db_temporarily_unavailable()
-        logger.warning(f"读取系统偏好版本失败，将使用回退偏好：{e}")
+        logger.warning(f"读取系统偏好版本失败，将使用缓存/空偏好：{e}")
         return 0.0
 
 
@@ -324,6 +295,8 @@ def _load_prefs_from_db(user_id: Optional[str]) -> dict[str, Any]:
 
 def _get_cached_prefs(user_id: Optional[str]) -> dict[str, Any]:
     uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return _prefs_cache.get(uid, {})
     now = time.time()
     last_checked = _prefs_cache_checked_at.get(uid, 0.0)
     if (now - last_checked) < _CACHE_CHECK_INTERVAL_SEC and uid in _prefs_cache:
@@ -341,12 +314,14 @@ def _get_cached_prefs(user_id: Optional[str]) -> dict[str, Any]:
         _prefs_cache_version_ts[uid] = version_ts
         return prefs
     except Exception as e:
-        logger.warning(f"读取系统偏好失败，将使用回退偏好：{e}")
+        logger.warning(f"读取系统偏好失败，将使用缓存/空偏好：{e}")
         return _prefs_cache.get(uid, {})
 
 
 def _get_cached_db_configs(user_id: Optional[str]) -> dict[str, dict[str, Any]]:
     uid = _resolve_user_id(user_id)
+    if _should_skip_db():
+        return _cache_configs.get(uid, {})
     now = time.time()
     last_checked = _cache_checked_at.get(uid, 0.0)
     if (now - last_checked) < _CACHE_CHECK_INTERVAL_SEC and uid in _cache_configs:
@@ -364,13 +339,16 @@ def _get_cached_db_configs(user_id: Optional[str]) -> dict[str, dict[str, Any]]:
         _cache_version_ts[uid] = version_ts
         return cfg
     except Exception as e:
-        logger.warning(f"读取 Agent 模型配置失败，将使用回退配置：{e}")
+        logger.warning(f"读取 Agent 模型配置失败，将使用缓存/空配置：{e}")
         return _cache_configs.get(uid, {})
 
 
 def get_agent_config(name: str, *, user_id: Optional[str] = None) -> dict[str, Any]:
-    base = dict(DEFAULT_AGENT_CONFIGS.get(name, {}))
-    db_cfg = _get_cached_db_configs(user_id).get(name, {})
+    """
+    中文注释：Agent 配置仅从数据库读取（允许使用进程内缓存），不再提供默认模型/默认 LLM 连接参数兜底。
+    """
+    base: dict[str, Any] = {}
+    db_cfg = _get_cached_db_configs(user_id).get(name, {}) or {}
     base.update({k: v for k, v in db_cfg.items() if v is not None})
 
     prefs = _get_cached_prefs(user_id)
@@ -379,11 +357,6 @@ def get_agent_config(name: str, *, user_id: Optional[str] = None) -> dict[str, A
         lang = _normalize_lang(prefs.get("ui_locale"))
     if lang:
         base["language"] = lang
-
-    if not base.get("llm_base_url"):
-        base["llm_base_url"] = _default_llm_base_url()
-    if not base.get("llm_api_key"):
-        base["llm_api_key"] = _default_llm_api_key()
     return base
 
 
@@ -410,19 +383,25 @@ def get_agent_readiness(
 ) -> dict[str, Any]:
     """
     中文注释：Agent 就绪态（readiness）用于服务内 gating。
-    - DB 配置可用时：要求关键 agents 存在对应的激活模型配置（避免默认模型误跑）
-    - DB 配置不可用时：允许使用环境变量默认 LLM 配置兜底
+    - 要求所有关键配置从数据库读取；DB 未配置/不可用时直接 fail-close
     """
     uid = _resolve_user_id(user_id)
     agents = required_agents or list(REQUIRED_AGENT_NAMES)
     reasons: list[str] = []
 
     db_required = _db_enabled()
-    if db_required:
-        db_cfg = _get_cached_db_configs(uid)
-        missing = [a for a in agents if not db_cfg.get(a)]
-        if missing:
-            reasons.append(f"missing_agent_model_configs:{','.join(missing)}")
+    if not db_required:
+        return {
+            "ready": False,
+            "reasons": ["db_not_configured"],
+            "required_agents": agents,
+            "db_required": db_required,
+        }
+
+    db_cfg = _get_cached_db_configs(uid)
+    missing = [a for a in agents if not db_cfg.get(a)]
+    if missing:
+        reasons.append(f"missing_agent_model_configs:{','.join(missing)}")
 
     base_url_missing: list[str] = []
     api_key_missing: list[str] = []
@@ -449,7 +428,7 @@ def get_agent_readiness(
 
 if __name__ == "__main__":
     user_id = "09bcc454-3855-4be1-a5cf-66bdeae42ae0"
-    name = "position_risk"
+    name = "market_structure"
     print(get_agent_config(name=name, user_id=user_id))
-    # print(get_agent_readiness(user_id=user_id))
-    # print(get_agent_enabled(user_id=user_id))
+    print(get_agent_readiness(user_id=user_id))
+    print(get_agent_enabled(user_id=user_id))

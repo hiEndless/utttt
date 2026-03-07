@@ -54,9 +54,18 @@ class DecisionExpert:
         query_payload.pop("meta", {})
 
         cfg = get_agent_config(self.name, user_id=user_id)
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
-        base_url = cfg.get("llm_base_url")
-        api_key = cfg.get("llm_api_key")
+        model_id = str(cfg.get("model_id") or "").strip()
+        base_url = str(cfg.get("llm_base_url") or "").strip() or None
+        api_key = str(cfg.get("llm_api_key") or "").strip() or None
+        missing_keys: list[str] = []
+        if not model_id:
+            missing_keys.append("model_id")
+        if not base_url:
+            missing_keys.append("llm_base_url")
+        if not api_key:
+            missing_keys.append("llm_api_key")
+        if missing_keys:
+            raise ValueError(f"agent_config_missing:{','.join(missing_keys)}")
 
         model = OpenAILike(id=model_id, base_url=base_url, api_key=api_key)
         prompt = build_decision_prompt(query_payload, target_lang=target_lang)
@@ -146,8 +155,15 @@ class DecisionExpert:
         meta_user_id = str(meta.get("user_id") or meta.get("uid") or "").strip() or None
 
         cfg = get_agent_config(self.name, user_id=meta_user_id)
-        model_id = cfg.get("model_id", "deepseek-ai/DeepSeek-V3")
+        model_id = str(cfg.get("model_id") or "").strip()
         target_lang = cfg.get("language", "zh")
+        if not model_id:
+            ts = int(time.time() * 1000)
+            meta_out = dict(meta)
+            meta_out["ts"] = ts
+            meta_out["version"] = self.version
+            meta_out["name"] = self.name
+            return _json_dumps_safe({"error": "agent_config_missing", "missing": ["model_id"], "meta": meta_out})
 
         # 不将原始 positions 透传给 LLM（仅用于本地提取 trade_id）
         query_local.pop("positions", None)
