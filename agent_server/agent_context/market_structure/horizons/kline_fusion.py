@@ -158,6 +158,7 @@ def aggregate_kline_background_by_horizon(
         trend_weights.append(wt)
 
     direction, agreement = _weighted_majority(trends, trend_weights)
+    volatility_state, volatility_agreement = _weighted_majority(vols, trend_weights)
     momentum, momentum_agree = _weighted_majority(momentums, trend_weights)
     structure = _merge_level(structures)
     proximity = _merge_level(proximities)
@@ -239,6 +240,8 @@ def aggregate_kline_background_by_horizon(
         "structure_state": structure_state,
         "momentum_state": momentum_state,
         "risk_level": risk_level,
+        "volatility_state": volatility_state,
+        "volatility_agreement": volatility_agreement,
         "confidence": confidence,
         "evidence_count": len(used_intervals),
         "used_intervals": used_intervals,

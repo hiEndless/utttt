@@ -133,34 +133,7 @@ def aggregate_global_overlay(
     )
 
     # --------------------------------------------------
-    # 2. 聚合操作权限（保守的“与”逻辑）
-    # --------------------------------------------------
-    # 如果没有执行状态，默认为允许（因为未知限制）
-    if not risk_sources["positions"]:
-        allow_open = True
-        allow_add = True
-    else:
-        allow_open = all(
-            es.get("execution_state", {}).get("action_allowance", {}).get("allow_open", False)
-            for es in risk_sources["positions"]
-        )
-
-        allow_add = all(
-            es.get("execution_state", {}).get("action_allowance", {}).get("allow_add", False)
-            for es in risk_sources["positions"]
-        )
-
-    # 全局叠加层绝不阻止降低风险/退出操作
-    global_action_allowance = {
-        "allow_open": allow_open,
-        "allow_add": allow_add,
-        "allow_hold": True,
-        "allow_reduce": True,
-        "allow_close": True
-    }
-
-    # --------------------------------------------------
-    # 3. 聚合冷却状态（仅继承）
+    # 2. 聚合冷却状态（仅继承）
     # --------------------------------------------------
     cooldown_until_candidates = []
 
@@ -208,7 +181,33 @@ def aggregate_global_overlay(
     }
 
     # --------------------------------------------------
-    # 5. 最终全局叠加状态
+    # 3. 聚合操作权限（账户级门控）
+    # --------------------------------------------------
+    # 中文注释：
+    # 1) 单仓位 execution_state 的 allow_open/allow_add 只对“该仓位是否允许做风险扩张动作”负责。
+    # 2) 全局层若用 all() 聚合，会被“任意一个仓位的 allow_open=False”永久锁死，导致账户级永远不能开仓/加仓。
+    # 3) 因此 v1 全局权限只反映：账户级风险体制 + 冷却状态（以及未来的熔断/account_risk_state）。
+    allow_open = True
+    allow_add = True
+
+    if global_risk_regime == "critical":
+        allow_open = False
+        allow_add = False
+
+    if global_cooldown_state.get("in_cooldown"):
+        allow_open = False
+        allow_add = False
+
+    global_action_allowance = {
+        "allow_open": allow_open,
+        "allow_add": allow_add,
+        "allow_hold": True,
+        "allow_reduce": True,
+        "allow_close": True,
+    }
+
+    # --------------------------------------------------
+    # 4. 最终全局叠加状态
     # --------------------------------------------------
     return {
         "global_risk_regime": global_risk_regime,

@@ -1,0 +1,324 @@
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
+
+from market_state_engine.contracts import (
+    KeyLevels,
+    LiquidityState,
+    MarketRegime,
+    MarketStateMSL,
+    PositioningState,
+    RiskState,
+    SentimentState,
+    StructureState,
+    VolatilityState,
+)
+
+from agent_server_new.domain.contracts import Confidence, ExecutionPlan
+from agent_server_new.domain.execution_planner import build_execution_plan
+from agent_server_new.domain.intent_resolver import resolve_intent
+from agent_server_new.domain.risk_gate import RiskGateContext, risk_gate
+from agent_server_new.domain.rule_planner import build_rule_plan
+from agent_server_new.domain.strategy_gate import strategy_gate_v2
+from agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
+from agent_server_new.observability.decision_trace import DecisionTrace
+from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from agent_server_new.ports.data.position_context_provider import PositionContextProvider
+from agent_server_new.ports.event_recorder import EventRecorder
+from agent_server_new.ports.market_state import MarketStateProvider
+from agent_server_new.app.context_builder import ContextBuilder
+from .event_context import EventContext
+
+
+@dataclass(frozen=True)
+class TradeEventInput:
+    """事件中心推送的最小输入集合（示例）。"""
+
+    event_id: str
+    exchange: str
+    symbol: str
+    signal_direction: str
+    payload: Dict[str, Any]
+
+
+class TradeEventWorkflow:
+    """示例工作流：load context -> call expert -> rule planner -> risk gate -> execution planner -> persist。"""
+
+    def __init__(
+        self,
+        *,
+        market_state: MarketStateProvider,
+        position_context: PositionContextProvider,
+        active_events: ActiveEventsProvider,
+        recorder: Optional[EventRecorder] = None,
+    ) -> None:
+        self._market_state = market_state
+        self._position_context = position_context
+        self._active_events = active_events
+        self._recorder = recorder
+
+    async def run(self, event: TradeEventInput) -> ExecutionPlan:
+        builder = ContextBuilder(
+            market_state=self._market_state,
+            position_context=self._position_context,
+            active_events=self._active_events,
+            max_key_features=10,
+        )
+        built = await builder.build(
+            event_id=event.event_id,
+            exchange=event.exchange,
+            symbol=event.symbol,
+            signal_payload=event.payload,
+        )
+        ctx = built.ctx
+
+        if self._recorder:
+            await self._recorder.record_market_context(
+                event.event_id,
+                {
+                    "ts": int(time.time() * 1000),
+                    "symbol": ctx.symbol,
+                    "msl": ctx.msl.to_llm_dict(),
+                    "key_market_features": dict(ctx.key_market_features),
+                    "active_events": list(ctx.active_events),
+                    "position_context": dict(ctx.position_context),
+                },
+            )
+
+        signal = evaluate_signal(
+            ctx=ExpertContext(
+                msl=ctx.msl,
+                key_market_features=ctx.key_market_features,
+                active_events=list(ctx.active_events),
+                signal_event=ctx.signal_event,
+                position_context=dict(ctx.position_context),
+            ),
+            signal_direction=event.signal_direction,
+        )
+
+        if self._recorder:
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "signal_evaluator",
+                {
+                    "direction": signal.direction,
+                    "verdict": signal.verdict,
+                    "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
+                    "invalidation_reasons": list(signal.invalidation_reasons),
+                    "notes": signal.notes,
+                },
+            )
+
+        position_ctx = dict(ctx.position_context or {})
+        intent = resolve_intent(signal=signal, msl=ctx.msl, position_context=position_ctx)
+        rule_plan = build_rule_plan(intent=intent, msl=ctx.msl, position_context=position_ctx)
+        sg = strategy_gate_v2(
+            msl=ctx.msl,
+            signal=signal,
+            intent=intent,
+            rule_plan=rule_plan,
+            position_context=position_ctx,
+            signal_event=dict(ctx.signal_event or {}),
+        )
+        allowance = risk_gate(RiskGateContext(global_regime="normal", cooldown_active=False))
+        if not sg.allowed:
+            plan = ExecutionPlan(
+                action="skip",
+                direction="none",
+                allowance=allowance,
+                confidence=signal.confidence,
+                sizing=None,
+                notes=f"strategy_gate_blocked: {','.join(sg.reasons)}",
+            )
+        else:
+            plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
+
+        if self._recorder:
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "intent_resolver",
+                {
+                    "intent": intent.intent,
+                    "direction": intent.direction,
+                    "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
+                    "reasons": list(intent.reasons),
+                    "notes": intent.notes,
+                },
+            )
+
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "rule_planner",
+                {
+                    "intent": {
+                        "intent": rule_plan.intent.intent,
+                        "direction": rule_plan.intent.direction,
+                        "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
+                    },
+                    "sizing": dict(rule_plan.sizing or {}),
+                    "reasons": list(rule_plan.reasons),
+                    "notes": rule_plan.notes,
+                },
+            )
+
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "strategy_gate",
+                {"allowed": sg.allowed, "reasons": list(sg.reasons)},
+            )
+
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "execution_planner",
+                {
+                    "action": plan.action,
+                    "direction": plan.direction,
+                    "sizing": dict(plan.sizing or {}),
+                    "allowance": {
+                        "allow_open": plan.allowance.allow_open,
+                        "allow_add": plan.allowance.allow_add,
+                        "allow_reduce": plan.allowance.allow_reduce,
+                        "allow_exit": plan.allowance.allow_exit,
+                        "reasons": list(plan.allowance.reasons),
+                    },
+                    "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
+                    "notes": plan.notes,
+                },
+            )
+
+            trace = DecisionTrace(
+                event_id=ctx.event_id,
+                exchange=ctx.exchange,
+                symbol=ctx.symbol,
+                ts=ctx.timestamp_ms,
+                event=dict(ctx.signal_event),
+                msl=ctx.msl.to_llm_dict(),
+                key_features=dict(ctx.key_market_features),
+                evidence=dict((ctx.key_market_features or {}).get("evidence") or {}),
+                anomalies=dict((ctx.key_market_features or {}).get("anomalies") or {}),
+                signal_verdict={
+                    "direction": signal.direction,
+                    "verdict": signal.verdict,
+                    "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
+                    "invalidation_reasons": list(signal.invalidation_reasons),
+                },
+                intent={
+                    "intent": intent.intent,
+                    "direction": intent.direction,
+                    "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
+                    "reasons": list(intent.reasons),
+                },
+                rule_plan={
+                    "intent": {
+                        "intent": rule_plan.intent.intent,
+                        "direction": rule_plan.intent.direction,
+                        "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
+                    },
+                    "sizing": dict(rule_plan.sizing or {}),
+                    "reasons": list(rule_plan.reasons),
+                },
+                strategy_gate_result={"allowed": sg.allowed, "reasons": list(sg.reasons)},
+                risk_gate={
+                    "allow_open": allowance.allow_open,
+                    "allow_add": allowance.allow_add,
+                    "allow_reduce": allowance.allow_reduce,
+                    "allow_exit": allowance.allow_exit,
+                    "reasons": list(allowance.reasons),
+                },
+                execution_plan={
+                    "action": plan.action,
+                    "direction": plan.direction,
+                    "sizing": dict(plan.sizing or {}),
+                    "notes": plan.notes,
+                },
+                tags=["decision_trace"],
+            )
+            await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
+
+        return plan
+
+
+def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
+    """保留：当未来 provider 直接返回 MSL dict 时，可在此处统一解析。"""
+
+    if isinstance(d.get("market_regime"), dict):
+        mr = d.get("market_regime") or {}
+        ls = d.get("liquidity_state") or {}
+        ps = d.get("positioning_state") or {}
+        vs = d.get("volatility_state") or {}
+        ss = d.get("sentiment_state") or {}
+        rs = d.get("risk_state") or {}
+        st = d.get("market_structure_state") or d.get("structure_state") or {}
+        kl = d.get("key_levels") or {}
+        return MarketStateMSL(
+            version=int(d.get("version") or 1),
+            timestamp=str(d.get("timestamp") or ""),
+            symbol=str(d.get("symbol") or ""),
+            market_regime=MarketRegime(
+                trend=str(mr.get("trend") or "unknown"),  # type: ignore[arg-type]
+                phase=str(mr.get("phase") or "unknown"),  # type: ignore[arg-type]
+                timeframe_alignment=str(mr.get("timeframe_alignment") or "unknown"),  # type: ignore[arg-type]
+                strength=float(mr.get("strength") or 0.0),
+            ),
+            liquidity=LiquidityState(
+                dominant_pressure=str(ls.get("dominant_pressure") or "unknown"),  # type: ignore[arg-type]
+                liquidity_risk=str(ls.get("liquidity_risk") or "unknown"),  # type: ignore[arg-type]
+                orderbook_bias=str(ls.get("orderbook_bias") or "unknown"),  # type: ignore[arg-type]
+                liquidation_proximity=str(ls.get("liquidation_proximity") or "unknown"),  # type: ignore[arg-type]
+            ),
+            positioning=PositioningState(
+                crowding=str(ps.get("crowding") or "unknown"),  # type: ignore[arg-type]
+                whale_bias=str(ps.get("whale_bias") or "unknown"),  # type: ignore[arg-type]
+                retail_bias=str(ps.get("retail_bias") or "unknown"),  # type: ignore[arg-type]
+                oi_trend=str(ps.get("oi_trend") or "unknown"),  # type: ignore[arg-type]
+            ),
+            volatility=VolatilityState(
+                volatility_regime=str(vs.get("volatility_regime") or "unknown"),  # type: ignore[arg-type]
+                expansion_risk=str(vs.get("expansion_risk") or "unknown"),  # type: ignore[arg-type]
+                volatility_direction=str(vs.get("volatility_direction") or "unknown"),  # type: ignore[arg-type]
+            ),
+            sentiment=SentimentState(
+                funding_sentiment=str(ss.get("funding_sentiment") or "unknown"),  # type: ignore[arg-type]
+                social_sentiment=str(ss.get("social_sentiment") or "unknown"),  # type: ignore[arg-type]
+                news_bias=str(ss.get("news_bias") or "unknown"),  # type: ignore[arg-type]
+                overall_sentiment=str(ss.get("overall_sentiment") or "unknown"),  # type: ignore[arg-type]
+            ),
+            risk=RiskState(
+                cascade_risk=str(rs.get("cascade_risk") or "unknown"),  # type: ignore[arg-type]
+                squeeze_probability=str(rs.get("squeeze_probability") or "unknown"),  # type: ignore[arg-type]
+                reversal_risk=str(rs.get("reversal_risk") or "unknown"),  # type: ignore[arg-type]
+            ),
+            market_structure=StructureState(
+                support_strength=str(st.get("support_strength") or "unknown"),  # type: ignore[arg-type]
+                resistance_strength=str(st.get("resistance_strength") or "unknown"),  # type: ignore[arg-type]
+                range_state=str(st.get("range_state") or "unknown"),  # type: ignore[arg-type]
+                trend_structure=str(st.get("trend_structure") or "unknown"),  # type: ignore[arg-type]
+            ),
+            key_levels=KeyLevels(
+                major_support=[float(x) for x in list(kl.get("major_support") or []) if x is not None],
+                major_resistance=[float(x) for x in list(kl.get("major_resistance") or []) if x is not None],
+                liquidation_clusters=[float(x) for x in list(kl.get("liquidation_clusters") or []) if x is not None],
+            ),
+            anomalies=[str(x) for x in list(d.get("anomalies") or []) if x],
+            summary=str(d.get("summary") or ""),
+            evidence=dict(d.get("evidence") or {}),
+        )
+
+    return MarketStateMSL(
+        version=1,
+        timestamp="",
+        symbol=str(d.get("symbol") or ""),
+        market_regime=MarketRegime(trend="unknown", phase="unknown", timeframe_alignment="unknown", strength=0.0),
+        liquidity=LiquidityState(dominant_pressure="unknown", liquidity_risk="unknown", orderbook_bias="unknown", liquidation_proximity="unknown"),
+        positioning=PositioningState(crowding="unknown", whale_bias="unknown", retail_bias="unknown", oi_trend="unknown"),
+        volatility=VolatilityState(volatility_regime="unknown", expansion_risk="unknown", volatility_direction="unknown"),
+        sentiment=SentimentState(funding_sentiment="unknown", social_sentiment="unknown", news_bias="unknown", overall_sentiment="unknown"),
+        risk=RiskState(cascade_risk="unknown", squeeze_probability="unknown", reversal_risk="unknown"),
+        market_structure=StructureState(support_strength="unknown", resistance_strength="unknown", range_state="unknown", trend_structure="unknown"),
+        key_levels=KeyLevels(),
+        anomalies=[],
+        summary="",
+        evidence=dict(d.get("evidence") or {}),
+    )

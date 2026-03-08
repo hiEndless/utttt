@@ -1,0 +1,141 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+
+from agent_server_new.app.workflows.event_context import EventContext
+from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from agent_server_new.ports.data.position_context_provider import PositionContextProvider
+from agent_server_new.ports.market_state import MarketStateProvider
+
+
+def _safe_dict(x: Any) -> Dict[str, Any]:
+    return x if isinstance(x, dict) else {}
+
+
+def _signal_context_builder(
+    *,
+    features: Dict[str, Any],
+    signal_event: Dict[str, Any],
+    active_events: List[Dict[str, Any]],
+    max_features: int = 10,
+) -> Dict[str, Any]:
+    """按信号类型动态选择证据：避免把所有证据一股脑塞给 LLM。"""
+
+    f = _safe_dict(features)
+    evidence = _safe_dict(f.get("evidence"))
+    anomalies = _safe_dict(f.get("anomalies"))
+    orderbook = _safe_dict(f.get("orderbook"))
+    open_interest = _safe_dict(f.get("open_interest"))
+    horizons = _safe_dict(f.get("horizons"))
+
+    payload = _safe_dict(_safe_dict(signal_event).get("payload"))
+    event_type = str(payload.get("event_type") or payload.get("type") or payload.get("kind") or "").lower()
+    profile = "generic"
+    if any(k in event_type for k in ("liquidation", "liq", "squeeze")):
+        profile = "liquidation"
+    elif any(k in event_type for k in ("news", "social", "macro", "onchain")):
+        profile = "macro_sentiment"
+    elif any(k in event_type for k in ("indicator", "signal", "strategy")):
+        profile = "indicator_signal"
+
+    candidates: List[Tuple[str, Any]]
+    if profile == "liquidation":
+        candidates = [
+            ("anomaly_flags", _safe_dict(anomalies).get("flags")),
+            ("liquidation_cluster_flag", "liquidation_cluster" in set(_safe_dict(anomalies).get("flags") or [])),
+            ("liquidity_vacuum", _safe_dict(orderbook).get("liquidity_vacuum")),
+            ("orderbook_stability", _safe_dict(orderbook).get("stability")),
+            ("delta_oi_pct", _safe_dict(open_interest).get("delta_oi_pct")),
+            ("oi_risk_flags", _safe_dict(open_interest).get("risk_flags")),
+            ("mid_trend_memory", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_memory")),
+        ]
+    elif profile == "macro_sentiment":
+        candidates = [
+            ("anomaly_flags", _safe_dict(anomalies).get("flags")),
+            ("oi_trend", _safe_dict(open_interest).get("oi_trend")),
+            ("oi_velocity", _safe_dict(open_interest).get("oi_velocity")),
+            ("mid_trend_context", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_context")),
+            ("mid_participants", _safe_dict(_safe_dict(horizons).get("mid_term")).get("participant_background")),
+            ("active_events_top", list(active_events or [])[:5]),
+        ]
+    else:
+        candidates = [
+            ("anomaly_flags", _safe_dict(anomalies).get("flags")),
+            ("liquidity_vacuum", _safe_dict(orderbook).get("liquidity_vacuum")),
+            ("orderbook_stability", _safe_dict(orderbook).get("stability")),
+            ("delta_oi_pct", _safe_dict(open_interest).get("delta_oi_pct")),
+            ("oi_trend", _safe_dict(open_interest).get("oi_trend")),
+            ("oi_velocity", _safe_dict(open_interest).get("oi_velocity")),
+            ("oi_acceleration", _safe_dict(open_interest).get("oi_acceleration")),
+            ("oi_risk_flags", _safe_dict(open_interest).get("risk_flags")),
+            ("mid_trend_memory", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_memory")),
+            ("mid_trend_context", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_context")),
+        ]
+
+    out: List[Dict[str, Any]] = []
+    for name, value in candidates:
+        if value is None:
+            continue
+        out.append({"name": name, "value": value})
+        if len(out) >= int(max_features):
+            break
+
+    return {"profile": profile, "features": out, "evidence": evidence, "anomalies": anomalies}
+
+
+@dataclass(frozen=True)
+class BuiltContext:
+    """ContextBuilder 的输出：包含 EventContext 与 raw_market_structure（便于审计）。"""
+
+    ctx: EventContext
+    raw_market_structure: Dict[str, Any]
+
+
+class ContextBuilder:
+    """组装上下文：market_state + position_context + signal_event。"""
+
+    def __init__(
+        self,
+        *,
+        market_state: MarketStateProvider,
+        position_context: PositionContextProvider,
+        active_events: ActiveEventsProvider,
+        max_key_features: int = 10,
+    ) -> None:
+        self._market_state = market_state
+        self._position_context = position_context
+        self._active_events = active_events
+        self._max_key_features = int(max_key_features)
+
+    async def build(
+        self,
+        *,
+        event_id: str,
+        exchange: str,
+        symbol: str,
+        signal_payload: Dict[str, Any],
+    ) -> BuiltContext:
+        market_state = await self._market_state.get_market_state(exchange, symbol)
+        position_ctx = await self._position_context.get_position_context(exchange, symbol)
+        active_events = await self._active_events.get_active_events(exchange, symbol)
+
+        signal_event = {"event_id": event_id, "exchange": exchange, "symbol": symbol, "payload": dict(signal_payload)}
+        key_features = _signal_context_builder(
+            features=dict(market_state.state_features or {}),
+            signal_event=signal_event,
+            active_events=list(active_events),
+            max_features=self._max_key_features,
+        )
+        ctx = EventContext(
+            event_id=event_id,
+            exchange=exchange,
+            symbol=symbol,
+            timestamp_ms=EventContext.now_ms(),
+            signal_event=signal_event,
+            msl=market_state.msl,
+            key_market_features=key_features,
+            active_events=list(active_events),
+            position_context=position_ctx,
+        )
+        return BuiltContext(ctx=ctx, raw_market_structure=dict(market_state.raw_market_structure or {}))

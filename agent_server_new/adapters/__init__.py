@@ -1,0 +1,8 @@
+"""
+适配器层（Adapters）
+
+将 ports 的抽象接口连接到具体实现：
+- 复用旧 agent_server 的 RedisClient/Recorder/工具函数
+- 或接入新的存储/消息队列/指标系统
+"""
+

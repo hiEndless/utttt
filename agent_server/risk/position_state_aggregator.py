@@ -81,21 +81,25 @@ COOLDOWN_EXIT_TYPES = {"risk", "emergency", "constraint_violation"}
 
 
 # ==========================================================
-# 风险语义推导（constraint 优先）
+# 风险体制推导（只反映结构/风险环境，不混入 risk_bias）
 # ==========================================================
 def _derive_risk_regime(signal_validation_output: Optional[Dict[str, Any]]) -> Optional[str]:
+    # 中文注释：risk_regime 只用于表达风险体制/风险等级（给全局聚合与 UI 使用）
+    # 不把 decision 的 risk_bias（defensive/conservative/neutral）混入此字段，避免语义污染
     if not signal_validation_output:
-        return None
+        return "normal"
 
     audit = signal_validation_output.get("audit_confidence", {}) or {}
     structural = audit.get("structural_clarity")
     flags = signal_validation_output.get("risk_exposure_flags", []) or []
 
     if structural == "DOMINANT_CONFLICT":
-        return "structural_conflict"
+        # 中文注释：结构性冲突属于风险升高（但不一定到 critical）
+        return "elevated"
 
     if "crowding_risk" in flags:
-        return "crowding_risk"
+        # 中文注释：拥挤风险属于风险升高
+        return "elevated"
 
     return "normal"
 
@@ -118,8 +122,9 @@ def _apply_execution_constraint(
             a in allowed for a in ["add", "aggressive_add", "scale_in_small"]
         )
         allowance["allow_hold"] = "hold" in allowed
-        allowance["allow_reduce"] = "reduce" in allowed
-        allowance["allow_close"] = "close" in allowed
+        # 中文注释：白名单只用于“风险扩张/中性执行”的裁剪，不得阻止风险降低类动作
+        allowance["allow_reduce"] = True
+        allowance["allow_close"] = True
 
     # --- 黑名单覆盖 ---
     for action in forbidden:
@@ -175,6 +180,8 @@ def aggregate_execution_state(
         }
 
     if in_cooldown:
+        # 中文注释：冷却只做“临时收紧”，在老化解除后应恢复到冷却前的 allowance
+        system_info["pre_cooldown_allowance"] = allowance.copy()
         allowance["allow_open"] = False
         allowance["allow_add"] = False
 
@@ -189,16 +196,16 @@ def aggregate_execution_state(
         )
 
     # ------------------------------
-    # 风险语义（constraint 优先）
+    # 风险体制（只看结构/风险；不被 risk_bias 覆盖）
     # ------------------------------
-    if execution_constraint and execution_constraint.get("risk_bias"):
-        risk_regime = execution_constraint["risk_bias"]
-    else:
-        risk_regime = _derive_risk_regime(signal_validation_output)
+    risk_regime = _derive_risk_regime(signal_validation_output) or "normal"
+    # 中文注释：risk_bias 是“执行偏好”（来自 decision），作为单独字段输出
+    risk_bias = execution_constraint.get("risk_bias") if execution_constraint else None
 
     return {
         "execution_state": {
             "risk_regime": risk_regime,
+            "risk_bias": risk_bias,
             "execution_regime": execution_regime,
             "intent_bias": execution_constraint.get("intent_bias") if execution_constraint else None,
             "action_allowance": allowance,
@@ -223,6 +230,7 @@ def age_execution_state(
     exec_state = new_payload.get("execution_state", {})
     cooldown = exec_state.get("cooldown_state", {})
     allowance = exec_state.get("action_allowance", {})
+    system_info = exec_state.get("system_info", {}) or {}
 
     if cooldown.get("in_cooldown"):
         until = cooldown.get("until_ts", 0)
@@ -231,12 +239,15 @@ def age_execution_state(
             cooldown["until_ts"] = None
             exec_state["execution_regime"] = "normal"
 
-            # 仅恢复冷却限制
-            allowance["allow_open"] = True
-            allowance["allow_add"] = True
+            # 中文注释：冷却解除时，优先恢复到“冷却前的 allowance”，避免误放开或误锁死
+            pre = system_info.get("pre_cooldown_allowance")
+            if isinstance(pre, dict):
+                allowance = dict(allowance)
+                allowance.update(pre)
 
     exec_state["action_allowance"] = allowance
     exec_state["cooldown_state"] = cooldown
+    exec_state["system_info"] = system_info
     new_payload["execution_state"] = exec_state
 
     return new_payload
@@ -342,4 +353,3 @@ if __name__ == "__main__":
 
 
     asyncio.run(_execution())
-
