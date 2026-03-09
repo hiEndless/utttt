@@ -42,3 +42,4 @@
 - [x] Task 40: 收紧 `schema_mapping.last_updated` 校验为必须等于 CONTRACT_INDEX 更新时间。
 - [x] Task 41: 增加 breaking 变更升版守卫（breaking 变更必须递增 mapping 主版本）。
 - [x] Task 42: breaking 升版守卫纳入 schema 文件内容 hash 变更检测。
+- [x] Task 43: breaking 升版守卫输出触发对象与原因，提升定位效率。

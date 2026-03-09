@@ -49,6 +49,7 @@
 26. 已收紧 `last_updated` 规则：必须严格等于 CONTRACT_INDEX 更新时间，避免发布时序漂移
 27. 已新增 breaking 升版守卫：`change_policy=breaking` 变更时必须提升 mapping 主版本
 28. breaking 升版守卫已扩展到 schema 文件内容 hash 变化，避免仅改 schema 文件导致漏检
+29. breaking 升版守卫已输出触发对象与原因，便于 CI 失败快速定位
 
 ## 关键收敛决议（冻结）
 

@@ -206,3 +206,4 @@
 - `schema_mapping.json.last_updated` 必须等于 `docs/CONTRACT_INDEX.md` 的“更新时间”。
 - 若 `change_policy=breaking` 的对象发生变更，`schema_mapping.version` 主版本号必须递增（守卫强校验）。
 - breaking 变更检测包含 schema 文件内容 hash 变化（不仅是 mapping 字段变化）。
+- 升版守卫失败时会输出触发对象与原因（新增对象/签名变更/schema hash 变更）。

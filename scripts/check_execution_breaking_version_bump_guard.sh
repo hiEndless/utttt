@@ -92,30 +92,37 @@ cur_items = _index(list(cur.get("items") or []))
 prev_items = _index(list(prev.get("items") or []))
 
 breaking_changed = False
+breaking_reason = ""
 for name, item in cur_items.items():
     if str(item.get("change_policy") or "").strip() != "breaking":
         continue
     prev_item = prev_items.get(name)
     if prev_item is None:
         breaking_changed = True
+        breaking_reason = f"{name}: breaking 对象为新增"
         break
     if _item_signature(item) != _item_signature(prev_item):
         breaking_changed = True
+        breaking_reason = f"{name}: mapping 签名变更(schema/code/symbol/fields)"
         break
     cur_schema = str(item.get("schema") or "").strip()
     prev_schema = str(prev_item.get("schema") or "").strip()
     if cur_schema != prev_schema:
         breaking_changed = True
+        breaking_reason = f"{name}: schema 路径变更({prev_schema} -> {cur_schema})"
         break
     cur_hash = _schema_hash_current(cur_schema)
     prev_hash = _schema_hash_prev(cur_schema)
     if cur_hash != prev_hash:
         breaking_changed = True
+        breaking_reason = f"{name}: schema 文件内容 hash 变更"
         break
 
 if not breaking_changed:
     print("[通过] 未检测到 breaking 对象变更，无需 schema mapping 版本递增。")
     raise SystemExit(0)
+
+print(f"[信息] 检测到 breaking 变更触发点: {breaking_reason}")
 
 if _major(cur_ver) <= _major(prev_ver):
     raise SystemExit(
