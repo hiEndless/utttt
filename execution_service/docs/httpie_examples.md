@@ -43,3 +43,14 @@ EXECUTION_STATE_PROVIDER_MODE=redis \
 EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0 \
 python -m execution_service.main
 ```
+
+## 6) 契约入口
+
+- 项目级入口：`docs/CONTRACT_INDEX.md`
+- API 说明：`execution_service/docs/api.md`
+
+## 7) Schema 快速定位
+
+- DecisionIntent：`execution_service/docs/decision_intent.schema.json`
+- ExecutionResult：`execution_service/docs/execution_result.schema.json`
+- DecisionState：`execution_service/docs/decision_state.schema.json`
