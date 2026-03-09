@@ -132,3 +132,4 @@
 - [x] Task 116: 新增 `check_runner_output_schema_guard.sh` 并接入全量守卫入口。
 - [x] Task 117: 入口文档顶部统一指向 `CONTRACT_INDEX.md` 作为唯一契约入口。
 - [x] Task 118: 新增 `check_contract_docs_index_guard.sh` 并接入全量守卫入口。
+- [x] Task 119: 增强 contract docs index 守卫，检查 `ARCHITECTURE_NEW/CONTRACTS_QUICK_REF` 显式引用 `CONTRACT_INDEX.md`。

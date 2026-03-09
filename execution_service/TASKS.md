@@ -19,3 +19,4 @@
 - [x] Task 17: 新增 execution_service HTTPie 示例文档并同步入口文档。
 - [x] Task 18: 新增项目级契约索引文档并补 runner 输出 schema 独立守卫。
 - [x] Task 19: 新增 `check_contract_docs_index_guard.sh` 校验契约索引路径有效并接入总守卫。
+- [x] Task 20: 增强 contract docs index 守卫，强制入口文档显式引用 `CONTRACT_INDEX.md`。

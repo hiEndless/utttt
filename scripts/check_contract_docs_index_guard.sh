@@ -43,4 +43,10 @@ if missing:
 print("[通过] CONTRACT_INDEX 引用路径全部有效。")
 PY
 
+echo "[附加] 校验入口文档已显式指向 CONTRACT_INDEX"
+if ! rg -n "CONTRACT_INDEX\\.md" docs/ARCHITECTURE_NEW.md docs/CONTRACTS_QUICK_REF.md >/dev/null; then
+  echo "[失败] 入口文档未统一指向 CONTRACT_INDEX.md"
+  exit 1
+fi
+
 echo "[通过] contract docs index 守卫检查完成。"
