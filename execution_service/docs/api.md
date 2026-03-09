@@ -145,6 +145,9 @@
 - `503`: `execution_sink_not_configured`
 - `501`: `execution_sink_reconcile_not_supported`
 
+说明：
+- 当 payload 或回执中携带 `decision_id` 且回执状态可识别时，服务会写回 `decision_state`（例如 `submitted -> filled`）。
+
 ## 调试状态快照
 
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
@@ -188,9 +191,12 @@
   - `last_error`: 最近一次 submit 错误文本（无错误为空字符串）
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）
+  - `reconcile_order_id`: 最近一次回执对账的订单号（如有）
+  - `reconcile_status_raw`: 最近一次回执原始状态（如有）
 - 状态机跃迁规则（冻结）：
   - `pending -> pending/submitted/failed/skipped/decided`
-  - `submitted/failed/skipped/decided` 为终态，仅允许保持原状态
+  - `submitted -> submitted/filled/canceled/rejected/failed`
+  - `failed/skipped/decided/filled/canceled/rejected` 为终态，仅允许保持原状态
   - 非法跃迁会被拒绝并记录中文告警日志，不覆盖已存终态
 
 ## 状态提供器模式

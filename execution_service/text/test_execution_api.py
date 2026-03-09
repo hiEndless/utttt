@@ -146,3 +146,50 @@ def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
     assert data["mode"] == "mock"
     assert data["order_id"] == "mock-order-001"
     assert data["status"] == "filled"
+
+
+def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    client = TestClient(create_app())
+
+    decide_resp = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-reconcile-001",
+            "exchange": "binance",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {"suggested_policy": "follow_long_term"},
+            "risk_hints": {"agent_action_hint": "add"},
+            "trace_id": "trace-reconcile-001",
+        },
+    )
+    assert decide_resp.status_code == 200
+    decide_data = decide_resp.json()
+    assert isinstance(decide_data.get("order_result"), dict)
+    order_id = str(decide_data["order_result"].get("order_id") or "")
+    assert order_id
+
+    reconcile_resp = client.post(
+        "/internal/execution/reconcile",
+        json={
+            "order_id": order_id,
+            "decision_id": "dec-reconcile-001",
+            "exchange": "binance",
+            "symbol": "ETHUSDT",
+            "trace_id": "trace-reconcile-001",
+        },
+    )
+    assert reconcile_resp.status_code == 200
+    reconcile_data = reconcile_resp.json()
+    assert reconcile_data["status"] == "filled"
+
+    debug_resp = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-reconcile-001")
+    assert debug_resp.status_code == 200
+    debug_data = debug_resp.json()
+    assert isinstance(debug_data.get("decision_state"), dict)
+    assert debug_data["decision_state"]["status"] == "filled"
+    assert debug_data["decision_state"]["last_transition"] == "filled"
+    assert debug_data["decision_state"]["reconcile_order_id"] == order_id

@@ -71,6 +71,16 @@ def test_decision_state_schema_samples() -> None:
     }
     assert _validate(schema, good)
 
+    good_reconciled = {
+        "decision_id": "dec-001",
+        "status": "filled",
+        "last_transition": "filled",
+        "attempts": 1,
+        "source": "execution_service",
+        "updated_at_ms": 1760000000002,
+    }
+    assert _validate(schema, good_reconciled)
+
     bad = {
         "decision_id": "dec-002",
         "status": "submitted",

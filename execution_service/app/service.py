@@ -166,6 +166,20 @@ class ExecutionService:
         out = dict(result or {})
         out.setdefault("order_id", order_id)
         out.setdefault("ts", int(time.time() * 1000))
+        decision_id = str(out.get("decision_id") or payload.get("decision_id") or "").strip()
+        reconcile_status = _normalize_reconcile_status(str(out.get("status") or ""))
+        if decision_id and reconcile_status is not None:
+            await self._save_state(
+                decision_id,
+                {
+                    "status": reconcile_status,
+                    "last_transition": reconcile_status,
+                    "source": "execution_service",
+                    "trace_id": str(payload.get("trace_id") or "").strip() or None,
+                    "reconcile_order_id": order_id,
+                    "reconcile_status_raw": str(out.get("status") or "").strip().lower() or None,
+                },
+            )
         return out
 
     async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
@@ -183,7 +197,8 @@ class ExecutionService:
                     next_status,
                 )
                 return
-        payload = dict(state or {})
+        payload = dict(prev or {})
+        payload.update(dict(state or {}))
         payload["decision_id"] = str(decision_id)
         payload["updated_at_ms"] = int(time.time() * 1000)
         await self._execution_state_store.save_state(str(decision_id), payload)
@@ -255,10 +270,13 @@ def _is_valid_state_transition(prev_status: str, next_status: str) -> bool:
         return True
     allowed = {
         "pending": {"pending", "submitted", "failed", "skipped", "decided"},
-        "submitted": {"submitted"},
+        "submitted": {"submitted", "filled", "canceled", "rejected", "failed"},
         "failed": {"failed"},
         "skipped": {"skipped"},
         "decided": {"decided"},
+        "filled": {"filled"},
+        "canceled": {"canceled"},
+        "rejected": {"rejected"},
     }
     next_set = allowed.get(str(prev_status), set())
     return str(next_status) in next_set
@@ -297,3 +315,12 @@ def _extract_last_error(result: ExecutionResult) -> str:
     retry_meta = order_result.get("retry_meta") if isinstance(order_result.get("retry_meta"), dict) else {}
     last_error = retry_meta.get("last_error")
     return str(last_error) if last_error else ""
+
+
+def _normalize_reconcile_status(status: str) -> str | None:
+    normalized = str(status or "").strip().lower()
+    if normalized in {"filled", "canceled", "cancelled", "rejected", "submitted", "failed"}:
+        if normalized == "cancelled":
+            return "canceled"
+        return normalized
+    return None

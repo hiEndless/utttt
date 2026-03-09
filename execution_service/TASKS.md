@@ -44,3 +44,4 @@
 - [x] Task 42: breaking 升版守卫纳入 schema 文件内容 hash 变更检测。
 - [x] Task 43: breaking 升版守卫输出触发对象与原因，提升定位效率。
 - [x] Task 44: 增加 `reconcile` 回执对账接口与 `exchange` sink 骨架实现，并补测试与文档。
+- [x] Task 45: reconcile 回执结果写回状态机，并扩展终态（filled/canceled/rejected）与测试。

@@ -18,11 +18,11 @@
     },
     "status": {
       "type": "string",
-      "enum": ["pending", "submitted", "failed", "skipped", "decided"]
+      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
     },
     "last_transition": {
       "type": "string",
-      "enum": ["pending", "submitted", "failed", "skipped", "decided"]
+      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
     },
     "execution_action": {
       "type": "string",

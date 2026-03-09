@@ -51,6 +51,7 @@
 28. breaking 升版守卫已扩展到 schema 文件内容 hash 变化，避免仅改 schema 文件导致漏检
 29. breaking 升版守卫已输出触发对象与原因，便于 CI 失败快速定位
 30. execution 已新增 `POST /internal/execution/reconcile` 回执对账接口，支持 `mock/exchange_skeleton` sink
+31. reconcile 已支持写回 execution_state 终态（`filled/canceled/rejected`）并纳入状态机跃迁约束
 
 ## 关键收敛决议（冻结）
 

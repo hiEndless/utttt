@@ -111,3 +111,35 @@ def test_state_machine_terminal_status_cannot_jump_back_to_pending() -> None:
     state = asyncio.run(store.get_state("dec-state-004"))
     assert isinstance(state, dict)
     assert state["status"] == "failed"
+
+
+def test_state_machine_submitted_can_transition_to_filled() -> None:
+    store = InMemoryExecutionStateStore()
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        submit_enabled=False,
+        execution_state_store=store,
+    )
+    asyncio.run(service._save_state("dec-state-005", {"status": "submitted"}))
+    asyncio.run(service._save_state("dec-state-005", {"status": "filled"}))
+    state = asyncio.run(store.get_state("dec-state-005"))
+    assert isinstance(state, dict)
+    assert state["status"] == "filled"
+
+
+def test_state_machine_filled_cannot_jump_back_to_pending() -> None:
+    store = InMemoryExecutionStateStore()
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        submit_enabled=False,
+        execution_state_store=store,
+    )
+    asyncio.run(service._save_state("dec-state-006", {"status": "filled"}))
+    asyncio.run(service._save_state("dec-state-006", {"status": "pending"}))
+    state = asyncio.run(store.get_state("dec-state-006"))
+    assert isinstance(state, dict)
+    assert state["status"] == "filled"
