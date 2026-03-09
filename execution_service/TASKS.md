@@ -61,3 +61,4 @@
 - [x] Task 59: 在 `schema_mapping.json` 显式登记 `retry_meta` 及其 `$ref` 引用来源，并增加机器校验。
 - [x] Task 60: 扩展 `schema_mapping.references` 支持结构化 JSON 值校验，并覆盖 `DecisionState` 关键字段断言。
 - [x] Task 61: 为 `DecisionIntent/ExecutionResult` 补齐关键 `references` 断言，增强 breaking 契约冻结强度。
+- [x] Task 62: 将 `ExecutionReconcileResult` 纳入 `schema_mapping`，并冻结 `status/reason_code/retry_meta` 关键断言。

@@ -154,3 +154,4 @@ execution_service/
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`
 - `schema_mapping.json` 已登记 `RetryMeta` 的 `$ref` 引用来源，守卫会校验引用路径和值不漂移
 - `DecisionIntent/ExecutionResult` 的关键枚举与边界也已纳入 `schema_mapping.references` 机器校验
+- `ExecutionReconcileResult` 也已纳入 `schema_mapping`，关键状态/错误码与 `retry_meta` 引用受守卫保护

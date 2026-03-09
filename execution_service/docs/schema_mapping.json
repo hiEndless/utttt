@@ -131,6 +131,48 @@
           "expected": "./retry_meta.schema.json"
         }
       ]
+    },
+    {
+      "name": "ExecutionReconcileResult",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+      "code": "execution_service/domain/reconcile_statuses.py",
+      "symbol": "RECONCILE_STATUSES",
+      "fields": [
+        "mode",
+        "venue",
+        "order_id",
+        "decision_id",
+        "exchange",
+        "symbol",
+        "status",
+        "filled_qty",
+        "avg_price",
+        "note",
+        "reason_code",
+        "error_message",
+        "idempotency_hit",
+        "retry_meta",
+        "ts"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.status.enum",
+          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+        },
+        {
+          "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.reason_code.enum",
+          "expected": ["reconcile_retry_exhausted", "reconcile_non_retryable_error", "reconcile_in_progress"]
+        },
+        {
+          "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        }
+      ]
     }
   ]
 }
