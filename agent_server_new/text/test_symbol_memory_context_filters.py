@@ -93,9 +93,14 @@ def test_context_builder_applies_ttl_dedup_topk_for_recent_memory():
         features = list((built.ctx.key_market_features or {}).get("features") or [])
         by_name = {str(item.get("name")): item.get("value") for item in features}
         recent = list(by_name.get("recent_memory") or [])
+        obs = dict((built.ctx.key_market_features or {}).get("memory_observability") or {})
         assert len(recent) == 2
         assert recent[0]["event_id"] == "evt-dup"
         assert recent[0]["plan"]["action"] == "add"
         assert recent[1]["event_id"] == "evt-new"
+        assert obs["memory_hit"] is True
+        assert obs["memory_raw_recent_count"] == 4
+        assert obs["memory_filtered_recent_count"] == 2
+        assert obs["memory_dropped_count"] == 2
 
     asyncio.run(_run())

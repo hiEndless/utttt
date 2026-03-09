@@ -187,6 +187,16 @@ signal_event + active_events + MSL
 - 一次执行：`python -m agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
 - 循环执行：`python -m agent_server_new.memory_summary_runner --loop --interval-s 60`
 
+## Memory Observability
+
+`DecisionTrace` 已包含 `memory_metrics`：
+- `memory_hit`
+- `memory_raw_recent_count`
+- `memory_filtered_recent_count`
+- `memory_dropped_count`
+- `memory_summary_field_count`
+- `memory_summary_event_count`
+
 ## One-shot Pipeline Smoke
 
 - 单进程串联 `market_state_engine -> agent_server_new`：

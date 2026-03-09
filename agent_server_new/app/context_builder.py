@@ -55,6 +55,27 @@ def _normalize_recent_memory(
     return clean
 
 
+def _build_memory_observability(
+    *,
+    raw_recent: List[Dict[str, Any]],
+    filtered_recent: List[Dict[str, Any]],
+    memory_summary: Dict[str, Any],
+) -> Dict[str, Any]:
+    raw_count = len(list(raw_recent or []))
+    filtered_count = len(list(filtered_recent or []))
+    summary_fields = len(dict(memory_summary or {}).keys())
+    summary_event_count = _to_int(dict(memory_summary or {}).get("event_count"), 0)
+    dropped_total = max(0, raw_count - filtered_count)
+    return {
+        "memory_hit": bool(summary_fields > 0 or filtered_count > 0),
+        "memory_raw_recent_count": raw_count,
+        "memory_filtered_recent_count": filtered_count,
+        "memory_dropped_count": dropped_total,
+        "memory_summary_field_count": summary_fields,
+        "memory_summary_event_count": summary_event_count,
+    }
+
+
 def _signal_context_builder(
     *,
     features: Dict[str, Any],
@@ -197,6 +218,11 @@ class ContextBuilder:
             topk=self._memory_recent_topk,
             dedup_key=self._memory_dedup_key,
         )
+        memory_observability = _build_memory_observability(
+            raw_recent=list(_safe_dict(symbol_memory).get("recent") or []),
+            filtered_recent=memory_recent,
+            memory_summary=memory_summary,
+        )
         symbol_memory_filtered = {"summary": memory_summary, "recent": memory_recent}
 
         signal_event = {"event_id": event_id, "exchange": exchange, "symbol": symbol, "payload": dict(signal_payload)}
@@ -209,6 +235,7 @@ class ContextBuilder:
             msl_meta=dict(market_state.msl_meta or {}),
             symbol_memory=symbol_memory_filtered,
         )
+        key_features["memory_observability"] = memory_observability
         ctx = EventContext(
             event_id=event_id,
             exchange=exchange,

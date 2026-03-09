@@ -331,6 +331,7 @@ class TradeEventWorkflow:
                     "sizing": dict(plan.sizing or {}),
                     "notes": plan.notes,
                 },
+                memory_metrics=dict((ctx.key_market_features or {}).get("memory_observability") or {}),
                 tags=["decision_trace"],
             )
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
