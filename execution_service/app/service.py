@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
 from execution_service.domain.decision_engine import ExecutionDecisionEngine
 from execution_service.ports.execution_sink import ExecutionSink
+from execution_service.ports.idempotency_store import IdempotencyStore
 from execution_service.ports.account_state_provider import AccountStateProvider
 from execution_service.ports.position_state_provider import PositionStateProvider
 from execution_service.ports.risk_policy_provider import RiskPolicyProvider
@@ -22,15 +23,22 @@ class ExecutionService:
         risk_policy_provider: RiskPolicyProvider,
         execution_sink: ExecutionSink | None = None,
         submit_enabled: bool = False,
+        idempotency_store: IdempotencyStore | None = None,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
         self._risk_policy_provider = risk_policy_provider
         self._execution_sink = execution_sink
         self._submit_enabled = bool(submit_enabled)
+        self._idempotency_store = idempotency_store
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
+        if self._idempotency_store is not None:
+            cached = await self._idempotency_store.get_result(decision.decision_id)
+            if isinstance(cached, dict) and cached:
+                return ExecutionResult.from_dict(cached)
+
         position_state = await self._position_provider.get_position_state(
             decision.exchange,
             decision.symbol,
@@ -75,6 +83,9 @@ class ExecutionService:
                         "notes": f"{result.notes or ''}; execution_submit_failed:{exc}".strip("; "),
                     }
                 )
+
+        if self._idempotency_store is not None:
+            await self._idempotency_store.save_result(decision.decision_id, result.to_dict())
         return result
 
     async def get_debug_state(self, *, exchange: str, symbol: str, redact: bool = False) -> Dict[str, Any]:

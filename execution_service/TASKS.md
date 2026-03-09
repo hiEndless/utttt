@@ -21,3 +21,4 @@
 - [x] Task 19: 新增 `check_contract_docs_index_guard.sh` 校验契约索引路径有效并接入总守卫。
 - [x] Task 20: 增强 contract docs index 守卫，强制入口文档显式引用 `CONTRACT_INDEX.md`。
 - [x] Task 21: 接入可选 `ExecutionSink` 下沉流程（mock），支持 `order_result` 回填与 submit 失败降级。
+- [x] Task 22: 接入 `decision_id` 幂等缓存（memory/redis）避免重复 submit，并补回归测试。

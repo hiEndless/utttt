@@ -60,6 +60,18 @@ value(JSON)：
 - `EXECUTION_ACCOUNT_KEY_TEMPLATE=execution:account:{exchange}`
 - `EXECUTION_RISK_POLICY_KEY_TEMPLATE=execution:risk_policy:{exchange}:{symbol}`
 
+幂等缓存（可选，mode=redis）：
+
+- `EXECUTION_IDEMPOTENCY_ENABLED=true`
+- `EXECUTION_IDEMPOTENCY_MODE=redis`
+- `EXECUTION_IDEMPOTENCY_REDIS_URL=redis://127.0.0.1:6379/0`
+- `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE=execution:idempotency:{decision_id}`
+- `EXECUTION_IDEMPOTENCY_TTL_S=3600`
+
+对应 key 示例：
+
+- `execution:idempotency:dec-001`
+
 ## 5) 说明
 
 - 建议由下游账户/仓位同步任务持续刷新这些键。

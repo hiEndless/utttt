@@ -103,6 +103,12 @@ execution_service/
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
   - `EXECUTION_SINK_MODE=mock`（当前支持 `mock`）
   - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
+- 幂等缓存（建议开启）：
+  - `EXECUTION_IDEMPOTENCY_ENABLED=true|false`（默认 `true`）
+  - `EXECUTION_IDEMPOTENCY_MODE=memory|redis`（默认 `memory`）
+  - `EXECUTION_IDEMPOTENCY_REDIS_URL`（当 mode=redis）
+  - `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE`（默认 `execution:idempotency:{decision_id}`）
+  - `EXECUTION_IDEMPOTENCY_TTL_S`（默认 `3600`）
 
 ## Agent 联调（当前）
 

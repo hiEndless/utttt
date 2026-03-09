@@ -1,6 +1,7 @@
 """execution_service adapters layer."""
 
 from .agent_execution_plan_adapter import adapt_agent_execution_plan_to_decision_intent
+from .idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
 from .mock_execution_sink import MockExecutionSink
 from .redis_state_providers import (
     RedisAccountStateProvider,
@@ -28,4 +29,6 @@ __all__ = [
     "build_stub_state_providers",
     "adapt_agent_execution_plan_to_decision_intent",
     "MockExecutionSink",
+    "InMemoryIdempotencyStore",
+    "RedisIdempotencyStore",
 ]

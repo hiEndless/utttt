@@ -15,6 +15,7 @@ from execution_service.adapters.redis_state_providers import (
     create_redis_client_from_env,
 )
 from execution_service.adapters.mock_execution_sink import MockExecutionSink
+from execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
 from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
 from execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
@@ -28,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 def create_app() -> FastAPI:
     state_provider_mode = str(os.getenv("EXECUTION_STATE_PROVIDER_MODE", "stub") or "stub").strip().lower()
+    redis_client = None
+    cfg = None
 
     if state_provider_mode == "redis":
         cfg = RedisExecutionStateConfig.from_env()
@@ -69,12 +72,43 @@ def create_app() -> FastAPI:
             logger.warning("execution_service submit 已启用，但未识别 sink_mode=%s，回退禁用 submit", sink_mode)
             submit_enabled = False
 
+    idempotency_enabled = str(os.getenv("EXECUTION_IDEMPOTENCY_ENABLED", "true") or "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    idempotency_mode = str(os.getenv("EXECUTION_IDEMPOTENCY_MODE", "memory") or "memory").strip().lower()
+    idempotency_store = None
+    if idempotency_enabled:
+        if idempotency_mode == "redis":
+            redis_url = str(
+                os.getenv("EXECUTION_IDEMPOTENCY_REDIS_URL", (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0"))
+                or (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0")
+            ).strip()
+            idem_ttl_s = int(str(os.getenv("EXECUTION_IDEMPOTENCY_TTL_S", "3600") or "3600"))
+            key_template = str(
+                os.getenv("EXECUTION_IDEMPOTENCY_KEY_TEMPLATE", "execution:idempotency:{decision_id}")
+                or "execution:idempotency:{decision_id}"
+            ).strip()
+            idem_client = redis_client if (redis_client is not None and cfg is not None and redis_url == cfg.redis_url) else create_redis_client_from_env(redis_url)
+            idempotency_store = RedisIdempotencyStore(
+                redis_client=idem_client,
+                key_template=key_template,
+                ttl_s=idem_ttl_s,
+            )
+            logger.info("execution_service 启用幂等缓存，mode=redis ttl=%s", idem_ttl_s)
+        else:
+            idempotency_store = InMemoryIdempotencyStore()
+            logger.info("execution_service 启用幂等缓存，mode=memory")
+
     service = ExecutionService(
         position_provider=position_provider,
         account_provider=account_provider,
         risk_policy_provider=risk_policy_provider,
         execution_sink=execution_sink,
         submit_enabled=submit_enabled,
+        idempotency_store=idempotency_store,
     )
     app = FastAPI(
         title="execution_service",

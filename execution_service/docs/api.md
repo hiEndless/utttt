@@ -86,6 +86,7 @@
   - `execution_action=skip`
   - `reject_reason=execution_submit_failed`
   - `applied_risk_rules` 追加 `execution_submit_fallback`
+- 当幂等缓存启用时（默认开启），相同 `decision_id` 的重复请求会直接返回首次结果，不重复 submit。
 
 建议标准拒绝码（首批冻结）：
 
@@ -145,3 +146,8 @@
 - `EXECUTION_SUBMIT_ENABLED`
 - `EXECUTION_SINK_MODE`
 - `EXECUTION_SINK_MOCK_VENUE`
+- `EXECUTION_IDEMPOTENCY_ENABLED`
+- `EXECUTION_IDEMPOTENCY_MODE`
+- `EXECUTION_IDEMPOTENCY_REDIS_URL`
+- `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE`
+- `EXECUTION_IDEMPOTENCY_TTL_S`

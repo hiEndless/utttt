@@ -134,3 +134,4 @@
 - [x] Task 118: 新增 `check_contract_docs_index_guard.sh` 并接入全量守卫入口。
 - [x] Task 119: 增强 contract docs index 守卫，检查 `ARCHITECTURE_NEW/CONTRACTS_QUICK_REF` 显式引用 `CONTRACT_INDEX.md`。
 - [x] Task 120: execution_service 接入可选 ExecutionSink 下沉流程（mock）并补提交成功/失败回归测试。
+- [x] Task 121: execution_service 接入 `decision_id` 幂等缓存（memory/redis）并补重复 submit 防重回归测试。
