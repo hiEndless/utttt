@@ -69,8 +69,9 @@ def test_schema_mapping_manifest_is_valid() -> None:
                 assert isinstance(ref, dict), f"reference item must be object in {name}"
                 ref_schema_rel = str(ref.get("schema") or "").strip()
                 json_path = str(ref.get("json_path") or "").strip()
-                expected = str(ref.get("expected") or "").strip()
-                assert ref_schema_rel and json_path and expected, f"reference fields missing in {name}"
+                assert "expected" in ref, f"reference expected missing in {name}"
+                expected = ref.get("expected")
+                assert ref_schema_rel and json_path, f"reference fields missing in {name}"
                 ref_schema_path = PROJECT_ROOT / ref_schema_rel
                 assert ref_schema_path.is_file(), f"reference schema not found: {ref_schema_rel}"
                 ref_schema = json.loads(ref_schema_path.read_text(encoding="utf-8"))

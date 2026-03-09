@@ -52,6 +52,18 @@
         "source",
         "trace_id",
         "updated_at_ms"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.status.enum",
+          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.source.const",
+          "expected": "execution_service"
+        }
       ]
     },
     {
