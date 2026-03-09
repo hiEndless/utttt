@@ -63,6 +63,7 @@
 40. ExecutionResult schema 发生破坏性变更后，`schema_mapping_version` 已按守卫要求升级到 `execution-schema-mapping-v3`
 41. 已新增独立 `retry_meta` schema，并接入守卫与项目索引文档
 42. `execution_result/execution_reconcile_result` 的 `retry_meta` 已改为 `$ref` 引用独立 schema，并更新 schema 测试支持本地 `$ref` 解析
+43. `retry_meta` 契约一致性测试已升级为按 `$ref` 读取独立 schema，避免内联路径依赖
 
 ## 关键收敛决议（冻结）
 

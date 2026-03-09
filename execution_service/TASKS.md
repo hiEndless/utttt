@@ -56,3 +56,4 @@
 - [x] Task 55: 新增独立 `retry_meta` schema 并接入守卫与索引文档。
 - [x] Task 54: 因 ExecutionResult schema 破坏性变更，将 `schema_mapping_version` 递增到 `v3` 并同步入口文档。
 - [x] Task 56: 将 `ExecutionResult/ExecutionReconcileResult` 的 `retry_meta` 收敛为 `$ref` 引用独立 schema，并更新测试校验逻辑。
+- [x] Task 57: 修复 `retry_meta` 契约一致性测试，按 `$ref` 解析独立 schema 枚举。
