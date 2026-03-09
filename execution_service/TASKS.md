@@ -34,3 +34,4 @@
 - [x] Task 32: 将 execution 三份 Schema 收敛到 `docs/CONTRACT_INDEX.md` 与入口文档。
 - [x] Task 33: 对齐 execution 模块内 cURL/HTTPie 文档的 schema 快速定位段。
 - [x] Task 34: 在 API 文档补充 schema 与字段来源映射表（schema -> code）。
+- [x] Task 35: 新增机器可校验 `schema_mapping.json` 并接入守卫脚本。

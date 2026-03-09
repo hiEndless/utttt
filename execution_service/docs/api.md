@@ -188,6 +188,8 @@
 
 ## Schema 与字段来源映射
 
+机器可校验清单：`execution_service/docs/schema_mapping.json`
+
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 |
 | --- | --- | --- | --- |
 | DecisionIntent | `decision_id` `exchange` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` |

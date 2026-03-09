@@ -1,0 +1,51 @@
+{
+  "version": "execution-schema-mapping-v1",
+  "items": [
+    {
+      "name": "DecisionIntent",
+      "schema": "execution_service/docs/decision_intent.schema.json",
+      "code": "execution_service/domain/contracts.py",
+      "symbol": "DecisionIntent",
+      "fields": [
+        "decision_id",
+        "exchange",
+        "symbol",
+        "direction_intent",
+        "confidence",
+        "cross_horizon_policy",
+        "risk_hints",
+        "trace_id"
+      ]
+    },
+    {
+      "name": "ExecutionResult",
+      "schema": "execution_service/docs/execution_result.schema.json",
+      "code": "execution_service/domain/contracts.py",
+      "symbol": "ExecutionResult",
+      "fields": [
+        "decision_id",
+        "execution_action",
+        "reject_reason",
+        "applied_risk_rules",
+        "order_result",
+        "notes"
+      ]
+    },
+    {
+      "name": "DecisionState",
+      "schema": "execution_service/docs/decision_state.schema.json",
+      "code": "execution_service/app/service.py",
+      "symbol": "_save_state",
+      "fields": [
+        "status",
+        "last_transition",
+        "attempts",
+        "submitted_at_ms",
+        "last_error",
+        "source",
+        "trace_id",
+        "updated_at_ms"
+      ]
+    }
+  ]
+}

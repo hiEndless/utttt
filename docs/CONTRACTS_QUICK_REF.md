@@ -135,6 +135,7 @@ agent_server_new -> execution_service
 - `execution_service/docs/decision_intent.schema.json`
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
+- `execution_service/docs/schema_mapping.json`
 
 ## 7. 联调判定清单（最小）
 
@@ -169,6 +170,7 @@ agent_server_new -> execution_service
 - Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
 - Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
 - Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
+- Execution Schema Mapping：`execution_service/docs/schema_mapping.json`
 - Execution cURL 示例：`execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - Execution Redis 键契约：`execution_service/docs/redis_keys.md`
