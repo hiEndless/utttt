@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionSignalResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "signal_action",
+    "mode",
+    "scope",
+    "position_before",
+    "position_after_simulation"
+  ],
+  "properties": {
+    "signal_action": {
+      "type": "string",
+      "enum": [
+        "add_long",
+        "add_short",
+        "reduce_long",
+        "reduce_short",
+        "hold",
+        "skip",
+        "exit_all"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["simulated"]
+    },
+    "scope": {
+      "type": "object",
+      "required": ["exchange", "account_id", "symbol"],
+      "properties": {
+        "exchange": {"type": "string", "minLength": 1},
+        "account_id": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string", "minLength": 1}
+      }
+    },
+    "position_before": {
+      "type": "object",
+      "required": ["mode", "long_position_size", "short_position_size", "net_position_size"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["one_way", "hedge"]},
+        "long_position_size": {"type": "number"},
+        "short_position_size": {"type": "number"},
+        "net_position_size": {"type": "number"}
+      }
+    },
+    "position_after_simulation": {
+      "type": "object",
+      "required": ["long_position_size", "short_position_size", "net_position_size"],
+      "properties": {
+        "long_position_size": {"type": "number"},
+        "short_position_size": {"type": "number"},
+        "net_position_size": {"type": "number"}
+      }
+    }
+  }
+}

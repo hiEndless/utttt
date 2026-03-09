@@ -68,3 +68,4 @@
 - [x] Task 66: 引入 `account_id` 作用域（默认 `main`）并贯通 execution providers/service/debug/redis key。
 - [x] Task 67: 风控规则支持 `hedge` 双向持仓（long/short 两腿独立上限 + one_way 兼容）并补测试。
 - [x] Task 68: execution 输出新增 `signal_result`（模拟信号结构），包含腿级动作与仓位 before/after 模拟快照。
+- [x] Task 69: 冻结 `signal_result` 独立 schema，并接入守卫、索引文档与 schema mapping（breaking 升版到 v4）。

@@ -44,6 +44,9 @@
         }
       }
     },
+    "signal_result": {
+      "$ref": "./execution_signal_result.schema.json"
+    },
     "notes": {
       "type": "string"
     }

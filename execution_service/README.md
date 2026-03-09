@@ -41,6 +41,7 @@ execution_service/
     decision_intent.schema.json
     decision_state.schema.json
     execution_result.schema.json
+    execution_signal_result.schema.json
     execution_reconcile_result.schema.json
     retry_meta.schema.json
     schema_mapping.json
@@ -159,6 +160,7 @@ execution_service/
 - decision_state schema：`execution_service/docs/decision_state.schema.json`
 - decision_intent schema：`execution_service/docs/decision_intent.schema.json`
 - execution_result schema：`execution_service/docs/execution_result.schema.json`
+- execution_signal_result schema：`execution_service/docs/execution_signal_result.schema.json`
 - execution_reconcile_result schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - retry_meta schema：`execution_service/docs/retry_meta.schema.json`
 - `execution_result/execution_reconcile_result` 中的 `retry_meta` 已统一通过 `$ref` 引用独立 schema，避免枚举漂移

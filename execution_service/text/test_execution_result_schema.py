@@ -29,7 +29,23 @@ def test_execution_result_schema_samples() -> None:
         "execution_action": "skip",
         "reject_reason": "execution_submit_failed",
         "applied_risk_rules": ["execution_submit_fallback"],
-        "order_result": {"retry_meta": {"attempts": 1, "max_retries": 0, "status": "failed"}}
+        "order_result": {"retry_meta": {"attempts": 1, "max_retries": 0, "status": "failed"}},
+        "signal_result": {
+            "signal_action": "skip",
+            "mode": "simulated",
+            "scope": {"exchange": "binance", "account_id": "main", "symbol": "ETHUSDT"},
+            "position_before": {
+                "mode": "one_way",
+                "long_position_size": 0.0,
+                "short_position_size": 0.0,
+                "net_position_size": 0.0,
+            },
+            "position_after_simulation": {
+                "long_position_size": 0.0,
+                "short_position_size": 0.0,
+                "net_position_size": 0.0,
+            },
+        },
     }
     assert validate_payload_with_local_refs(
         schema, good_submit_fail, Path(PROJECT_ROOT) / "execution_service" / "docs"

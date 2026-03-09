@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v3",
+  "schema_mapping_version": "execution-schema-mapping-v4",
   "ts": 1760000000000
 }
 ```
@@ -84,7 +84,7 @@
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
 7. `signal_result`: 可选对象（执行层模拟信号结构，当前默认返回）
-7. JSON Schema：`execution_service/docs/execution_result.schema.json`
+8. JSON Schema：`execution_service/docs/execution_result.schema.json`
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。

@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v3",
+  "version": "execution-schema-mapping-v4",
   "last_updated": "2026-03-10",
   "items": [
     {
@@ -55,6 +55,7 @@
         "reject_reason",
         "applied_risk_rules",
         "order_result",
+        "signal_result",
         "notes"
       ],
       "references": [
@@ -72,6 +73,11 @@
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.order_result.properties.retry_meta.$ref",
           "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.signal_result.$ref",
+          "expected": "./execution_signal_result.schema.json"
         }
       ]
     },
@@ -171,6 +177,38 @@
           "schema": "execution_service/docs/execution_reconcile_result.schema.json",
           "json_path": "properties.retry_meta.$ref",
           "expected": "./retry_meta.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionSignalResult",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/execution_signal_result.schema.json",
+      "code": "execution_service/domain/risk_rules.py",
+      "symbol": "_build_signal_action",
+      "fields": [
+        "signal_action",
+        "mode",
+        "scope",
+        "position_before",
+        "position_after_simulation"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.signal_action.enum",
+          "expected": ["add_long", "add_short", "reduce_long", "reduce_short", "hold", "skip", "exit_all"]
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.mode.enum",
+          "expected": ["simulated"]
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.signal_result.$ref",
+          "expected": "./execution_signal_result.schema.json"
         }
       ]
     }

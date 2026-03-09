@@ -160,6 +160,7 @@ event_center_new(signal_event + active_events)
 - Execution API（草案）：`execution_service/docs/api.md`
 - Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
 - Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
+- Execution SignalResult Schema：`execution_service/docs/execution_signal_result.schema.json`
 - Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
 - Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`

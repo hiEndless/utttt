@@ -75,6 +75,7 @@
 52. execution 已引入 `account_id` 作用域（默认 `main`），并贯通到 position/account provider 与 debug 接口，兼容后续多账户扩展
 53. 风控规则已支持 `hedge` 双向持仓：同 symbol 多空腿独立限额（`max_long/max_short_position_size`）并保持 `one_way` 兼容
 54. execution 输出已新增 `signal_result`（模拟信号结构），可直接供下游消费而不依赖真实交易下沉
+55. `signal_result` 已冻结为独立 schema 并纳入守卫/索引；因 `ExecutionResult` 契约 breaking 变更，schema mapping 已升版至 `v4`
 
 ## 关键收敛决议（冻结）
 

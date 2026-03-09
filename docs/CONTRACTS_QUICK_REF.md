@@ -137,6 +137,7 @@ agent_server_new -> execution_service
 执行层冻结 Schema：
 - `execution_service/docs/decision_intent.schema.json`
 - `execution_service/docs/execution_result.schema.json`
+- `execution_service/docs/execution_signal_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/execution_reconcile_result.schema.json`
 - `execution_service/docs/retry_meta.schema.json`
@@ -175,6 +176,7 @@ agent_server_new -> execution_service
 - Execution API（草案）：`execution_service/docs/api.md`
 - Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
 - Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
+- Execution SignalResult Schema：`execution_service/docs/execution_signal_result.schema.json`
 - Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
 - Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`

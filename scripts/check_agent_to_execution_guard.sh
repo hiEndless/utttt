@@ -30,6 +30,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   execution_service/text/test_decision_intent_schema.py \
   execution_service/text/test_decision_state_schema.py \
   execution_service/text/test_execution_result_schema.py \
+  execution_service/text/test_execution_signal_result_schema.py \
   execution_service/text/test_schema_mapping.py \
   execution_service/text/test_stub_state_providers.py \
   execution_service/text/test_agent_to_execution_smoke.py \
