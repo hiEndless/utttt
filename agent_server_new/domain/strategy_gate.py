@@ -25,7 +25,8 @@ def strategy_gate(*, msl: MarketStateMSL, signal: SignalVerdict) -> StrategyGate
         reasons.append("horizon_conflict")
     if msl.regime == "transition" and signal.verdict == "uncertain":
         reasons.append("transition_and_uncertain")
-    if "liquidity_vacuum" in set(msl.risk_flags or []):
+    anomalies = set([str(x) for x in list(msl.anomalies or []) if x])
+    if "liquidity_vacuum" in anomalies or "orderbook_liquidity_vacuum" in anomalies:
         reasons.append("liquidity_vacuum")
     if reasons:
         return StrategyGateResult(allowed=False, reasons=reasons)
@@ -44,6 +45,7 @@ def strategy_gate_v2(
     """策略门控（v2）：检查 freshness、regime mismatch、以及规则计划与市场语境冲突。"""
 
     reasons: List[str] = []
+    anomalies = set([str(x) for x in list(msl.anomalies or []) if x])
 
     ts = signal_event.get("ts") or signal_event.get("timestamp") or signal_event.get("timestamp_ms")
     try:
@@ -60,7 +62,7 @@ def strategy_gate_v2(
         if (msl.direction_bias == "bullish" and signal.direction == "short") or (msl.direction_bias == "bearish" and signal.direction == "long"):
             reasons.append("direction_bias_mismatch")
 
-    if intent.intent in ("increase", "hold") and "liquidity_vacuum" in set(msl.risk_flags or []):
+    if intent.intent in ("increase", "hold") and ("liquidity_vacuum" in anomalies or "orderbook_liquidity_vacuum" in anomalies):
         reasons.append("liquidity_vacuum")
 
     if intent.intent == "increase" and msl.horizon_alignment == "conflict":

@@ -19,6 +19,8 @@ def _signal_context_builder(
     signal_event: Dict[str, Any],
     active_events: List[Dict[str, Any]],
     max_features: int = 10,
+    cross_horizon: Dict[str, Any] | None = None,
+    msl_meta: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """按信号类型动态选择证据：避免把所有证据一股脑塞给 LLM。"""
 
@@ -74,6 +76,12 @@ def _signal_context_builder(
         ]
 
     out: List[Dict[str, Any]] = []
+    # 固定注入跨周期摘要，保证下游可直接消费 suggested_policy。
+    if isinstance(cross_horizon, dict) and cross_horizon:
+        out.append({"name": "cross_horizon", "value": dict(cross_horizon)})
+    if isinstance(msl_meta, dict) and msl_meta:
+        out.append({"name": "msl_meta", "value": dict(msl_meta)})
+
     for name, value in candidates:
         if value is None:
             continue
@@ -126,6 +134,8 @@ class ContextBuilder:
             signal_event=signal_event,
             active_events=list(active_events),
             max_features=self._max_key_features,
+            cross_horizon=dict(market_state.cross_horizon or {}),
+            msl_meta=dict(market_state.msl_meta or {}),
         )
         ctx = EventContext(
             event_id=event_id,

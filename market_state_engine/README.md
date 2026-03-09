@@ -38,6 +38,8 @@ data_server
 - anomaly synthesis
 - regime detection
 - structure summary
+- plugin-based state inference
+- state fusion
 - MSL generation
 - key_features extraction
 - state serving
@@ -76,6 +78,8 @@ data_server
 输出给 `agent_server_new`：
 
 - `MSL`
+- `msl_bundle`（`short_term/mid_term/long_term`）
+- `cross_horizon`（周期一致性与冲突摘要）
 - `state_features`
 - `anomaly_flags`
 
@@ -92,6 +96,9 @@ data_server
 - `symbol`
 - `status`（新增：`ok` 或 `data_unavailable`）
 - `msl`
+- `msl_meta`（新增：schema/inference 元信息）
+- `msl_bundle` / `msl_bundle_meta`（新增：多周期状态与元信息）
+- `cross_horizon`（新增：跨周期一致性/冲突）
 - `state_features`
 - `anomaly_flags`
 - `raw_market_structure`
@@ -109,6 +116,22 @@ market_state_engine/
   contracts.py
   engine.py
   msl.py
+  config/
+    state_inference_profiles.json
+  state_inference/
+    base.py
+    views.py
+    rule_regime_inference.py
+    positioning_inference.py
+    volatility_inference.py
+    liquidity_inference.py
+    risk_inference.py
+    structure_inference.py
+    state_fusion.py
+    msl_generator.py
+    msl_generator_v1.py
+    msl_generator_v2.py
+    engine.py
   text/
     test_market_state_data_unavailable.py
   docs/
@@ -164,6 +187,61 @@ market_state_engine/
 - 已补充跨服务契约测试（`feature_service -> market_state_engine`）覆盖
   - 新契约解析：`meta + data.raw_market_structure`
   - 上游 503 映射：`feature_data_unavailable -> data_unavailable`
+- 已收口 MSL 契约为“结构状态专用”
+  - `msl` 不再输出 `sentiment_state`
+  - 状态层只保留结构相关状态字段（regime/liquidity/positioning/volatility/risk/structure）
+- 已增加输入域守卫（结构边界防漂移）
+  - `service.py` 会忽略 `news/social/onchain` 等外部事件输入字段
+  - 当发现并忽略外部字段时，会附加 `anomaly_flags=external_event_input_ignored`
+  - `state_features.evidence.ignored_external_input_keys` 记录被忽略字段
+- 已完成引擎因子拆层
+  - `engine.py` 的状态推断已拆到 `factors/`（`regime/liquidity/positioning/volatility/risk/structure`）
+  - 拆层后输出契约保持不变，状态层回归测试通过
+- 已新增状态层 CI 守卫脚本
+  - `scripts/check_market_state_engine_guard.sh`
+  - 默认检查 `sentiment_state` 不回归，并执行状态层契约测试（含插件流水线测试）
+- 已新增 MSL 字段白名单守卫
+  - `test_msl_contract_whitelist.py` 锁定 `msl` 字段集合（`ok` / `data_unavailable` 两条分支）
+  - 守卫脚本默认执行该测试，防止契约字段漂移
+- 已新增 `state->agent` 联动守卫脚本
+  - `scripts/check_state_to_agent_contract_guard.sh`
+  - 同时检查状态层与决策层核心实现不回归 `sentiment_state`，并执行跨模块契约测试
+- 已新增新架构守卫总入口脚本
+  - `scripts/check_new_arch_guards.sh`
+  - 一次执行 feature/state/state->agent 全量契约守卫
+- 已完成插件式状态推断流水线
+  - `engine.py` 已接入 `state_inference/engine.py`
+  - 默认推断链路为 `regime -> positioning -> volatility -> liquidity -> risk -> structure`
+  - `risk_only` 已收敛为最小链路 `regime -> risk`
+  - `state_fusion` 负责融合 partial state 与插件 warnings
+  - `msl_generator` 负责将融合状态映射为稳定 `MSL` 输出
+  - 支持多版本推断生成器（同一 schema）
+    - `msl_generator_v1`
+    - `msl_generator_v2`
+    - 统一输出 `MSL schema v2`
+  - 通过 `msl_meta` 输出 `schema_version/inference_version/inference_profile`
+  - 已支持多周期状态并存输出（`msl_bundle`）
+    - `short_term`
+    - `mid_term`
+    - `long_term`
+  - 已支持跨周期冲突输出（`cross_horizon`）
+    - `alignment`: `aligned|mixed|conflicting|unknown`
+    - `conflicts`: 结构化冲突列表
+    - 冲突字段覆盖：`trend`、`phase`、`volatility_regime`、`liquidity_risk`
+    - 冲突排序优先级：`trend > phase > volatility_regime > liquidity_risk`
+    - 新增执行建议字段：
+      - `suggested_policy`: `follow_long_term|wait_confirmation|reduce_risk|no_action`
+      - `policy_reason`: 规则命中原因（如 `short_long_trend_conflict`）
+  - 已补充插件流水线测试（默认链路 + 插件异常降级 warning）
+  - 已支持插件启停配置（默认全启用）
+    - `MSE_STATE_PLUGIN_PROFILE`：预设链路（`default` / `fast_mode` / `risk_only`）
+    - `MSE_STATE_PLUGIN_PROFILES_FILE`：profile 配置文件路径（JSON）
+    - `MSE_MSL_INFERENCE_VERSION`：推断生成器版本（`msl_generator_v1` / `msl_generator_v2`）
+    - `MSE_STATE_PLUGINS_ENABLED`：仅启用名单（逗号分隔）
+    - `MSE_STATE_PLUGINS_DISABLED`：禁用名单（逗号分隔）
+    - 优先级：`enabled_plugins` > `plugin_profile` > `default`，最后应用 `disabled_plugins`
+    - profile 来源优先级：`profiles_file` > 内置默认配置
+    - 已补充服务层环境变量配置解析测试
 
 当前仍是过渡阶段：
 

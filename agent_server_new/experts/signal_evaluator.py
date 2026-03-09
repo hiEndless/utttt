@@ -39,11 +39,12 @@ def evaluate_signal(
     invalidation = []
     if liquidity_vacuum:
         invalidation.append("liquidity_vacuum")
-    if msl.liquidity_state == "thin" and msl.crowding == "high":
+    # 兼容新 MSL 契约：从 liquidity/positioning 子结构读取风险语义。
+    if msl.liquidity.liquidity_risk in ("short_squeeze", "long_squeeze") and msl.positioning.crowding in ("crowded_long", "crowded_short"):
         invalidation.append("thin_liquidity_and_high_crowding")
     if msl.horizon_alignment == "conflict":
         invalidation.append("horizon_conflict")
-    if "liquidation_cluster" in set([str(x) for x in list(msl.risk_flags or [])]):
+    if "liquidation_cluster" in set([str(x) for x in list(msl.anomalies or [])]):
         invalidation.append("liquidation_cluster")
 
     if invalidation:

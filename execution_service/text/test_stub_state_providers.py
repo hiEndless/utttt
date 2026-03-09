@@ -1,0 +1,32 @@
+from pathlib import Path
+import sys
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+import asyncio
+
+from execution_service.adapters.stub_state_providers import (
+    StubAccountStateProvider,
+    StubPositionStateProvider,
+)
+
+
+def test_stub_position_provider_with_symbol_override() -> None:
+    provider = StubPositionStateProvider(
+        symbol_overrides={"ETHUSDT": {"position_size": 0.8, "position_side": "long"}}
+    )
+    state = asyncio.run(provider.get_position_state("binance", "ETHUSDT"))
+    assert state["position_side"] == "long"
+    assert state["position_size"] == 0.8
+    assert state["exchange"] == "binance"
+
+
+def test_stub_account_provider_with_exchange_override() -> None:
+    provider = StubAccountStateProvider(
+        exchange_overrides={"binance": {"current_drawdown_ratio": 0.11}}
+    )
+    state = asyncio.run(provider.get_account_state("binance"))
+    assert state["exchange"] == "binance"
+    assert state["current_drawdown_ratio"] == 0.11

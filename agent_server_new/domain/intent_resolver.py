@@ -28,7 +28,8 @@ def resolve_intent(
             notes="信号被否定：默认防御性处理。",
         )
 
-    if "liquidity_vacuum" in set(msl.risk_flags or []):
+    anomalies = set([str(x) for x in list(msl.anomalies or []) if x])
+    if "liquidity_vacuum" in anomalies or "orderbook_liquidity_vacuum" in anomalies:
         return ActionIntent(
             intent="hold",
             direction="none",

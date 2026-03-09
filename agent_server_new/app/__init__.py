@@ -6,3 +6,8 @@
 - ports（外部依赖抽象）
 """
 
+from .bootstrap import create_trade_event_workflow_from_env
+
+__all__ = [
+    "create_trade_event_workflow_from_env",
+]

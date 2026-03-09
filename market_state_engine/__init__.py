@@ -7,7 +7,6 @@ from .contracts import (
     MarketStateMSL,
     PositioningState,
     RiskState,
-    SentimentState,
     StructureState,
     VolatilityState,
 )
@@ -22,7 +21,6 @@ __all__ = [
     "MarketStateMSL",
     "PositioningState",
     "RiskState",
-    "SentimentState",
     "StructureState",
     "VolatilityState",
 ]

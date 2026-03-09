@@ -1,6 +1,7 @@
 # agent_server_new
 
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
+本模块重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
 
 `agent_server_new` 是目标架构中的 **Decision Agent**，只负责决策层，不再承载长期稳定的状态生产职责，也不负责真实执行。
 
@@ -22,7 +23,6 @@ data_server
 - consume `signal_event`
 - consume `active_events`
 - consume `MSL`
-- consume `position_context`
 - 做 signal evaluation
 - 做 intent resolve / rule planning
 - 做 strategy gating / risk gating
@@ -54,17 +54,21 @@ data_server
    - 外部事件（舆情/链上/新闻等）
 2. `market_state_engine`
    - `MSL`（由结构事件与结构特征归纳后的状态）
+   - `msl_meta`（schema/inference 元信息）
+   - `msl_bundle`（short/mid/long 多周期状态）
+   - `cross_horizon`（含 `suggested_policy/policy_reason`）
    - `key_features`
    - `anomaly_flags`
 
-再叠加一个内部或外部上下文：
-
-- `position_context`
+仓位与账户上下文（`position_context`）由 `execution_service` 侧读取并裁决，不再作为 agent 裁决输入。
 
 冻结流向约定：
 
 - 结构事件先经 `market_state_engine` 归纳为 `MSL` 再进入决策层。
 - 舆情/链上/新闻等外部事件由 `event_center_new` 直接进入决策层。
+- 决策层按结构状态白名单消费 `MSL`，不依赖 `sentiment_state` 等已下线字段。
+- 决策层可直接消费 `cross_horizon.suggested_policy` 作为周期冲突处理参考，不自行重复拼接规则。
+- `position_context` 下沉到 `execution_service` 做最终风险与仓位裁决，不再作为 agent 裁决输入。
 
 ### 输出
 
@@ -79,10 +83,11 @@ data_server
 ## 推荐决策链路
 
 ```text
-signal_event + active_events + MSL + position_context
+signal_event + active_events + MSL
   -> SignalEvaluator
   -> IntentResolver
   -> RulePlanner
+  -> HorizonPolicyGate（消费 `cross_horizon.suggested_policy`）
   -> StrategyGate
   -> RiskGate
   -> ExecutionPlanner
@@ -90,11 +95,67 @@ signal_event + active_events + MSL + position_context
   -> DecisionTrace
 ```
 
+## 当前与目标链路
+
+### 当前实现（过渡态）
+
+- `SignalEvaluator -> IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner`
+- 说明：部分 `Rule/Risk/Execution` 逻辑仍在 agent 内，便于当前链路可运行。
+
+### 目标收敛（冻结方向）
+
+- `SignalEvaluator -> HorizonPolicyGate -> DirectionDecision`
+- `execution_service` 接管仓位/账户/PnL 风控与最终动作裁决。
+- `Position Context` 不再作为 agent 裁决输入。
+
 其中：
 
 - LLM 只负责语义判断、解释、冲突权衡
 - 硬约束必须在确定性 gate 中生效
 - `ExecutionPlan` 是决策层终点，不是执行层入口代码
+- `HorizonPolicyGate` 在策略门控前执行，用于把跨周期冲突建议快速转为保守动作（例如 `wait_confirmation -> skip/watch`）
+- `HorizonPolicyGate` 已抽离为独立领域模块：`agent_server_new/domain/horizon_policy_gate.py`
+- 账户/仓位/PnL 相关信息由 execution 层读取并做最终动作裁决，agent 不承担该部分权责
+- `HorizonPolicyGate` 规则已配置化：
+  - `block_on_increase_policies`（默认：`wait_confirmation,reduce_risk`）
+  - 可通过 `TradeEventWorkflow(horizon_policy_config=...)` 注入覆盖
+  - 也可通过环境变量统一加载：
+    - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`（CSV）
+    - `AGENT_HORIZON_POLICY_CONFIG_JSON`（JSON，支持完整配置覆盖）
+  - 推荐使用样例文件：`agent_server_new/.env.example`
+
+## 运行配置（建议）
+
+- `AGENT_MARKET_STATE_BASE_URL`
+  - `market_state_engine` 服务地址（默认：`http://127.0.0.1:8300`）
+- `AGENT_MARKET_STATE_TIMEOUT_S`
+  - market_state HTTP 请求超时秒数（默认：`10`）
+- `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
+  - HorizonPolicyGate 阻断策略列表（CSV）
+- `AGENT_HORIZON_POLICY_CONFIG_JSON`
+  - HorizonPolicyGate JSON 配置（用于覆盖默认规则）
+
+可直接参考：`agent_server_new/.env.example`
+
+## Bootstrap
+
+- 提供默认工厂：`agent_server_new.app.create_trade_event_workflow_from_env`
+- 默认接线：
+  - `market_state = HttpMarketStateProvider.from_env()`
+  - `position_context = StubPositionContextProvider()`（兼容占位，后续由 execution 层接管）
+  - `active_events = StubActiveEventsProvider()`
+
+## CLI Smoke Test
+
+- 最小运行入口：`python -m agent_server_new.runner --dry-run`
+- 单次执行示例：
+  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --payload-json '{"event_type":"manual_signal"}'`
+
+## One-shot Pipeline Smoke
+
+- 单进程串联 `market_state_engine -> agent_server_new`：
+  - `python -m agent_server_new.pipeline_smoke --dry-run`
+  - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
 
 ## 必须从 `agent_server_new` 中剥离的能力
 
@@ -232,7 +293,7 @@ agent_server_new/
 - 可以依赖：
   - `event_center_new` 发布的事件协议
   - `market_state_engine` 发布的状态协议
-  - `position_context` port
+  - 与 execution 层约定的决策输出契约
 - 不可以依赖：
   - `data_server` 的原始结构输出
   - `feature_service` 的内部存储结构
@@ -259,9 +320,7 @@ agent_server_new/
    - `MSL`
    - `key_features`
    - `anomaly_flags`
-3. 从 position provider 读入：
-   - `position_context`
-4. 决策层只做决策，不做状态拼装
+3. 决策层只做决策，不做状态拼装与仓位风控裁决
 
 也就是说：
 

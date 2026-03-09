@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Dict
 
 import httpx
@@ -12,7 +13,6 @@ from market_state_engine.contracts import (
     MarketStateMSL,
     PositioningState,
     RiskState,
-    SentimentState,
     StructureState,
     VolatilityState,
 )
@@ -23,7 +23,6 @@ def _build_msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     ls = d.get("liquidity_state") or {}
     ps = d.get("positioning_state") or {}
     vs = d.get("volatility_state") or {}
-    ss = d.get("sentiment_state") or {}
     rs = d.get("risk_state") or {}
     st = d.get("market_structure_state") or {}
     kl = d.get("key_levels") or {}
@@ -54,12 +53,6 @@ def _build_msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
             expansion_risk=str(vs.get("expansion_risk") or "unknown"),  # type: ignore[arg-type]
             volatility_direction=str(vs.get("volatility_direction") or "unknown"),  # type: ignore[arg-type]
         ),
-        sentiment=SentimentState(
-            funding_sentiment=str(ss.get("funding_sentiment") or "unknown"),  # type: ignore[arg-type]
-            social_sentiment=str(ss.get("social_sentiment") or "unknown"),  # type: ignore[arg-type]
-            news_bias=str(ss.get("news_bias") or "unknown"),  # type: ignore[arg-type]
-            overall_sentiment=str(ss.get("overall_sentiment") or "unknown"),  # type: ignore[arg-type]
-        ),
         risk=RiskState(
             cascade_risk=str(rs.get("cascade_risk") or "unknown"),  # type: ignore[arg-type]
             squeeze_probability=str(rs.get("squeeze_probability") or "unknown"),  # type: ignore[arg-type]
@@ -89,6 +82,17 @@ class HttpMarketStateProvider(MarketStateProvider):
         self._base_url = str(base_url or "").rstrip("/")
         self._timeout_s = float(timeout_s)
 
+    @classmethod
+    def from_env(cls) -> "HttpMarketStateProvider":
+        """从环境变量构建 provider。"""
+        base_url = str(os.getenv("AGENT_MARKET_STATE_BASE_URL", "http://127.0.0.1:8300") or "http://127.0.0.1:8300").strip()
+        timeout_raw = str(os.getenv("AGENT_MARKET_STATE_TIMEOUT_S", "10") or "10").strip()
+        try:
+            timeout_s = float(timeout_raw)
+        except Exception:
+            timeout_s = 10.0
+        return cls(base_url=base_url, timeout_s=timeout_s)
+
     async def get_market_state(self, exchange: str, symbol: str) -> MarketStateSnapshot:
         url = f"{self._base_url}/internal/market-state/{exchange}/{symbol}"
         async with httpx.AsyncClient(timeout=self._timeout_s) as client:
@@ -100,6 +104,10 @@ class HttpMarketStateProvider(MarketStateProvider):
             exchange=str(data.get("exchange") or exchange),
             symbol=str(data.get("symbol") or symbol),
             msl=_build_msl_from_dict(dict(data.get("msl") or {})),
+            msl_meta=dict(data.get("msl_meta") or {}),
+            msl_bundle=dict(data.get("msl_bundle") or {}),
+            msl_bundle_meta=dict(data.get("msl_bundle_meta") or {}),
+            cross_horizon=dict(data.get("cross_horizon") or {}),
             state_features=dict(data.get("state_features") or {}),
             anomaly_flags=[str(x) for x in list(data.get("anomaly_flags") or []) if x],
             raw_market_structure=dict(data.get("raw_market_structure") or {}),

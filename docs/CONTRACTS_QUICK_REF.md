@@ -7,6 +7,7 @@
 ```text
 feature_service -> market_state_engine -> agent_server_new
 feature_service -> event_center_new
+agent_server_new -> execution_service
 ```
 
 事件流冻结约定：
@@ -97,27 +98,55 @@ feature_service -> event_center_new
 决策层应消费：
 - 来自事件层：`signal_event`、`active_events`
 - 来自状态层：`MSL`、`key_features`、`anomaly_flags`
+- 约束：`MSL` 按结构字段白名单解析，不依赖 `sentiment_state` 等已下线字段
+
+决策层推荐输入顺序（冻结）：
+- `MSL -> Key Evidence -> Active Events -> Signal Event`
+
+执行层应消费：
 - 来自持仓上下文：`position_context`
+- 来自决策层：`ExecutionPlan` / direction intent / risk hints
 
 决策层输出：
 - `ExecutionPlan`
 - `DecisionTrace`
 
-## 6. 联调判定清单（最小）
+## 6. execution_service（草案）
+
+执行层目标输入：
+- `decision_id`
+- `direction_intent`
+- `confidence`
+- `cross_horizon_policy`
+- `risk_hints`
+
+执行层目标输出：
+- `execution_action`
+- `reject_reason`
+- `applied_risk_rules`
+- `order_result`（可选）
+
+## 7. 联调判定清单（最小）
 
 1. `feature_service` 两个业务接口都返回 `meta + data`。
 2. `market_state_engine` 能读取 `feature_service.data.raw_market_structure`。
 3. 当 feature 层返回 `503` 时，状态层正确返回 `status=data_unavailable`。
 4. `agent_server_new` 不直接读取 raw market structure。
 
-## 7. 文档入口
+## 8. 文档入口
 
 - 总览：`ARCHITECTURE_NEW.md`
+- 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
 - HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
 - 一键冒烟脚本：`scripts/integration_smoke_new_arch.sh`
 - 契约守卫脚本（CI 可用）：`scripts/check_feature_contract_guard.sh`
 - Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
+- State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
+- State->Agent 联动守卫脚本（CI 可用）：`scripts/check_state_to_agent_contract_guard.sh`
+- 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
 - Feature API：`feature_service/docs/api.md`
 - State API：`market_state_engine/docs/api.md`
 - Event Schema：`event_center_new/docs/schema.md`
+- Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Execution API（草案）：`execution_service/docs/api.md`

@@ -11,13 +11,13 @@ from market_state_engine.contracts import (
     MarketStateMSL,
     PositioningState,
     RiskState,
-    SentimentState,
     StructureState,
     VolatilityState,
 )
 
 from agent_server_new.domain.contracts import Confidence, ExecutionPlan
 from agent_server_new.domain.execution_planner import build_execution_plan
+from agent_server_new.domain.horizon_policy_gate import horizon_policy_gate, load_horizon_policy_config_from_env
 from agent_server_new.domain.intent_resolver import resolve_intent
 from agent_server_new.domain.risk_gate import RiskGateContext, risk_gate
 from agent_server_new.domain.rule_planner import build_rule_plan
@@ -42,6 +42,18 @@ class TradeEventInput:
     signal_direction: str
     payload: Dict[str, Any]
 
+def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[str, str]:
+    feats = list((key_market_features or {}).get("features") or [])
+    for item in feats:
+        if str((item or {}).get("name") or "") != "cross_horizon":
+            continue
+        value = dict((item or {}).get("value") or {})
+        return {
+            "suggested_policy": str(value.get("suggested_policy") or "no_action"),
+            "policy_reason": str(value.get("policy_reason") or "insufficient_evidence"),
+        }
+    return {"suggested_policy": "no_action", "policy_reason": "insufficient_evidence"}
+
 
 class TradeEventWorkflow:
     """示例工作流：load context -> call expert -> rule planner -> risk gate -> execution planner -> persist。"""
@@ -53,11 +65,13 @@ class TradeEventWorkflow:
         position_context: PositionContextProvider,
         active_events: ActiveEventsProvider,
         recorder: Optional[EventRecorder] = None,
+        horizon_policy_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
         self._active_events = active_events
         self._recorder = recorder
+        self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
         builder = ContextBuilder(
@@ -114,6 +128,13 @@ class TradeEventWorkflow:
         position_ctx = dict(ctx.position_context or {})
         intent = resolve_intent(signal=signal, msl=ctx.msl, position_context=position_ctx)
         rule_plan = build_rule_plan(intent=intent, msl=ctx.msl, position_context=position_ctx)
+        ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
+        hpg = horizon_policy_gate(
+            suggested_policy=str(ch.get("suggested_policy") or "no_action"),
+            policy_reason=str(ch.get("policy_reason") or "insufficient_evidence"),
+            intent=str(intent.intent),
+            config=self._horizon_policy_config,
+        )
         sg = strategy_gate_v2(
             msl=ctx.msl,
             signal=signal,
@@ -123,7 +144,16 @@ class TradeEventWorkflow:
             signal_event=dict(ctx.signal_event or {}),
         )
         allowance = risk_gate(RiskGateContext(global_regime="normal", cooldown_active=False))
-        if not sg.allowed:
+        if not hpg.allowed:
+            plan = ExecutionPlan(
+                action="skip",
+                direction="none",
+                allowance=allowance,
+                confidence=signal.confidence,
+                sizing=None,
+                notes=f"horizon_policy_gate_blocked: {','.join(hpg.reasons)}",
+            )
+        elif not sg.allowed:
             plan = ExecutionPlan(
                 action="skip",
                 direction="none",
@@ -161,6 +191,12 @@ class TradeEventWorkflow:
                     "reasons": list(rule_plan.reasons),
                     "notes": rule_plan.notes,
                 },
+            )
+
+            await self._recorder.record_agent_output(
+                event.event_id,
+                "horizon_policy_gate",
+                {"allowed": hpg.allowed, "reasons": list(hpg.reasons), "cross_horizon": dict(ch)},
             )
 
             await self._recorder.record_agent_output(
@@ -219,7 +255,10 @@ class TradeEventWorkflow:
                     "sizing": dict(rule_plan.sizing or {}),
                     "reasons": list(rule_plan.reasons),
                 },
-                strategy_gate_result={"allowed": sg.allowed, "reasons": list(sg.reasons)},
+                strategy_gate_result={
+                    "allowed": bool(hpg.allowed and sg.allowed),
+                    "reasons": [*list(hpg.reasons), *list(sg.reasons)],
+                },
                 risk_gate={
                     "allow_open": allowance.allow_open,
                     "allow_add": allowance.allow_add,
@@ -248,7 +287,6 @@ def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
         ls = d.get("liquidity_state") or {}
         ps = d.get("positioning_state") or {}
         vs = d.get("volatility_state") or {}
-        ss = d.get("sentiment_state") or {}
         rs = d.get("risk_state") or {}
         st = d.get("market_structure_state") or d.get("structure_state") or {}
         kl = d.get("key_levels") or {}
@@ -279,12 +317,6 @@ def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
                 expansion_risk=str(vs.get("expansion_risk") or "unknown"),  # type: ignore[arg-type]
                 volatility_direction=str(vs.get("volatility_direction") or "unknown"),  # type: ignore[arg-type]
             ),
-            sentiment=SentimentState(
-                funding_sentiment=str(ss.get("funding_sentiment") or "unknown"),  # type: ignore[arg-type]
-                social_sentiment=str(ss.get("social_sentiment") or "unknown"),  # type: ignore[arg-type]
-                news_bias=str(ss.get("news_bias") or "unknown"),  # type: ignore[arg-type]
-                overall_sentiment=str(ss.get("overall_sentiment") or "unknown"),  # type: ignore[arg-type]
-            ),
             risk=RiskState(
                 cascade_risk=str(rs.get("cascade_risk") or "unknown"),  # type: ignore[arg-type]
                 squeeze_probability=str(rs.get("squeeze_probability") or "unknown"),  # type: ignore[arg-type]
@@ -314,7 +346,6 @@ def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
         liquidity=LiquidityState(dominant_pressure="unknown", liquidity_risk="unknown", orderbook_bias="unknown", liquidation_proximity="unknown"),
         positioning=PositioningState(crowding="unknown", whale_bias="unknown", retail_bias="unknown", oi_trend="unknown"),
         volatility=VolatilityState(volatility_regime="unknown", expansion_risk="unknown", volatility_direction="unknown"),
-        sentiment=SentimentState(funding_sentiment="unknown", social_sentiment="unknown", news_bias="unknown", overall_sentiment="unknown"),
         risk=RiskState(cascade_risk="unknown", squeeze_probability="unknown", reversal_risk="unknown"),
         market_structure=StructureState(support_strength="unknown", resistance_strength="unknown", range_state="unknown", trend_structure="unknown"),
         key_levels=KeyLevels(),

@@ -68,22 +68,6 @@ class VolatilityState:
 
 
 @dataclass(frozen=True)
-class SentimentState:
-    funding_sentiment: Literal["bullish", "bearish", "neutral", "unknown"]
-    social_sentiment: Literal["bullish", "bearish", "neutral", "unknown"]
-    news_bias: Literal["positive", "negative", "neutral", "unknown"]
-    overall_sentiment: Literal["euphoric", "optimistic", "neutral", "fearful", "unknown"]
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "funding_sentiment": self.funding_sentiment,
-            "social_sentiment": self.social_sentiment,
-            "news_bias": self.news_bias,
-            "overall_sentiment": self.overall_sentiment,
-        }
-
-
-@dataclass(frozen=True)
 class RiskState:
     cascade_risk: Literal["high", "medium", "low", "unknown"]
     squeeze_probability: Literal["high", "medium", "low", "unknown"]
@@ -139,7 +123,6 @@ class MarketStateMSL:
     liquidity: LiquidityState
     positioning: PositioningState
     volatility: VolatilityState
-    sentiment: SentimentState
     risk: RiskState
     market_structure: StructureState
 
@@ -157,7 +140,6 @@ class MarketStateMSL:
             "liquidity_state": self.liquidity.to_dict(),
             "positioning_state": self.positioning.to_dict(),
             "volatility_state": self.volatility.to_dict(),
-            "sentiment_state": self.sentiment.to_dict(),
             "risk_state": self.risk.to_dict(),
             "market_structure_state": self.market_structure.to_dict(),
             "key_levels": self.key_levels.to_dict(),

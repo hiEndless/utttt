@@ -13,6 +13,10 @@ class MarketStateSnapshot:
     exchange: str
     symbol: str
     msl: MarketStateMSL
+    msl_meta: Dict[str, Any] = field(default_factory=dict)
+    msl_bundle: Dict[str, Any] = field(default_factory=dict)
+    msl_bundle_meta: Dict[str, Any] = field(default_factory=dict)
+    cross_horizon: Dict[str, Any] = field(default_factory=dict)
     state_features: Dict[str, Any] = field(default_factory=dict)
     anomaly_flags: List[str] = field(default_factory=list)
     raw_market_structure: Dict[str, Any] = field(default_factory=dict)

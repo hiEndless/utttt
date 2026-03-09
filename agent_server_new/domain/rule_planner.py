@@ -27,7 +27,7 @@ def build_rule_plan(
         elif intent.confidence.level == "low":
             base = 0.07
 
-        if msl.volatility_state == "high":
+        if msl.volatility.volatility_regime == "high":
             base *= 0.6
             reasons.append("downsize_high_volatility")
         if msl.market_fragility == "medium":
@@ -42,7 +42,7 @@ def build_rule_plan(
 
     if intent.intent == "decrease":
         ratio = 0.25
-        if msl.market_fragility == "high" or msl.volatility_state == "high":
+        if msl.market_fragility == "high" or msl.volatility.volatility_regime == "high":
             ratio = 0.4
             reasons.append("increase_exit_ratio_on_fragility_or_vol")
         sizing = {"mode": "ratio", "partial_exit_ratio": float(ratio), "entry_type": "market"}
