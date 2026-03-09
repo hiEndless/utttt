@@ -205,3 +205,4 @@
 - `schema_mapping.json.version` 必须与 `/internal/execution/version.schema_mapping_version` 保持一致。
 - `schema_mapping.json.last_updated` 必须等于 `docs/CONTRACT_INDEX.md` 的“更新时间”。
 - 若 `change_policy=breaking` 的对象发生变更，`schema_mapping.version` 主版本号必须递增（守卫强校验）。
+- breaking 变更检测包含 schema 文件内容 hash 变化（不仅是 mapping 字段变化）。

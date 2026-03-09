@@ -4,6 +4,7 @@ set -euo pipefail
 echo "[1/2] 读取当前与上一版本 schema mapping"
 ./venv/bin/python - <<'PY'
 import json
+import hashlib
 import re
 import subprocess
 from pathlib import Path
@@ -59,6 +60,25 @@ def _item_signature(item: dict) -> tuple:
     )
 
 
+def _schema_hash_current(schema_rel: str) -> str | None:
+    p = Path(schema_rel)
+    if not p.is_file():
+        return None
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def _schema_hash_prev(schema_rel: str) -> str | None:
+    p = subprocess.run(
+        ["git", "show", f"HEAD~1:{schema_rel}"],
+        capture_output=True,
+        text=False,
+        check=False,
+    )
+    if p.returncode != 0:
+        return None
+    return hashlib.sha256(p.stdout).hexdigest()
+
+
 cur = _load_current()
 prev = _load_prev()
 if prev is None:
@@ -80,6 +100,16 @@ for name, item in cur_items.items():
         breaking_changed = True
         break
     if _item_signature(item) != _item_signature(prev_item):
+        breaking_changed = True
+        break
+    cur_schema = str(item.get("schema") or "").strip()
+    prev_schema = str(prev_item.get("schema") or "").strip()
+    if cur_schema != prev_schema:
+        breaking_changed = True
+        break
+    cur_hash = _schema_hash_current(cur_schema)
+    prev_hash = _schema_hash_prev(cur_schema)
+    if cur_hash != prev_hash:
         breaking_changed = True
         break
 
