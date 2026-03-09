@@ -136,6 +136,7 @@ agent_server_new -> execution_service
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/schema_mapping.json`
+- `docs/CONTRACT_INDEX.md` 中 `execution_schema_mapping_version` 必须与 `/internal/execution/version` 一致
 
 ## 7. 联调判定清单（最小）
 

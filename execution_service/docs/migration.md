@@ -44,6 +44,7 @@
 21. execution 已新增机器可校验 `schema_mapping.json`，并接入守卫防止表格/代码映射漂移
 22. execution `/version` 已透出 `schema_mapping_version`，并通过测试强校验与 mapping 文件版本一致
 23. schema_mapping 已新增 `owner/change_policy` 元数据，并由测试强校验变更责任与升级策略
+24. 新增 execution 合同入口守卫，要求 `CONTRACT_INDEX` 显式声明并对齐 schema mapping 版本
 
 ## 关键收敛决议（冻结）
 
