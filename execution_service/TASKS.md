@@ -40,3 +40,4 @@
 - [x] Task 38: 增加 execution 合同入口守卫（CONTRACT_INDEX 版本声明一致性）。
 - [x] Task 39: 增加 `schema_mapping.last_updated` 并校验不晚于 CONTRACT_INDEX 更新时间。
 - [x] Task 40: 收紧 `schema_mapping.last_updated` 校验为必须等于 CONTRACT_INDEX 更新时间。
+- [x] Task 41: 增加 breaking 变更升版守卫（breaking 变更必须递增 mapping 主版本）。
