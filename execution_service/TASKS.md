@@ -73,3 +73,4 @@
 - [x] Task 71: 将 `account_id` 贯通到 `decision_state/reconcile` 写回链路与契约，确保状态快照可按账户追踪。
 - [x] Task 72: 在 `signal_result` 增加结构化 `risk_checks`（账户优先），覆盖回撤/余额/symbol 暴露与腿级限额检查。
 - [x] Task 73: 冻结 `risk_policy` 独立契约（schema+守卫），并校验 stub/redis provider 默认值与策略字段一致。
+- [x] Task 74: `risk_checks.check` 收敛为常量枚举，并增加代码-契约一致性测试防漂移。

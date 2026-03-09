@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 from execution_service.domain.contracts import DecisionIntent
+from execution_service.domain.risk_check_codes import (
+    RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
+    RISK_CHECK_ACCOUNT_DRAWDOWN_LIMIT,
+    RISK_CHECK_LONG_LEG_POSITION_LIMIT,
+    RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
+    RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
+)
 
 
 @dataclass(frozen=True)
@@ -343,21 +350,21 @@ def _build_risk_checks(
 ) -> list[Dict[str, Any]]:
     checks: list[Dict[str, Any]] = [
         {
-            "check": "account_drawdown_limit",
+            "check": RISK_CHECK_ACCOUNT_DRAWDOWN_LIMIT,
             "scope": "account",
             "status": _status(current_drawdown_ratio < max_drawdown_ratio),
             "value": current_drawdown_ratio,
             "threshold": max_drawdown_ratio,
         },
         {
-            "check": "account_available_balance",
+            "check": RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
             "scope": "account",
             "status": _status(available_balance >= min_available_balance),
             "value": available_balance,
             "threshold": min_available_balance,
         },
         {
-            "check": "symbol_exposure_ratio",
+            "check": RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
             "scope": "symbol",
             "status": _status(symbol_exposure_ratio <= max_symbol_exposure_ratio),
             "value": symbol_exposure_ratio,
@@ -367,7 +374,7 @@ def _build_risk_checks(
     if direction == "long":
         checks.append(
             {
-                "check": "long_leg_position_limit",
+                "check": RISK_CHECK_LONG_LEG_POSITION_LIMIT,
                 "scope": "position",
                 "status": _status(long_position_size < max_long_position_size),
                 "value": long_position_size,
@@ -377,7 +384,7 @@ def _build_risk_checks(
     if direction == "short":
         checks.append(
             {
-                "check": "short_leg_position_limit",
+                "check": RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
                 "scope": "position",
                 "status": _status(short_position_size < max_short_position_size),
                 "value": short_position_size,

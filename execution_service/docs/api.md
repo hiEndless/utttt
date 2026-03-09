@@ -110,6 +110,7 @@
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
   - `risk_checks`: 结构化风控检查明细（账户/仓位/symbol 维度）
+    - `check` 枚举（冻结）：`account_drawdown_limit`、`account_available_balance`、`symbol_exposure_ratio`、`long_leg_position_limit`、`short_leg_position_limit`
 
 建议标准拒绝码（首批冻结）：
 

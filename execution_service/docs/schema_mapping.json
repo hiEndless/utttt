@@ -261,6 +261,17 @@
           "expected": ["pass", "fail"]
         },
         {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_checks.items.properties.check.enum",
+          "expected": [
+            "account_drawdown_limit",
+            "account_available_balance",
+            "symbol_exposure_ratio",
+            "long_leg_position_limit",
+            "short_leg_position_limit"
+          ]
+        },
+        {
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.signal_result.$ref",
           "expected": "./execution_signal_result.schema.json"
