@@ -29,6 +29,15 @@ def test_execution_signal_result_schema_samples() -> None:
             "short_position_size": 0.2,
             "net_position_size": 0.4,
         },
+        "risk_checks": [
+            {
+                "check": "account_drawdown_limit",
+                "scope": "account",
+                "status": "pass",
+                "value": 0.05,
+                "threshold": 0.2,
+            }
+        ],
     }
     assert validate_payload_with_local_refs(schema, good, base_dir)
 
@@ -47,5 +56,6 @@ def test_execution_signal_result_schema_samples() -> None:
             "short_position_size": 0.2,
             "net_position_size": 0.4,
         },
+        "risk_checks": [],
     }
     assert not validate_payload_with_local_refs(schema, bad, base_dir)

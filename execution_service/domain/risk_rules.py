@@ -83,8 +83,31 @@ def evaluate_risk_rules(
         ),
         1.0,
     )
+    available_balance = _to_float(context.account_state.get("available_balance"), 0.0)
+    min_available_balance = _to_float(context.risk_policy.get("min_available_balance"), 0.0)
+    account_equity = _to_float(context.account_state.get("account_equity"), 0.0)
+    gross_position_size = max(0.0, long_position_size) + max(0.0, short_position_size)
+    symbol_exposure_ratio = _resolve_symbol_exposure_ratio(
+        context=context,
+        gross_position_size=gross_position_size,
+        account_equity=account_equity,
+    )
+    max_symbol_exposure_ratio = _to_float(context.risk_policy.get("max_symbol_exposure_ratio"), 1.0)
 
     direction = decision.direction_intent
+    risk_checks = _build_risk_checks(
+        direction=direction,
+        long_position_size=long_position_size,
+        short_position_size=short_position_size,
+        max_long_position_size=max_long_position_size,
+        max_short_position_size=max_short_position_size,
+        current_drawdown_ratio=current_drawdown_ratio,
+        max_drawdown_ratio=max_drawdown_ratio,
+        available_balance=available_balance,
+        min_available_balance=min_available_balance,
+        symbol_exposure_ratio=symbol_exposure_ratio,
+        max_symbol_exposure_ratio=max_symbol_exposure_ratio,
+    )
 
     def _finalize(
         *,
@@ -125,6 +148,7 @@ def evaluate_risk_rules(
                 },
                 "position_before": position_before,
                 "position_after_simulation": position_after,
+                "risk_checks": list(risk_checks),
             },
             "notes": notes,
         }
@@ -287,3 +311,81 @@ def _simulate_position_after(
         "short_position_size": short_after,
         "net_position_size": long_after - short_after,
     }
+
+
+def _resolve_symbol_exposure_ratio(
+    *,
+    context: RiskContext,
+    gross_position_size: float,
+    account_equity: float,
+) -> float:
+    explicit = context.position_state.get("symbol_exposure_ratio")
+    if explicit is not None:
+        return _to_float(explicit, 0.0)
+    if account_equity <= 0:
+        return 0.0
+    return gross_position_size / account_equity
+
+
+def _build_risk_checks(
+    *,
+    direction: str,
+    long_position_size: float,
+    short_position_size: float,
+    max_long_position_size: float,
+    max_short_position_size: float,
+    current_drawdown_ratio: float,
+    max_drawdown_ratio: float,
+    available_balance: float,
+    min_available_balance: float,
+    symbol_exposure_ratio: float,
+    max_symbol_exposure_ratio: float,
+) -> list[Dict[str, Any]]:
+    checks: list[Dict[str, Any]] = [
+        {
+            "check": "account_drawdown_limit",
+            "scope": "account",
+            "status": _status(current_drawdown_ratio < max_drawdown_ratio),
+            "value": current_drawdown_ratio,
+            "threshold": max_drawdown_ratio,
+        },
+        {
+            "check": "account_available_balance",
+            "scope": "account",
+            "status": _status(available_balance >= min_available_balance),
+            "value": available_balance,
+            "threshold": min_available_balance,
+        },
+        {
+            "check": "symbol_exposure_ratio",
+            "scope": "symbol",
+            "status": _status(symbol_exposure_ratio <= max_symbol_exposure_ratio),
+            "value": symbol_exposure_ratio,
+            "threshold": max_symbol_exposure_ratio,
+        },
+    ]
+    if direction == "long":
+        checks.append(
+            {
+                "check": "long_leg_position_limit",
+                "scope": "position",
+                "status": _status(long_position_size < max_long_position_size),
+                "value": long_position_size,
+                "threshold": max_long_position_size,
+            }
+        )
+    if direction == "short":
+        checks.append(
+            {
+                "check": "short_leg_position_limit",
+                "scope": "position",
+                "status": _status(short_position_size < max_short_position_size),
+                "value": short_position_size,
+                "threshold": max_short_position_size,
+            }
+        )
+    return checks
+
+
+def _status(passed: bool) -> str:
+    return "pass" if passed else "fail"

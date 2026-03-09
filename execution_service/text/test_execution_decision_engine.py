@@ -39,6 +39,7 @@ def test_rule_priority_position_limit_first() -> None:
     assert result.reject_reason == "position_limit_reached"
     assert isinstance(result.signal_result, dict)
     assert result.signal_result["signal_action"] == "skip"
+    assert isinstance(result.signal_result["risk_checks"], list)
 
 
 def test_rule_priority_cooldown_second() -> None:
@@ -89,6 +90,8 @@ def test_rule_priority_direction_conflict_fourth() -> None:
     assert result.reject_reason == "direction_conflict_with_position"
     assert isinstance(result.signal_result, dict)
     assert result.signal_result["signal_action"] == "reduce_long"
+    checks = result.signal_result["risk_checks"]
+    assert any(c["check"] == "short_leg_position_limit" for c in checks)
 
 
 def test_allow_add_when_all_rules_pass() -> None:
@@ -107,6 +110,8 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert result.reject_reason is None
     assert isinstance(result.signal_result, dict)
     assert result.signal_result["signal_action"] == "add_long"
+    checks = result.signal_result["risk_checks"]
+    assert any(c["check"] == "account_drawdown_limit" for c in checks)
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:
@@ -147,3 +152,29 @@ def test_dual_side_short_leg_limit_blocks_short_add() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "position_limit_reached"
+
+
+def test_account_risk_checks_show_failure_when_balance_too_low() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "position_size": 0.1,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={
+            "account_equity": 1000.0,
+            "available_balance": 10.0,
+            "current_drawdown_ratio": 0.01,
+            "max_drawdown_ratio": 0.5,
+        },
+        risk_policy={
+            "min_available_balance": 100.0,
+            "max_drawdown_ratio": 0.5,
+        },
+    )
+    assert isinstance(result.signal_result, dict)
+    checks = result.signal_result["risk_checks"]
+    bal_check = next(c for c in checks if c["check"] == "account_available_balance")
+    assert bal_check["status"] == "fail"

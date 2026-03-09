@@ -45,6 +45,15 @@ def test_execution_result_schema_samples() -> None:
                 "short_position_size": 0.0,
                 "net_position_size": 0.0,
             },
+            "risk_checks": [
+                {
+                    "check": "account_drawdown_limit",
+                    "scope": "account",
+                    "status": "pass",
+                    "value": 0.01,
+                    "threshold": 0.2,
+                }
+            ],
         },
     }
     assert validate_payload_with_local_refs(

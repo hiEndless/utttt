@@ -78,6 +78,7 @@
 55. `signal_result` 已冻结为独立 schema 并纳入守卫/索引；因 `ExecutionResult` 契约 breaking 变更，schema mapping 已升版至 `v4`
 56. `account_id` 已正式纳入 `DecisionIntent` 契约与 schema/mapping，schema mapping 版本已升至 `v5`
 57. `account_id` 已贯通到 `decision_state` 与 `reconcile` 写回链路，调试快照可按账户维度稳定追踪
+58. `signal_result` 已增加结构化 `risk_checks`，优先输出账户风控（回撤/余额）并附带 symbol 暴露与腿级限额检查
 
 ## 关键收敛决议（冻结）
 

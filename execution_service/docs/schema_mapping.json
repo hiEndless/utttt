@@ -205,7 +205,8 @@
         "mode",
         "scope",
         "position_before",
-        "position_after_simulation"
+        "position_after_simulation",
+        "risk_checks"
       ],
       "references": [
         {
@@ -217,6 +218,11 @@
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.mode.enum",
           "expected": ["simulated"]
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_checks.items.properties.status.enum",
+          "expected": ["pass", "fail"]
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",

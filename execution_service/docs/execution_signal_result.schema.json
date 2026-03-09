@@ -8,7 +8,8 @@
     "mode",
     "scope",
     "position_before",
-    "position_after_simulation"
+    "position_after_simulation",
+    "risk_checks"
   ],
   "properties": {
     "signal_action": {
@@ -53,6 +54,20 @@
         "long_position_size": {"type": "number"},
         "short_position_size": {"type": "number"},
         "net_position_size": {"type": "number"}
+      }
+    },
+    "risk_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check", "scope", "status", "value", "threshold"],
+        "properties": {
+          "check": {"type": "string", "minLength": 1},
+          "scope": {"type": "string", "enum": ["account", "symbol", "position"]},
+          "status": {"type": "string", "enum": ["pass", "fail"]},
+          "value": {"type": "number"},
+          "threshold": {"type": "number"}
+        }
       }
     }
   }

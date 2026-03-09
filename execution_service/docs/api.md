@@ -109,6 +109,7 @@
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
+  - `risk_checks`: 结构化风控检查明细（账户/仓位/symbol 维度）
 
 建议标准拒绝码（首批冻结）：
 
@@ -309,7 +310,7 @@
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
 | --- | --- | --- | --- | --- | --- |
 | DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
-| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
+| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
 | DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
 
 说明：

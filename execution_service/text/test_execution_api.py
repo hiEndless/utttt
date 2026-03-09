@@ -57,6 +57,7 @@ def test_decide_success() -> None:
     assert isinstance(data.get("signal_result"), dict)
     assert data["signal_result"]["mode"] == "simulated"
     assert data["signal_result"]["scope"]["account_id"] == "main"
+    assert isinstance(data["signal_result"]["risk_checks"], list)
 
 
 def test_decide_bad_request() -> None:
