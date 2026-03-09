@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import asyncio
+import logging
 from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
@@ -12,6 +13,8 @@ from execution_service.ports.idempotency_store import IdempotencyStore
 from execution_service.ports.account_state_provider import AccountStateProvider
 from execution_service.ports.position_state_provider import PositionStateProvider
 from execution_service.ports.risk_policy_provider import RiskPolicyProvider
+
+logger = logging.getLogger(__name__)
 
 
 class ExecutionService:
@@ -144,6 +147,18 @@ class ExecutionService:
     async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
         if self._execution_state_store is None:
             return
+        prev = await self._execution_state_store.get_state(str(decision_id))
+        prev_status = prev.get("status") if isinstance(prev, dict) else None
+        next_status = state.get("status")
+        if isinstance(prev_status, str) and isinstance(next_status, str):
+            if not _is_valid_state_transition(prev_status, next_status):
+                logger.warning(
+                    "执行状态机拒绝非法跃迁 decision_id=%s from=%s to=%s",
+                    str(decision_id),
+                    prev_status,
+                    next_status,
+                )
+                return
         payload = dict(state or {})
         payload["decision_id"] = str(decision_id)
         payload["updated_at_ms"] = int(time.time() * 1000)
@@ -209,6 +224,20 @@ def _derive_execution_status(result: ExecutionResult) -> str:
     if result.execution_action in {"add", "reduce", "exit"} and result.order_result is not None:
         return "submitted"
     return "decided"
+
+
+def _is_valid_state_transition(prev_status: str, next_status: str) -> bool:
+    if prev_status == next_status:
+        return True
+    allowed = {
+        "pending": {"pending", "submitted", "failed", "skipped", "decided"},
+        "submitted": {"submitted"},
+        "failed": {"failed"},
+        "skipped": {"skipped"},
+        "decided": {"decided"},
+    }
+    next_set = allowed.get(str(prev_status), set())
+    return str(next_status) in next_set
 
 
 def _apply_redaction(position_state: Dict[str, Any], account_state: Dict[str, Any]) -> None:

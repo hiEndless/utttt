@@ -145,6 +145,10 @@
   - `attempts`: submit 尝试次数（未 submit 为 `0`）
   - `submitted_at_ms`: 最近一次成功 submit 时间戳（未 submit 为 `null`）
   - `last_error`: 最近一次 submit 错误文本（无错误为空字符串）
+- 状态机跃迁规则（冻结）：
+  - `pending -> pending/submitted/failed/skipped/decided`
+  - `submitted/failed/skipped/decided` 为终态，仅允许保持原状态
+  - 非法跃迁会被拒绝并记录中文告警日志，不覆盖已存终态
 
 ## 状态提供器模式
 

@@ -33,6 +33,7 @@
 10. execution_service 已支持执行状态机存储（memory/redis），可追踪 `pending/submitted/failed/skipped/decided`
 11. execution_service submit 已支持重试（指数退避 + 最大次数），并将重试轨迹写入 `order_result.retry_meta`
 12. execution_state debug 快照已扩展 `attempts/submitted_at_ms/last_error/last_transition`，便于联调排障
+13. execution_state 已增加状态跃迁合法性校验，终态不会被非法回跳覆盖
 
 ## 关键收敛决议（冻结）
 

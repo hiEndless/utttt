@@ -94,3 +94,19 @@ def test_state_machine_skipped_status() -> None:
     assert state["status"] in {"decided", "skipped"}
     assert state["attempts"] == 0
     assert state["submitted_at_ms"] is None
+
+
+def test_state_machine_terminal_status_cannot_jump_back_to_pending() -> None:
+    store = InMemoryExecutionStateStore()
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        submit_enabled=False,
+        execution_state_store=store,
+    )
+    asyncio.run(service._save_state("dec-state-004", {"status": "failed"}))
+    asyncio.run(service._save_state("dec-state-004", {"status": "pending"}))
+    state = asyncio.run(store.get_state("dec-state-004"))
+    assert isinstance(state, dict)
+    assert state["status"] == "failed"
