@@ -46,6 +46,7 @@
 23. schema_mapping 已新增 `owner/change_policy` 元数据，并由测试强校验变更责任与升级策略
 24. 新增 execution 合同入口守卫，要求 `CONTRACT_INDEX` 显式声明并对齐 schema mapping 版本
 25. schema_mapping 已新增 `last_updated`，并由入口守卫校验不晚于 CONTRACT_INDEX 更新时间
+26. 已收紧 `last_updated` 规则：必须严格等于 CONTRACT_INDEX 更新时间，避免发布时序漂移
 
 ## 关键收敛决议（冻结）
 

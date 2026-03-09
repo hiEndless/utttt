@@ -24,7 +24,7 @@ if ! rg -n "execution_schema_mapping_version:\s*${expected}" docs/CONTRACT_INDEX
   exit 1
 fi
 
-echo "[4/4] 校验 schema_mapping.last_updated 不晚于 CONTRACT_INDEX 更新时间"
+echo "[4/4] 校验 schema_mapping.last_updated 必须等于 CONTRACT_INDEX 更新时间"
 ./venv/bin/python - <<'PY'
 import json
 import re
@@ -40,9 +40,9 @@ index_day = date.fromisoformat(match.group(1))
 mapping = json.loads(Path("execution_service/docs/schema_mapping.json").read_text(encoding="utf-8"))
 mapping_day = date.fromisoformat(str(mapping.get("last_updated") or "").strip())
 
-if mapping_day > index_day:
+if mapping_day != index_day:
     raise SystemExit(
-        f"[失败] schema_mapping.last_updated={mapping_day.isoformat()} 晚于 CONTRACT_INDEX 更新时间={index_day.isoformat()}"
+        f"[失败] schema_mapping.last_updated={mapping_day.isoformat()} 必须等于 CONTRACT_INDEX 更新时间={index_day.isoformat()}"
     )
 PY
 

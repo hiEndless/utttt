@@ -203,3 +203,4 @@
 - `owner/change_policy` 由 `schema_mapping.json` 统一管理并由测试强校验。
 - `schema_mapping.json.last_updated` 表示 mapping 最近更新时间（`YYYY-MM-DD`）。
 - `schema_mapping.json.version` 必须与 `/internal/execution/version.schema_mapping_version` 保持一致。
+- `schema_mapping.json.last_updated` 必须等于 `docs/CONTRACT_INDEX.md` 的“更新时间”。
