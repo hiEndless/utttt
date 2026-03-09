@@ -28,6 +28,8 @@ from agent_server_new.observability.decision_trace import DecisionTrace
 from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from agent_server_new.ports.event_recorder import EventRecorder
+from agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
+from agent_server_new.ports.memory.symbol_memory_recorder import SymbolMemoryRecorder
 from agent_server_new.ports.execution import ExecutionDecisionProvider
 from agent_server_new.ports.market_state import MarketStateProvider
 from agent_server_new.app.context_builder import ContextBuilder
@@ -79,6 +81,8 @@ class TradeEventWorkflow:
         active_events: ActiveEventsProvider,
         execution_decider: Optional[ExecutionDecisionProvider] = None,
         recorder: Optional[EventRecorder] = None,
+        symbol_memory_provider: SymbolMemoryProvider | None = None,
+        symbol_memory_recorder: SymbolMemoryRecorder | None = None,
         horizon_policy_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
@@ -86,6 +90,8 @@ class TradeEventWorkflow:
         self._active_events = active_events
         self._execution_decider = execution_decider
         self._recorder = recorder
+        self._symbol_memory_provider = symbol_memory_provider
+        self._symbol_memory_recorder = symbol_memory_recorder
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
@@ -97,6 +103,7 @@ class TradeEventWorkflow:
             market_state=self._market_state,
             position_context=self._position_context,
             active_events=self._active_events,
+            symbol_memory_provider=self._symbol_memory_provider,
             max_key_features=10,
         )
         built = await builder.build(
@@ -318,6 +325,36 @@ class TradeEventWorkflow:
                 tags=["decision_trace"],
             )
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
+
+        if self._symbol_memory_recorder is not None:
+            await self._symbol_memory_recorder.record_symbol_memory(
+                event.exchange,
+                event.symbol,
+                {
+                    "ts": int(time.time() * 1000),
+                    "event_id": event.event_id,
+                    "signal_event": dict(ctx.signal_event or {}),
+                    "msl_summary": str(ctx.msl.summary or ""),
+                    "cross_horizon_policy": dict(ch),
+                    "signal": {
+                        "direction": signal.direction,
+                        "verdict": signal.verdict,
+                        "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
+                    },
+                    "intent": {
+                        "intent": intent.intent,
+                        "direction": intent.direction,
+                        "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
+                        "reasons": list(intent.reasons),
+                    },
+                    "plan": {
+                        "action": plan.action,
+                        "direction": plan.direction,
+                        "notes": plan.notes,
+                    },
+                    "execution_result": dict(execution_result or {}),
+                },
+            )
 
         return WorkflowResult(agent_plan=plan, execution_result=execution_result)
 

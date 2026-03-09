@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Tuple
 
 from agent_server_new.app.workflows.event_context import EventContext
 from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
 from agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from agent_server_new.ports.market_state import MarketStateProvider
 
@@ -21,6 +22,7 @@ def _signal_context_builder(
     max_features: int = 10,
     cross_horizon: Dict[str, Any] | None = None,
     msl_meta: Dict[str, Any] | None = None,
+    symbol_memory: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """按信号类型动态选择证据：避免把所有证据一股脑塞给 LLM。"""
 
@@ -81,6 +83,12 @@ def _signal_context_builder(
         out.append({"name": "cross_horizon", "value": dict(cross_horizon)})
     if isinstance(msl_meta, dict) and msl_meta:
         out.append({"name": "msl_meta", "value": dict(msl_meta)})
+    memory_summary = _safe_dict(_safe_dict(symbol_memory).get("summary"))
+    recent_memory = list(_safe_dict(symbol_memory).get("recent") or [])
+    if memory_summary:
+        out.append({"name": "memory_summary", "value": memory_summary})
+    if recent_memory:
+        out.append({"name": "recent_memory", "value": recent_memory})
 
     for name, value in candidates:
         if value is None:
@@ -109,11 +117,13 @@ class ContextBuilder:
         market_state: MarketStateProvider,
         position_context: PositionContextProvider,
         active_events: ActiveEventsProvider,
+        symbol_memory_provider: SymbolMemoryProvider | None = None,
         max_key_features: int = 10,
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
         self._active_events = active_events
+        self._symbol_memory_provider = symbol_memory_provider
         self._max_key_features = int(max_key_features)
 
     async def build(
@@ -127,6 +137,11 @@ class ContextBuilder:
         market_state = await self._market_state.get_market_state(exchange, symbol)
         position_ctx = await self._position_context.get_position_context(exchange, symbol)
         active_events = await self._active_events.get_active_events(exchange, symbol)
+        symbol_memory = (
+            await self._symbol_memory_provider.get_symbol_memory(exchange, symbol, limit=5)
+            if self._symbol_memory_provider is not None
+            else {}
+        )
 
         signal_event = {"event_id": event_id, "exchange": exchange, "symbol": symbol, "payload": dict(signal_payload)}
         key_features = _signal_context_builder(
@@ -136,6 +151,7 @@ class ContextBuilder:
             max_features=self._max_key_features,
             cross_horizon=dict(market_state.cross_horizon or {}),
             msl_meta=dict(market_state.msl_meta or {}),
+            symbol_memory=dict(symbol_memory or {}),
         )
         ctx = EventContext(
             event_id=event_id,
