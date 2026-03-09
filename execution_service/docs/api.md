@@ -114,6 +114,7 @@
     - `scope/status` 枚举（冻结）：`account|symbol|position` 与 `pass|fail`
     - `message_zh`：必填中文说明，包含当前值与阈值，便于值班排障与联调定位；文案模板由代码常量统一维护
     - 生成实现：`risk_checks` 由独立 builder 统一构造，保证裁决逻辑与检查项生成逻辑解耦
+  - `signal_result` 组装由独立 result builder 统一处理，确保 `signal_action/scope/position_after_simulation` 结构稳定
 
 建议标准拒绝码（首批冻结）：
 

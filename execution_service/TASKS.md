@@ -79,3 +79,4 @@
 - [x] Task 77: `risk_checks.message_zh` 文案模板收敛为常量并增加模板稳定性测试，避免多处格式漂移。
 - [x] Task 78: 将 `risk_checks` 构造逻辑拆分为独立 builder 模块，并新增 builder 单测，降低 `risk_rules` 复杂度。
 - [x] Task 79: 为 `risk_check_builder` 增加与 `execution_signal_result` schema 的逐项契约校验测试，保证 builder 产物持续合规。
+- [x] Task 80: 将裁决结果组装逻辑从 `risk_rules` 拆分到独立 result builder，并新增 builder 单测与守卫接入。

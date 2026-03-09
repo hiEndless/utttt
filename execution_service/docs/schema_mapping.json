@@ -234,8 +234,8 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_signal_result.schema.json",
-      "code": "execution_service/domain/risk_rules.py",
-      "symbol": "_build_signal_action",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "build_risk_decision_result",
       "fields": [
         "signal_action",
         "mode",
