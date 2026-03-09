@@ -184,7 +184,7 @@ class ExecutionService:
                     "order_id": order_id,
                     "status": "submitted",
                     "idempotency_hit": False,
-                    "reject_reason": "reconcile_in_progress",
+                    "reason_code": "reconcile_in_progress",
                     "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
                     "ts": int(time.time() * 1000),
                 }

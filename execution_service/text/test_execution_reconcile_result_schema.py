@@ -101,6 +101,16 @@ def test_execution_reconcile_result_schema_samples() -> None:
     }
     assert _validate(schema, good_failed)
 
+    good_in_progress = {
+        "mode": "mock",
+        "order_id": "mock-order-inprogress-001",
+        "status": "submitted",
+        "reason_code": "reconcile_in_progress",
+        "idempotency_hit": False,
+        "ts": 1760000000003,
+    }
+    assert _validate(schema, good_in_progress)
+
     bad = {
         "mode": "mock",
         "order_id": "",
