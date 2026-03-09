@@ -124,6 +124,42 @@
       ]
     },
     {
+      "name": "RiskPolicy",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/risk_policy.schema.json",
+      "code": "execution_service/adapters/redis_state_providers.py",
+      "symbol": "RedisRiskPolicyProvider",
+      "fields": [
+        "max_position_size",
+        "max_long_position_size",
+        "max_short_position_size",
+        "max_drawdown_ratio",
+        "position_mode",
+        "allow_dual_side",
+        "min_available_balance",
+        "max_symbol_exposure_ratio",
+        "simulation_step_size"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.position_mode.enum",
+          "expected": ["one_way", "hedge"]
+        },
+        {
+          "schema": "execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.max_drawdown_ratio.maximum",
+          "expected": 1
+        },
+        {
+          "schema": "execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.max_symbol_exposure_ratio.maximum",
+          "expected": 1
+        }
+      ]
+    },
+    {
       "name": "RetryMeta",
       "owner": "execution_service",
       "change_policy": "non_breaking",

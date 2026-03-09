@@ -41,6 +41,7 @@
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/execution_reconcile_result.schema.json`
 - `execution_service/docs/retry_meta.schema.json`
+- `execution_service/docs/risk_policy.schema.json`
 - `execution_service/docs/schema_mapping.json`
 - `execution_service/docs/redis_keys.md`
 - `execution_service/docs/curl_examples.md`

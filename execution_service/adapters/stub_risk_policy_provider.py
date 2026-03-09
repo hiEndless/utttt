@@ -11,7 +11,14 @@ class StubRiskPolicyProvider:
     default_policy: Dict[str, Any] = field(
         default_factory=lambda: {
             "max_position_size": 1.0,
+            "max_long_position_size": 1.0,
+            "max_short_position_size": 1.0,
             "max_drawdown_ratio": 0.15,
+            "position_mode": "one_way",
+            "allow_dual_side": False,
+            "min_available_balance": 0.0,
+            "max_symbol_exposure_ratio": 1.0,
+            "simulation_step_size": 0.1,
         }
     )
     symbol_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)

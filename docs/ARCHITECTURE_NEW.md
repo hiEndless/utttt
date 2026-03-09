@@ -164,6 +164,7 @@ event_center_new(signal_event + active_events)
 - Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
 - Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`
+- Execution RiskPolicy Schema：`execution_service/docs/risk_policy.schema.json`
 - Execution cURL 示例：`execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - Execution 边界：`execution_service/docs/boundaries.md`

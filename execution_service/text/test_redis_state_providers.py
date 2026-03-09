@@ -65,7 +65,13 @@ def test_redis_risk_policy_provider_parse() -> None:
     client = _FakeRedis(
         {
             "execution:risk_policy:binance:ETHUSDT": json.dumps(
-                {"max_position_size": 2.0, "max_drawdown_ratio": 0.08}
+                {
+                    "max_position_size": 2.0,
+                    "max_drawdown_ratio": 0.08,
+                    "min_available_balance": 50.0,
+                    "max_symbol_exposure_ratio": 0.4,
+                    "simulation_step_size": 0.15,
+                }
             )
         }
     )
@@ -75,3 +81,6 @@ def test_redis_risk_policy_provider_parse() -> None:
     assert out["max_long_position_size"] == 2.0
     assert out["max_short_position_size"] == 2.0
     assert out["max_drawdown_ratio"] == 0.08
+    assert out["min_available_balance"] == 50.0
+    assert out["max_symbol_exposure_ratio"] == 0.4
+    assert out["simulation_step_size"] == 0.15

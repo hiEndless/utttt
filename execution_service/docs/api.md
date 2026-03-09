@@ -302,6 +302,7 @@
 - 风控已支持 `hedge` 模式（同 symbol 多空双开），可通过以下字段表达：
   - 仓位状态：`position_mode=hedge`、`long_position_size`、`short_position_size`
   - 风控策略：`allow_dual_side=true`、`max_long_position_size`、`max_short_position_size`
+  - 账户策略：`min_available_balance`、`max_symbol_exposure_ratio`、`simulation_step_size`
 
 ## Schema 与字段来源映射
 
@@ -312,6 +313,7 @@
 | DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
 | ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
 | DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
+| RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `simulation_step_size` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
 
 说明：
 - schema 用于契约冻结与守卫检查。

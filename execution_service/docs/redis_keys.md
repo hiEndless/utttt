@@ -55,7 +55,10 @@ value(JSON)：
   "max_short_position_size": 1.0,
   "max_drawdown_ratio": 0.2,
   "position_mode": "one_way",
-  "allow_dual_side": false
+  "allow_dual_side": false,
+  "min_available_balance": 0.0,
+  "max_symbol_exposure_ratio": 1.0,
+  "simulation_step_size": 0.1
 }
 ```
 
@@ -97,4 +100,5 @@ value(JSON)：
 
 - 建议由下游账户/仓位同步任务持续刷新这些键。
 - `account_id` 当前默认 `main`，后续可平滑扩展到多账户。
+- 风控策略字段建议对齐 `execution_service/docs/risk_policy.schema.json`。
 - 若键缺失，provider 会使用默认值回退，裁决逻辑仍可运行，但风险精度会下降。

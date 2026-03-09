@@ -72,3 +72,4 @@
 - [x] Task 70: 将 `account_id` 正式纳入 `DecisionIntent` 契约（schema/代码/映射），并将 schema mapping 升版到 v5。
 - [x] Task 71: 将 `account_id` 贯通到 `decision_state/reconcile` 写回链路与契约，确保状态快照可按账户追踪。
 - [x] Task 72: 在 `signal_result` 增加结构化 `risk_checks`（账户优先），覆盖回撤/余额/symbol 暴露与腿级限额检查。
+- [x] Task 73: 冻结 `risk_policy` 独立契约（schema+守卫），并校验 stub/redis provider 默认值与策略字段一致。

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionRiskPolicy",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "max_position_size",
+    "max_long_position_size",
+    "max_short_position_size",
+    "max_drawdown_ratio",
+    "position_mode",
+    "allow_dual_side",
+    "min_available_balance",
+    "max_symbol_exposure_ratio",
+    "simulation_step_size"
+  ],
+  "properties": {
+    "max_position_size": {"type": "number", "minimum": 0},
+    "max_long_position_size": {"type": "number", "minimum": 0},
+    "max_short_position_size": {"type": "number", "minimum": 0},
+    "max_drawdown_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+    "position_mode": {"type": "string", "enum": ["one_way", "hedge"]},
+    "allow_dual_side": {"type": "boolean"},
+    "min_available_balance": {"type": "number", "minimum": 0},
+    "max_symbol_exposure_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+    "simulation_step_size": {"type": "number", "minimum": 0}
+  }
+}

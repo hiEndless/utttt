@@ -79,6 +79,7 @@
 56. `account_id` 已正式纳入 `DecisionIntent` 契约与 schema/mapping，schema mapping 版本已升至 `v5`
 57. `account_id` 已贯通到 `decision_state` 与 `reconcile` 写回链路，调试快照可按账户维度稳定追踪
 58. `signal_result` 已增加结构化 `risk_checks`，优先输出账户风控（回撤/余额）并附带 symbol 暴露与腿级限额检查
+59. `risk_policy` 已冻结独立 schema，并接入守卫与 provider 默认值测试，策略字段定义统一收敛
 
 ## 关键收敛决议（冻结）
 

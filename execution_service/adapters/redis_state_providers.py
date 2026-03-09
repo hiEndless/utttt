@@ -151,6 +151,9 @@ class RedisRiskPolicyProvider:
             "max_drawdown_ratio": _to_float(payload.get("max_drawdown_ratio"), 0.15),
             "position_mode": str(payload.get("position_mode", "one_way") or "one_way").lower(),
             "allow_dual_side": bool(payload.get("allow_dual_side", False)),
+            "min_available_balance": _to_float(payload.get("min_available_balance"), 0.0),
+            "max_symbol_exposure_ratio": _to_float(payload.get("max_symbol_exposure_ratio"), 1.0),
+            "simulation_step_size": _to_float(payload.get("simulation_step_size"), 0.1),
         }
 
 
