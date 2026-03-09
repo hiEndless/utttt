@@ -62,3 +62,4 @@
 - [x] Task 60: 扩展 `schema_mapping.references` 支持结构化 JSON 值校验，并覆盖 `DecisionState` 关键字段断言。
 - [x] Task 61: 为 `DecisionIntent/ExecutionResult` 补齐关键 `references` 断言，增强 breaking 契约冻结强度。
 - [x] Task 62: 将 `ExecutionReconcileResult` 纳入 `schema_mapping`，并冻结 `status/reason_code/retry_meta` 关键断言。
+- [x] Task 63: 将 `ExchangeExecutionSink` 从纯占位升级为可配置 dry-run + Binance 签名请求骨架，并补单测与守卫。

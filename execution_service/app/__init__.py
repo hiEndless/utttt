@@ -72,9 +72,26 @@ def create_app() -> FastAPI:
             logger.info("execution_service 启用执行下沉，mode=mock")
         elif sink_mode == "exchange":
             execution_sink = ExchangeExecutionSink(
-                venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip()
+                venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip(),
+                dry_run=str(
+                    os.getenv("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true") or "true"
+                ).strip().lower() in {"1", "true", "yes", "on"},
+                api_base_url=str(
+                    os.getenv("EXECUTION_SINK_EXCHANGE_API_BASE_URL", "https://api.binance.com")
+                    or "https://api.binance.com"
+                ).strip(),
+                api_key=str(os.getenv("EXECUTION_SINK_EXCHANGE_API_KEY", "") or "").strip(),
+                api_secret=str(os.getenv("EXECUTION_SINK_EXCHANGE_API_SECRET", "") or "").strip(),
+                recv_window_ms=int(str(os.getenv("EXECUTION_SINK_EXCHANGE_RECV_WINDOW_MS", "5000") or "5000")),
+                default_order_qty=float(
+                    str(os.getenv("EXECUTION_SINK_EXCHANGE_DEFAULT_ORDER_QTY", "0.001") or "0.001")
+                ),
+                timeout_s=float(str(os.getenv("EXECUTION_SINK_EXCHANGE_TIMEOUT_S", "5") or "5")),
             )
-            logger.info("execution_service 启用执行下沉，mode=exchange_skeleton")
+            logger.info(
+                "execution_service 启用执行下沉，mode=exchange_skeleton dry_run=%s",
+                getattr(execution_sink, "dry_run", True),
+            )
         else:
             logger.warning("execution_service submit 已启用，但未识别 sink_mode=%s，回退禁用 submit", sink_mode)
             submit_enabled = False

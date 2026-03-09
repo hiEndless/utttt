@@ -114,6 +114,12 @@ execution_service/
   - `EXECUTION_SINK_MODE=mock|exchange`（`exchange` 为骨架实现）
   - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
+  - `EXECUTION_SINK_EXCHANGE_DRY_RUN=true|false`（默认 `true`，建议联调阶段保持开启）
+  - `EXECUTION_SINK_EXCHANGE_API_BASE_URL=https://api.binance.com`
+  - `EXECUTION_SINK_EXCHANGE_API_KEY` / `EXECUTION_SINK_EXCHANGE_API_SECRET`（`dry_run=false` 必填）
+  - `EXECUTION_SINK_EXCHANGE_RECV_WINDOW_MS=5000`
+  - `EXECUTION_SINK_EXCHANGE_DEFAULT_ORDER_QTY=0.001`
+  - `EXECUTION_SINK_EXCHANGE_TIMEOUT_S=5`
   - `EXECUTION_SUBMIT_MAX_RETRIES`（默认 `0`）
   - `EXECUTION_SUBMIT_BACKOFF_BASE_S`（默认 `0.2`）
   - `EXECUTION_RECONCILE_MAX_RETRIES`（默认 `0`）
@@ -155,3 +161,4 @@ execution_service/
 - `schema_mapping.json` 已登记 `RetryMeta` 的 `$ref` 引用来源，守卫会校验引用路径和值不漂移
 - `DecisionIntent/ExecutionResult` 的关键枚举与边界也已纳入 `schema_mapping.references` 机器校验
 - `ExecutionReconcileResult` 也已纳入 `schema_mapping`，关键状态/错误码与 `retry_meta` 引用受守卫保护
+- `ExchangeExecutionSink` 已支持 dry-run 请求快照与 Binance 签名请求骨架（真实请求需显式关闭 dry-run）
