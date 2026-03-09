@@ -74,3 +74,4 @@
 - [x] Task 72: 在 `signal_result` 增加结构化 `risk_checks`（账户优先），覆盖回撤/余额/symbol 暴露与腿级限额检查。
 - [x] Task 73: 冻结 `risk_policy` 独立契约（schema+守卫），并校验 stub/redis provider 默认值与策略字段一致。
 - [x] Task 74: `risk_checks.check` 收敛为常量枚举，并增加代码-契约一致性测试防漂移。
+- [x] Task 75: `risk_checks` 增加并冻结 `message_zh` 必填中文说明字段，同步 schema/测试与文档说明。

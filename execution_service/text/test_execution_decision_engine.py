@@ -112,6 +112,7 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert result.signal_result["signal_action"] == "add_long"
     checks = result.signal_result["risk_checks"]
     assert any(c["check"] == "account_drawdown_limit" for c in checks)
+    assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:
@@ -178,3 +179,4 @@ def test_account_risk_checks_show_failure_when_balance_too_low() -> None:
     checks = result.signal_result["risk_checks"]
     bal_check = next(c for c in checks if c["check"] == "account_available_balance")
     assert bal_check["status"] == "fail"
+    assert "可用余额检查" in bal_check["message_zh"]

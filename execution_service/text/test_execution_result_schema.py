@@ -52,6 +52,7 @@ def test_execution_result_schema_samples() -> None:
                     "status": "pass",
                     "value": 0.01,
                     "threshold": 0.2,
+                    "message_zh": "账户回撤检查: 当前=0.0100, 阈值=0.2000",
                 }
             ],
         },

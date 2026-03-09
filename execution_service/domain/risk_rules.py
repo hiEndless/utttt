@@ -355,6 +355,7 @@ def _build_risk_checks(
             "status": _status(current_drawdown_ratio < max_drawdown_ratio),
             "value": current_drawdown_ratio,
             "threshold": max_drawdown_ratio,
+            "message_zh": f"账户回撤检查: 当前={current_drawdown_ratio:.4f}, 阈值={max_drawdown_ratio:.4f}",
         },
         {
             "check": RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
@@ -362,6 +363,7 @@ def _build_risk_checks(
             "status": _status(available_balance >= min_available_balance),
             "value": available_balance,
             "threshold": min_available_balance,
+            "message_zh": f"可用余额检查: 当前={available_balance:.4f}, 阈值={min_available_balance:.4f}",
         },
         {
             "check": RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
@@ -369,6 +371,7 @@ def _build_risk_checks(
             "status": _status(symbol_exposure_ratio <= max_symbol_exposure_ratio),
             "value": symbol_exposure_ratio,
             "threshold": max_symbol_exposure_ratio,
+            "message_zh": f"symbol 暴露占比检查: 当前={symbol_exposure_ratio:.4f}, 阈值={max_symbol_exposure_ratio:.4f}",
         },
     ]
     if direction == "long":
@@ -379,6 +382,7 @@ def _build_risk_checks(
                 "status": _status(long_position_size < max_long_position_size),
                 "value": long_position_size,
                 "threshold": max_long_position_size,
+                "message_zh": f"多头仓位上限检查: 当前={long_position_size:.4f}, 阈值={max_long_position_size:.4f}",
             }
         )
     if direction == "short":
@@ -389,6 +393,7 @@ def _build_risk_checks(
                 "status": _status(short_position_size < max_short_position_size),
                 "value": short_position_size,
                 "threshold": max_short_position_size,
+                "message_zh": f"空头仓位上限检查: 当前={short_position_size:.4f}, 阈值={max_short_position_size:.4f}",
             }
         )
     return checks

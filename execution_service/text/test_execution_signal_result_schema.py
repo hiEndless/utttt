@@ -36,6 +36,7 @@ def test_execution_signal_result_schema_samples() -> None:
                 "status": "pass",
                 "value": 0.05,
                 "threshold": 0.2,
+                "message_zh": "账户回撤检查: 当前=0.0500, 阈值=0.2000",
             }
         ],
     }
@@ -56,6 +57,14 @@ def test_execution_signal_result_schema_samples() -> None:
             "short_position_size": 0.2,
             "net_position_size": 0.4,
         },
-        "risk_checks": [],
+        "risk_checks": [
+            {
+                "check": "account_drawdown_limit",
+                "scope": "account",
+                "status": "pass",
+                "value": 0.05,
+                "threshold": 0.2
+            }
+        ],
     }
     assert not validate_payload_with_local_refs(schema, bad, base_dir)

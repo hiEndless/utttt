@@ -81,6 +81,7 @@
 58. `signal_result` 已增加结构化 `risk_checks`，优先输出账户风控（回撤/余额）并附带 symbol 暴露与腿级限额检查
 59. `risk_policy` 已冻结独立 schema，并接入守卫与 provider 默认值测试，策略字段定义统一收敛
 60. `risk_checks.check` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
+61. `risk_checks.message_zh` 已冻结为必填中文说明字段，确保风控检查项具备可读诊断信息
 
 ## 关键收敛决议（冻结）
 

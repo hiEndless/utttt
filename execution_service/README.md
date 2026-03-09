@@ -102,6 +102,7 @@ execution_service/
 - `decide` 响应已增加 `signal_result`（模拟信号结构）：`signal_action` + `scope` + `position_before/position_after_simulation`。
 - `signal_result` 已增加 `risk_checks`，用于结构化表达账户/仓位/symbol 维度的风控检查结果。
 - `risk_checks.check` 已收敛为常量枚举，并由测试强校验与 schema 一致。
+- `risk_checks.message_zh` 已冻结为必填字段，统一输出中文检查说明，便于日志与人工排障阅读。
 
 ## 最小接口（当前）
 
