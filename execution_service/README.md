@@ -40,6 +40,7 @@ execution_service/
     decision_intent.schema.json
     decision_state.schema.json
     execution_result.schema.json
+    execution_reconcile_result.schema.json
     schema_mapping.json
     migration.md
   app/
@@ -143,4 +144,5 @@ execution_service/
 - decision_state schema：`execution_service/docs/decision_state.schema.json`
 - decision_intent schema：`execution_service/docs/decision_intent.schema.json`
 - execution_result schema：`execution_service/docs/execution_result.schema.json`
+- execution_reconcile_result schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`

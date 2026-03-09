@@ -20,6 +20,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   execution_service/text/test_execution_idempotency.py \
   execution_service/text/test_execution_state_machine.py \
   execution_service/text/test_execution_submit_flow.py \
+  execution_service/text/test_execution_reconcile_result_schema.py \
   execution_service/text/test_decision_intent_schema.py \
   execution_service/text/test_decision_state_schema.py \
   execution_service/text/test_execution_result_schema.py \

@@ -111,6 +111,7 @@
 ## 执行回执对账（骨架）
 
 - `POST /internal/execution/reconcile`
+- JSON Schema：`execution_service/docs/execution_reconcile_result.schema.json`
 
 请求示例：
 

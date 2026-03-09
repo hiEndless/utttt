@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionReconcileResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "mode",
+    "order_id",
+    "status",
+    "ts"
+  ],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["mock", "exchange_skeleton"]
+    },
+    "venue": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision_id": {
+      "type": ["string", "null"]
+    },
+    "exchange": {
+      "type": ["string", "null"]
+    },
+    "symbol": {
+      "type": ["string", "null"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+    },
+    "filled_qty": {
+      "type": "number"
+    },
+    "avg_price": {
+      "type": ["number", "null"]
+    },
+    "note": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

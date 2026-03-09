@@ -52,6 +52,7 @@
 29. breaking 升版守卫已输出触发对象与原因，便于 CI 失败快速定位
 30. execution 已新增 `POST /internal/execution/reconcile` 回执对账接口，支持 `mock/exchange_skeleton` sink
 31. reconcile 已支持写回 execution_state 终态（`filled/canceled/rejected`）并纳入状态机跃迁约束
+32. reconcile 响应契约已冻结为独立 schema，并接入守卫与项目文档索引
 
 ## 关键收敛决议（冻结）
 
