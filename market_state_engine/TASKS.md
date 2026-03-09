@@ -130,3 +130,5 @@
 - [x] Task 114: 新增 execution_service HTTPie 示例文档并同步架构/契约入口链接。
 - [x] Task 115: 新增 `docs/CONTRACT_INDEX.md` 契约索引并同步入口文档链接。
 - [x] Task 116: 新增 `check_runner_output_schema_guard.sh` 并接入全量守卫入口。
+- [x] Task 117: 入口文档顶部统一指向 `CONTRACT_INDEX.md` 作为唯一契约入口。
+- [x] Task 118: 新增 `check_contract_docs_index_guard.sh` 并接入全量守卫入口。

@@ -1,5 +1,6 @@
 # execution_service
 
+统一契约入口：`/docs/CONTRACT_INDEX.md`
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 
 `execution_service` 是目标架构中的 **Execution Layer**，位于 `agent_server_new` 下游，负责最终执行裁决与落地。

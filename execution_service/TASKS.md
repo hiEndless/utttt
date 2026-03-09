@@ -18,3 +18,4 @@
 - [x] Task 16: 新增 execution_service cURL 示例文档（stub/redis 双模式）并同步入口文档。
 - [x] Task 17: 新增 execution_service HTTPie 示例文档并同步入口文档。
 - [x] Task 18: 新增项目级契约索引文档并补 runner 输出 schema 独立守卫。
+- [x] Task 19: 新增 `check_contract_docs_index_guard.sh` 校验契约索引路径有效并接入总守卫。

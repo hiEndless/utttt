@@ -151,6 +151,7 @@ agent_server_new -> execution_service
 - State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
 - State->Agent 联动守卫脚本（CI 可用）：`scripts/check_state_to_agent_contract_guard.sh`
 - Runner 输出 Schema 守卫脚本（CI 可用）：`scripts/check_runner_output_schema_guard.sh`
+- Contract Docs Index 守卫脚本（CI 可用）：`scripts/check_contract_docs_index_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
 - Feature API：`feature_service/docs/api.md`
