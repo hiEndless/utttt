@@ -38,6 +38,7 @@
 15. execution_state 已冻结独立 schema（`decision_state.schema.json`）并接入守卫脚本防漂移
 16. ExecutionResult 已冻结独立 schema（`execution_result.schema.json`）并接入守卫脚本防漂移
 17. DecisionIntent 已冻结独立 schema（`decision_intent.schema.json`）并接入守卫脚本防漂移
+18. execution 三份 schema 已统一纳入 `docs/CONTRACT_INDEX.md` 作为项目级单入口索引
 
 ## 关键收敛决议（冻结）
 

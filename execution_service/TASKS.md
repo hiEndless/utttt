@@ -31,3 +31,4 @@
 - [x] Task 29: 冻结 `decision_state` 独立 JSON Schema 并接入守卫脚本。
 - [x] Task 30: 冻结 `ExecutionResult` 独立 JSON Schema 并接入守卫脚本。
 - [x] Task 31: 冻结 `DecisionIntent` 独立 JSON Schema 并接入守卫脚本。
+- [x] Task 32: 将 execution 三份 Schema 收敛到 `docs/CONTRACT_INDEX.md` 与入口文档。

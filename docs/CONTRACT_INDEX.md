@@ -34,6 +34,9 @@
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`
+- `execution_service/docs/decision_intent.schema.json`
+- `execution_service/docs/execution_result.schema.json`
+- `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/redis_keys.md`
 - `execution_service/docs/curl_examples.md`
 - `execution_service/docs/httpie_examples.md`
