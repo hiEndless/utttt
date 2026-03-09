@@ -1,6 +1,7 @@
 # UTaker 联调契约速查（新架构）
 
 更新时间：2026-03-09
+统一契约入口：`docs/CONTRACT_INDEX.md`
 
 ## 1. 服务调用顺序
 
@@ -106,6 +107,7 @@ agent_server_new -> execution_service
 执行层应消费：
 - 来自持仓上下文：`position_context`
 - 来自决策层：`ExecutionPlan` / direction intent / risk hints
+- 接口：`POST /internal/execution/decide`
 
 决策层输出：
 - `ExecutionPlan`
@@ -126,6 +128,9 @@ agent_server_new -> execution_service
 - `applied_risk_rules`
 - `order_result`（可选）
 
+执行层状态来源：
+- 支持 `stub` 与 `redis` 双模式（`EXECUTION_STATE_PROVIDER_MODE`）
+
 ## 7. 联调判定清单（最小）
 
 1. `feature_service` 两个业务接口都返回 `meta + data`。
@@ -136,6 +141,7 @@ agent_server_new -> execution_service
 ## 8. 文档入口
 
 - 总览：`ARCHITECTURE_NEW.md`
+- 契约索引：`CONTRACT_INDEX.md`
 - 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
 - HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
@@ -144,9 +150,16 @@ agent_server_new -> execution_service
 - Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
 - State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
 - State->Agent 联动守卫脚本（CI 可用）：`scripts/check_state_to_agent_contract_guard.sh`
+- Runner 输出 Schema 守卫脚本（CI 可用）：`scripts/check_runner_output_schema_guard.sh`
+- Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
 - Feature API：`feature_service/docs/api.md`
 - State API：`market_state_engine/docs/api.md`
 - Event Schema：`event_center_new/docs/schema.md`
 - Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
+- Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
 - Execution API（草案）：`execution_service/docs/api.md`
+- Execution cURL 示例：`execution_service/docs/curl_examples.md`
+- Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
+- Execution Redis 键契约：`execution_service/docs/redis_keys.md`

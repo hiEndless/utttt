@@ -6,3 +6,6 @@
 - 或接入新的存储/消息队列/指标系统
 """
 
+from .execution_service_http import HttpExecutionDecisionProvider
+
+__all__ = ["HttpExecutionDecisionProvider"]

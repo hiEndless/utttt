@@ -1,0 +1,39 @@
+# UTaker 契约索引
+
+更新时间：2026-03-10
+
+## 1. 架构与总入口
+
+- `docs/ARCHITECTURE_NEW.md`
+- `docs/CONTRACTS_QUICK_REF.md`
+- `docs/REFACTOR_PLAYBOOK_NEW.md`
+
+## 2. feature_service
+
+- `feature_service/docs/api.md`
+- `feature_service/docs/boundaries.md`
+
+## 3. market_state_engine
+
+- `market_state_engine/docs/api.md`
+- `market_state_engine/docs/boundaries.md`
+
+## 4. event_center_new
+
+- `event_center_new/docs/schema.md`
+- `event_center_new/docs/refactor.md`
+
+## 5. agent_server_new
+
+- `agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- `agent_server_new/docs/runner_output_contract.md`
+- `agent_server_new/docs/runner_output.schema.json`
+
+## 6. execution_service
+
+- `execution_service/docs/api.md`
+- `execution_service/docs/boundaries.md`
+- `execution_service/docs/migration.md`
+- `execution_service/docs/redis_keys.md`
+- `execution_service/docs/curl_examples.md`
+- `execution_service/docs/httpie_examples.md`

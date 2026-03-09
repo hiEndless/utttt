@@ -24,6 +24,9 @@
    - 冷却期
    - 回撤阈值
    - 方向冲突
+4. 已有最小 `agent -> execution` 适配与冒烟测试（ExecutionPlan -> DecisionIntent）
+5. 已新增 `scripts/check_agent_to_execution_guard.sh` 并接入 `check_new_arch_guards.sh`
+6. execution_service 已支持 `stub/redis` 双模式状态提供器，可逐步替换到真实 Redis 数据
 
 ## 关键收敛决议（冻结）
 

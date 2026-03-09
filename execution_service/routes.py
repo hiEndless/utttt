@@ -6,6 +6,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
 
 from execution_service.app.service import ExecutionService
+from execution_service.version import CONTRACT_VERSION, RULESET_VERSION
 
 
 def create_router(service: ExecutionService) -> APIRouter:
@@ -14,6 +15,15 @@ def create_router(service: ExecutionService) -> APIRouter:
     @router.get("/healthz")
     async def healthz() -> Dict[str, Any]:
         return {"ok": True, "service": "execution_service", "ts": int(time.time() * 1000)}
+
+    @router.get("/version")
+    async def version() -> Dict[str, Any]:
+        return {
+            "service": "execution_service",
+            "contract_version": CONTRACT_VERSION,
+            "ruleset_version": RULESET_VERSION,
+            "ts": int(time.time() * 1000),
+        }
 
     @router.post("/decide")
     async def decide(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -24,5 +34,22 @@ def create_router(service: ExecutionService) -> APIRouter:
         except Exception as exc:  # pragma: no cover
             raise HTTPException(status_code=502, detail=f"execution_decide_failed:{exc}") from exc
         return result.to_dict()
+
+    @router.get("/debug/state/{exchange}/{symbol}")
+    async def debug_state(exchange: str, symbol: str, redact: bool = False) -> Dict[str, Any]:
+        exchange_normalized = str(exchange or "").strip()
+        symbol_normalized = str(symbol or "").strip().upper()
+        if not exchange_normalized:
+            raise HTTPException(status_code=400, detail="exchange_required")
+        if not symbol_normalized:
+            raise HTTPException(status_code=400, detail="symbol_required")
+        try:
+            return await service.get_debug_state(
+                exchange=exchange_normalized,
+                symbol=symbol_normalized,
+                redact=bool(redact),
+            )
+        except Exception as exc:  # pragma: no cover
+            raise HTTPException(status_code=502, detail=f"execution_debug_state_failed:{exc}") from exc
 
     return router

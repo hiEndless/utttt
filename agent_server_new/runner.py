@@ -17,6 +17,17 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--symbol", default="ETHUSDT", help="交易对")
     p.add_argument("--signal-direction", default="long", help="信号方向: long/short")
     p.add_argument("--payload-json", default='{"event_type":"manual_signal"}', help="事件 payload(JSON)")
+    p.add_argument(
+        "--use-execution-result",
+        action="store_true",
+        help="优先输出 execution_service 最终动作（若 workflow 已接 execution_decider）",
+    )
+    p.add_argument("--print-json", action="store_true", help="以 JSON 输出执行结果，便于脚本消费")
+    p.add_argument(
+        "--fail-on-execution-reject",
+        action="store_true",
+        help="当 execution 返回 reject_reason 时以非 0 退出（便于任务编排）",
+    )
     return p
 
 
@@ -35,6 +46,9 @@ async def _run_once(
     symbol: str,
     signal_direction: str,
     payload: Dict[str, Any],
+    use_execution_result: bool,
+    print_json: bool,
+    fail_on_execution_reject: bool,
 ) -> int:
     wf = create_trade_event_workflow_from_env()
     event = TradeEventInput(
@@ -44,8 +58,48 @@ async def _run_once(
         signal_direction=signal_direction,
         payload=payload,
     )
+    if use_execution_result and hasattr(wf, "run_with_result"):
+        out = await wf.run_with_result(event)  # type: ignore[attr-defined]
+        if out.execution_result is not None:
+            action = str(out.execution_result.get("execution_action") or "unknown")
+            reason = str(out.execution_result.get("reject_reason") or "")
+            result = {
+                "source": "execution",
+                "action": action,
+                "reason": reason,
+                "notes": str(out.agent_plan.notes or ""),
+            }
+            if print_json:
+                print(json.dumps(result, ensure_ascii=False))
+            else:
+                print(f"执行完成[execution]: action={action} reason={reason} notes={out.agent_plan.notes}")
+            if fail_on_execution_reject and reason:
+                return 2
+            return 0
+        plan = out.agent_plan
+        result = {
+            "source": "agent_fallback",
+            "action": str(plan.action),
+            "direction": str(plan.direction),
+            "notes": str(plan.notes or ""),
+        }
+        if print_json:
+            print(json.dumps(result, ensure_ascii=False))
+        else:
+            print(f"执行完成[agent-fallback]: action={plan.action} direction={plan.direction} notes={plan.notes}")
+        return 0
+
     plan = await wf.run(event)
-    print(f"执行完成: action={plan.action} direction={plan.direction} notes={plan.notes}")
+    result = {
+        "source": "agent",
+        "action": str(plan.action),
+        "direction": str(plan.direction),
+        "notes": str(plan.notes or ""),
+    }
+    if print_json:
+        print(json.dumps(result, ensure_ascii=False))
+    else:
+        print(f"执行完成[agent]: action={plan.action} direction={plan.direction} notes={plan.notes}")
     return 0
 
 
@@ -64,10 +118,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             symbol=str(args.symbol),
             signal_direction=str(args.signal_direction),
             payload=payload,
+            use_execution_result=bool(args.use_execution_result),
+            print_json=bool(args.print_json),
+            fail_on_execution_reject=bool(args.fail_on_execution_reject),
         )
     )
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,5 +1,7 @@
 # UTaker 新架构总览（2026-03-09）
 
+统一契约入口：`docs/CONTRACT_INDEX.md`
+
 本文档用于统一说明当前仓库的“新架构主链路”、模块边界、接口契约与迁移现状。
 
 ## 1. 架构主链路
@@ -133,6 +135,7 @@ event_center_new(signal_event + active_events)
 ## 5. 契约文档入口
 
 - 联调速查：`CONTRACTS_QUICK_REF.md`
+- 契约索引：`CONTRACT_INDEX.md`
 - 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - 联调 cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
 - 联调 HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
@@ -141,6 +144,8 @@ event_center_new(signal_event + active_events)
 - Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
 - State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
 - State->Agent 联动守卫脚本（CI 可用）：`scripts/check_state_to_agent_contract_guard.sh`
+- Runner 输出 Schema 守卫脚本（CI 可用）：`scripts/check_runner_output_schema_guard.sh`
+- Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
 - Feature API：`feature_service/docs/api.md`
 - Feature 边界：`feature_service/docs/boundaries.md`
@@ -149,9 +154,14 @@ event_center_new(signal_event + active_events)
 - Event 事件契约：`event_center_new/docs/schema.md`
 - Event 重构说明：`event_center_new/docs/refactor.md`
 - Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
+- Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
 - Execution API（草案）：`execution_service/docs/api.md`
+- Execution cURL 示例：`execution_service/docs/curl_examples.md`
+- Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - Execution 边界：`execution_service/docs/boundaries.md`
 - Execution 迁移：`execution_service/docs/migration.md`
+- Execution Redis 键契约：`execution_service/docs/redis_keys.md`
 
 ## 6. 测试与文档组织约定
 

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import json
 
 PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
@@ -17,6 +18,19 @@ class _FakeWorkflow:
 
         _ = event
         return _Plan()
+
+    async def run_with_result(self, event):  # noqa: ANN001
+        class _Plan:
+            action = "add"
+            direction = "long"
+            notes = "agent-ok"
+
+        class _Result:
+            agent_plan = _Plan()
+            execution_result = {"execution_action": "reduce", "reject_reason": "position_limit_reached"}
+
+        _ = event
+        return _Result()
 
 
 def test_runner_dry_run(monkeypatch, capsys):
@@ -47,3 +61,72 @@ def test_runner_run_once(monkeypatch, capsys):
     assert code == 0
     assert "执行完成" in out
 
+
+def test_runner_run_once_use_execution_result(monkeypatch, capsys):
+    monkeypatch.setattr(runner, "create_trade_event_workflow_from_env", lambda: _FakeWorkflow())
+    code = runner.main(
+        [
+            "--event-id",
+            "evt-002",
+            "--exchange",
+            "binance",
+            "--symbol",
+            "ETHUSDT",
+            "--signal-direction",
+            "long",
+            "--payload-json",
+            '{"event_type":"manual_signal"}',
+            "--use-execution-result",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "执行完成[execution]" in out
+
+
+def test_runner_print_json(monkeypatch, capsys):
+    monkeypatch.setattr(runner, "create_trade_event_workflow_from_env", lambda: _FakeWorkflow())
+    code = runner.main(
+        [
+            "--event-id",
+            "evt-003",
+            "--exchange",
+            "binance",
+            "--symbol",
+            "ETHUSDT",
+            "--signal-direction",
+            "long",
+            "--payload-json",
+            '{"event_type":"manual_signal"}',
+            "--use-execution-result",
+            "--print-json",
+        ]
+    )
+    out = capsys.readouterr().out.strip()
+    assert code == 0
+    payload = json.loads(out)
+    assert payload["source"] == "execution"
+    assert payload["action"] == "reduce"
+
+
+def test_runner_fail_on_execution_reject(monkeypatch, capsys):
+    monkeypatch.setattr(runner, "create_trade_event_workflow_from_env", lambda: _FakeWorkflow())
+    code = runner.main(
+        [
+            "--event-id",
+            "evt-004",
+            "--exchange",
+            "binance",
+            "--symbol",
+            "ETHUSDT",
+            "--signal-direction",
+            "long",
+            "--payload-json",
+            '{"event_type":"manual_signal"}',
+            "--use-execution-result",
+            "--fail-on-execution-reject",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert "执行完成[execution]" in out
+    assert code == 2

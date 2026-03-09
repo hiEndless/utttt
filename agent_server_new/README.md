@@ -1,7 +1,9 @@
 # agent_server_new
 
+统一契约入口：`/docs/CONTRACT_INDEX.md`
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 本模块重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
+runner JSON 输出契约：`agent_server_new/docs/runner_output_contract.md`
 
 `agent_server_new` 是目标架构中的 **Decision Agent**，只负责决策层，不再承载长期稳定的状态生产职责，也不负责真实执行。
 
@@ -95,6 +97,10 @@ signal_event + active_events + MSL
   -> DecisionTrace
 ```
 
+补充：
+- `TradeEventWorkflow.run()` 继续返回 `ExecutionPlan`（兼容）
+- `TradeEventWorkflow.run_with_result()` 返回 `WorkflowResult(agent_plan, execution_result)`，用于消费 execution 最终动作
+
 ## 当前与目标链路
 
 ### 当前实现（过渡态）
@@ -130,6 +136,12 @@ signal_event + active_events + MSL
   - `market_state_engine` 服务地址（默认：`http://127.0.0.1:8300`）
 - `AGENT_MARKET_STATE_TIMEOUT_S`
   - market_state HTTP 请求超时秒数（默认：`10`）
+- `AGENT_EXECUTION_ENABLED`
+  - 是否启用 execution_service 下游裁决（默认：`false`）
+- `AGENT_EXECUTION_BASE_URL`
+  - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
+- `AGENT_EXECUTION_TIMEOUT_S`
+  - execution_service HTTP 请求超时秒数（默认：`10`）
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`
@@ -144,18 +156,23 @@ signal_event + active_events + MSL
   - `market_state = HttpMarketStateProvider.from_env()`
   - `position_context = StubPositionContextProvider()`（兼容占位，后续由 execution 层接管）
   - `active_events = StubActiveEventsProvider()`
+  - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
 
 ## CLI Smoke Test
 
 - 最小运行入口：`python -m agent_server_new.runner --dry-run`
 - 单次执行示例：
   - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --payload-json '{"event_type":"manual_signal"}'`
+  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
+  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
+  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
 
 ## One-shot Pipeline Smoke
 
 - 单进程串联 `market_state_engine -> agent_server_new`：
   - `python -m agent_server_new.pipeline_smoke --dry-run`
   - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
+  - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 
 ## 必须从 `agent_server_new` 中剥离的能力
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -27,9 +28,12 @@ from agent_server_new.observability.decision_trace import DecisionTrace
 from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from agent_server_new.ports.event_recorder import EventRecorder
+from agent_server_new.ports.execution import ExecutionDecisionProvider
 from agent_server_new.ports.market_state import MarketStateProvider
 from agent_server_new.app.context_builder import ContextBuilder
 from .event_context import EventContext
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -41,6 +45,15 @@ class TradeEventInput:
     symbol: str
     signal_direction: str
     payload: Dict[str, Any]
+
+
+@dataclass(frozen=True)
+class WorkflowResult:
+    """工作流输出：保留 agent 计划，并附带 execution 最终裁决（如可用）。"""
+
+    agent_plan: ExecutionPlan
+    execution_result: Optional[Dict[str, Any]] = None
+
 
 def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[str, str]:
     feats = list((key_market_features or {}).get("features") or [])
@@ -64,16 +77,22 @@ class TradeEventWorkflow:
         market_state: MarketStateProvider,
         position_context: PositionContextProvider,
         active_events: ActiveEventsProvider,
+        execution_decider: Optional[ExecutionDecisionProvider] = None,
         recorder: Optional[EventRecorder] = None,
         horizon_policy_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
         self._active_events = active_events
+        self._execution_decider = execution_decider
         self._recorder = recorder
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
+        result = await self.run_with_result(event)
+        return result.agent_plan
+
+    async def run_with_result(self, event: TradeEventInput) -> WorkflowResult:
         builder = ContextBuilder(
             market_state=self._market_state,
             position_context=self._position_context,
@@ -164,6 +183,30 @@ class TradeEventWorkflow:
             )
         else:
             plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
+
+        execution_result: Optional[Dict[str, Any]] = None
+        if self._execution_decider is not None:
+            decision_payload = _build_decision_intent_payload(
+                event=event,
+                plan=plan,
+                cross_horizon=ch,
+            )
+            try:
+                execution_result = await self._execution_decider.decide(decision_payload)
+                logger.info(
+                    "执行层裁决完成 event_id=%s action=%s reason=%s",
+                    event.event_id,
+                    str(execution_result.get("execution_action") or "unknown"),
+                    str(execution_result.get("reject_reason") or ""),
+                )
+                if self._recorder:
+                    await self._recorder.record_agent_output(
+                        event.event_id,
+                        "execution_decider",
+                        execution_result,
+                    )
+            except Exception as exc:  # pragma: no cover
+                logger.warning("执行层裁决失败 event_id=%s err=%s", event.event_id, exc)
 
         if self._recorder:
             await self._recorder.record_agent_output(
@@ -276,7 +319,32 @@ class TradeEventWorkflow:
             )
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
 
-        return plan
+        return WorkflowResult(agent_plan=plan, execution_result=execution_result)
+
+
+def _build_decision_intent_payload(
+    *,
+    event: TradeEventInput,
+    plan: ExecutionPlan,
+    cross_horizon: Dict[str, str],
+) -> Dict[str, Any]:
+    """把 agent 内部 ExecutionPlan 映射为 execution_service 的 DecisionIntent。"""
+
+    return {
+        "decision_id": str(event.event_id),
+        "exchange": str(event.exchange),
+        "symbol": str(event.symbol),
+        "direction_intent": str(plan.direction or "none"),
+        "confidence": {
+            "level": str(plan.confidence.level or "low"),
+            "score": float(plan.confidence.score or 0.0),
+        },
+        "cross_horizon_policy": dict(cross_horizon or {}),
+        "risk_hints": {
+            "agent_action_hint": str(plan.action or "hold"),
+            "agent_notes": str(plan.notes or ""),
+        },
+    }
 
 
 def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:

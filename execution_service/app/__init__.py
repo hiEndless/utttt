@@ -1,5 +1,72 @@
 """execution_service app layer."""
 
+from __future__ import annotations
+
+import logging
+import os
+
+from fastapi import FastAPI
+
+from execution_service.adapters.redis_state_providers import (
+    RedisAccountStateProvider,
+    RedisExecutionStateConfig,
+    RedisPositionStateProvider,
+    RedisRiskPolicyProvider,
+    create_redis_client_from_env,
+)
+from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
+from execution_service.adapters.stub_state_providers import (
+    StubAccountStateProvider,
+    StubPositionStateProvider,
+)
+from execution_service.routes import create_router
 from .service import ExecutionService
 
-__all__ = ["ExecutionService"]
+logger = logging.getLogger(__name__)
+
+
+def create_app() -> FastAPI:
+    state_provider_mode = str(os.getenv("EXECUTION_STATE_PROVIDER_MODE", "stub") or "stub").strip().lower()
+
+    if state_provider_mode == "redis":
+        cfg = RedisExecutionStateConfig.from_env()
+        redis_client = create_redis_client_from_env(cfg.redis_url)
+        position_provider = RedisPositionStateProvider(
+            redis_client=redis_client,
+            key_template=cfg.position_key_template,
+        )
+        account_provider = RedisAccountStateProvider(
+            redis_client=redis_client,
+            key_template=cfg.account_key_template,
+        )
+        risk_policy_provider = RedisRiskPolicyProvider(
+            redis_client=redis_client,
+            key_template=cfg.risk_policy_key_template,
+        )
+        logger.info("execution_service 使用 Redis 状态提供器，redis_url=%s", cfg.redis_url)
+    else:
+        position_provider = StubPositionStateProvider()
+        account_provider = StubAccountStateProvider()
+        risk_policy_provider = StubRiskPolicyProvider()
+        logger.info("execution_service 使用 Stub 状态提供器")
+
+    service = ExecutionService(
+        position_provider=position_provider,
+        account_provider=account_provider,
+        risk_policy_provider=risk_policy_provider,
+    )
+    app = FastAPI(
+        title="execution_service",
+        docs_url="/docs",
+        redoc_url=None,
+        openapi_url="/openapi.json",
+    )
+    app.include_router(create_router(service))
+    return app
+
+
+__all__ = [
+    "ExecutionService",
+    "create_app",
+    "create_redis_client_from_env",
+]

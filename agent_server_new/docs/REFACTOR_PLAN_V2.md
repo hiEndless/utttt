@@ -125,6 +125,7 @@ execution_service 最终输出：
 2. Phase 2（进行中）：
 - `agent -> execution_service` 输出契约冻结
 - 把仓位/风控硬规则下沉到 execution
+ - 可选 `execution_decider` 已接入 workflow（`AGENT_EXECUTION_ENABLED=true` 时生效）
 
 3. Phase 3（待开始）：
 - agent 内 `RulePlanner/ExecutionPlanner` 改为建议层

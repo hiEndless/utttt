@@ -1,0 +1,66 @@
+# execution_service Redis Key 契约
+
+更新时间：2026-03-10
+
+当 `EXECUTION_STATE_PROVIDER_MODE=redis` 时，execution_service 读取以下键：
+
+## 1) 仓位状态
+
+- key 模板：`execution:position:{exchange}:{symbol}`
+- 默认示例：`execution:position:binance:ETHUSDT`
+
+value(JSON)：
+
+```json
+{
+  "position_side": "flat",
+  "position_size": 0.1,
+  "max_position_size": 1.0,
+  "unrealized_pnl": 0.0,
+  "cooldown_seconds_left": 0
+}
+```
+
+## 2) 账户状态
+
+- key 模板：`execution:account:{exchange}`
+- 默认示例：`execution:account:binance`
+
+value(JSON)：
+
+```json
+{
+  "account_equity": 10000.0,
+  "available_balance": 9000.0,
+  "margin_ratio": 0.1,
+  "max_drawdown_ratio": 0.2,
+  "current_drawdown_ratio": 0.01
+}
+```
+
+## 3) 风控策略
+
+- key 模板：`execution:risk_policy:{exchange}:{symbol}`
+- 默认示例：`execution:risk_policy:binance:ETHUSDT`
+
+value(JSON)：
+
+```json
+{
+  "max_position_size": 1.0,
+  "max_drawdown_ratio": 0.2
+}
+```
+
+## 4) 环境变量
+
+- `EXECUTION_STATE_PROVIDER_MODE=redis`
+- `EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0`
+- `EXECUTION_POSITION_KEY_TEMPLATE=execution:position:{exchange}:{symbol}`
+- `EXECUTION_ACCOUNT_KEY_TEMPLATE=execution:account:{exchange}`
+- `EXECUTION_RISK_POLICY_KEY_TEMPLATE=execution:risk_policy:{exchange}:{symbol}`
+
+## 5) 说明
+
+- 建议由下游账户/仓位同步任务持续刷新这些键。
+- 若键缺失，provider 会使用默认值回退，裁决逻辑仍可运行，但风险精度会下降。

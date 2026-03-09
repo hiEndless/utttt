@@ -60,26 +60,48 @@ class _InProcessMarketStateProvider:
         )
 
 
-async def run_pipeline_once(*, exchange: str, symbol: str, signal_direction: str) -> Dict[str, Any]:
+async def run_pipeline_once(
+    *,
+    exchange: str,
+    symbol: str,
+    signal_direction: str,
+    use_execution_result: bool = False,
+) -> Dict[str, Any]:
     wf = TradeEventWorkflow(
         market_state=_InProcessMarketStateProvider(),
         position_context=StubPositionContextProvider(),
         active_events=StubActiveEventsProvider(),
         recorder=None,
     )
-    out = await wf.run(
-        TradeEventInput(
-            event_id="pipeline-smoke-001",
-            exchange=exchange,
-            symbol=symbol,
-            signal_direction=signal_direction,
-            payload={"event_type": "manual_signal"},
-        )
+    event = TradeEventInput(
+        event_id="pipeline-smoke-001",
+        exchange=exchange,
+        symbol=symbol,
+        signal_direction=signal_direction,
+        payload={"event_type": "manual_signal"},
     )
+    if use_execution_result:
+        result = await wf.run_with_result(event)
+        if result.execution_result is not None:
+            return {
+                "action": str(result.execution_result.get("execution_action") or "unknown"),
+                "direction": str(result.execution_result.get("direction") or result.agent_plan.direction),
+                "notes": str(result.execution_result.get("notes") or result.agent_plan.notes),
+                "source": "execution",
+            }
+        out = result.agent_plan
+        return {
+            "action": out.action,
+            "direction": out.direction,
+            "notes": out.notes,
+            "source": "agent_fallback",
+        }
+    out = await wf.run(event)
     return {
         "action": out.action,
         "direction": out.direction,
         "notes": out.notes,
+        "source": "agent",
     }
 
 
@@ -89,6 +111,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--exchange", default="binance")
     p.add_argument("--symbol", default="ETHUSDT")
     p.add_argument("--signal-direction", default="long")
+    p.add_argument("--use-execution-result", action="store_true", help="优先输出 execution 最终动作")
     return p
 
 
@@ -102,12 +125,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             exchange=str(args.exchange),
             symbol=str(args.symbol),
             signal_direction=str(args.signal_direction),
+            use_execution_result=bool(args.use_execution_result),
         )
     )
-    print(f"one-shot 完成: action={out['action']} direction={out['direction']} notes={out['notes']}")
+    print(
+        f"one-shot 完成: source={out.get('source','unknown')} "
+        f"action={out['action']} direction={out['direction']} notes={out['notes']}"
+    )
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

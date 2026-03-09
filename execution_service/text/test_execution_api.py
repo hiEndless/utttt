@@ -22,6 +22,16 @@ def test_healthz() -> None:
     assert data["service"] == "execution_service"
 
 
+def test_version() -> None:
+    client = TestClient(create_app())
+    response = client.get("/internal/execution/version")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["service"] == "execution_service"
+    assert data["contract_version"] == "execution-contract-v1"
+    assert data["ruleset_version"] == "risk-rules-v1"
+
+
 def test_decide_success() -> None:
     client = TestClient(create_app())
     response = client.post(
@@ -57,3 +67,25 @@ def test_decide_bad_request() -> None:
         },
     )
     assert response.status_code == 400
+
+
+def test_debug_state_success() -> None:
+    client = TestClient(create_app())
+    response = client.get("/internal/execution/debug/state/binance/ETHUSDT")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["exchange"] == "binance"
+    assert data["symbol"] == "ETHUSDT"
+    assert isinstance(data["position_state"], dict)
+    assert isinstance(data["account_state"], dict)
+    assert isinstance(data["risk_policy"], dict)
+
+
+def test_debug_state_redacted() -> None:
+    client = TestClient(create_app())
+    response = client.get("/internal/execution/debug/state/binance/ETHUSDT?redact=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["redacted"] is True
+    assert data["account_state"]["account_equity"] == "***"
+    assert data["account_state"]["available_balance"] == "***"

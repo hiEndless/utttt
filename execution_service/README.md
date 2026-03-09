@@ -70,6 +70,8 @@ execution_service/
 - `AccountStateProvider`：账户侧输入端口
 - 已提供最小 stub：
   - `execution_service/adapters/stub_state_providers.py`
+- 已提供 Redis 实现：
+  - `execution_service/adapters/redis_state_providers.py`
 
 ## 决策引擎（当前）
 
@@ -83,4 +85,30 @@ execution_service/
 ## 最小接口（当前）
 
 - `GET /internal/execution/healthz`
+- `GET /internal/execution/version`
 - `POST /internal/execution/decide`
+- `GET /internal/execution/debug/state/{exchange}/{symbol}`（联调只读）
+- `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true`（脱敏视图）
+
+## 运行模式
+
+- `EXECUTION_STATE_PROVIDER_MODE=stub|redis`（默认 `stub`）
+- 当 `redis` 模式启用时：
+  - `EXECUTION_REDIS_URL`（默认 `redis://127.0.0.1:6379/0`）
+  - `EXECUTION_POSITION_KEY_TEMPLATE`（默认 `execution:position:{exchange}:{symbol}`）
+  - `EXECUTION_ACCOUNT_KEY_TEMPLATE`（默认 `execution:account:{exchange}`）
+  - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
+
+## Agent 联调（当前）
+
+- 已提供最小适配器：
+  - `execution_service/adapters/agent_execution_plan_adapter.py`
+- 用途：把 `agent_server_new` 的 `ExecutionPlan` 映射为 `DecisionIntent v1`
+
+## Redis 集成测试
+
+- 测试文件：`execution_service/text/test_execution_service_redis_ethusdt.py`
+- 说明：使用 `binance/ETHUSDT` 的 execution 键数据做端到端裁决验证（`integration` 标记）
+- Redis 键契约：`execution_service/docs/redis_keys.md`
+- cURL 示例：`execution_service/docs/curl_examples.md`
+- HTTPie 示例：`execution_service/docs/httpie_examples.md`

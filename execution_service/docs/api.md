@@ -13,6 +13,21 @@
 }
 ```
 
+## 版本信息
+
+- `GET /internal/execution/version`
+
+返回示例：
+
+```json
+{
+  "service": "execution_service",
+  "contract_version": "execution-contract-v1",
+  "ruleset_version": "risk-rules-v1",
+  "ts": 1760000000000
+}
+```
+
 ## 执行裁决
 
 - `POST /internal/execution/decide`
@@ -71,3 +86,52 @@
 - `cooldown_active`
 - `max_drawdown_exceeded`
 - `direction_conflict_with_position`
+
+## 调试状态快照
+
+- `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false`
+
+返回示例：
+
+```json
+{
+  "exchange": "binance",
+  "symbol": "ETHUSDT",
+  "position_state": {
+    "position_side": "flat",
+    "position_size": 0.1,
+    "max_position_size": 1.0,
+    "cooldown_seconds_left": 0
+  },
+  "account_state": {
+    "account_equity": 10000,
+    "available_balance": 9000,
+    "max_drawdown_ratio": 0.2,
+    "current_drawdown_ratio": 0.01
+  },
+  "risk_policy": {
+    "max_position_size": 1.0,
+    "max_drawdown_ratio": 0.2
+  },
+  "redacted": false,
+  "ts": 1760000000000
+}
+```
+
+说明：
+- `redact=true` 时会脱敏敏感字段（如 `account_equity/available_balance/unrealized_pnl`）
+
+## 状态提供器模式
+
+`execution_service` 支持两种运行模式：
+
+1. `stub`（默认）：使用内置 stub 状态
+2. `redis`：从 Redis 读取仓位/账户/策略状态
+
+环境变量：
+
+- `EXECUTION_STATE_PROVIDER_MODE=stub|redis`
+- `EXECUTION_REDIS_URL`
+- `EXECUTION_POSITION_KEY_TEMPLATE`
+- `EXECUTION_ACCOUNT_KEY_TEMPLATE`
+- `EXECUTION_RISK_POLICY_KEY_TEMPLATE`

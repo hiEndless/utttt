@@ -105,3 +105,28 @@
 - [x] Task 89: 落地 execution_service Task 3，新增 `AccountStateProvider` 端口与最小 stub providers，并补测试与文档同步。
 - [x] Task 90: 落地 execution_service Task 4，实现确定性执行裁决器并锁定规则优先级测试。
 - [x] Task 91: 落地 execution_service Task 5，新增最小 HTTP API（healthz/decide）并补接口测试。
+- [x] Task 92: 落地 execution_service Task 6，新增 agent->execution 适配器与最小联调冒烟测试。
+- [x] Task 93: 落地 execution_service Task 7，新增 agent->execution 守卫脚本并接入新架构总守卫入口。
+- [x] Task 94: 在 agent_server_new 接入可选 execution HTTP decider（环境开关），并补 workflow 调用测试与文档同步。
+- [x] Task 95: 修复 execution decider 接线时序回归（plan 未定义），并通过 state->agent 与全量守卫复验。
+- [x] Task 96: execution_service 新增 Redis 状态 providers 与运行模式切换（stub/redis），并同步文档与测试。
+- [x] Task 97: 修复 execution_service app 导入冲突（app.py 与 app/ 包同名）并通过全量守卫复验。
+- [x] Task 98: 扩展 agent->execution 守卫覆盖 Redis/providers 模式测试。
+- [x] Task 99: agent workflow 新增 `run_with_result()` 输出 execution 最终裁决对象（兼容保留 run 返回 plan）。
+- [x] Task 100: 新增 execution_service Redis 集成测试（binance/ETHUSDT）并同步 README/TASKS。
+- [x] Task 101: runner/pipeline_smoke 新增 `--use-execution-result` 输出模式并补测试。
+- [x] Task 102: execution_service Redis key 契约文档落地并同步架构入口文档。
+- [x] Task 103: runner 新增 `--print-json` 输出模式，便于下游脚本直接消费。
+- [x] Task 104: execution_service 新增 debug 状态快照接口并补测试与文档。
+- [x] Task 105: runner 新增 `--fail-on-execution-reject` 退出码控制，便于自动化编排失败快照。
+- [x] Task 106: execution_service debug 接口支持 `redact` 脱敏查询参数并补测试。
+- [x] Task 107: execution_service 新增 `/version` 契约版本接口并同步 API/README。
+- [x] Task 108: 冻结 runner `--print-json` 输出契约文档（含退出码语义）并挂入口。
+- [x] Task 109: runner 输出契约补充 `jq/Python` 解析示例，降低下游接入成本。
+- [x] Task 110: `check_agent_to_execution_guard.sh` 纳入 execution API（含 `/version`）测试。
+- [x] Task 111: 新增 runner JSON Schema 文件与轻量校验测试，并接入 state->agent 守卫。
+- [x] Task 112: 新增 execution_service cURL 示例文档并同步架构/契约入口链接。
+- [x] Task 113: 入口文档新增 runner JSON Schema 链接，明确机器可校验契约入口。
+- [x] Task 114: 新增 execution_service HTTPie 示例文档并同步架构/契约入口链接。
+- [x] Task 115: 新增 `docs/CONTRACT_INDEX.md` 契约索引并同步入口文档链接。
+- [x] Task 116: 新增 `check_runner_output_schema_guard.sh` 并接入全量守卫入口。

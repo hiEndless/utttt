@@ -26,4 +26,18 @@ def test_pipeline_smoke_run_once():
     )
     assert out["action"] in {"add", "reduce", "hold", "exit", "skip"}
     assert out["direction"] in {"long", "short", "none"}
+    assert out["source"] == "agent"
 
+
+def test_pipeline_smoke_run_once_use_execution_result_fallback():
+    out = asyncio.run(
+        pipeline_smoke.run_pipeline_once(
+            exchange="binance",
+            symbol="ETHUSDT",
+            signal_direction="long",
+            use_execution_result=True,
+        )
+    )
+    assert out["action"] in {"add", "reduce", "hold", "exit", "skip"}
+    assert out["direction"] in {"long", "short", "none"}
+    assert out["source"] in {"execution", "agent_fallback"}
