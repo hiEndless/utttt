@@ -149,6 +149,12 @@ signal_event + active_events + MSL
   - 记忆后端（`inmemory|redis`，默认：`inmemory`）
 - `AGENT_SYMBOL_MEMORY_REDIS_URL`
   - 当后端为 `redis` 时的连接地址（默认：`redis://127.0.0.1:6379/0`）
+- `AGENT_SYMBOL_MEMORY_CONTEXT_TOPK`
+  - 注入到决策上下文的 recent memory 条数（默认：`5`）
+- `AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS`
+  - recent memory 注入的时间窗口（毫秒，默认：`86400000`）
+- `AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY`
+  - recent memory 去重键（默认：`event_id`）
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`

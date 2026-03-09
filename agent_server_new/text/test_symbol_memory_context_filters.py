@@ -55,35 +55,47 @@ class _Events:
 
 
 class _Memory:
-    async def get_symbol_memory(self, exchange: str, symbol: str, limit: int = 20):  # noqa: ARG002
-        _ = (exchange, symbol, limit)
+    def __init__(self) -> None:
         now = int(time.time() * 1000)
-        return {
-            "summary": {"event_count": 12, "last_plan_action": "hold"},
-            "recent": [{"event_id": "evt-100", "ts": now, "plan": {"action": "add"}}],
+        self._payload = {
+            "summary": {"event_count": 999},
+            "recent": [
+                {"event_id": "evt-old", "ts": now - 20_000, "plan": {"action": "hold"}},
+                {"event_id": "evt-dup", "ts": now - 2_000, "plan": {"action": "hold"}},
+                {"event_id": "evt-dup", "ts": now - 1_000, "plan": {"action": "add"}},
+                {"event_id": "evt-new", "ts": now - 500, "plan": {"action": "add"}},
+            ],
         }
 
+    async def get_symbol_memory(self, exchange: str, symbol: str, limit: int = 20):  # noqa: ARG002
+        _ = (exchange, symbol, limit)
+        return dict(self._payload)
 
-def test_context_builder_injects_symbol_memory_features():
+
+def test_context_builder_applies_ttl_dedup_topk_for_recent_memory():
     async def _run():
         builder = ContextBuilder(
             market_state=_MarketState(),
             position_context=_Position(),
             active_events=_Events(),
             symbol_memory_provider=_Memory(),
-            max_key_features=8,
+            memory_recent_topk=2,
+            memory_recent_ttl_ms=5_000,
+            memory_dedup_key="event_id",
+            max_key_features=10,
         )
         built = await builder.build(
-            event_id="evt-101",
+            event_id="evt-now",
             exchange="binance",
             symbol="ETHUSDT",
             signal_payload={"event_type": "indicator_signal"},
         )
         features = list((built.ctx.key_market_features or {}).get("features") or [])
         by_name = {str(item.get("name")): item.get("value") for item in features}
-        assert "memory_summary" in by_name
-        assert "recent_memory" in by_name
-        assert by_name["memory_summary"]["event_count"] == 12
-        assert by_name["recent_memory"][0]["event_id"] == "evt-100"
+        recent = list(by_name.get("recent_memory") or [])
+        assert len(recent) == 2
+        assert recent[0]["event_id"] == "evt-dup"
+        assert recent[0]["plan"]["action"] == "add"
+        assert recent[1]["event_id"] == "evt-new"
 
     asyncio.run(_run())

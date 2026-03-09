@@ -83,6 +83,9 @@ class TradeEventWorkflow:
         recorder: Optional[EventRecorder] = None,
         symbol_memory_provider: SymbolMemoryProvider | None = None,
         symbol_memory_recorder: SymbolMemoryRecorder | None = None,
+        memory_recent_topk: int = 5,
+        memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
+        memory_dedup_key: str = "event_id",
         horizon_policy_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
@@ -92,6 +95,9 @@ class TradeEventWorkflow:
         self._recorder = recorder
         self._symbol_memory_provider = symbol_memory_provider
         self._symbol_memory_recorder = symbol_memory_recorder
+        self._memory_recent_topk = max(1, int(memory_recent_topk))
+        self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
+        self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
@@ -105,6 +111,9 @@ class TradeEventWorkflow:
             active_events=self._active_events,
             symbol_memory_provider=self._symbol_memory_provider,
             max_key_features=10,
+            memory_recent_topk=self._memory_recent_topk,
+            memory_recent_ttl_ms=self._memory_recent_ttl_ms,
+            memory_dedup_key=self._memory_dedup_key,
         )
         built = await builder.build(
             event_id=event.event_id,

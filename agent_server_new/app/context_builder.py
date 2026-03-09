@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
@@ -12,6 +13,46 @@ from agent_server_new.ports.market_state import MarketStateProvider
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
     return x if isinstance(x, dict) else {}
+
+
+def _to_int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def _normalize_recent_memory(
+    *,
+    recent: List[Dict[str, Any]],
+    now_ms: int,
+    ttl_ms: int,
+    topk: int,
+    dedup_key: str,
+) -> List[Dict[str, Any]]:
+    clean = [dict(item) for item in list(recent or []) if isinstance(item, dict)]
+
+    if ttl_ms > 0:
+        cutoff = now_ms - int(ttl_ms)
+        clean = [item for item in clean if _to_int(item.get("ts"), 0) >= cutoff]
+
+    dedup_key_norm = str(dedup_key or "").strip()
+    if dedup_key_norm:
+        seen = set()
+        deduped_reversed: List[Dict[str, Any]] = []
+        # 从新到旧做去重，保留最新条目，再恢复时间升序。
+        for item in reversed(clean):
+            key = str(item.get(dedup_key_norm) or "").strip()
+            if key and key in seen:
+                continue
+            if key:
+                seen.add(key)
+            deduped_reversed.append(item)
+        clean = list(reversed(deduped_reversed))
+
+    if topk > 0 and len(clean) > topk:
+        clean = clean[-topk:]
+    return clean
 
 
 def _signal_context_builder(
@@ -119,12 +160,18 @@ class ContextBuilder:
         active_events: ActiveEventsProvider,
         symbol_memory_provider: SymbolMemoryProvider | None = None,
         max_key_features: int = 10,
+        memory_recent_topk: int = 5,
+        memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
+        memory_dedup_key: str = "event_id",
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
         self._active_events = active_events
         self._symbol_memory_provider = symbol_memory_provider
         self._max_key_features = int(max_key_features)
+        self._memory_recent_topk = max(1, int(memory_recent_topk))
+        self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
+        self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
 
     async def build(
         self,
@@ -142,6 +189,15 @@ class ContextBuilder:
             if self._symbol_memory_provider is not None
             else {}
         )
+        memory_summary = _safe_dict(_safe_dict(symbol_memory).get("summary"))
+        memory_recent = _normalize_recent_memory(
+            recent=list(_safe_dict(symbol_memory).get("recent") or []),
+            now_ms=int(time.time() * 1000),
+            ttl_ms=self._memory_recent_ttl_ms,
+            topk=self._memory_recent_topk,
+            dedup_key=self._memory_dedup_key,
+        )
+        symbol_memory_filtered = {"summary": memory_summary, "recent": memory_recent}
 
         signal_event = {"event_id": event_id, "exchange": exchange, "symbol": symbol, "payload": dict(signal_payload)}
         key_features = _signal_context_builder(
@@ -151,7 +207,7 @@ class ContextBuilder:
             max_features=self._max_key_features,
             cross_horizon=dict(market_state.cross_horizon or {}),
             msl_meta=dict(market_state.msl_meta or {}),
-            symbol_memory=dict(symbol_memory or {}),
+            symbol_memory=symbol_memory_filtered,
         )
         ctx = EventContext(
             event_id=event_id,

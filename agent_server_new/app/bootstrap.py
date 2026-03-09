@@ -15,6 +15,17 @@ from agent_server_new.adapters.symbol_memory_redis import (
 from agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 
 
+def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
+    raw = str(os.getenv(name, str(default)) or str(default)).strip()
+    try:
+        out = int(raw)
+    except Exception:
+        out = int(default)
+    if min_value is not None:
+        out = max(int(min_value), out)
+    return out
+
+
 def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     """基于环境变量创建可运行的默认工作流。
 
@@ -51,6 +62,9 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             )
         else:
             symbol_memory_adapter = InMemorySymbolMemoryAdapter()
+    memory_recent_topk = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TOPK", 5, min_value=1)
+    memory_recent_ttl_ms = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", 86_400_000, min_value=0)
+    memory_dedup_key = str(os.getenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id") or "event_id").strip() or "event_id"
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=StubPositionContextProvider(),
@@ -59,4 +73,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         recorder=None,
         symbol_memory_provider=symbol_memory_adapter,
         symbol_memory_recorder=symbol_memory_adapter,
+        memory_recent_topk=memory_recent_topk,
+        memory_recent_ttl_ms=memory_recent_ttl_ms,
+        memory_dedup_key=memory_dedup_key,
     )

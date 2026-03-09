@@ -39,9 +39,15 @@ def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypa
 def test_create_trade_event_workflow_from_env_enables_symbol_memory_inmemory(monkeypatch):
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_ENABLED", "true")
     monkeypatch.delenv("AGENT_SYMBOL_MEMORY_BACKEND", raising=False)
+    monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_TOPK", "7")
+    monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", "60000")
+    monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id")
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._symbol_memory_provider, InMemorySymbolMemoryAdapter)  # noqa: SLF001
     assert isinstance(wf._symbol_memory_recorder, InMemorySymbolMemoryAdapter)  # noqa: SLF001
+    assert wf._memory_recent_topk == 7  # noqa: SLF001
+    assert wf._memory_recent_ttl_ms == 60000  # noqa: SLF001
+    assert wf._memory_dedup_key == "event_id"  # noqa: SLF001
 
 
 def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkeypatch):
