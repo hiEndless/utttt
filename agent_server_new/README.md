@@ -143,6 +143,12 @@ signal_event + active_events + MSL
   - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
 - `AGENT_EXECUTION_TIMEOUT_S`
   - execution_service HTTP 请求超时秒数（默认：`10`）
+- `AGENT_SYMBOL_MEMORY_ENABLED`
+  - 是否启用 symbol 级记忆注入（默认：`false`）
+- `AGENT_SYMBOL_MEMORY_BACKEND`
+  - 记忆后端（`inmemory|redis`，默认：`inmemory`）
+- `AGENT_SYMBOL_MEMORY_REDIS_URL`
+  - 当后端为 `redis` 时的连接地址（默认：`redis://127.0.0.1:6379/0`）
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`
