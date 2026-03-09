@@ -26,6 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
+  "schema_mapping_version": "execution-schema-mapping-v1",
   "ts": 1760000000000
 }
 ```
@@ -199,3 +200,4 @@
 说明：
 - schema 用于契约冻结与守卫检查。
 - 代码定义位置用于评审时追溯字段来源与语义变更点。
+- `schema_mapping.json.version` 必须与 `/internal/execution/version.schema_mapping_version` 保持一致。

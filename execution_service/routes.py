@@ -10,6 +10,7 @@ from execution_service.version import (
     CONTRACT_VERSION,
     IDEMPOTENCY_VERSION,
     RULESET_VERSION,
+    SCHEMA_MAPPING_VERSION,
     STATE_MACHINE_VERSION,
 )
 
@@ -29,6 +30,7 @@ def create_router(service: ExecutionService) -> APIRouter:
             "ruleset_version": RULESET_VERSION,
             "state_machine_version": STATE_MACHINE_VERSION,
             "idempotency_version": IDEMPOTENCY_VERSION,
+            "schema_mapping_version": SCHEMA_MAPPING_VERSION,
             "ts": int(time.time() * 1000),
         }
 

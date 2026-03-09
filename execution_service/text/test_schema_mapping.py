@@ -6,11 +6,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from execution_service.version import SCHEMA_MAPPING_VERSION
+
 
 def test_schema_mapping_manifest_is_valid() -> None:
     mapping_path = PROJECT_ROOT / "execution_service" / "docs" / "schema_mapping.json"
     data = json.loads(mapping_path.read_text(encoding="utf-8"))
-    assert data.get("version") == "execution-schema-mapping-v1"
+    assert data.get("version") == SCHEMA_MAPPING_VERSION
     items = data.get("items")
     assert isinstance(items, list) and items
 
