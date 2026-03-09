@@ -285,6 +285,11 @@
 - execution 读取仓位/账户状态时已支持 `account_id` 作用域（当前默认 `main`）。
 - Redis 默认 key 模板已包含 `{account_id}`，但也兼容自定义模板（可按需回退到旧模板）。
 
+补充说明（双向持仓）：
+- 风控已支持 `hedge` 模式（同 symbol 多空双开），可通过以下字段表达：
+  - 仓位状态：`position_mode=hedge`、`long_position_size`、`short_position_size`
+  - 风控策略：`allow_dual_side=true`、`max_long_position_size`、`max_short_position_size`
+
 ## Schema 与字段来源映射
 
 机器可校验清单：`execution_service/docs/schema_mapping.json`

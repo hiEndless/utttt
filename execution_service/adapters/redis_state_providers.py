@@ -88,8 +88,11 @@ class RedisPositionStateProvider:
             "exchange": exchange,
             "account_id": account_id,
             "symbol": symbol,
+            "position_mode": str(payload.get("position_mode", "one_way") or "one_way").lower(),
             "position_side": str(payload.get("position_side", "flat") or "flat").lower(),
             "position_size": _to_float(payload.get("position_size"), 0.0),
+            "long_position_size": _to_float(payload.get("long_position_size"), 0.0),
+            "short_position_size": _to_float(payload.get("short_position_size"), 0.0),
             "max_position_size": _to_float(payload.get("max_position_size"), 1.0),
             "unrealized_pnl": _to_float(payload.get("unrealized_pnl"), 0.0),
             "cooldown_seconds_left": _to_int(payload.get("cooldown_seconds_left"), 0),
@@ -143,7 +146,11 @@ class RedisRiskPolicyProvider:
             "exchange": exchange,
             "symbol": symbol,
             "max_position_size": _to_float(payload.get("max_position_size"), 1.0),
+            "max_long_position_size": _to_float(payload.get("max_long_position_size"), _to_float(payload.get("max_position_size"), 1.0)),
+            "max_short_position_size": _to_float(payload.get("max_short_position_size"), _to_float(payload.get("max_position_size"), 1.0)),
             "max_drawdown_ratio": _to_float(payload.get("max_drawdown_ratio"), 0.15),
+            "position_mode": str(payload.get("position_mode", "one_way") or "one_way").lower(),
+            "allow_dual_side": bool(payload.get("allow_dual_side", False)),
         }
 
 

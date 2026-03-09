@@ -66,3 +66,4 @@
 - [x] Task 64: `ExchangeExecutionSink.reconcile` 接入 Binance 状态映射（filled/canceled/rejected/submitted）并补回归测试。
 - [x] Task 65: `ExchangeExecutionSink.reconcile` 补齐 `avg_price` 计算策略（`avgPrice` -> `quoteQty/executedQty` -> `price`）。
 - [x] Task 66: 引入 `account_id` 作用域（默认 `main`）并贯通 execution providers/service/debug/redis key。
+- [x] Task 67: 风控规则支持 `hedge` 双向持仓（long/short 两腿独立上限 + one_way 兼容）并补测试。

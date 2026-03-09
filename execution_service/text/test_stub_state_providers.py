@@ -20,6 +20,7 @@ def test_stub_position_provider_with_symbol_override() -> None:
     state = asyncio.run(provider.get_position_state("binance", "ETHUSDT", account_id="main"))
     assert state["position_side"] == "long"
     assert state["position_size"] == 0.8
+    assert state["position_mode"] == "one_way"
     assert state["exchange"] == "binance"
     assert state["account_id"] == "main"
 

@@ -10,8 +10,11 @@ class StubPositionStateProvider:
 
     default_state: Dict[str, Any] = field(
         default_factory=lambda: {
+            "position_mode": "one_way",
             "position_side": "flat",
             "position_size": 0.0,
+            "long_position_size": 0.0,
+            "short_position_size": 0.0,
             "max_position_size": 1.0,
             "unrealized_pnl": 0.0,
             "cooldown_seconds_left": 0,

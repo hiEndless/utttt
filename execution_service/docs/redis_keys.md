@@ -13,8 +13,11 @@ value(JSON)：
 
 ```json
 {
+  "position_mode": "one_way",
   "position_side": "flat",
   "position_size": 0.1,
+  "long_position_size": 0.0,
+  "short_position_size": 0.0,
   "max_position_size": 1.0,
   "unrealized_pnl": 0.0,
   "cooldown_seconds_left": 0
@@ -48,7 +51,11 @@ value(JSON)：
 ```json
 {
   "max_position_size": 1.0,
-  "max_drawdown_ratio": 0.2
+  "max_long_position_size": 1.0,
+  "max_short_position_size": 1.0,
+  "max_drawdown_ratio": 0.2,
+  "position_mode": "one_way",
+  "allow_dual_side": false
 }
 ```
 

@@ -73,6 +73,7 @@
 50. `ExchangeExecutionSink.reconcile` 已支持 Binance 原始状态到标准状态映射，并返回 `exchange_status_raw` 便于联调排障
 51. `ExchangeExecutionSink.reconcile` 已补齐 `avg_price` 多源回退计算，降低市价单回执均价缺失概率
 52. execution 已引入 `account_id` 作用域（默认 `main`），并贯通到 position/account provider 与 debug 接口，兼容后续多账户扩展
+53. 风控规则已支持 `hedge` 双向持仓：同 symbol 多空腿独立限额（`max_long/max_short_position_size`）并保持 `one_way` 兼容
 
 ## 关键收敛决议（冻结）
 

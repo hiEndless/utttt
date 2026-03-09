@@ -28,8 +28,11 @@ def test_redis_position_provider_parse_and_defaults() -> None:
         {
             "execution:position:binance:main:ETHUSDT": json.dumps(
                 {
+                    "position_mode": "hedge",
                     "position_side": "long",
                     "position_size": 0.3,
+                    "long_position_size": 0.3,
+                    "short_position_size": 0.1,
                     "max_position_size": 1.2,
                     "cooldown_seconds_left": 5,
                 }
@@ -40,6 +43,9 @@ def test_redis_position_provider_parse_and_defaults() -> None:
     out = asyncio.run(provider.get_position_state("binance", "ETHUSDT", account_id="main"))
     assert out["position_side"] == "long"
     assert out["position_size"] == 0.3
+    assert out["long_position_size"] == 0.3
+    assert out["short_position_size"] == 0.1
+    assert out["position_mode"] == "hedge"
     assert out["max_position_size"] == 1.2
     assert out["cooldown_seconds_left"] == 5
     assert out["account_id"] == "main"
@@ -66,4 +72,6 @@ def test_redis_risk_policy_provider_parse() -> None:
     provider = RedisRiskPolicyProvider(redis_client=client)  # type: ignore[arg-type]
     out = asyncio.run(provider.get_risk_policy("binance", "ETHUSDT"))
     assert out["max_position_size"] == 2.0
+    assert out["max_long_position_size"] == 2.0
+    assert out["max_short_position_size"] == 2.0
     assert out["max_drawdown_ratio"] == 0.08

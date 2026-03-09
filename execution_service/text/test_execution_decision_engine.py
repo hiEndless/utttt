@@ -101,3 +101,39 @@ def test_allow_add_when_all_rules_pass() -> None:
     )
     assert result.execution_action == "add"
     assert result.reject_reason is None
+
+
+def test_dual_side_mode_allows_opposite_direction_add() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("short"),
+        position_state={
+            "position_mode": "hedge",
+            "position_side": "long",
+            "position_size": 0.5,
+            "long_position_size": 0.5,
+            "short_position_size": 0.0,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={"current_drawdown_ratio": 0.01, "max_drawdown_ratio": 0.1},
+        risk_policy={"allow_dual_side": True},
+    )
+    assert result.execution_action == "add"
+    assert result.reject_reason is None
+    assert "dual_side_hedge_mode" in result.applied_risk_rules
+
+
+def test_dual_side_short_leg_limit_blocks_short_add() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("short"),
+        position_state={
+            "position_mode": "hedge",
+            "long_position_size": 0.3,
+            "short_position_size": 0.8,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={"current_drawdown_ratio": 0.01, "max_drawdown_ratio": 0.1},
+        risk_policy={"allow_dual_side": True, "max_short_position_size": 0.8},
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "position_limit_reached"
