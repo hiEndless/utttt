@@ -48,3 +48,4 @@
 - [x] Task 46: 冻结 `reconcile` 响应 schema 并接入守卫与索引文档。
 - [x] Task 47: 增加 `order_id` 维度 reconcile 幂等（缓存+锁）并补测试与文档。
 - [x] Task 48: 增加 reconcile 错误分级重试（指数退避）并输出 `retry_meta`。
+- [x] Task 49: reconcile 失败改为标准化业务响应（`status=failed`）并补测试与文档。

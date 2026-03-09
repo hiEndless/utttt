@@ -89,6 +89,18 @@ def test_execution_reconcile_result_schema_samples() -> None:
     }
     assert _validate(schema, good_exchange)
 
+    good_failed = {
+        "mode": "mock",
+        "order_id": "mock-order-err-001",
+        "status": "failed",
+        "reason_code": "reconcile_non_retryable_error",
+        "error_message": "invalid_order_id",
+        "idempotency_hit": False,
+        "retry_meta": {"attempts": 1, "max_retries": 3, "status": "failed", "retryable": False},
+        "ts": 1760000000002,
+    }
+    assert _validate(schema, good_failed)
+
     bad = {
         "mode": "mock",
         "order_id": "",

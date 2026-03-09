@@ -43,6 +43,13 @@
     "note": {
       "type": "string"
     },
+    "reason_code": {
+      "type": "string",
+      "enum": ["reconcile_retry_exhausted", "reconcile_non_retryable_error", "reconcile_in_progress"]
+    },
+    "error_message": {
+      "type": "string"
+    },
     "idempotency_hit": {
       "type": "boolean"
     },
@@ -51,7 +58,8 @@
       "properties": {
         "attempts": {"type": "integer", "minimum": 1},
         "max_retries": {"type": "integer", "minimum": 0},
-        "status": {"type": "string", "enum": ["ok"]}
+        "status": {"type": "string", "enum": ["ok", "failed"]},
+        "retryable": {"type": "boolean"}
       }
     },
     "ts": {

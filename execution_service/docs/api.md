@@ -142,6 +142,21 @@
 }
 ```
 
+响应示例（失败标准化输出）：
+
+```json
+{
+  "mode": "mock",
+  "order_id": "mock-order-err-001",
+  "status": "failed",
+  "reason_code": "reconcile_non_retryable_error",
+  "error_message": "invalid_order_id",
+  "idempotency_hit": false,
+  "retry_meta": {"attempts": 1, "max_retries": 3, "status": "failed", "retryable": false},
+  "ts": 1760000000002
+}
+```
+
 错误约定：
 - `400`: `order_id` 缺失
 - `503`: `execution_sink_not_configured`
@@ -151,6 +166,7 @@
 - 当 payload 或回执中携带 `decision_id` 且回执状态可识别时，服务会写回 `decision_state`（例如 `submitted -> filled`）。
 - `reconcile` 已接入 `order_id` 幂等：相同 `order_id` 二次调用优先返回缓存结果，并标记 `idempotency_hit=true`。
 - `reconcile` 支持错误分级重试：可重试错误会按指数退避重试，并在响应 `retry_meta` 中记录尝试轨迹。
+- 对账失败场景返回业务响应 `status=failed`（HTTP 200），减少下游对 502 的分支处理。
 
 ## 调试状态快照
 

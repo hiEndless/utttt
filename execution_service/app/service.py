@@ -180,6 +180,7 @@ class ExecutionService:
                     out_cached["idempotency_hit"] = True
                     return out_cached
                 return {
+                    "mode": _infer_sink_mode(self._execution_sink),
                     "order_id": order_id,
                     "status": "submitted",
                     "idempotency_hit": False,
@@ -198,6 +199,7 @@ class ExecutionService:
                 order_id=order_id,
                 payload=payload,
             )
+            out.setdefault("mode", _infer_sink_mode(self._execution_sink))
             out.setdefault("order_id", order_id)
             out.setdefault("ts", int(time.time() * 1000))
             out["idempotency_hit"] = False
@@ -246,9 +248,23 @@ class ExecutionService:
                 last_error = str(exc)
                 retryable = _is_retryable_reconcile_error(exc)
                 if (not retryable) or attempts >= max_attempts:
-                    raise RuntimeError(
-                        f"execution_reconcile_failed:last_error={last_error};retryable={retryable};attempts={attempts}"
-                    ) from exc
+                    return {
+                        "order_id": str(order_id),
+                        "decision_id": str(payload.get("decision_id") or "").strip() or None,
+                        "exchange": str(payload.get("exchange") or "").strip() or None,
+                        "symbol": str(payload.get("symbol") or "").strip().upper() or None,
+                        "status": "failed",
+                        "reason_code": (
+                            "reconcile_retry_exhausted" if retryable else "reconcile_non_retryable_error"
+                        ),
+                        "error_message": last_error,
+                        "retry_meta": {
+                            "attempts": attempts,
+                            "max_retries": self._reconcile_max_retries,
+                            "status": "failed",
+                            "retryable": bool(retryable),
+                        },
+                    }
                 backoff_s = self._reconcile_backoff_base_s * (2 ** (attempts - 1))
                 if backoff_s > 0:
                     await asyncio.sleep(backoff_s)
@@ -415,3 +431,12 @@ def _is_retryable_reconcile_error(exc: Exception) -> bool:
         "429",
     )
     return any(token in msg for token in retryable_signals)
+
+
+def _infer_sink_mode(execution_sink: Any) -> str:
+    if execution_sink is None:
+        return "mock"
+    cls_name = str(getattr(execution_sink, "__class__", type(execution_sink)).__name__).lower()
+    if "exchange" in cls_name:
+        return "exchange_skeleton"
+    return "mock"

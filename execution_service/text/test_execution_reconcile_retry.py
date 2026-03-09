@@ -64,10 +64,33 @@ def test_reconcile_non_retryable_error_fails_fast() -> None:
         reconcile_max_retries=3,
         reconcile_backoff_base_s=0.0,
     )
-    try:
-        asyncio.run(service.reconcile_order({"order_id": "ord-retry-002", "decision_id": "dec-retry-002"}))
-        assert False, "expected RuntimeError"
-    except RuntimeError as exc:
-        text = str(exc)
-        assert "retryable=False" in text
-        assert "attempts=1" in text
+    out = asyncio.run(service.reconcile_order({"order_id": "ord-retry-002", "decision_id": "dec-retry-002"}))
+    assert out["mode"] == "mock"
+    assert out["status"] == "failed"
+    assert out["reason_code"] == "reconcile_non_retryable_error"
+    assert out["retry_meta"]["retryable"] is False
+    assert out["retry_meta"]["attempts"] == 1
+
+
+class _AlwaysRetryableSink:
+    async def reconcile(self, order_id, payload):  # noqa: ANN001
+        _ = (order_id, payload)
+        raise RuntimeError("timeout")
+
+
+def test_reconcile_retryable_error_exhausted() -> None:
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        execution_sink=_AlwaysRetryableSink(),  # type: ignore[arg-type]
+        submit_enabled=True,
+        reconcile_max_retries=1,
+        reconcile_backoff_base_s=0.0,
+    )
+    out = asyncio.run(service.reconcile_order({"order_id": "ord-retry-003", "decision_id": "dec-retry-003"}))
+    assert out["mode"] == "mock"
+    assert out["status"] == "failed"
+    assert out["reason_code"] == "reconcile_retry_exhausted"
+    assert out["retry_meta"]["retryable"] is True
+    assert out["retry_meta"]["attempts"] == 2

@@ -55,6 +55,7 @@
 32. reconcile 响应契约已冻结为独立 schema，并接入守卫与项目文档索引
 33. reconcile 已接入 `order_id` 维度幂等（缓存+锁），避免重复写回覆盖状态
 34. reconcile 已支持错误分级重试（指数退避），并在响应中输出 `retry_meta`
+35. reconcile 失败已标准化为业务响应（`status=failed`），降低下游 502 分支复杂度
 
 ## 关键收敛决议（冻结）
 
