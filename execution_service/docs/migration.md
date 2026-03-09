@@ -59,6 +59,8 @@
 36. reconcile 错误码字段已统一为 `reason_code`，并覆盖 `reconcile_in_progress` 场景
 37. reconcile `reason_code` 已抽为代码常量，并由测试强校验与 schema 枚举一致
 38. reconcile `status` 已抽为代码常量，并由测试强校验与 schema 枚举一致
+39. submit/reconcile `retry_meta.status` 已抽为共享常量，并由测试强校验两份 schema 枚举一致
+40. ExecutionResult schema 发生破坏性变更后，`schema_mapping_version` 已按守卫要求升级到 `execution-schema-mapping-v3`
 
 ## 关键收敛决议（冻结）
 

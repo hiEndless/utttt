@@ -18,6 +18,7 @@ from execution_service.domain.reconcile_statuses import (
     RECONCILE_STATUS_SUBMITTED,
     RECONCILE_STATUSES,
 )
+from execution_service.domain.retry_meta import RETRY_META_STATUS_FAILED, RETRY_META_STATUS_OK
 from execution_service.ports.execution_sink import ExecutionSink
 from execution_service.ports.execution_state_store import ExecutionStateStore
 from execution_service.ports.idempotency_store import IdempotencyStore
@@ -252,7 +253,7 @@ class ExecutionService:
                 out["retry_meta"] = {
                     "attempts": attempts,
                     "max_retries": self._reconcile_max_retries,
-                    "status": "ok",
+                    "status": RETRY_META_STATUS_OK,
                 }
                 return out
             except Exception as exc:  # pragma: no cover
@@ -272,7 +273,7 @@ class ExecutionService:
                         "retry_meta": {
                             "attempts": attempts,
                             "max_retries": self._reconcile_max_retries,
-                            "status": "failed",
+                            "status": RETRY_META_STATUS_FAILED,
                             "retryable": bool(retryable),
                         },
                     }
@@ -314,7 +315,7 @@ class ExecutionService:
                 payload["retry_meta"] = {
                     "attempts": attempts,
                     "max_retries": self._submit_max_retries,
-                    "status": "ok",
+                    "status": RETRY_META_STATUS_OK,
                 }
                 return ExecutionResult.from_dict(
                     {
@@ -344,7 +345,7 @@ class ExecutionService:
                     "retry_meta": {
                         "attempts": max_attempts,
                         "max_retries": self._submit_max_retries,
-                        "status": "failed",
+                        "status": RETRY_META_STATUS_FAILED,
                         "last_error": last_error,
                     }
                 },

@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v2",
+  "schema_mapping_version": "execution-schema-mapping-v3",
   "ts": 1760000000000
 }
 ```
@@ -169,6 +169,7 @@
 - 对账失败场景返回业务响应 `status=failed`（HTTP 200），减少下游对 502 的分支处理。
 - `reason_code` 枚举由 `execution_service/domain/reconcile_codes.py` 单点定义，并由测试校验与 schema 一致。
 - `status` 枚举由 `execution_service/domain/reconcile_statuses.py` 单点定义，并由测试校验与 schema 一致。
+- `retry_meta.status` 枚举由 `execution_service/domain/retry_meta.py` 单点定义，并由测试校验两份 schema 一致。
 
 ## 调试状态快照
 

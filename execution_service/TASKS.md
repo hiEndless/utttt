@@ -52,3 +52,5 @@
 - [x] Task 50: reconcile 标准化失败码统一到 `reason_code`（包含 `reconcile_in_progress`）。
 - [x] Task 51: reconcile `reason_code` 抽为常量并增加常量-schema 一致性测试。
 - [x] Task 52: reconcile `status` 抽为常量并增加常量-schema 一致性测试。
+- [x] Task 53: submit/reconcile 共享 `retry_meta.status` 常量并增加双 schema 一致性测试。
+- [x] Task 54: 因 ExecutionResult schema 破坏性变更，将 `schema_mapping_version` 递增到 `v3` 并同步入口文档。

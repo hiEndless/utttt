@@ -31,7 +31,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v2`
+- `execution_schema_mapping_version: execution-schema-mapping-v3`
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`

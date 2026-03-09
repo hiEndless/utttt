@@ -37,7 +37,17 @@
       }
     },
     "order_result": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "retry_meta": {
+          "type": "object",
+          "properties": {
+            "attempts": {"type": "integer", "minimum": 1},
+            "max_retries": {"type": "integer", "minimum": 0},
+            "status": {"type": "string", "enum": ["ok", "failed"]}
+          }
+        }
+      }
     },
     "notes": {
       "type": "string"
