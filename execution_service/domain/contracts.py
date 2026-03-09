@@ -108,6 +108,7 @@ class ExecutionResult:
     reject_reason: Optional[str]
     applied_risk_rules: List[str]
     order_result: Optional[Dict[str, Any]] = None
+    signal_result: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
 
     @classmethod
@@ -117,6 +118,7 @@ class ExecutionResult:
         reject_reason_raw = payload.get("reject_reason")
         applied_rules_raw = payload.get("applied_risk_rules") or []
         order_result_raw = payload.get("order_result")
+        signal_result_raw = payload.get("signal_result")
         notes_raw = payload.get("notes")
 
         if not decision_id:
@@ -132,6 +134,9 @@ class ExecutionResult:
         if order_result_raw is not None and not isinstance(order_result_raw, dict):
             raise ValueError("order_result 必须是对象")
         order_result = None if order_result_raw is None else dict(order_result_raw)
+        if signal_result_raw is not None and not isinstance(signal_result_raw, dict):
+            raise ValueError("signal_result 必须是对象")
+        signal_result = None if signal_result_raw is None else dict(signal_result_raw)
         notes = None if notes_raw is None else str(notes_raw).strip() or None
         return cls(
             decision_id=decision_id,
@@ -139,6 +144,7 @@ class ExecutionResult:
             reject_reason=reject_reason,
             applied_risk_rules=applied_rules,
             order_result=order_result,
+            signal_result=signal_result,
             notes=notes,
         )
 
@@ -151,6 +157,8 @@ class ExecutionResult:
         }
         if self.order_result is not None:
             data["order_result"] = self.order_result
+        if self.signal_result is not None:
+            data["signal_result"] = self.signal_result
         if self.notes:
             data["notes"] = self.notes
         return data

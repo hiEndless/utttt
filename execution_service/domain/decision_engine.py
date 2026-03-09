@@ -31,6 +31,7 @@ class ExecutionDecisionEngine:
                 "execution_action": rule_outcome["execution_action"],
                 "reject_reason": rule_outcome["reject_reason"],
                 "applied_risk_rules": rule_outcome["applied_risk_rules"],
+                "signal_result": rule_outcome.get("signal_result"),
                 "notes": rule_outcome["notes"],
             }
         )

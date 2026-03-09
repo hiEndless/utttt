@@ -83,6 +83,7 @@
 4. `applied_risk_rules`: 字符串数组
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
+7. `signal_result`: 可选对象（执行层模拟信号结构，当前默认返回）
 7. JSON Schema：`execution_service/docs/execution_result.schema.json`
 
 说明：
@@ -100,6 +101,12 @@
   - `execution_action=skip`
   - `reject_reason=idempotency_in_progress`
   - `applied_risk_rules` 包含 `idempotency_lock_busy`
+- `signal_result`（模拟结构）字段说明：
+  - `signal_action`: `add_long|add_short|reduce_long|reduce_short|hold|skip|exit_all`
+  - `mode`: 当前固定 `simulated`
+  - `scope`: `exchange/account_id/symbol`
+  - `position_before`: 模拟前仓位快照（long/short/net）
+  - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
 
 建议标准拒绝码（首批冻结）：
 

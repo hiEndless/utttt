@@ -86,39 +86,82 @@ def evaluate_risk_rules(
 
     direction = decision.direction_intent
 
+    def _finalize(
+        *,
+        execution_action: str,
+        reject_reason: str | None,
+        applied_risk_rules: list[str],
+        notes: str,
+    ) -> Dict[str, Any]:
+        signal_action = _build_signal_action(
+            execution_action=execution_action,
+            direction=direction,
+            position_side=position_side,
+            allow_dual_side=allow_dual_side,
+        )
+        position_before = {
+            "mode": "hedge" if allow_dual_side else "one_way",
+            "long_position_size": long_position_size,
+            "short_position_size": short_position_size,
+            "net_position_size": long_position_size - short_position_size,
+        }
+        position_after = _simulate_position_after(
+            signal_action=signal_action,
+            long_position_size=long_position_size,
+            short_position_size=short_position_size,
+            step_size=_resolve_step_size(context=context),
+        )
+        return {
+            "execution_action": execution_action,
+            "reject_reason": reject_reason,
+            "applied_risk_rules": applied_risk_rules,
+            "signal_result": {
+                "signal_action": signal_action,
+                "mode": "simulated",
+                "scope": {
+                    "exchange": decision.exchange,
+                    "account_id": str(context.account_state.get("account_id") or "main"),
+                    "symbol": decision.symbol,
+                },
+                "position_before": position_before,
+                "position_after_simulation": position_after,
+            },
+            "notes": notes,
+        }
+
     # 规则 1: 仓位上限（最高优先级）
     if direction == "long" and long_position_size >= max_long_position_size:
-        return {
-            "execution_action": "skip",
-            "reject_reason": "position_limit_reached",
-            "applied_risk_rules": ["max_position_limit_long"],
-            "notes": "多头仓位已达上限，禁止继续加仓",
-        }
+        return _finalize(
+            execution_action="skip",
+            reject_reason="position_limit_reached",
+            applied_risk_rules=["max_position_limit_long"],
+            notes="多头仓位已达上限，禁止继续加仓",
+        )
     if direction == "short" and short_position_size >= max_short_position_size:
-        return {
-            "execution_action": "skip",
-            "reject_reason": "position_limit_reached",
-            "applied_risk_rules": ["max_position_limit_short"],
-            "notes": "空头仓位已达上限，禁止继续加仓",
-        }
+        return _finalize(
+            execution_action="skip",
+            reject_reason="position_limit_reached",
+            applied_risk_rules=["max_position_limit_short"],
+            notes="空头仓位已达上限，禁止继续加仓",
+        )
 
     # 规则 2: 冷却期
     if cooldown_seconds_left > 0:
-        return {
-            "execution_action": "skip",
-            "reject_reason": "cooldown_active",
-            "applied_risk_rules": ["cooldown"],
-            "notes": f"当前处于冷却期，剩余 {cooldown_seconds_left} 秒",
-        }
+        return _finalize(
+            execution_action="skip",
+            reject_reason="cooldown_active",
+            applied_risk_rules=["cooldown"],
+            notes=f"当前处于冷却期，剩余 {cooldown_seconds_left} 秒",
+        )
 
     # 规则 3: 最大回撤阈值
     if current_drawdown_ratio >= max_drawdown_ratio:
-        return {
-            "execution_action": "skip",
-            "reject_reason": "max_drawdown_exceeded",
-            "applied_risk_rules": ["max_drawdown"],
-            "notes": "当前回撤超过阈值，禁止新增风险",
-        }
+        return _finalize(
+            execution_action="skip",
+            reject_reason="max_drawdown_exceeded",
+            applied_risk_rules=["max_drawdown"],
+            notes="当前回撤超过阈值，禁止新增风险",
+        )
 
     # 规则 4: 方向冲突（有持仓且与意图方向相反）
     if (
@@ -129,36 +172,36 @@ def evaluate_risk_rules(
         and direction != position_side
         and position_size > 0
     ):
-        return {
-            "execution_action": "reduce",
-            "reject_reason": "direction_conflict_with_position",
-            "applied_risk_rules": ["direction_conflict"],
-            "notes": "当前持仓方向与新意图冲突，先减仓再观察",
-        }
+        return _finalize(
+            execution_action="reduce",
+            reject_reason="direction_conflict_with_position",
+            applied_risk_rules=["direction_conflict"],
+            notes="当前持仓方向与新意图冲突，先减仓再观察",
+        )
 
     # 规则 5: 双向模式（hedge）允许同 symbol 多空并存，按腿独立加仓
     if allow_dual_side and direction in {"long", "short"}:
-        return {
-            "execution_action": "add",
-            "reject_reason": None,
-            "applied_risk_rules": ["dual_side_hedge_mode"],
-            "notes": "双向持仓模式，按目标方向独立执行",
-        }
+        return _finalize(
+            execution_action="add",
+            reject_reason=None,
+            applied_risk_rules=["dual_side_hedge_mode"],
+            notes="双向持仓模式，按目标方向独立执行",
+        )
 
     if direction == "none":
-        return {
-            "execution_action": "hold",
-            "reject_reason": None,
-            "applied_risk_rules": [],
-            "notes": "无方向意图，保持观望",
-        }
+        return _finalize(
+            execution_action="hold",
+            reject_reason=None,
+            applied_risk_rules=[],
+            notes="无方向意图，保持观望",
+        )
 
-    return {
-        "execution_action": "add",
-        "reject_reason": None,
-        "applied_risk_rules": [],
-        "notes": "通过风控检查，允许执行",
-    }
+    return _finalize(
+        execution_action="add",
+        reject_reason=None,
+        applied_risk_rules=[],
+        notes="通过风控检查，允许执行",
+    )
 
 
 def _extract_leg_size(
@@ -179,3 +222,68 @@ def _extract_leg_size(
     if fallback_side == leg:
         return max(0.0, fallback_size)
     return 0.0
+
+
+def _resolve_step_size(*, context: RiskContext) -> float:
+    step = _to_float(context.risk_policy.get("simulation_step_size"), 0.1)
+    if step <= 0:
+        return 0.1
+    return step
+
+
+def _build_signal_action(
+    *,
+    execution_action: str,
+    direction: str,
+    position_side: str,
+    allow_dual_side: bool,
+) -> str:
+    if execution_action == "add":
+        if direction == "long":
+            return "add_long"
+        if direction == "short":
+            return "add_short"
+        return "hold"
+    if execution_action == "reduce":
+        if allow_dual_side:
+            if direction == "long":
+                return "reduce_short"
+            if direction == "short":
+                return "reduce_long"
+        if position_side == "long":
+            return "reduce_long"
+        if position_side == "short":
+            return "reduce_short"
+        return "hold"
+    if execution_action == "exit":
+        return "exit_all"
+    if execution_action == "skip":
+        return "skip"
+    return "hold"
+
+
+def _simulate_position_after(
+    *,
+    signal_action: str,
+    long_position_size: float,
+    short_position_size: float,
+    step_size: float,
+) -> Dict[str, float]:
+    long_after = max(0.0, long_position_size)
+    short_after = max(0.0, short_position_size)
+    if signal_action == "add_long":
+        long_after += step_size
+    elif signal_action == "add_short":
+        short_after += step_size
+    elif signal_action == "reduce_long":
+        long_after = max(0.0, long_after - step_size)
+    elif signal_action == "reduce_short":
+        short_after = max(0.0, short_after - step_size)
+    elif signal_action == "exit_all":
+        long_after = 0.0
+        short_after = 0.0
+    return {
+        "long_position_size": long_after,
+        "short_position_size": short_after,
+        "net_position_size": long_after - short_after,
+    }

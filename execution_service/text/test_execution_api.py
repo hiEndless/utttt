@@ -53,6 +53,9 @@ def test_decide_success() -> None:
     data = response.json()
     assert data["decision_id"] == "dec-001"
     assert data["execution_action"] in {"add", "reduce", "hold", "exit", "skip"}
+    assert isinstance(data.get("signal_result"), dict)
+    assert data["signal_result"]["mode"] == "simulated"
+    assert data["signal_result"]["scope"]["account_id"] == "main"
 
 
 def test_decide_bad_request() -> None:

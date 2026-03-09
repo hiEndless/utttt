@@ -37,6 +37,8 @@ def test_rule_priority_position_limit_first() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "position_limit_reached"
+    assert isinstance(result.signal_result, dict)
+    assert result.signal_result["signal_action"] == "skip"
 
 
 def test_rule_priority_cooldown_second() -> None:
@@ -85,6 +87,8 @@ def test_rule_priority_direction_conflict_fourth() -> None:
     )
     assert result.execution_action == "reduce"
     assert result.reject_reason == "direction_conflict_with_position"
+    assert isinstance(result.signal_result, dict)
+    assert result.signal_result["signal_action"] == "reduce_long"
 
 
 def test_allow_add_when_all_rules_pass() -> None:
@@ -101,6 +105,8 @@ def test_allow_add_when_all_rules_pass() -> None:
     )
     assert result.execution_action == "add"
     assert result.reject_reason is None
+    assert isinstance(result.signal_result, dict)
+    assert result.signal_result["signal_action"] == "add_long"
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:
@@ -121,6 +127,10 @@ def test_dual_side_mode_allows_opposite_direction_add() -> None:
     assert result.execution_action == "add"
     assert result.reject_reason is None
     assert "dual_side_hedge_mode" in result.applied_risk_rules
+    assert isinstance(result.signal_result, dict)
+    assert result.signal_result["signal_action"] == "add_short"
+    assert result.signal_result["position_before"]["long_position_size"] == 0.5
+    assert result.signal_result["position_after_simulation"]["short_position_size"] > 0
 
 
 def test_dual_side_short_leg_limit_blocks_short_add() -> None:
