@@ -38,3 +38,4 @@
 - [x] Task 36: 增加 `schema_mapping_version` 并校验映射版本与 `/version` 一致。
 - [x] Task 37: 为 schema mapping 增加 `owner/change_policy` 并做强校验。
 - [x] Task 38: 增加 execution 合同入口守卫（CONTRACT_INDEX 版本声明一致性）。
+- [x] Task 39: 增加 `schema_mapping.last_updated` 并校验不晚于 CONTRACT_INDEX 更新时间。

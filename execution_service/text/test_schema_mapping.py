@@ -1,5 +1,6 @@
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -13,6 +14,9 @@ def test_schema_mapping_manifest_is_valid() -> None:
     mapping_path = PROJECT_ROOT / "execution_service" / "docs" / "schema_mapping.json"
     data = json.loads(mapping_path.read_text(encoding="utf-8"))
     assert data.get("version") == SCHEMA_MAPPING_VERSION
+    last_updated = str(data.get("last_updated") or "").strip()
+    assert last_updated
+    date.fromisoformat(last_updated)
     items = data.get("items")
     assert isinstance(items, list) and items
 

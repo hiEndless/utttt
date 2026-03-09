@@ -201,4 +201,5 @@
 - schema 用于契约冻结与守卫检查。
 - 代码定义位置用于评审时追溯字段来源与语义变更点。
 - `owner/change_policy` 由 `schema_mapping.json` 统一管理并由测试强校验。
+- `schema_mapping.json.last_updated` 表示 mapping 最近更新时间（`YYYY-MM-DD`）。
 - `schema_mapping.json.version` 必须与 `/internal/execution/version.schema_mapping_version` 保持一致。
