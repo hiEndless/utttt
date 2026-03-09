@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionDecisionState",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "decision_id",
+    "status",
+    "last_transition",
+    "attempts",
+    "source",
+    "updated_at_ms"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "submitted", "failed", "skipped", "decided"]
+    },
+    "last_transition": {
+      "type": "string",
+      "enum": ["pending", "submitted", "failed", "skipped", "decided"]
+    },
+    "execution_action": {
+      "type": "string",
+      "enum": ["add", "reduce", "hold", "exit", "skip"]
+    },
+    "reject_reason": {
+      "type": ["string", "null"]
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "submitted_at_ms": {
+      "type": ["integer", "null"]
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "const": "execution_service"
+    },
+    "trace_id": {
+      "type": ["string", "null"]
+    },
+    "updated_at_ms": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

@@ -108,6 +108,7 @@
 ## 调试状态快照
 
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
+- `decision_state` JSON Schema：`execution_service/docs/decision_state.schema.json`
 
 返回示例：
 

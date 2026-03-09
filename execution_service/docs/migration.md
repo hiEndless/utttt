@@ -35,6 +35,7 @@
 12. execution_state debug 快照已扩展 `attempts/submitted_at_ms/last_error/last_transition`，便于联调排障
 13. execution_state 已增加状态跃迁合法性校验，终态不会被非法回跳覆盖
 14. execution_state 已透传 `trace_id` 并写入 `source=execution_service`，支持跨服务链路定位
+15. execution_state 已冻结独立 schema（`decision_state.schema.json`）并接入守卫脚本防漂移
 
 ## 关键收敛决议（冻结）
 

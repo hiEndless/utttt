@@ -35,6 +35,7 @@ execution_service/
   docs/
     api.md
     boundaries.md
+    decision_state.schema.json
     migration.md
   app/
     __init__.py
@@ -132,3 +133,4 @@ execution_service/
 - Redis 键契约：`execution_service/docs/redis_keys.md`
 - cURL 示例：`execution_service/docs/curl_examples.md`
 - HTTPie 示例：`execution_service/docs/httpie_examples.md`
+- decision_state schema：`execution_service/docs/decision_state.schema.json`
