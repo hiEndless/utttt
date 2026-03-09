@@ -54,13 +54,7 @@
       "type": "boolean"
     },
     "retry_meta": {
-      "type": "object",
-      "properties": {
-        "attempts": {"type": "integer", "minimum": 1},
-        "max_retries": {"type": "integer", "minimum": 0},
-        "status": {"type": "string", "enum": ["ok", "failed"]},
-        "retryable": {"type": "boolean"}
-      }
+      "$ref": "./retry_meta.schema.json"
     },
     "ts": {
       "type": "integer",

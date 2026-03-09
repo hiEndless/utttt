@@ -9,6 +9,16 @@ if PROJECT_ROOT not in sys.path:
 
 
 def _validate(schema: Dict[str, Any], payload: Dict[str, Any]) -> bool:
+    # 支持同目录下的本地 $ref（当前用于 retry_meta.schema.json）
+    base_dir = Path(PROJECT_ROOT) / "execution_service" / "docs"
+
+    def _resolve_ref(node: Dict[str, Any]) -> Dict[str, Any]:
+        ref = node.get("$ref")
+        if not isinstance(ref, str):
+            return node
+        ref_path = (base_dir / ref).resolve()
+        return json.loads(ref_path.read_text(encoding="utf-8"))
+
     def _type_ok(type_node: Any, value: Any) -> bool:
         if isinstance(type_node, list):
             return any(_type_ok(t, value) for t in type_node)
@@ -25,6 +35,7 @@ def _validate(schema: Dict[str, Any], payload: Dict[str, Any]) -> bool:
         return True
 
     def check(node: Dict[str, Any], value: Any) -> bool:
+        node = _resolve_ref(node)
         node_type = node.get("type")
         if node_type is not None and not _type_ok(node_type, value):
             return False

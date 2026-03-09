@@ -150,4 +150,5 @@ execution_service/
 - execution_result schema：`execution_service/docs/execution_result.schema.json`
 - execution_reconcile_result schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - retry_meta schema：`execution_service/docs/retry_meta.schema.json`
+- `execution_result/execution_reconcile_result` 中的 `retry_meta` 已统一通过 `$ref` 引用独立 schema，避免枚举漂移
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`

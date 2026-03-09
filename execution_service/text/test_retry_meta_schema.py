@@ -38,8 +38,16 @@ def test_retry_meta_schema_enum_matches_main_schemas() -> None:
     )
 
     source_enum = _enum_from(retry_meta_schema, ["properties", "status"])
-    result_enum = _enum_from(result_schema, ["properties", "order_result", "properties", "retry_meta", "properties", "status"])
-    reconcile_enum = _enum_from(reconcile_schema, ["properties", "retry_meta", "properties", "status"])
+    result_ref = (
+        result_schema
+        .get("properties", {})
+        .get("order_result", {})
+        .get("properties", {})
+        .get("retry_meta", {})
+        .get("$ref")
+    )
+    reconcile_ref = reconcile_schema.get("properties", {}).get("retry_meta", {}).get("$ref")
 
-    assert source_enum and result_enum and reconcile_enum
-    assert set(source_enum) == set(result_enum) == set(reconcile_enum)
+    assert result_ref == "./retry_meta.schema.json"
+    assert reconcile_ref == "./retry_meta.schema.json"
+    assert source_enum
