@@ -65,6 +65,7 @@
 42. `execution_result/execution_reconcile_result` 的 `retry_meta` 已改为 `$ref` 引用独立 schema，并更新 schema 测试支持本地 `$ref` 解析
 43. `retry_meta` 契约一致性测试已升级为按 `$ref` 读取独立 schema，避免内联路径依赖
 44. 已抽取统一 schema 校验工具，减少 execution 契约测试重复逻辑并避免后续漏改
+45. `schema_mapping.json` 已显式登记 `RetryMeta` 与 `$ref` 引用来源，并通过测试强校验引用路径与期望值
 
 ## 关键收敛决议（冻结）
 

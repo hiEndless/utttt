@@ -10,6 +10,15 @@ if str(PROJECT_ROOT) not in sys.path:
 from execution_service.version import SCHEMA_MAPPING_VERSION
 
 
+def _read_json_path(doc: dict, path: str):
+    node = doc
+    for part in path.split("."):
+        if not isinstance(node, dict):
+            return None
+        node = node.get(part)
+    return node
+
+
 def test_schema_mapping_manifest_is_valid() -> None:
     mapping_path = PROJECT_ROOT / "execution_service" / "docs" / "schema_mapping.json"
     data = json.loads(mapping_path.read_text(encoding="utf-8"))
@@ -29,6 +38,7 @@ def test_schema_mapping_manifest_is_valid() -> None:
         owner = str(item.get("owner") or "").strip()
         change_policy = str(item.get("change_policy") or "").strip()
         fields = item.get("fields")
+        references = item.get("references")
 
         assert name
         assert owner
@@ -52,3 +62,20 @@ def test_schema_mapping_manifest_is_valid() -> None:
         for f in fields:
             key = str(f).strip()
             assert key in props, f"field {key} missing in {schema_rel}"
+
+        if references is not None:
+            assert isinstance(references, list) and references, f"references invalid in {name}"
+            for ref in references:
+                assert isinstance(ref, dict), f"reference item must be object in {name}"
+                ref_schema_rel = str(ref.get("schema") or "").strip()
+                json_path = str(ref.get("json_path") or "").strip()
+                expected = str(ref.get("expected") or "").strip()
+                assert ref_schema_rel and json_path and expected, f"reference fields missing in {name}"
+                ref_schema_path = PROJECT_ROOT / ref_schema_rel
+                assert ref_schema_path.is_file(), f"reference schema not found: {ref_schema_rel}"
+                ref_schema = json.loads(ref_schema_path.read_text(encoding="utf-8"))
+                actual = _read_json_path(ref_schema, json_path)
+                assert actual == expected, (
+                    f"reference mismatch in {name}: {ref_schema_rel} {json_path} "
+                    f"expected={expected} actual={actual}"
+                )

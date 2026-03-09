@@ -58,3 +58,4 @@
 - [x] Task 56: 将 `ExecutionResult/ExecutionReconcileResult` 的 `retry_meta` 收敛为 `$ref` 引用独立 schema，并更新测试校验逻辑。
 - [x] Task 57: 修复 `retry_meta` 契约一致性测试，按 `$ref` 解析独立 schema 枚举。
 - [x] Task 58: 抽取统一 schema 校验工具，收敛 execution schema 测试的重复校验逻辑。
+- [x] Task 59: 在 `schema_mapping.json` 显式登记 `retry_meta` 及其 `$ref` 引用来源，并增加机器校验。

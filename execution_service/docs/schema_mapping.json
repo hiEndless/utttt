@@ -53,6 +53,33 @@
         "trace_id",
         "updated_at_ms"
       ]
+    },
+    {
+      "name": "RetryMeta",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/retry_meta.schema.json",
+      "code": "execution_service/domain/retry_meta.py",
+      "symbol": "RETRY_META_STATUSES",
+      "fields": [
+        "attempts",
+        "max_retries",
+        "status",
+        "retryable",
+        "last_error"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        }
+      ]
     }
   ]
 }

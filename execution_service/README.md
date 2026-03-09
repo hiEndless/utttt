@@ -152,3 +152,4 @@ execution_service/
 - retry_meta schema：`execution_service/docs/retry_meta.schema.json`
 - `execution_result/execution_reconcile_result` 中的 `retry_meta` 已统一通过 `$ref` 引用独立 schema，避免枚举漂移
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`
+- `schema_mapping.json` 已登记 `RetryMeta` 的 `$ref` 引用来源，守卫会校验引用路径和值不漂移
