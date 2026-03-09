@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v4",
+  "version": "execution-schema-mapping-v5",
   "last_updated": "2026-03-10",
   "items": [
     {
@@ -12,6 +12,7 @@
       "fields": [
         "decision_id",
         "exchange",
+        "account_id",
         "symbol",
         "direction_intent",
         "confidence",
@@ -39,6 +40,11 @@
           "schema": "execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.confidence.properties.score.maximum",
           "expected": 1.0
+        },
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.account_id.minLength",
+          "expected": 1
         }
       ]
     },

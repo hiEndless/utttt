@@ -72,6 +72,7 @@ execution_service/
 
 - `DecisionIntent v1` 已冻结（见 `execution_service/domain/contracts.py`）
 - `ExecutionResult v1` 已冻结（见 `execution_service/domain/contracts.py`）
+- `DecisionIntent` 已显式包含 `account_id`（默认 `main`）
 - 约束：agent 只需提交方向意图与证据提示，不提交仓位上下文
 - `Position Context` 由 execution_service 侧读取并用于最终动作裁决
 

@@ -63,7 +63,7 @@ class ExecutionService:
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
-        account_id = _resolve_account_id(payload)
+        account_id = decision.account_id
         lock_acquired = False
         if self._idempotency_store is not None:
             cached = await self._idempotency_store.get_result(decision.decision_id)
@@ -458,7 +458,3 @@ def _infer_sink_mode(execution_sink: Any) -> str:
         return "exchange_skeleton"
     return "mock"
 
-
-def _resolve_account_id(payload: Mapping[str, Any]) -> str:
-    account_id = str(payload.get("account_id") or "").strip()
-    return account_id or "main"

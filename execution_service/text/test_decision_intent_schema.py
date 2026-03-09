@@ -16,6 +16,7 @@ def test_decision_intent_schema_samples() -> None:
     good = {
         "decision_id": "dec-001",
         "exchange": "binance",
+        "account_id": "main",
         "symbol": "ETHUSDT",
         "direction_intent": "long",
         "confidence": {"level": "medium", "score": 0.66},
@@ -30,6 +31,7 @@ def test_decision_intent_schema_samples() -> None:
     bad = {
         "decision_id": "dec-002",
         "exchange": "binance",
+        "account_id": "main",
         "symbol": "ETHUSDT",
         "direction_intent": "buy",
         "confidence": {"level": "medium", "score": 0.66},

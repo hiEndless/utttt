@@ -69,3 +69,4 @@
 - [x] Task 67: 风控规则支持 `hedge` 双向持仓（long/short 两腿独立上限 + one_way 兼容）并补测试。
 - [x] Task 68: execution 输出新增 `signal_result`（模拟信号结构），包含腿级动作与仓位 before/after 模拟快照。
 - [x] Task 69: 冻结 `signal_result` 独立 schema，并接入守卫、索引文档与 schema mapping（breaking 升版到 v4）。
+- [x] Task 70: 将 `account_id` 正式纳入 `DecisionIntent` 契约（schema/代码/映射），并将 schema mapping 升版到 v5。

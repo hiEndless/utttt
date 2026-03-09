@@ -32,7 +32,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v4"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v5"
 
 
 def test_decide_success() -> None:
@@ -42,6 +42,7 @@ def test_decide_success() -> None:
         json={
             "decision_id": "dec-001",
             "exchange": "binance",
+            "account_id": "main",
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
@@ -65,6 +66,7 @@ def test_decide_bad_request() -> None:
         json={
             "decision_id": "dec-001",
             "exchange": "binance",
+            "account_id": "main",
             "symbol": "ETHUSDT",
             "direction_intent": "buy",
             "confidence": {"level": "medium", "score": 0.66},
@@ -115,6 +117,7 @@ def test_debug_state_with_decision_id() -> None:
         json={
             "decision_id": "dec-debug-001",
             "exchange": "binance",
+            "account_id": "main",
             "symbol": "ETHUSDT",
             "direction_intent": "none",
             "confidence": {"level": "medium", "score": 0.66},
@@ -173,6 +176,7 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
         json={
             "decision_id": "dec-reconcile-001",
             "exchange": "binance",
+            "account_id": "main",
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},

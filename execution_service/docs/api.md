@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v4",
+  "schema_mapping_version": "execution-schema-mapping-v5",
   "ts": 1760000000000
 }
 ```
@@ -41,6 +41,7 @@
 {
   "decision_id": "dec-001",
   "exchange": "binance",
+  "account_id": "main",
   "symbol": "ETHUSDT",
   "direction_intent": "long",
   "confidence": {"level": "medium", "score": 0.67},
@@ -54,14 +55,15 @@
 
 1. `decision_id`: 非空字符串
 2. `exchange`: 非空字符串
-3. `symbol`: 非空字符串
-4. `direction_intent`: `long | short | none`
-5. `confidence.level`: `low | medium | high`
-6. `confidence.score`: `[0, 1]` 浮点数
-7. `cross_horizon_policy`: 对象（可为空对象）
-8. `risk_hints`: 对象（可为空对象）
-9. `trace_id`: 可选字符串
-10. JSON Schema：`execution_service/docs/decision_intent.schema.json`
+3. `account_id`: 非空字符串（当前默认建议 `main`）
+4. `symbol`: 非空字符串
+5. `direction_intent`: `long | short | none`
+6. `confidence.level`: `low | medium | high`
+7. `confidence.score`: `[0, 1]` 浮点数
+8. `cross_horizon_policy`: 对象（可为空对象）
+9. `risk_hints`: 对象（可为空对象）
+10. `trace_id`: 可选字符串
+11. JSON Schema：`execution_service/docs/decision_intent.schema.json`
 
 响应示例：
 

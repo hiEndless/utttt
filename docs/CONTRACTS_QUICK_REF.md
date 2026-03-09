@@ -117,6 +117,9 @@ agent_server_new -> execution_service
 
 执行层目标输入：
 - `decision_id`
+- `exchange`
+- `account_id`
+- `symbol`
 - `direction_intent`
 - `confidence`
 - `cross_horizon_policy`
@@ -127,6 +130,7 @@ agent_server_new -> execution_service
 - `reject_reason`
 - `applied_risk_rules`
 - `order_result`（可选）
+- `signal_result`（模拟信号结构）
 
 执行层新增回执对账接口（骨架）：
 - `POST /internal/execution/reconcile`

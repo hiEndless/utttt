@@ -37,6 +37,7 @@ class DecisionIntent:
 
     decision_id: str
     exchange: str
+    account_id: str
     symbol: str
     direction_intent: DirectionIntent
     confidence: DecisionConfidence
@@ -48,6 +49,7 @@ class DecisionIntent:
     def from_dict(cls, payload: Mapping[str, Any]) -> "DecisionIntent":
         decision_id = str(payload.get("decision_id", "")).strip()
         exchange = str(payload.get("exchange", "")).strip()
+        account_id = str(payload.get("account_id", "")).strip() or "main"
         symbol = str(payload.get("symbol", "")).strip()
         direction = str(payload.get("direction_intent", "")).strip().lower()
         if not decision_id:
@@ -76,6 +78,7 @@ class DecisionIntent:
         return cls(
             decision_id=decision_id,
             exchange=exchange,
+            account_id=account_id,
             symbol=symbol,
             direction_intent=direction,  # type: ignore[arg-type]
             confidence=confidence,
@@ -88,6 +91,7 @@ class DecisionIntent:
         data = {
             "decision_id": self.decision_id,
             "exchange": self.exchange,
+            "account_id": self.account_id,
             "symbol": self.symbol,
             "direction_intent": self.direction_intent,
             "confidence": self.confidence.to_dict(),

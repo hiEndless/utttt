@@ -12,6 +12,7 @@ def test_decision_intent_v1_parse_success() -> None:
     payload = {
         "decision_id": "dec-001",
         "exchange": "binance",
+        "account_id": "sub_1",
         "symbol": "ETHUSDT",
         "direction_intent": "long",
         "confidence": {"level": "medium", "score": 0.66},
@@ -22,6 +23,7 @@ def test_decision_intent_v1_parse_success() -> None:
     decision = DecisionIntent.from_dict(payload)
     data = decision.to_dict()
     assert data["decision_id"] == "dec-001"
+    assert data["account_id"] == "sub_1"
     assert data["direction_intent"] == "long"
     assert data["confidence"]["score"] == 0.66
 
@@ -30,6 +32,7 @@ def test_decision_intent_v1_reject_invalid_direction() -> None:
     payload = {
         "decision_id": "dec-001",
         "exchange": "binance",
+        "account_id": "main",
         "symbol": "ETHUSDT",
         "direction_intent": "buy",
         "confidence": {"level": "medium", "score": 0.66},
@@ -41,6 +44,20 @@ def test_decision_intent_v1_reject_invalid_direction() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "direction_intent" in str(exc)
+
+
+def test_decision_intent_default_account_id_main() -> None:
+    payload = {
+        "decision_id": "dec-003",
+        "exchange": "binance",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {},
+    }
+    decision = DecisionIntent.from_dict(payload)
+    assert decision.account_id == "main"
 
 
 def test_execution_result_v1_parse_success() -> None:
