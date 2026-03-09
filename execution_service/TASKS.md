@@ -77,3 +77,4 @@
 - [x] Task 75: `risk_checks` 增加并冻结 `message_zh` 必填中文说明字段，同步 schema/测试与文档说明。
 - [x] Task 76: `risk_checks.scope/status` 收敛为常量枚举，并增加代码-契约一致性测试防漂移。
 - [x] Task 77: `risk_checks.message_zh` 文案模板收敛为常量并增加模板稳定性测试，避免多处格式漂移。
+- [x] Task 78: 将 `risk_checks` 构造逻辑拆分为独立 builder 模块，并新增 builder 单测，降低 `risk_rules` 复杂度。

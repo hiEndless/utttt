@@ -28,6 +28,7 @@ from .risk_check_messages import (
     RISK_MSG_SHORT_LEG_POSITION_LIMIT,
     RISK_MSG_SYMBOL_EXPOSURE_RATIO,
 )
+from .risk_check_builder import build_risk_checks
 
 __all__ = [
     "DecisionConfidence",
@@ -57,4 +58,5 @@ __all__ = [
     "RISK_MSG_SYMBOL_EXPOSURE_RATIO",
     "RISK_MSG_LONG_LEG_POSITION_LIMIT",
     "RISK_MSG_SHORT_LEG_POSITION_LIMIT",
+    "build_risk_checks",
 ]
