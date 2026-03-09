@@ -101,6 +101,8 @@ class ExchangeExecutionSink:
         out = await self._binance_query_order(symbol=symbol, order_id=str(order_id))
         exchange_status_raw = str(out.get("status") or "").strip().upper()
         reconcile_status = self._map_binance_status(exchange_status_raw)
+        executed_qty = _to_float(out.get("executedQty"))
+        avg_price = self._compute_avg_price(out=out, executed_qty=executed_qty)
         return {
             "mode": "exchange_skeleton",
             "dry_run": False,
@@ -110,8 +112,8 @@ class ExchangeExecutionSink:
             "exchange": exchange or None,
             "symbol": symbol or None,
             "status": reconcile_status,
-            "filled_qty": float(out.get("executedQty") or 0.0),
-            "avg_price": float(out.get("price") or 0.0) if str(out.get("price") or "").strip() else None,
+            "filled_qty": executed_qty,
+            "avg_price": avg_price,
             "ts": int(time.time() * 1000),
             "exchange_status_raw": exchange_status_raw or None,
             "note": f"交易所回执状态映射: {exchange_status_raw or 'UNKNOWN'} -> {reconcile_status}",
@@ -231,3 +233,24 @@ class ExchangeExecutionSink:
             return RECONCILE_STATUS_REJECTED
         # 中文注释：未识别状态统一回退 submitted，避免误判终态。
         return RECONCILE_STATUS_SUBMITTED
+
+    def _compute_avg_price(self, *, out: Mapping[str, Any], executed_qty: float) -> float | None:
+        # 中文注释：优先使用交易所明确返回的 avgPrice；若为空则尝试 quoteQty / executedQty 推导。
+        avg_price = _to_float(out.get("avgPrice"))
+        if avg_price > 0:
+            return avg_price
+        if executed_qty > 0:
+            quote_qty = _to_float(out.get("cummulativeQuoteQty"))
+            if quote_qty > 0:
+                return quote_qty / executed_qty
+        price = _to_float(out.get("price"))
+        if price > 0:
+            return price
+        return None
+
+
+def _to_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0

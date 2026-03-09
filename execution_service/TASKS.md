@@ -64,3 +64,4 @@
 - [x] Task 62: 将 `ExecutionReconcileResult` 纳入 `schema_mapping`，并冻结 `status/reason_code/retry_meta` 关键断言。
 - [x] Task 63: 将 `ExchangeExecutionSink` 从纯占位升级为可配置 dry-run + Binance 签名请求骨架，并补单测与守卫。
 - [x] Task 64: `ExchangeExecutionSink.reconcile` 接入 Binance 状态映射（filled/canceled/rejected/submitted）并补回归测试。
+- [x] Task 65: `ExchangeExecutionSink.reconcile` 补齐 `avg_price` 计算策略（`avgPrice` -> `quoteQty/executedQty` -> `price`）。

@@ -15,17 +15,31 @@ from execution_service.domain.contracts import DecisionIntent
 
 
 class _FakeBinanceReconcileSink(ExchangeExecutionSink):
-    def __init__(self, *, status: str) -> None:
+    def __init__(
+        self,
+        *,
+        status: str,
+        executed_qty: str = "0.25",
+        avg_price: str = "",
+        price: str = "2000.0",
+        quote_qty: str = "0",
+    ) -> None:
         super().__init__(venue="binance", dry_run=False, api_key="k", api_secret="s")
         self._status = status
+        self._executed_qty = executed_qty
+        self._avg_price = avg_price
+        self._price = price
+        self._quote_qty = quote_qty
 
     async def _binance_query_order(self, *, symbol: str, order_id: str):  # type: ignore[override]
         return {
             "symbol": symbol,
             "orderId": order_id,
             "status": self._status,
-            "executedQty": "0.25",
-            "price": "2000.0",
+            "executedQty": self._executed_qty,
+            "avgPrice": self._avg_price,
+            "price": self._price,
+            "cummulativeQuoteQty": self._quote_qty,
         }
 
 
@@ -109,7 +123,7 @@ def test_exchange_sink_reconcile_dry_run_placeholder() -> None:
 
 
 def test_exchange_sink_reconcile_maps_binance_filled_to_filled() -> None:
-    sink = _FakeBinanceReconcileSink(status="FILLED")
+    sink = _FakeBinanceReconcileSink(status="FILLED", avg_price="1999.9")
     out = asyncio.run(
         sink.reconcile(
             "123456",
@@ -119,6 +133,7 @@ def test_exchange_sink_reconcile_maps_binance_filled_to_filled() -> None:
     assert out["dry_run"] is False
     assert out["status"] == "filled"
     assert out["exchange_status_raw"] == "FILLED"
+    assert out["avg_price"] == 1999.9
 
 
 def test_exchange_sink_reconcile_maps_binance_canceled_to_canceled() -> None:
@@ -143,3 +158,21 @@ def test_exchange_sink_reconcile_unknown_status_fallback_submitted() -> None:
     )
     assert out["status"] == "submitted"
     assert out["exchange_status_raw"] == "PARTIALLY_FILLED"
+
+
+def test_exchange_sink_reconcile_avg_price_fallback_to_quote_div_qty() -> None:
+    sink = _FakeBinanceReconcileSink(
+        status="PARTIALLY_FILLED",
+        executed_qty="0.5",
+        avg_price="",
+        price="",
+        quote_qty="1100",
+    )
+    out = asyncio.run(
+        sink.reconcile(
+            "123459",
+            {"decision_id": "dec-007", "exchange": "binance", "symbol": "ETHUSDT"},
+        )
+    )
+    assert out["status"] == "submitted"
+    assert out["avg_price"] == 2200.0

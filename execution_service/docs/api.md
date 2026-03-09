@@ -274,6 +274,10 @@
   - `REJECTED -> rejected`
   - 其他状态回退 `submitted`
 - 对账返回会附加 `exchange_status_raw`，便于联调定位状态映射行为。
+- `reconcile.avg_price` 计算优先级：
+  - 1) `avgPrice`
+  - 2) `cummulativeQuoteQty / executedQty`
+  - 3) `price`
 
 ## Schema 与字段来源映射
 
