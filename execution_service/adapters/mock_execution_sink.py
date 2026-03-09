@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent
 
@@ -25,5 +25,19 @@ class MockExecutionSink:
             "symbol": decision.symbol,
             "direction_intent": decision.direction_intent,
             "execution_action": execution_action,
+            "ts": int(time.time() * 1000),
+        }
+
+    async def reconcile(self, order_id: str, payload: Mapping[str, Any]) -> Dict[str, Any]:
+        return {
+            "mode": "mock",
+            "venue": self.venue,
+            "order_id": str(order_id),
+            "decision_id": str(payload.get("decision_id") or "").strip() or None,
+            "exchange": str(payload.get("exchange") or "").strip() or None,
+            "symbol": str(payload.get("symbol") or "").strip().upper() or None,
+            "status": "filled",
+            "filled_qty": 1.0,
+            "avg_price": 1000.0,
             "ts": int(time.time() * 1000),
         }

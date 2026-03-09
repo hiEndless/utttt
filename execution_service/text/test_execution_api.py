@@ -119,3 +119,30 @@ def test_debug_state_with_decision_id() -> None:
     assert "attempts" in data["decision_state"]
     assert data["decision_state"]["source"] == "execution_service"
     assert data["decision_state"]["trace_id"] == "trace-debug-001"
+
+
+def test_reconcile_sink_not_configured() -> None:
+    client = TestClient(create_app())
+    response = client.post("/internal/execution/reconcile", json={"order_id": "ord-001"})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "execution_sink_not_configured"
+
+
+def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/reconcile",
+        json={
+            "order_id": "mock-order-001",
+            "decision_id": "dec-001",
+            "exchange": "binance",
+            "symbol": "ETHUSDT",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["mode"] == "mock"
+    assert data["order_id"] == "mock-order-001"
+    assert data["status"] == "filled"

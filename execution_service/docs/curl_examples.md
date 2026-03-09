@@ -56,12 +56,25 @@ curl -s http://127.0.0.1:9962/internal/execution/debug/state/binance/ETHUSDT | j
 curl -s 'http://127.0.0.1:9962/internal/execution/debug/state/binance/ETHUSDT?redact=true' | jq
 ```
 
-## 7) 契约入口
+## 7) 执行回执对账（reconcile）
+
+```bash
+curl -s -X POST http://127.0.0.1:9962/internal/execution/reconcile \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "order_id":"mock-order-001",
+    "decision_id":"dec-001",
+    "exchange":"binance",
+    "symbol":"ETHUSDT"
+  }' | jq
+```
+
+## 8) 契约入口
 
 - 项目级入口：`docs/CONTRACT_INDEX.md`
 - API 说明：`execution_service/docs/api.md`
 
-## 8) Schema 快速定位
+## 9) Schema 快速定位
 
 - DecisionIntent：`execution_service/docs/decision_intent.schema.json`
 - ExecutionResult：`execution_service/docs/execution_result.schema.json`

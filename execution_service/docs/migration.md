@@ -50,6 +50,7 @@
 27. 已新增 breaking 升版守卫：`change_policy=breaking` 变更时必须提升 mapping 主版本
 28. breaking 升版守卫已扩展到 schema 文件内容 hash 变化，避免仅改 schema 文件导致漏检
 29. breaking 升版守卫已输出触发对象与原因，便于 CI 失败快速定位
+30. execution 已新增 `POST /internal/execution/reconcile` 回执对账接口，支持 `mock/exchange_skeleton` sink
 
 ## 关键收敛决议（冻结）
 

@@ -153,6 +153,21 @@ class ExecutionService:
             out["decision_state"] = await self._execution_state_store.get_state(str(decision_id))
         return out
 
+    async def reconcile_order(self, payload: Mapping[str, Any]) -> Dict[str, Any]:
+        order_id = str(payload.get("order_id") or "").strip()
+        if not order_id:
+            raise ValueError("order_id 不能为空")
+        if self._execution_sink is None:
+            raise RuntimeError("execution_sink_not_configured")
+        reconcile_fn = getattr(self._execution_sink, "reconcile", None)
+        if not callable(reconcile_fn):
+            raise RuntimeError("execution_sink_reconcile_not_supported")
+        result = await reconcile_fn(order_id, payload)  # type: ignore[misc]
+        out = dict(result or {})
+        out.setdefault("order_id", order_id)
+        out.setdefault("ts", int(time.time() * 1000))
+        return out
+
     async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
         if self._execution_state_store is None:
             return

@@ -4,6 +4,7 @@ from .execution_state_store import InMemoryExecutionStateStore, RedisExecutionSt
 from .agent_execution_plan_adapter import adapt_agent_execution_plan_to_decision_intent
 from .idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
 from .mock_execution_sink import MockExecutionSink
+from .exchange_execution_sink import ExchangeExecutionSink
 from .redis_state_providers import (
     RedisAccountStateProvider,
     RedisExecutionStateConfig,
@@ -30,6 +31,7 @@ __all__ = [
     "build_stub_state_providers",
     "adapt_agent_execution_plan_to_decision_intent",
     "MockExecutionSink",
+    "ExchangeExecutionSink",
     "InMemoryExecutionStateStore",
     "RedisExecutionStateStore",
     "InMemoryIdempotencyStore",

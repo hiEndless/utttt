@@ -43,3 +43,4 @@
 - [x] Task 41: 增加 breaking 变更升版守卫（breaking 变更必须递增 mapping 主版本）。
 - [x] Task 42: breaking 升版守卫纳入 schema 文件内容 hash 变更检测。
 - [x] Task 43: breaking 升版守卫输出触发对象与原因，提升定位效率。
+- [x] Task 44: 增加 `reconcile` 回执对账接口与 `exchange` sink 骨架实现，并补测试与文档。

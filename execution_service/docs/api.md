@@ -108,6 +108,43 @@
 - `max_drawdown_exceeded`
 - `direction_conflict_with_position`
 
+## 执行回执对账（骨架）
+
+- `POST /internal/execution/reconcile`
+
+请求示例：
+
+```json
+{
+  "order_id": "mock-order-001",
+  "decision_id": "dec-001",
+  "exchange": "binance",
+  "symbol": "ETHUSDT"
+}
+```
+
+响应示例（mock）：
+
+```json
+{
+  "mode": "mock",
+  "venue": "mock_exchange",
+  "order_id": "mock-order-001",
+  "decision_id": "dec-001",
+  "exchange": "binance",
+  "symbol": "ETHUSDT",
+  "status": "filled",
+  "filled_qty": 1.0,
+  "avg_price": 1000.0,
+  "ts": 1760000000000
+}
+```
+
+错误约定：
+- `400`: `order_id` 缺失
+- `503`: `execution_sink_not_configured`
+- `501`: `execution_sink_reconcile_not_supported`
+
 ## 调试状态快照
 
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
@@ -173,6 +210,7 @@
 - `EXECUTION_SUBMIT_ENABLED`
 - `EXECUTION_SINK_MODE`
 - `EXECUTION_SINK_MOCK_VENUE`
+- `EXECUTION_SINK_EXCHANGE_VENUE`（当 `EXECUTION_SINK_MODE=exchange`）
 - `EXECUTION_SUBMIT_MAX_RETRIES`
 - `EXECUTION_SUBMIT_BACKOFF_BASE_S`
 - `EXECUTION_IDEMPOTENCY_ENABLED`

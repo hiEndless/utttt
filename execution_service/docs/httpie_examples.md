@@ -34,7 +34,17 @@ http GET :9962/internal/execution/debug/state/binance/ETHUSDT
 http GET ':9962/internal/execution/debug/state/binance/ETHUSDT?redact=true'
 ```
 
-## 5) 启动示例（stub / redis）
+## 5) 执行回执对账（reconcile）
+
+```bash
+http POST :9962/internal/execution/reconcile \
+  order_id=mock-order-001 \
+  decision_id=dec-001 \
+  exchange=binance \
+  symbol=ETHUSDT
+```
+
+## 6) 启动示例（stub / redis）
 
 ```bash
 EXECUTION_STATE_PROVIDER_MODE=stub python -m execution_service.main
@@ -44,12 +54,12 @@ EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0 \
 python -m execution_service.main
 ```
 
-## 6) 契约入口
+## 7) 契约入口
 
 - 项目级入口：`docs/CONTRACT_INDEX.md`
 - API 说明：`execution_service/docs/api.md`
 
-## 7) Schema 快速定位
+## 8) Schema 快速定位
 
 - DecisionIntent：`execution_service/docs/decision_intent.schema.json`
 - ExecutionResult：`execution_service/docs/execution_result.schema.json`

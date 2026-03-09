@@ -15,6 +15,7 @@ from execution_service.adapters.redis_state_providers import (
     create_redis_client_from_env,
 )
 from execution_service.adapters.mock_execution_sink import MockExecutionSink
+from execution_service.adapters.exchange_execution_sink import ExchangeExecutionSink
 from execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
 from execution_service.adapters.execution_state_store import InMemoryExecutionStateStore, RedisExecutionStateStore
 from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
@@ -69,6 +70,11 @@ def create_app() -> FastAPI:
                 venue=str(os.getenv("EXECUTION_SINK_MOCK_VENUE", "mock_exchange") or "mock_exchange").strip()
             )
             logger.info("execution_service 启用执行下沉，mode=mock")
+        elif sink_mode == "exchange":
+            execution_sink = ExchangeExecutionSink(
+                venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip()
+            )
+            logger.info("execution_service 启用执行下沉，mode=exchange_skeleton")
         else:
             logger.warning("execution_service submit 已启用，但未识别 sink_mode=%s，回退禁用 submit", sink_mode)
             submit_enabled = False

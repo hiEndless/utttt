@@ -44,6 +44,22 @@ def create_router(service: ExecutionService) -> APIRouter:
             raise HTTPException(status_code=502, detail=f"execution_decide_failed:{exc}") from exc
         return result.to_dict()
 
+    @router.post("/reconcile")
+    async def reconcile(payload: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            return await service.reconcile_order(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            msg = str(exc)
+            if msg == "execution_sink_not_configured":
+                raise HTTPException(status_code=503, detail=msg) from exc
+            if msg == "execution_sink_reconcile_not_supported":
+                raise HTTPException(status_code=501, detail=msg) from exc
+            raise HTTPException(status_code=502, detail=f"execution_reconcile_failed:{exc}") from exc
+        except Exception as exc:  # pragma: no cover
+            raise HTTPException(status_code=502, detail=f"execution_reconcile_failed:{exc}") from exc
+
     @router.get("/debug/state/{exchange}/{symbol}")
     async def debug_state(
         exchange: str,

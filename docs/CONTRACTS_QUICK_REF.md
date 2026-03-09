@@ -128,6 +128,9 @@ agent_server_new -> execution_service
 - `applied_risk_rules`
 - `order_result`（可选）
 
+执行层新增回执对账接口（骨架）：
+- `POST /internal/execution/reconcile`
+
 执行层状态来源：
 - 支持 `stub` 与 `redis` 双模式（`EXECUTION_STATE_PROVIDER_MODE`）
 

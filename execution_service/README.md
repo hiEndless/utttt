@@ -19,6 +19,7 @@
 4. 生成最终执行动作（add/reduce/hold/exit/skip）
 5. 可选：路由到交易执行器
 6. 输出执行结果与拒绝原因
+7. 提供执行回执对账接口（骨架）
 
 ## 不负责
 
@@ -92,6 +93,7 @@ execution_service/
 - `GET /internal/execution/healthz`
 - `GET /internal/execution/version`
 - `POST /internal/execution/decide`
+- `POST /internal/execution/reconcile`
 - `GET /internal/execution/debug/state/{exchange}/{symbol}`（联调只读）
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true`（脱敏视图）
 
@@ -105,8 +107,9 @@ execution_service/
   - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
-  - `EXECUTION_SINK_MODE=mock`（当前支持 `mock`）
+  - `EXECUTION_SINK_MODE=mock|exchange`（`exchange` 为骨架实现）
   - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
+  - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SUBMIT_MAX_RETRIES`（默认 `0`）
   - `EXECUTION_SUBMIT_BACKOFF_BASE_S`（默认 `0.2`）
 - 幂等缓存（建议开启）：
