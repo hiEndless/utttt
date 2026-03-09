@@ -185,3 +185,15 @@
 - `EXECUTION_STATE_MACHINE_REDIS_URL`
 - `EXECUTION_STATE_MACHINE_KEY_TEMPLATE`
 - `EXECUTION_STATE_MACHINE_TTL_S`
+
+## Schema 与字段来源映射
+
+| 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 |
+| --- | --- | --- | --- |
+| DecisionIntent | `decision_id` `exchange` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` |
+| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` |
+| DecisionState | `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 |
+
+说明：
+- schema 用于契约冻结与守卫检查。
+- 代码定义位置用于评审时追溯字段来源与语义变更点。

@@ -40,6 +40,7 @@
 17. DecisionIntent 已冻结独立 schema（`decision_intent.schema.json`）并接入守卫脚本防漂移
 18. execution 三份 schema 已统一纳入 `docs/CONTRACT_INDEX.md` 作为项目级单入口索引
 19. execution 模块内 cURL/HTTPie 文档已补齐 schema 快速定位段，和项目入口文档保持一致
+20. execution API 文档已补充“schema 与字段来源映射表”，支持联调与评审快速追溯
 
 ## 关键收敛决议（冻结）
 
