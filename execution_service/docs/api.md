@@ -60,6 +60,7 @@
 7. `cross_horizon_policy`: 对象（可为空对象）
 8. `risk_hints`: 对象（可为空对象）
 9. `trace_id`: 可选字符串
+10. JSON Schema：`execution_service/docs/decision_intent.schema.json`
 
 响应示例：
 

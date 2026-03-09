@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionIntent",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "decision_id",
+    "exchange",
+    "symbol",
+    "direction_intent",
+    "confidence",
+    "cross_horizon_policy",
+    "risk_hints"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exchange": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction_intent": {
+      "type": "string",
+      "enum": ["long", "short", "none"]
+    },
+    "confidence": {
+      "type": "object",
+      "required": ["level", "score"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      }
+    },
+    "cross_horizon_policy": {
+      "type": "object"
+    },
+    "risk_hints": {
+      "type": "object"
+    },
+    "trace_id": {
+      "type": ["string", "null"]
+    }
+  }
+}

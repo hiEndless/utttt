@@ -35,6 +35,7 @@ execution_service/
   docs/
     api.md
     boundaries.md
+    decision_intent.schema.json
     decision_state.schema.json
     execution_result.schema.json
     migration.md
@@ -135,4 +136,5 @@ execution_service/
 - cURL 示例：`execution_service/docs/curl_examples.md`
 - HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - decision_state schema：`execution_service/docs/decision_state.schema.json`
+- decision_intent schema：`execution_service/docs/decision_intent.schema.json`
 - execution_result schema：`execution_service/docs/execution_result.schema.json`

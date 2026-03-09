@@ -37,6 +37,7 @@
 14. execution_state 已透传 `trace_id` 并写入 `source=execution_service`，支持跨服务链路定位
 15. execution_state 已冻结独立 schema（`decision_state.schema.json`）并接入守卫脚本防漂移
 16. ExecutionResult 已冻结独立 schema（`execution_result.schema.json`）并接入守卫脚本防漂移
+17. DecisionIntent 已冻结独立 schema（`decision_intent.schema.json`）并接入守卫脚本防漂移
 
 ## 关键收敛决议（冻结）
 
