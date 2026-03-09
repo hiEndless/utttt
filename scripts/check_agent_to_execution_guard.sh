@@ -22,6 +22,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   execution_service/text/test_execution_submit_flow.py \
   execution_service/text/test_execution_reconcile_retry.py \
   execution_service/text/test_execution_reconcile_result_schema.py \
+  execution_service/text/test_retry_meta_schema.py \
   execution_service/text/test_reconcile_reason_codes_contract.py \
   execution_service/text/test_reconcile_status_codes_contract.py \
   execution_service/text/test_retry_meta_contract.py \

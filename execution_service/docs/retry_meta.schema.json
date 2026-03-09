@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionRetryMeta",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["attempts", "max_retries", "status"],
+  "properties": {
+    "attempts": {"type": "integer", "minimum": 1},
+    "max_retries": {"type": "integer", "minimum": 0},
+    "status": {"type": "string", "enum": ["ok", "failed"]},
+    "retryable": {"type": "boolean"},
+    "last_error": {"type": "string"}
+  }
+}

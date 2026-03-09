@@ -170,6 +170,7 @@
 - `reason_code` 枚举由 `execution_service/domain/reconcile_codes.py` 单点定义，并由测试校验与 schema 一致。
 - `status` 枚举由 `execution_service/domain/reconcile_statuses.py` 单点定义，并由测试校验与 schema 一致。
 - `retry_meta.status` 枚举由 `execution_service/domain/retry_meta.py` 单点定义，并由测试校验两份 schema 一致。
+- `retry_meta` 独立 schema：`execution_service/docs/retry_meta.schema.json`
 
 ## 调试状态快照
 

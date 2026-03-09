@@ -139,6 +139,7 @@ agent_server_new -> execution_service
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/execution_reconcile_result.schema.json`
+- `execution_service/docs/retry_meta.schema.json`
 - `execution_service/docs/schema_mapping.json`
 - `docs/CONTRACT_INDEX.md` 中 `execution_schema_mapping_version` 必须与 `/internal/execution/version` 一致
 
@@ -176,6 +177,7 @@ agent_server_new -> execution_service
 - Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
 - Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
 - Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
+- Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`
 - Execution Schema Mapping：`execution_service/docs/schema_mapping.json`
 - Execution cURL 示例：`execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`

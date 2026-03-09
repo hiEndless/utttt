@@ -61,6 +61,7 @@
 38. reconcile `status` 已抽为代码常量，并由测试强校验与 schema 枚举一致
 39. submit/reconcile `retry_meta.status` 已抽为共享常量，并由测试强校验两份 schema 枚举一致
 40. ExecutionResult schema 发生破坏性变更后，`schema_mapping_version` 已按守卫要求升级到 `execution-schema-mapping-v3`
+41. 已新增独立 `retry_meta` schema，并接入守卫与项目索引文档
 
 ## 关键收敛决议（冻结）
 
