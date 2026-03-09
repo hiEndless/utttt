@@ -1,66 +1,12 @@
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict
 
 PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-
-def _validate(schema: Dict[str, Any], payload: Dict[str, Any]) -> bool:
-    # 支持同目录下的本地 $ref（当前用于 retry_meta.schema.json）
-    base_dir = Path(PROJECT_ROOT) / "execution_service" / "docs"
-
-    def _resolve_ref(node: Dict[str, Any]) -> Dict[str, Any]:
-        ref = node.get("$ref")
-        if not isinstance(ref, str):
-            return node
-        ref_path = (base_dir / ref).resolve()
-        return json.loads(ref_path.read_text(encoding="utf-8"))
-
-    def _type_ok(type_node: Any, value: Any) -> bool:
-        if isinstance(type_node, list):
-            return any(_type_ok(t, value) for t in type_node)
-        if type_node == "object":
-            return isinstance(value, dict)
-        if type_node == "string":
-            return isinstance(value, str)
-        if type_node == "number":
-            return isinstance(value, (int, float)) and not isinstance(value, bool)
-        if type_node == "integer":
-            return isinstance(value, int) and not isinstance(value, bool)
-        if type_node == "null":
-            return value is None
-        return True
-
-    def check(node: Dict[str, Any], value: Any) -> bool:
-        node = _resolve_ref(node)
-        node_type = node.get("type")
-        if node_type is not None and not _type_ok(node_type, value):
-            return False
-        if "enum" in node and value not in node["enum"]:
-            return False
-        if isinstance(value, str):
-            min_len = node.get("minLength")
-            if isinstance(min_len, int) and len(value) < min_len:
-                return False
-        if isinstance(value, int):
-            minimum = node.get("minimum")
-            if isinstance(minimum, int) and value < minimum:
-                return False
-        if isinstance(value, dict):
-            required = list(node.get("required") or [])
-            for k in required:
-                if k not in value:
-                    return False
-            props = dict(node.get("properties") or {})
-            for k, v in value.items():
-                if k in props and not check(dict(props[k] or {}), v):
-                    return False
-        return True
-
-    return check(schema, payload)
+from execution_service.text.schema_utils import validate_payload_with_local_refs
 
 
 def test_execution_reconcile_result_schema_samples() -> None:
@@ -81,7 +27,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
         "ts": 1760000000000,
     }
-    assert _validate(schema, good_mock)
+    assert validate_payload_with_local_refs(
+        schema, good_mock, Path(PROJECT_ROOT) / "execution_service" / "docs"
+    )
 
     good_exchange = {
         "mode": "exchange_skeleton",
@@ -98,7 +46,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "retry_meta": {"attempts": 2, "max_retries": 2, "status": "ok"},
         "ts": 1760000000001,
     }
-    assert _validate(schema, good_exchange)
+    assert validate_payload_with_local_refs(
+        schema, good_exchange, Path(PROJECT_ROOT) / "execution_service" / "docs"
+    )
 
     good_failed = {
         "mode": "mock",
@@ -110,7 +60,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "retry_meta": {"attempts": 1, "max_retries": 3, "status": "failed", "retryable": False},
         "ts": 1760000000002,
     }
-    assert _validate(schema, good_failed)
+    assert validate_payload_with_local_refs(
+        schema, good_failed, Path(PROJECT_ROOT) / "execution_service" / "docs"
+    )
 
     good_in_progress = {
         "mode": "mock",
@@ -120,7 +72,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "idempotency_hit": False,
         "ts": 1760000000003,
     }
-    assert _validate(schema, good_in_progress)
+    assert validate_payload_with_local_refs(
+        schema, good_in_progress, Path(PROJECT_ROOT) / "execution_service" / "docs"
+    )
 
     bad = {
         "mode": "mock",
@@ -128,4 +82,6 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "status": "open",
         "ts": 1760000000000,
     }
-    assert not _validate(schema, bad)
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "execution_service" / "docs"
+    )
