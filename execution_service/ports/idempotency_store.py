@@ -11,3 +11,9 @@ class IdempotencyStore(Protocol):
 
     async def save_result(self, decision_id: str, result: Dict[str, Any]) -> None:
         ...
+
+    async def try_acquire_lock(self, decision_id: str, ttl_s: int) -> bool:
+        ...
+
+    async def release_lock(self, decision_id: str) -> None:
+        ...

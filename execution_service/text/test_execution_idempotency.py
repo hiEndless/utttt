@@ -30,6 +30,11 @@ class _CountingSink:
         }
 
 
+class _NoReleaseStore(InMemoryIdempotencyStore):
+    async def release_lock(self, decision_id: str) -> None:  # noqa: ARG002
+        return
+
+
 def _payload(decision_id: str = "dec-idem-001") -> dict:
     return {
         "decision_id": decision_id,
@@ -75,3 +80,22 @@ def test_idempotency_disabled_allows_resubmit() -> None:
     asyncio.run(service.decide(_payload("dec-idem-002")))
     asyncio.run(service.decide(_payload("dec-idem-002")))
     assert sink.count == 2
+
+
+def test_idempotency_lock_busy_returns_in_progress() -> None:
+    sink = _CountingSink()
+    store = _NoReleaseStore()
+    asyncio.run(store.try_acquire_lock("dec-idem-003", 30))
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        execution_sink=sink,  # type: ignore[arg-type]
+        submit_enabled=True,
+        idempotency_store=store,
+        idempotency_lock_ttl_s=30,
+    )
+    out = asyncio.run(service.decide(_payload("dec-idem-003")))
+    assert out.execution_action == "skip"
+    assert out.reject_reason == "idempotency_in_progress"
+    assert sink.count == 0

@@ -87,6 +87,10 @@
   - `reject_reason=execution_submit_failed`
   - `applied_risk_rules` 追加 `execution_submit_fallback`
 - 当幂等缓存启用时（默认开启），相同 `decision_id` 的重复请求会直接返回首次结果，不重复 submit。
+- 当同一 `decision_id` 正在处理中且未拿到锁时，返回：
+  - `execution_action=skip`
+  - `reject_reason=idempotency_in_progress`
+  - `applied_risk_rules` 包含 `idempotency_lock_busy`
 
 建议标准拒绝码（首批冻结）：
 
@@ -151,3 +155,4 @@
 - `EXECUTION_IDEMPOTENCY_REDIS_URL`
 - `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE`
 - `EXECUTION_IDEMPOTENCY_TTL_S`
+- `EXECUTION_IDEMPOTENCY_LOCK_TTL_S`

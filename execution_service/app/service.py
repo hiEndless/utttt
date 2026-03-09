@@ -24,6 +24,7 @@ class ExecutionService:
         execution_sink: ExecutionSink | None = None,
         submit_enabled: bool = False,
         idempotency_store: IdempotencyStore | None = None,
+        idempotency_lock_ttl_s: int = 30,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
@@ -31,62 +32,85 @@ class ExecutionService:
         self._execution_sink = execution_sink
         self._submit_enabled = bool(submit_enabled)
         self._idempotency_store = idempotency_store
+        self._idempotency_lock_ttl_s = int(idempotency_lock_ttl_s)
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
+        lock_acquired = False
         if self._idempotency_store is not None:
             cached = await self._idempotency_store.get_result(decision.decision_id)
             if isinstance(cached, dict) and cached:
                 return ExecutionResult.from_dict(cached)
-
-        position_state = await self._position_provider.get_position_state(
-            decision.exchange,
-            decision.symbol,
-        )
-        account_state = await self._account_provider.get_account_state(decision.exchange)
-        risk_policy = await self._risk_policy_provider.get_risk_policy(
-            decision.exchange,
-            decision.symbol,
-        )
-        result = ExecutionDecisionEngine.decide(
-            decision,
-            position_state=dict(position_state or {}),
-            account_state=dict(account_state or {}),
-            risk_policy=dict(risk_policy or {}),
-        )
-        if (
-            self._submit_enabled
-            and self._execution_sink is not None
-            and result.reject_reason is None
-            and result.execution_action in {"add", "reduce", "exit"}
-        ):
-            try:
-                order_result = await self._execution_sink.submit(decision, result.execution_action)
-                result = ExecutionResult.from_dict(
+            lock_acquired = await self._idempotency_store.try_acquire_lock(
+                decision.decision_id,
+                self._idempotency_lock_ttl_s,
+            )
+            if not lock_acquired:
+                cached_after_lock_fail = await self._idempotency_store.get_result(decision.decision_id)
+                if isinstance(cached_after_lock_fail, dict) and cached_after_lock_fail:
+                    return ExecutionResult.from_dict(cached_after_lock_fail)
+                return ExecutionResult.from_dict(
                     {
-                        "decision_id": result.decision_id,
-                        "execution_action": result.execution_action,
-                        "reject_reason": result.reject_reason,
-                        "applied_risk_rules": list(result.applied_risk_rules),
-                        "order_result": dict(order_result or {}),
-                        "notes": result.notes,
-                    }
-                )
-            except Exception as exc:  # pragma: no cover
-                # 中文注释：执行下沉异常时不抛 5xx，转为业务可观测降级，避免阻塞主决策链路。
-                result = ExecutionResult.from_dict(
-                    {
-                        "decision_id": result.decision_id,
+                        "decision_id": decision.decision_id,
                         "execution_action": "skip",
-                        "reject_reason": "execution_submit_failed",
-                        "applied_risk_rules": [*list(result.applied_risk_rules), "execution_submit_fallback"],
-                        "notes": f"{result.notes or ''}; execution_submit_failed:{exc}".strip("; "),
+                        "reject_reason": "idempotency_in_progress",
+                        "applied_risk_rules": ["idempotency_lock_busy"],
+                        "notes": "相同 decision_id 正在处理，请稍后重试",
                     }
                 )
 
-        if self._idempotency_store is not None:
-            await self._idempotency_store.save_result(decision.decision_id, result.to_dict())
-        return result
+        try:
+            position_state = await self._position_provider.get_position_state(
+                decision.exchange,
+                decision.symbol,
+            )
+            account_state = await self._account_provider.get_account_state(decision.exchange)
+            risk_policy = await self._risk_policy_provider.get_risk_policy(
+                decision.exchange,
+                decision.symbol,
+            )
+            result = ExecutionDecisionEngine.decide(
+                decision,
+                position_state=dict(position_state or {}),
+                account_state=dict(account_state or {}),
+                risk_policy=dict(risk_policy or {}),
+            )
+            if (
+                self._submit_enabled
+                and self._execution_sink is not None
+                and result.reject_reason is None
+                and result.execution_action in {"add", "reduce", "exit"}
+            ):
+                try:
+                    order_result = await self._execution_sink.submit(decision, result.execution_action)
+                    result = ExecutionResult.from_dict(
+                        {
+                            "decision_id": result.decision_id,
+                            "execution_action": result.execution_action,
+                            "reject_reason": result.reject_reason,
+                            "applied_risk_rules": list(result.applied_risk_rules),
+                            "order_result": dict(order_result or {}),
+                            "notes": result.notes,
+                        }
+                    )
+                except Exception as exc:  # pragma: no cover
+                    # 中文注释：执行下沉异常时不抛 5xx，转为业务可观测降级，避免阻塞主决策链路。
+                    result = ExecutionResult.from_dict(
+                        {
+                            "decision_id": result.decision_id,
+                            "execution_action": "skip",
+                            "reject_reason": "execution_submit_failed",
+                            "applied_risk_rules": [*list(result.applied_risk_rules), "execution_submit_fallback"],
+                            "notes": f"{result.notes or ''}; execution_submit_failed:{exc}".strip("; "),
+                        }
+                    )
+
+            if self._idempotency_store is not None:
+                await self._idempotency_store.save_result(decision.decision_id, result.to_dict())
+            return result
+        finally:
+            if self._idempotency_store is not None and lock_acquired:
+                await self._idempotency_store.release_lock(decision.decision_id)
 
     async def get_debug_state(self, *, exchange: str, symbol: str, redact: bool = False) -> Dict[str, Any]:
         """只读调试视图：便于联调时检查 execution 输入状态。"""

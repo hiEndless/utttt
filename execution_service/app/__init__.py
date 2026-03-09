@@ -109,6 +109,7 @@ def create_app() -> FastAPI:
         execution_sink=execution_sink,
         submit_enabled=submit_enabled,
         idempotency_store=idempotency_store,
+        idempotency_lock_ttl_s=int(str(os.getenv("EXECUTION_IDEMPOTENCY_LOCK_TTL_S", "30") or "30")),
     )
     app = FastAPI(
         title="execution_service",

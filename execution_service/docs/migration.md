@@ -29,6 +29,7 @@
 6. execution_service 已支持 `stub/redis` 双模式状态提供器，可逐步替换到真实 Redis 数据
 7. execution_service 已支持可选 `ExecutionSink` 下沉流程（当前 `mock`），并在失败时做业务降级回退
 8. execution_service 已支持基于 `decision_id` 的幂等缓存（memory/redis），避免重复提交
+9. execution_service 已支持 `decision_id` 处理锁（lock TTL），并发重复请求可返回 `idempotency_in_progress`
 
 ## 关键收敛决议（冻结）
 

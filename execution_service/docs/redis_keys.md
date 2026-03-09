@@ -67,10 +67,12 @@ value(JSON)：
 - `EXECUTION_IDEMPOTENCY_REDIS_URL=redis://127.0.0.1:6379/0`
 - `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE=execution:idempotency:{decision_id}`
 - `EXECUTION_IDEMPOTENCY_TTL_S=3600`
+- `EXECUTION_IDEMPOTENCY_LOCK_TTL_S=30`
 
 对应 key 示例：
 
 - `execution:idempotency:dec-001`
+- `execution:idempotency:lock:dec-001`
 
 ## 5) 说明
 
