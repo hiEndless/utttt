@@ -1,6 +1,6 @@
 # feature_service
 
-项目级新架构总览：`/ARCHITECTURE_NEW.md`
+项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 
 `feature_service` 是目标架构中的 **Feature Layer**，位于 `data_server` 之后、`event_center_new` 和 `market_state_engine` 之前。
 

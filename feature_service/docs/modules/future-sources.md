@@ -1,0 +1,36 @@
+# 未来数据源骨架（news/social/onchain）
+
+## 当前状态
+
+已新增预留骨架，但尚未接入 `FeatureService` 主输出链路。
+
+新增接口：
+
+- `feature_service/ports/news_provider.py`
+- `feature_service/ports/social_provider.py`
+- `feature_service/ports/onchain_provider.py`
+
+新增 provider 占位：
+
+- `feature_service/providers/future_source_providers.py`
+  - `Noop*Provider`
+  - `Static*Provider`
+  - `Fallback*Provider`
+  - `Unavailable*Provider`
+
+## 作用
+
+- 为未来新闻/社交/链上特征接入提供统一接口形态。
+- 复用当前服务的降级语义（`mark_degraded`），保证扩展后可观测性一致。
+
+## 未接入部分
+
+- 当前 `service.py` 未消费上述 provider。
+- `/features` 暂未输出 `news/social/onchain` 特征字段。
+
+## 建议接入顺序
+
+1. 在 `ports` 和 `ProviderBundle` 定义三类 provider 注入位。
+2. 在 `FeatureService.get_features` 增加可选输出块（建议 `features.alternative_sources`）。
+3. 在 `contracts.py` 增加对应类型约束并补契约测试。
+4. 在 `normalizers` 增加 source 级标准化规则（`source/timestamp/confidence/freshness/degraded`）。

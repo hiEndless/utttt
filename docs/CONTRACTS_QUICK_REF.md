@@ -1,0 +1,123 @@
+# UTaker 联调契约速查（新架构）
+
+更新时间：2026-03-09
+
+## 1. 服务调用顺序
+
+```text
+feature_service -> market_state_engine -> agent_server_new
+feature_service -> event_center_new
+```
+
+事件流冻结约定：
+
+1. 结构事件通道  
+`event_center_new(结构事件) -> market_state_engine -> agent_server_new`
+
+2. 外部事件通道  
+`event_center_new(舆情/链上/新闻等) -> agent_server_new`
+
+约束：
+- `market_state_engine` 只做市场结构状态分析，不直接处理舆情/链上/新闻事件流。
+
+## 2. feature_service
+
+### 2.1 健康检查
+- `GET /internal/feature-service/healthz`
+
+### 2.2 原始结构（给状态层）
+- `GET /internal/feature-service/raw-structure/{exchange}/{symbol}`
+- 成功响应：`{ meta, data }`
+- 关键字段：
+  - `meta.schema_version`
+  - `meta.generated_at_ms`
+  - `meta.degraded`
+  - `meta.degraded_reasons`
+  - `data.exchange`
+  - `data.symbol`
+  - `data.raw_market_structure`
+- 说明：仅支持新契约读取路径 `data.raw_market_structure`，不再支持旧格式。
+
+### 2.3 特征快照（给事件层/状态层）
+- `GET /internal/feature-service/features/{exchange}/{symbol}`
+- 成功响应：`{ meta, data }`
+- 关键字段：
+  - `data.indicators`
+  - `data.derived_metrics`
+  - `data.structure_snapshot`
+
+### 2.4 错误码
+- `503` + `detail.code=feature_data_unavailable`
+- `detail.degraded_reasons`：上游降级原因列表
+
+## 3. market_state_engine
+
+### 3.1 健康检查
+- `GET /internal/market-state/healthz`
+
+### 3.2 状态查询
+- `GET /internal/market-state/{exchange}/{symbol}`
+- 关键字段：
+  - `exchange`
+  - `symbol`
+  - `status`（`ok` / `data_unavailable`）
+  - `msl`
+  - `state_features`
+  - `anomaly_flags`
+  - `raw_market_structure`
+  - `ts`
+
+### 3.3 上游不可用时约定
+- 当 feature 层返回 `503 feature_data_unavailable`：
+  - 状态层返回 `HTTP 200`
+  - `status=data_unavailable`
+  - `reason_code=feature_data_unavailable`
+  - `degraded_reasons` 透传
+
+## 4. event_center_new（事件语义）
+
+当前冻结方向（用于联调字段对齐）：
+- Event 基础对象：`EventEnvelope`
+- 证据对象：`Evidence`
+- 输出方向：`SelectedEvent` / `EventBatch`
+
+建议最小字段（跨服务对齐）：
+- `id`
+- `ts_ms`
+- `asset`
+- `type`
+- `source_category`
+- `importance`
+- `ttl_ms`
+- `payload`
+- `trace`
+
+## 5. agent_server_new（输入要求）
+
+决策层应消费：
+- 来自事件层：`signal_event`、`active_events`
+- 来自状态层：`MSL`、`key_features`、`anomaly_flags`
+- 来自持仓上下文：`position_context`
+
+决策层输出：
+- `ExecutionPlan`
+- `DecisionTrace`
+
+## 6. 联调判定清单（最小）
+
+1. `feature_service` 两个业务接口都返回 `meta + data`。
+2. `market_state_engine` 能读取 `feature_service.data.raw_market_structure`。
+3. 当 feature 层返回 `503` 时，状态层正确返回 `status=data_unavailable`。
+4. `agent_server_new` 不直接读取 raw market structure。
+
+## 7. 文档入口
+
+- 总览：`ARCHITECTURE_NEW.md`
+- cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
+- HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
+- 一键冒烟脚本：`scripts/integration_smoke_new_arch.sh`
+- 契约守卫脚本（CI 可用）：`scripts/check_feature_contract_guard.sh`
+- Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
+- Feature API：`feature_service/docs/api.md`
+- State API：`market_state_engine/docs/api.md`
+- Event Schema：`event_center_new/docs/schema.md`

@@ -1,6 +1,6 @@
 # agent_server_new
 
-项目级新架构总览：`/ARCHITECTURE_NEW.md`
+项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 
 `agent_server_new` 是目标架构中的 **Decision Agent**，只负责决策层，不再承载长期稳定的状态生产职责，也不负责真实执行。
 
@@ -51,14 +51,20 @@ data_server
 1. `event_center_new`
    - `signal_event`
    - `active_events`
+   - 外部事件（舆情/链上/新闻等）
 2. `market_state_engine`
-   - `MSL`
+   - `MSL`（由结构事件与结构特征归纳后的状态）
    - `key_features`
    - `anomaly_flags`
 
 再叠加一个内部或外部上下文：
 
 - `position_context`
+
+冻结流向约定：
+
+- 结构事件先经 `market_state_engine` 归纳为 `MSL` 再进入决策层。
+- 舆情/链上/新闻等外部事件由 `event_center_new` 直接进入决策层。
 
 ### 输出
 
