@@ -109,7 +109,14 @@ curl -sS "${STATE_BASE_URL}/internal/market-state/${EXCHANGE}/${SYMBOL}" | jq .
 
 - 架构总览：`ARCHITECTURE_NEW.md`
 - 契约速查：`CONTRACTS_QUICK_REF.md`
+- 契约总索引：`CONTRACT_INDEX.md`
 - HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
 - 一键冒烟脚本：`scripts/integration_smoke_new_arch.sh`
 - Feature API：`feature_service/docs/api.md`
 - State API：`market_state_engine/docs/api.md`
+
+## 5. Execution Schema 快速定位
+
+- DecisionIntent：`execution_service/docs/decision_intent.schema.json`
+- ExecutionResult：`execution_service/docs/execution_result.schema.json`
+- DecisionState：`execution_service/docs/decision_state.schema.json`

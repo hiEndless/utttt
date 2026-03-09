@@ -89,3 +89,10 @@ http GET "${STATE_BASE_URL}/internal/market-state/${EXCHANGE}/${SYMBOL}" | jq '{
 - 架构总览：`ARCHITECTURE_NEW.md`
 - 契约速查：`CONTRACTS_QUICK_REF.md`
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
+- 契约总索引：`CONTRACT_INDEX.md`
+
+## 4. Execution Schema 快速定位
+
+- DecisionIntent：`execution_service/docs/decision_intent.schema.json`
+- ExecutionResult：`execution_service/docs/execution_result.schema.json`
+- DecisionState：`execution_service/docs/decision_state.schema.json`
