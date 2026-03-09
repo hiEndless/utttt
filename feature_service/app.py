@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from feature_service.adapters.behavior_compat import CompatBehaviorProvider
 from feature_service.adapters.horizons_compat import CompatHorizonsProvider
+from feature_service.adapters.indicators_redis import RedisIndicatorsProvider
 from feature_service.adapters.open_interest_compat import CompatOpenInterestProvider
 from feature_service.adapters.orderbook_compat import CompatOrderbookProvider
 from feature_service.routes import create_router
@@ -16,6 +17,7 @@ def create_app() -> FastAPI:
         open_interest_provider=CompatOpenInterestProvider(),
         horizons_provider=CompatHorizonsProvider(),
         behavior_provider=CompatBehaviorProvider(),
+        indicators_provider=RedisIndicatorsProvider(),
     )
     app = FastAPI(
         title="feature_service",

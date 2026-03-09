@@ -143,7 +143,7 @@ data_server
 2. 再迁结构聚合
 3. 最后替换旧的过渡实现
 
-## 服务目录建议
+## 当前服务目录
 
 ```text
 feature_service/
@@ -158,11 +158,17 @@ feature_service/
     boundaries.md
     migration.md
   ports/
-    raw_market_provider.py
-    feature_store.py
+    orderbook_provider.py
+    open_interest_provider.py
+    horizons_provider.py
+    behavior_provider.py
+    indicators_provider.py
   adapters/
-    raw_market_http.py
-    memory_feature_store.py
+    orderbook_compat.py
+    open_interest_compat.py
+    horizons_compat.py
+    behavior_compat.py
+    indicators_redis.py
 ```
 
 ## 当前阶段目标
@@ -178,6 +184,14 @@ feature_service/
 
 - `feature_service` 自己负责组装 `raw_market_structure`
 - 但底层 `orderbook / open_interest / horizons / behavioral` 仍通过兼容 adapter 复用旧实现
+- 基础 `indicators` 已通过 Redis provider 直接读取 `data_server` 产出
+- `derived_metrics` 已开始在本层汇总为稳定摘要特征
+  - `indicator_metrics`
+  - `horizon_metrics`
+  - `orderbook_metrics`
+  - `open_interest_metrics`
+  - `behavior_metrics`
+  - `pre_decision_metrics`
 - 不再直接调用旧的最终 market structure 聚合器
 
 ## 下一步建议

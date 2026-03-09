@@ -5,6 +5,7 @@ from typing import Any, Dict, Mapping
 
 from feature_service.ports.behavior_provider import BehaviorProvider
 from feature_service.ports.horizons_provider import HorizonsProvider
+from feature_service.ports.indicators_provider import IndicatorsProvider
 from feature_service.ports.open_interest_provider import OpenInterestProvider
 from feature_service.ports.orderbook_provider import OrderbookProvider
 
@@ -18,6 +19,10 @@ def _safe_float(x: Any, default: float = 0.0) -> float:
         return float(x)
     except Exception:
         return default
+
+
+def _safe_list(x: Any) -> list[Any]:
+    return x if isinstance(x, list) else []
 
 
 def _confidence_from_level(level: str) -> Dict[str, Any]:
@@ -248,6 +253,126 @@ def _build_long_term_structural_context(open_interest_out: Mapping[str, Any], ho
     }
 
 
+def _derive_indicator_metrics(indicators: Mapping[str, Any]) -> Dict[str, Any]:
+    intervals: Dict[str, Any] = {}
+    inventory: set[str] = set()
+    populated_intervals = 0
+    for interval, payload in (indicators or {}).items():
+        block = _safe_dict(payload)
+        if not block:
+            continue
+        names = sorted([str(k) for k, v in block.items() if v is not None])
+        if not names:
+            continue
+        populated_intervals += 1
+        inventory.update(names)
+        intervals[str(interval)] = {
+            "indicator_names": names,
+            "indicator_count": len(names),
+        }
+    return {
+        "interval_count": populated_intervals,
+        "indicator_inventory": sorted(inventory),
+        "by_interval": intervals,
+    }
+
+
+def _derive_horizon_metrics(horizons_out: Mapping[str, Any]) -> Dict[str, Any]:
+    fused = _safe_dict(horizons_out.get("fused"))
+    hz = _safe_dict(fused.get("horizons"))
+    out: Dict[str, Any] = {}
+    for horizon in ("short_term", "mid_term", "long_term"):
+        block = _safe_dict(hz.get(horizon))
+        mb = _safe_dict(block.get("market_background"))
+        pb = _safe_dict(block.get("participant_background"))
+        tm = _safe_dict(mb.get("trend_memory"))
+        out[horizon] = {
+            "price_direction": str(tm.get("price_direction") or "unknown"),
+            "price_strength": str(tm.get("price_strength") or "unknown"),
+            "trend_context": _safe_dict(mb.get("trend_context")),
+            "volatility_state": str(mb.get("volatility_state") or "unknown"),
+            "crowding": str(pb.get("crowding") or "unknown"),
+            "participant_state": str(pb.get("participant_state") or "unknown"),
+            "confidence": float(block.get("confidence") or 0.0),
+        }
+    return out
+
+
+def _derive_orderbook_metrics(orderbook_out: Mapping[str, Any]) -> Dict[str, Any]:
+    structure_short = _safe_dict(orderbook_out.get("orderbook_structure_short"))
+    risk_flags = _safe_dict(orderbook_out.get("orderbook_risk_flags"))
+    return {
+        "liquidity_stability": str(structure_short.get("liquidity_stability") or "unknown"),
+        "spread_state": str(structure_short.get("spread_state") or "unknown"),
+        "depth_state": str(structure_short.get("depth_state") or "unknown"),
+        "imbalance_state": str(structure_short.get("imbalance_state") or "unknown"),
+        "liquidity_vacuum_event": bool(risk_flags.get("liquidity_vacuum_event") is True),
+    }
+
+
+def _derive_open_interest_metrics(open_interest_out: Mapping[str, Any]) -> Dict[str, Any]:
+    consensus = _safe_dict(open_interest_out.get("structure_consensus"))
+    structure = _safe_dict(open_interest_out.get("open_interest_structure"))
+    representative: Dict[str, Any] = {}
+    for interval in ("15m", "1h", "4h", "1d"):
+        cell = _safe_dict(structure.get(interval))
+        if not cell:
+            continue
+        representative[interval] = {
+            "oi_trend": str(_safe_dict(cell.get("dynamics")).get("oi_trend") or "unknown"),
+            "oi_velocity": str(_safe_dict(cell.get("dynamics")).get("oi_velocity") or "unknown"),
+            "delta_oi_pct": _safe_float(_safe_dict(cell.get("delta")).get("delta_oi_pct"), default=0.0),
+            "risk_flags": [str(x) for x in _safe_list(cell.get("risk_flags")) if x],
+        }
+    return {
+        "structure_consensus": consensus,
+        "representative_intervals": representative,
+    }
+
+
+def _derive_behavior_metrics(behavior_out: Mapping[str, Any]) -> Dict[str, Any]:
+    structure = _safe_dict(behavior_out.get("behavioral_structure"))
+    out: Dict[str, Any] = {}
+    for horizon in ("short_term", "mid_term", "long_term"):
+        block = _safe_dict(structure.get(horizon))
+        summary = _safe_dict(block.get("summary"))
+        out[horizon] = {
+            "status": str(block.get("status") or "unknown"),
+            "dominant_flow": str(summary.get("dominant_flow") or "unknown"),
+            "market_mode": str(summary.get("market_mode") or "unknown"),
+            "range_stability": str(summary.get("range_stability") or "unknown"),
+            "risk_flags": [str(x) for x in _safe_list(summary.get("risk_flags")) if x],
+        }
+    return out
+
+
+def _derive_pre_decision_metrics(pre: Mapping[str, Any]) -> Dict[str, Any]:
+    short = _safe_dict(pre.get("short_term"))
+    mid = _safe_dict(pre.get("mid_term"))
+    long = _safe_dict(pre.get("long_term"))
+    short_pp = _safe_dict(short.get("participant_positioning"))
+    mid_pp = _safe_dict(mid.get("participant_positioning"))
+    long_ctx = _safe_dict(long.get("structural_context"))
+    return {
+        "short_term": {
+            "liquidity_vacuum": bool(_safe_dict(short.get("structural_risks")).get("liquidity_vacuum") is True),
+            "oi_trend": str(_safe_dict(short_pp.get("oi_dynamics")).get("oi_trend") or "unknown"),
+            "delta_oi_pct": _safe_float(_safe_dict(short_pp.get("oi_delta")).get("delta_oi_pct"), default=0.0),
+            "selected_interval": str(_safe_dict(short_pp.get("meta")).get("selected_interval") or "unknown"),
+        },
+        "mid_term": {
+            "oi_trend": str(_safe_dict(mid_pp.get("oi_dynamics")).get("oi_trend") or "unknown"),
+            "delta_oi_pct": _safe_float(_safe_dict(mid_pp.get("oi_delta")).get("delta_oi_pct"), default=0.0),
+            "selected_interval": str(_safe_dict(mid_pp.get("meta")).get("selected_interval") or "unknown"),
+        },
+        "long_term": {
+            "trend_maturity": str(long_ctx.get("trend_maturity") or "unknown"),
+            "leverage_extreme": bool(long_ctx.get("leverage_extreme") is True),
+            "crowding_zone": str(_safe_dict(long_ctx.get("crowding_percentile")).get("zone") or "unknown"),
+        },
+    }
+
+
 class FeatureService:
     """Feature Layer：消费底层结构输出并组装 raw_market_structure / feature snapshot。"""
 
@@ -258,11 +383,13 @@ class FeatureService:
         open_interest_provider: OpenInterestProvider,
         horizons_provider: HorizonsProvider,
         behavior_provider: BehaviorProvider,
+        indicators_provider: IndicatorsProvider,
     ) -> None:
         self._orderbook_provider = orderbook_provider
         self._open_interest_provider = open_interest_provider
         self._horizons_provider = horizons_provider
         self._behavior_provider = behavior_provider
+        self._indicators_provider = indicators_provider
 
     async def _assemble_raw_market_structure(self, exchange: str, symbol: str) -> Dict[str, Any]:
         orderbook_out, open_interest_out, horizons_out, behavior_out = await asyncio.gather(
@@ -312,16 +439,28 @@ class FeatureService:
         }
 
     async def get_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        raw_market_structure = await self._assemble_raw_market_structure(exchange, symbol)
+        raw_market_structure, indicators = await asyncio.gather(
+            self._assemble_raw_market_structure(exchange, symbol),
+            self._indicators_provider.get_indicators(exchange, symbol),
+        )
         pre = raw_market_structure.get("pre_decision_structure")
         horizons = raw_market_structure.get("horizons")
+        orderbook = raw_market_structure.get("orderbook")
+        open_interest = raw_market_structure.get("open_interest")
+        behavioral = raw_market_structure.get("behavioral")
         return {
             "exchange": exchange,
             "symbol": symbol,
             "features": {
-                "indicators": {},
+                "indicators": dict(indicators or {}),
                 "derived_metrics": {
                     "candidate_horizons": list(raw_market_structure.get("candidate_horizons") or []) if isinstance(raw_market_structure, dict) else [],
+                    "indicator_metrics": _derive_indicator_metrics(dict(indicators or {})),
+                    "horizon_metrics": _derive_horizon_metrics(_safe_dict(horizons)),
+                    "orderbook_metrics": _derive_orderbook_metrics(_safe_dict(orderbook)),
+                    "open_interest_metrics": _derive_open_interest_metrics(_safe_dict(open_interest)),
+                    "behavior_metrics": _derive_behavior_metrics(_safe_dict(behavioral)),
+                    "pre_decision_metrics": _derive_pre_decision_metrics(_safe_dict(pre)),
                 },
                 "structure_snapshot": {
                     "pre_decision_structure": pre if isinstance(pre, dict) else {},
