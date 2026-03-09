@@ -6,7 +6,12 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
 
 from execution_service.app.service import ExecutionService
-from execution_service.version import CONTRACT_VERSION, RULESET_VERSION
+from execution_service.version import (
+    CONTRACT_VERSION,
+    IDEMPOTENCY_VERSION,
+    RULESET_VERSION,
+    STATE_MACHINE_VERSION,
+)
 
 
 def create_router(service: ExecutionService) -> APIRouter:
@@ -22,6 +27,8 @@ def create_router(service: ExecutionService) -> APIRouter:
             "service": "execution_service",
             "contract_version": CONTRACT_VERSION,
             "ruleset_version": RULESET_VERSION,
+            "state_machine_version": STATE_MACHINE_VERSION,
+            "idempotency_version": IDEMPOTENCY_VERSION,
             "ts": int(time.time() * 1000),
         }
 

@@ -31,6 +31,22 @@ class _FailSink:
         raise RuntimeError("sink_down")
 
 
+class _FlakySink:
+    def __init__(self) -> None:
+        self.count = 0
+
+    async def submit(self, decision, execution_action):  # noqa: ANN001
+        self.count += 1
+        if self.count == 1:
+            raise RuntimeError("temporary_down")
+        return {
+            "submitted": True,
+            "order_id": "mock-retry-001",
+            "decision_id": decision.decision_id,
+            "execution_action": execution_action,
+        }
+
+
 def _payload() -> dict:
     return {
         "decision_id": "dec-submit-001",
@@ -69,3 +85,24 @@ def test_submit_failure_fallback_to_skip() -> None:
     out = asyncio.run(service.decide(_payload()))
     assert out.execution_action == "skip"
     assert out.reject_reason == "execution_submit_failed"
+    assert isinstance(out.order_result, dict)
+    assert out.order_result["retry_meta"]["status"] == "failed"
+
+
+def test_submit_retry_then_success() -> None:
+    sink = _FlakySink()
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        execution_sink=sink,  # type: ignore[arg-type]
+        submit_enabled=True,
+        submit_max_retries=1,
+        submit_backoff_base_s=0,
+    )
+    out = asyncio.run(service.decide(_payload()))
+    assert out.execution_action == "add"
+    assert out.reject_reason is None
+    assert isinstance(out.order_result, dict)
+    assert out.order_result["order_id"] == "mock-retry-001"
+    assert out.order_result["retry_meta"]["attempts"] == 2

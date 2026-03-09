@@ -142,6 +142,8 @@ def create_app() -> FastAPI:
         risk_policy_provider=risk_policy_provider,
         execution_sink=execution_sink,
         submit_enabled=submit_enabled,
+        submit_max_retries=int(str(os.getenv("EXECUTION_SUBMIT_MAX_RETRIES", "0") or "0")),
+        submit_backoff_base_s=float(str(os.getenv("EXECUTION_SUBMIT_BACKOFF_BASE_S", "0.2") or "0.2")),
         idempotency_store=idempotency_store,
         idempotency_lock_ttl_s=int(str(os.getenv("EXECUTION_IDEMPOTENCY_LOCK_TTL_S", "30") or "30")),
         execution_state_store=execution_state_store,

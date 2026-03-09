@@ -30,6 +30,8 @@ def test_version() -> None:
     assert data["service"] == "execution_service"
     assert data["contract_version"] == "execution-contract-v1"
     assert data["ruleset_version"] == "risk-rules-v1"
+    assert data["state_machine_version"] == "execution-state-machine-v1"
+    assert data["idempotency_version"] == "execution-idempotency-v1"
 
 
 def test_decide_success() -> None:

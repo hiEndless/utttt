@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import asyncio
 from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
@@ -27,6 +28,8 @@ class ExecutionService:
         idempotency_store: IdempotencyStore | None = None,
         idempotency_lock_ttl_s: int = 30,
         execution_state_store: ExecutionStateStore | None = None,
+        submit_max_retries: int = 0,
+        submit_backoff_base_s: float = 0.2,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
@@ -36,6 +39,8 @@ class ExecutionService:
         self._idempotency_store = idempotency_store
         self._idempotency_lock_ttl_s = int(idempotency_lock_ttl_s)
         self._execution_state_store = execution_state_store
+        self._submit_max_retries = max(0, int(submit_max_retries))
+        self._submit_backoff_base_s = max(0.0, float(submit_backoff_base_s))
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
@@ -85,29 +90,7 @@ class ExecutionService:
                 and result.reject_reason is None
                 and result.execution_action in {"add", "reduce", "exit"}
             ):
-                try:
-                    order_result = await self._execution_sink.submit(decision, result.execution_action)
-                    result = ExecutionResult.from_dict(
-                        {
-                            "decision_id": result.decision_id,
-                            "execution_action": result.execution_action,
-                            "reject_reason": result.reject_reason,
-                            "applied_risk_rules": list(result.applied_risk_rules),
-                            "order_result": dict(order_result or {}),
-                            "notes": result.notes,
-                        }
-                    )
-                except Exception as exc:  # pragma: no cover
-                    # 中文注释：执行下沉异常时不抛 5xx，转为业务可观测降级，避免阻塞主决策链路。
-                    result = ExecutionResult.from_dict(
-                        {
-                            "decision_id": result.decision_id,
-                            "execution_action": "skip",
-                            "reject_reason": "execution_submit_failed",
-                            "applied_risk_rules": [*list(result.applied_risk_rules), "execution_submit_fallback"],
-                            "notes": f"{result.notes or ''}; execution_submit_failed:{exc}".strip("; "),
-                        }
-                    )
+                result = await self._submit_with_retry(decision=decision, result=result)
 
             if self._idempotency_store is not None:
                 await self._idempotency_store.save_result(decision.decision_id, result.to_dict())
@@ -161,6 +144,56 @@ class ExecutionService:
         payload["decision_id"] = str(decision_id)
         payload["updated_at_ms"] = int(time.time() * 1000)
         await self._execution_state_store.save_state(str(decision_id), payload)
+
+    async def _submit_with_retry(self, *, decision: DecisionIntent, result: ExecutionResult) -> ExecutionResult:
+        attempts = 0
+        last_error = ""
+        max_attempts = 1 + self._submit_max_retries
+        while attempts < max_attempts:
+            attempts += 1
+            try:
+                order_result = await self._execution_sink.submit(decision, result.execution_action)  # type: ignore[union-attr]
+                payload = dict(order_result or {})
+                payload["retry_meta"] = {
+                    "attempts": attempts,
+                    "max_retries": self._submit_max_retries,
+                    "status": "ok",
+                }
+                return ExecutionResult.from_dict(
+                    {
+                        "decision_id": result.decision_id,
+                        "execution_action": result.execution_action,
+                        "reject_reason": result.reject_reason,
+                        "applied_risk_rules": list(result.applied_risk_rules),
+                        "order_result": payload,
+                        "notes": result.notes,
+                    }
+                )
+            except Exception as exc:  # pragma: no cover
+                last_error = str(exc)
+                if attempts >= max_attempts:
+                    break
+                backoff_s = self._submit_backoff_base_s * (2 ** (attempts - 1))
+                if backoff_s > 0:
+                    await asyncio.sleep(backoff_s)
+        # 中文注释：执行下沉异常时不抛 5xx，转为业务可观测降级，避免阻塞主决策链路。
+        return ExecutionResult.from_dict(
+            {
+                "decision_id": result.decision_id,
+                "execution_action": "skip",
+                "reject_reason": "execution_submit_failed",
+                "applied_risk_rules": [*list(result.applied_risk_rules), "execution_submit_fallback"],
+                "order_result": {
+                    "retry_meta": {
+                        "attempts": max_attempts,
+                        "max_retries": self._submit_max_retries,
+                        "status": "failed",
+                        "last_error": last_error,
+                    }
+                },
+                "notes": f"{result.notes or ''}; execution_submit_failed:{last_error}".strip("; "),
+            }
+        )
 
 
 def _derive_execution_status(result: ExecutionResult) -> str:

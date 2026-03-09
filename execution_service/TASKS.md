@@ -24,3 +24,4 @@
 - [x] Task 22: 接入 `decision_id` 幂等缓存（memory/redis）避免重复 submit，并补回归测试。
 - [x] Task 23: 接入 `decision_id` 处理锁（lock TTL），并发重复请求返回 `idempotency_in_progress`。
 - [x] Task 24: 接入执行状态机存储（memory/redis），并在 debug 接口支持按 `decision_id` 查询状态快照。
+- [x] Task 25: submit 下沉支持重试（指数退避 + 最大次数）并在 `order_result.retry_meta` 输出重试轨迹。

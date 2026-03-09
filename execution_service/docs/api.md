@@ -24,6 +24,8 @@
   "service": "execution_service",
   "contract_version": "execution-contract-v1",
   "ruleset_version": "risk-rules-v1",
+  "state_machine_version": "execution-state-machine-v1",
+  "idempotency_version": "execution-idempotency-v1",
   "ts": 1760000000000
 }
 ```
@@ -82,6 +84,10 @@
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。
+- submit 支持重试（指数退避）：
+  - 最大尝试次数：`1 + EXECUTION_SUBMIT_MAX_RETRIES`
+  - 退避基数秒：`EXECUTION_SUBMIT_BACKOFF_BASE_S`
+  - `order_result.retry_meta` 会记录尝试次数与状态。
 - 下沉失败时会降级为：
   - `execution_action=skip`
   - `reject_reason=execution_submit_failed`
@@ -151,6 +157,8 @@
 - `EXECUTION_SUBMIT_ENABLED`
 - `EXECUTION_SINK_MODE`
 - `EXECUTION_SINK_MOCK_VENUE`
+- `EXECUTION_SUBMIT_MAX_RETRIES`
+- `EXECUTION_SUBMIT_BACKOFF_BASE_S`
 - `EXECUTION_IDEMPOTENCY_ENABLED`
 - `EXECUTION_IDEMPOTENCY_MODE`
 - `EXECUTION_IDEMPOTENCY_REDIS_URL`
