@@ -12,6 +12,12 @@ from execution_service.domain.reconcile_codes import (
     RECONCILE_REASON_NON_RETRYABLE_ERROR,
     RECONCILE_REASON_RETRY_EXHAUSTED,
 )
+from execution_service.domain.reconcile_statuses import (
+    RECONCILE_STATUS_CANCELED,
+    RECONCILE_STATUS_FAILED,
+    RECONCILE_STATUS_SUBMITTED,
+    RECONCILE_STATUSES,
+)
 from execution_service.ports.execution_sink import ExecutionSink
 from execution_service.ports.execution_state_store import ExecutionStateStore
 from execution_service.ports.idempotency_store import IdempotencyStore
@@ -187,7 +193,7 @@ class ExecutionService:
                 return {
                     "mode": _infer_sink_mode(self._execution_sink),
                     "order_id": order_id,
-                    "status": "submitted",
+                    "status": RECONCILE_STATUS_SUBMITTED,
                     "idempotency_hit": False,
                     "reason_code": RECONCILE_REASON_IN_PROGRESS,
                     "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
@@ -258,7 +264,7 @@ class ExecutionService:
                         "decision_id": str(payload.get("decision_id") or "").strip() or None,
                         "exchange": str(payload.get("exchange") or "").strip() or None,
                         "symbol": str(payload.get("symbol") or "").strip().upper() or None,
-                        "status": "failed",
+                        "status": RECONCILE_STATUS_FAILED,
                         "reason_code": (
                             RECONCILE_REASON_RETRY_EXHAUSTED if retryable else RECONCILE_REASON_NON_RETRYABLE_ERROR
                         ),
@@ -411,9 +417,9 @@ def _extract_last_error(result: ExecutionResult) -> str:
 
 def _normalize_reconcile_status(status: str) -> str | None:
     normalized = str(status or "").strip().lower()
-    if normalized in {"filled", "canceled", "cancelled", "rejected", "submitted", "failed"}:
+    if normalized in set(RECONCILE_STATUSES) | {"cancelled"}:
         if normalized == "cancelled":
-            return "canceled"
+            return RECONCILE_STATUS_CANCELED
         return normalized
     return None
 

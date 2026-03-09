@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent
+from execution_service.domain.reconcile_statuses import RECONCILE_STATUS_SUBMITTED
 
 
 @dataclass
@@ -26,7 +27,7 @@ class ExchangeExecutionSink:
             "exchange": decision.exchange,
             "symbol": decision.symbol,
             "execution_action": execution_action,
-            "status": "submitted",
+            "status": RECONCILE_STATUS_SUBMITTED,
             "ts": int(time.time() * 1000),
         }
 
@@ -41,7 +42,7 @@ class ExchangeExecutionSink:
             "decision_id": decision_id or None,
             "exchange": exchange or None,
             "symbol": symbol or None,
-            "status": "submitted",
+            "status": RECONCILE_STATUS_SUBMITTED,
             "filled_qty": 0.0,
             "avg_price": None,
             "ts": int(time.time() * 1000),

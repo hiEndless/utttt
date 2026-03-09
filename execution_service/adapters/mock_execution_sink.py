@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent
+from execution_service.domain.reconcile_statuses import RECONCILE_STATUS_FILLED
 
 
 @dataclass
@@ -36,7 +37,7 @@ class MockExecutionSink:
             "decision_id": str(payload.get("decision_id") or "").strip() or None,
             "exchange": str(payload.get("exchange") or "").strip() or None,
             "symbol": str(payload.get("symbol") or "").strip().upper() or None,
-            "status": "filled",
+            "status": RECONCILE_STATUS_FILLED,
             "filled_qty": 1.0,
             "avg_price": 1000.0,
             "ts": int(time.time() * 1000),
