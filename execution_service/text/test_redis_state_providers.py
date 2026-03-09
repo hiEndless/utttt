@@ -84,3 +84,19 @@ def test_redis_risk_policy_provider_parse() -> None:
     assert out["min_available_balance"] == 50.0
     assert out["max_symbol_exposure_ratio"] == 0.4
     assert out["simulation_step_size"] == 0.15
+    assert out["rule_priority_order"] == ["position_limit", "cooldown", "max_drawdown", "direction_conflict"]
+
+
+def test_redis_risk_policy_provider_parse_rule_priority_order_from_csv() -> None:
+    client = _FakeRedis(
+        {
+            "execution:risk_policy:binance:ETHUSDT": json.dumps(
+                {
+                    "rule_priority_order": "max_drawdown,position_limit,cooldown,direction_conflict",
+                }
+            )
+        }
+    )
+    provider = RedisRiskPolicyProvider(redis_client=client)  # type: ignore[arg-type]
+    out = asyncio.run(provider.get_risk_policy("binance", "ETHUSDT"))
+    assert out["rule_priority_order"] == ["max_drawdown", "position_limit", "cooldown", "direction_conflict"]

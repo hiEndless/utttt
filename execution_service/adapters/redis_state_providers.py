@@ -34,6 +34,17 @@ def _safe_json_load(raw: Any) -> Dict[str, Any]:
         return {}
 
 
+def _to_str_list(value: Any, default: list[str]) -> list[str]:
+    if isinstance(value, list):
+        result = [str(x).strip() for x in value if str(x).strip()]
+        return result or list(default)
+    if isinstance(value, str) and value.strip():
+        # 兼容 redis 中以逗号分隔存储的简单配置。
+        result = [x.strip() for x in value.split(",") if x.strip()]
+        return result or list(default)
+    return list(default)
+
+
 @dataclass
 class RedisExecutionStateConfig:
     """Redis 状态读取配置。"""
@@ -154,6 +165,10 @@ class RedisRiskPolicyProvider:
             "min_available_balance": _to_float(payload.get("min_available_balance"), 0.0),
             "max_symbol_exposure_ratio": _to_float(payload.get("max_symbol_exposure_ratio"), 1.0),
             "simulation_step_size": _to_float(payload.get("simulation_step_size"), 0.1),
+            "rule_priority_order": _to_str_list(
+                payload.get("rule_priority_order"),
+                ["position_limit", "cooldown", "max_drawdown", "direction_conflict"],
+            ),
         }
 
 

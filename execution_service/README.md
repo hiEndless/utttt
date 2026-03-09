@@ -108,6 +108,8 @@ execution_service/
 - `risk_checks` 构造逻辑已拆分到独立 builder 模块，`risk_rules` 专注裁决流程编排，便于扩展与单测。
 - `risk_check_builder` 已增加逐项 schema 契约校验测试，确保生成字段始终满足 `execution_signal_result` 规范。
 - 裁决结果组装（`signal_action` + 仓位模拟 + scope）已拆分到独立 result builder，`risk_rules` 仅负责规则判定。
+- 风控规则执行已改为“规则表驱动”：默认顺序冻结为 `position_limit -> cooldown -> max_drawdown -> direction_conflict`；
+  可通过 `risk_policy.rule_priority_order` 提供完整自定义顺序（无效配置自动回退默认）。
 
 ## 最小接口（当前）
 

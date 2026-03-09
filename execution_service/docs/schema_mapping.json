@@ -139,7 +139,8 @@
         "allow_dual_side",
         "min_available_balance",
         "max_symbol_exposure_ratio",
-        "simulation_step_size"
+        "simulation_step_size",
+        "rule_priority_order"
       ],
       "references": [
         {
@@ -156,6 +157,11 @@
           "schema": "execution_service/docs/risk_policy.schema.json",
           "json_path": "properties.max_symbol_exposure_ratio.maximum",
           "expected": 1
+        },
+        {
+          "schema": "execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.rule_priority_order.items.enum",
+          "expected": ["position_limit", "cooldown", "max_drawdown", "direction_conflict"]
         }
       ]
     },

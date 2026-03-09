@@ -115,6 +115,8 @@
     - `message_zh`：必填中文说明，包含当前值与阈值，便于值班排障与联调定位；文案模板由代码常量统一维护
     - 生成实现：`risk_checks` 由独立 builder 统一构造，保证裁决逻辑与检查项生成逻辑解耦
   - `signal_result` 组装由独立 result builder 统一处理，确保 `signal_action/scope/position_after_simulation` 结构稳定
+  - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> direction_conflict`
+    - 可选覆盖：`risk_policy.rule_priority_order`（必须提供四项完整排列，否则自动回退默认）
 
 建议标准拒绝码（首批冻结）：
 
@@ -308,6 +310,7 @@
   - 仓位状态：`position_mode=hedge`、`long_position_size`、`short_position_size`
   - 风控策略：`allow_dual_side=true`、`max_long_position_size`、`max_short_position_size`
   - 账户策略：`min_available_balance`、`max_symbol_exposure_ratio`、`simulation_step_size`
+  - 规则优先级策略：`rule_priority_order`（可选覆盖，必须是四项完整排列）
 
 ## Schema 与字段来源映射
 
@@ -318,7 +321,7 @@
 | DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
 | ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
 | DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
-| RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `simulation_step_size` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
+| RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `simulation_step_size` `rule_priority_order` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
 
 说明：
 - schema 用于契约冻结与守卫检查。

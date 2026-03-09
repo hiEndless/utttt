@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from execution_service.domain.contracts import DecisionIntent
 from execution_service.domain.risk_check_builder import build_risk_checks
@@ -15,6 +15,20 @@ class RiskContext:
     position_state: Dict[str, Any]
     account_state: Dict[str, Any]
     risk_policy: Dict[str, Any]
+
+
+# 中文注释：默认优先级冻结，确保不配置时行为稳定可预期。
+RULE_POSITION_LIMIT = "position_limit"
+RULE_COOLDOWN = "cooldown"
+RULE_MAX_DRAWDOWN = "max_drawdown"
+RULE_DIRECTION_CONFLICT = "direction_conflict"
+
+DEFAULT_RULE_PRIORITY_ORDER = (
+    RULE_POSITION_LIMIT,
+    RULE_COOLDOWN,
+    RULE_MAX_DRAWDOWN,
+    RULE_DIRECTION_CONFLICT,
+)
 
 
 def _to_float(value: Any, default: float) -> float:
@@ -110,6 +124,7 @@ def evaluate_risk_rules(
         symbol_exposure_ratio=symbol_exposure_ratio,
         max_symbol_exposure_ratio=max_symbol_exposure_ratio,
     )
+    rule_priority_order = _resolve_rule_priority_order(context.risk_policy)
 
     def _finalize(
         *,
@@ -134,55 +149,30 @@ def evaluate_risk_rules(
             notes=notes,
         )
 
-    # 规则 1: 仓位上限（最高优先级）
-    if direction == "long" and long_position_size >= max_long_position_size:
-        return _finalize(
-            execution_action="skip",
-            reject_reason="position_limit_reached",
-            applied_risk_rules=["max_position_limit_long"],
-            notes="多头仓位已达上限，禁止继续加仓",
-        )
-    if direction == "short" and short_position_size >= max_short_position_size:
-        return _finalize(
-            execution_action="skip",
-            reject_reason="position_limit_reached",
-            applied_risk_rules=["max_position_limit_short"],
-            notes="空头仓位已达上限，禁止继续加仓",
-        )
-
-    # 规则 2: 冷却期
-    if cooldown_seconds_left > 0:
-        return _finalize(
-            execution_action="skip",
-            reject_reason="cooldown_active",
-            applied_risk_rules=["cooldown"],
-            notes=f"当前处于冷却期，剩余 {cooldown_seconds_left} 秒",
-        )
-
-    # 规则 3: 最大回撤阈值
-    if current_drawdown_ratio >= max_drawdown_ratio:
-        return _finalize(
-            execution_action="skip",
-            reject_reason="max_drawdown_exceeded",
-            applied_risk_rules=["max_drawdown"],
-            notes="当前回撤超过阈值，禁止新增风险",
-        )
-
-    # 规则 4: 方向冲突（有持仓且与意图方向相反）
-    if (
-        not allow_dual_side
-        and
-        direction in {"long", "short"}
-        and position_side in {"long", "short"}
-        and direction != position_side
-        and position_size > 0
-    ):
-        return _finalize(
-            execution_action="reduce",
-            reject_reason="direction_conflict_with_position",
-            applied_risk_rules=["direction_conflict"],
-            notes="当前持仓方向与新意图冲突，先减仓再观察",
-        )
+    rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {
+        RULE_POSITION_LIMIT: lambda: _check_rule_position_limit(
+            direction=direction,
+            long_position_size=long_position_size,
+            short_position_size=short_position_size,
+            max_long_position_size=max_long_position_size,
+            max_short_position_size=max_short_position_size,
+        ),
+        RULE_COOLDOWN: lambda: _check_rule_cooldown(cooldown_seconds_left=cooldown_seconds_left),
+        RULE_MAX_DRAWDOWN: lambda: _check_rule_max_drawdown(
+            current_drawdown_ratio=current_drawdown_ratio,
+            max_drawdown_ratio=max_drawdown_ratio,
+        ),
+        RULE_DIRECTION_CONFLICT: lambda: _check_rule_direction_conflict(
+            allow_dual_side=allow_dual_side,
+            direction=direction,
+            position_side=position_side,
+            position_size=position_size,
+        ),
+    }
+    for rule_name in rule_priority_order:
+        result = rule_handlers[rule_name]()
+        if result is not None:
+            return _finalize(**result)
 
     # 规则 5: 双向模式（hedge）允许同 symbol 多空并存，按腿独立加仓
     if allow_dual_side and direction in {"long", "short"}:
@@ -248,3 +238,91 @@ def _resolve_symbol_exposure_ratio(
     if account_equity <= 0:
         return 0.0
     return gross_position_size / account_equity
+
+
+def _resolve_rule_priority_order(risk_policy: Dict[str, Any]) -> tuple[str, ...]:
+    raw = risk_policy.get("rule_priority_order")
+    if not isinstance(raw, list):
+        return DEFAULT_RULE_PRIORITY_ORDER
+    candidate = [str(x).strip() for x in raw if str(x).strip()]
+    if len(candidate) != len(DEFAULT_RULE_PRIORITY_ORDER):
+        return DEFAULT_RULE_PRIORITY_ORDER
+    if len(set(candidate)) != len(DEFAULT_RULE_PRIORITY_ORDER):
+        return DEFAULT_RULE_PRIORITY_ORDER
+    if set(candidate) != set(DEFAULT_RULE_PRIORITY_ORDER):
+        return DEFAULT_RULE_PRIORITY_ORDER
+    return tuple(candidate)
+
+
+def _check_rule_position_limit(
+    *,
+    direction: str,
+    long_position_size: float,
+    short_position_size: float,
+    max_long_position_size: float,
+    max_short_position_size: float,
+) -> Dict[str, Any] | None:
+    if direction == "long" and long_position_size >= max_long_position_size:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "position_limit_reached",
+            "applied_risk_rules": ["max_position_limit_long"],
+            "notes": "多头仓位已达上限，禁止继续加仓",
+        }
+    if direction == "short" and short_position_size >= max_short_position_size:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "position_limit_reached",
+            "applied_risk_rules": ["max_position_limit_short"],
+            "notes": "空头仓位已达上限，禁止继续加仓",
+        }
+    return None
+
+
+def _check_rule_cooldown(*, cooldown_seconds_left: int) -> Dict[str, Any] | None:
+    if cooldown_seconds_left > 0:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "cooldown_active",
+            "applied_risk_rules": ["cooldown"],
+            "notes": f"当前处于冷却期，剩余 {cooldown_seconds_left} 秒",
+        }
+    return None
+
+
+def _check_rule_max_drawdown(
+    *,
+    current_drawdown_ratio: float,
+    max_drawdown_ratio: float,
+) -> Dict[str, Any] | None:
+    if current_drawdown_ratio >= max_drawdown_ratio:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "max_drawdown_exceeded",
+            "applied_risk_rules": ["max_drawdown"],
+            "notes": "当前回撤超过阈值，禁止新增风险",
+        }
+    return None
+
+
+def _check_rule_direction_conflict(
+    *,
+    allow_dual_side: bool,
+    direction: str,
+    position_side: str,
+    position_size: float,
+) -> Dict[str, Any] | None:
+    if (
+        not allow_dual_side
+        and direction in {"long", "short"}
+        and position_side in {"long", "short"}
+        and direction != position_side
+        and position_size > 0
+    ):
+        return {
+            "execution_action": "reduce",
+            "reject_reason": "direction_conflict_with_position",
+            "applied_risk_rules": ["direction_conflict"],
+            "notes": "当前持仓方向与新意图冲突，先减仓再观察",
+        }
+    return None

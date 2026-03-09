@@ -180,3 +180,42 @@ def test_account_risk_checks_show_failure_when_balance_too_low() -> None:
     bal_check = next(c for c in checks if c["check"] == "account_available_balance")
     assert bal_check["status"] == "fail"
     assert "可用余额检查" in bal_check["message_zh"]
+
+
+def test_custom_rule_priority_order_can_override_default() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "long",
+            "position_size": 1.0,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 5,
+        },
+        account_state={"current_drawdown_ratio": 0.3, "max_drawdown_ratio": 0.1},
+        risk_policy={
+            "rule_priority_order": [
+                "max_drawdown",
+                "position_limit",
+                "cooldown",
+                "direction_conflict",
+            ]
+        },
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "max_drawdown_exceeded"
+
+
+def test_invalid_custom_rule_priority_order_falls_back_to_default() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "long",
+            "position_size": 1.0,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 5,
+        },
+        account_state={"current_drawdown_ratio": 0.3, "max_drawdown_ratio": 0.1},
+        risk_policy={"rule_priority_order": ["max_drawdown"]},
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "position_limit_reached"
