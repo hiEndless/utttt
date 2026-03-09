@@ -106,6 +106,7 @@ execution_service/
 - `risk_checks.scope/status` 已收敛为常量枚举，并由契约测试校验与 schema 一致，降低实现漂移风险。
 - `risk_checks.message_zh` 文案模板已收敛为常量定义，避免不同规则输出格式不一致。
 - `risk_checks` 构造逻辑已拆分到独立 builder 模块，`risk_rules` 专注裁决流程编排，便于扩展与单测。
+- `risk_check_builder` 已增加逐项 schema 契约校验测试，确保生成字段始终满足 `execution_signal_result` 规范。
 
 ## 最小接口（当前）
 

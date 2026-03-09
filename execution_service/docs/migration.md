@@ -85,6 +85,7 @@
 62. `risk_checks.scope/status` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
 63. `risk_checks.message_zh` 文案模板已收敛为常量并新增模板稳定性测试，减少多处拼接导致的格式漂移
 64. `risk_checks` 构造逻辑已拆分为独立 builder 模块并新增单测，降低 `risk_rules` 复杂度并提升可维护性
+65. `risk_check_builder` 已新增逐项 schema 契约校验测试，确保 builder 产物持续满足 `execution_signal_result` 规范
 
 ## 关键收敛决议（冻结）
 
