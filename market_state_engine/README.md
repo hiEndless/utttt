@@ -1,5 +1,7 @@
 # market_state_engine
 
+项目级新架构总览：`/ARCHITECTURE_NEW.md`
+
 `market_state_engine` 是目标架构中的 **State Layer**，位于 `feature_service` 之后、`agent_server_new` 之前。
 
 目标收敛架构：
@@ -20,6 +22,12 @@ data_server
 一句话定义：
 
 > `market_state_engine` 负责把 feature data 变成 state data。
+
+边界补充（冻结）：
+
+- `market_state_engine` 只做“市场结构状态”分析与 MSL 产出。
+- 不直接接收新闻舆情、链上、社媒等外部事件流。
+- 外部事件由 `event_center_new` 直接提供给 `agent_server_new` 作为决策上下文。
 
 ## 核心职责
 
@@ -57,11 +65,11 @@ data_server
 
 - `feature_service` 提供的 `raw_market_structure`
 
-未来可扩展输入：
+未来可扩展输入（仅限结构相关）：
 
-- `feature_snapshot`
-- `selected_event`
-- `active_events`
+- `feature_snapshot`（结构类特征）
+- `selected_event`（结构类事件）
+- `active_events`（结构类事件）
 
 ### 输出
 
@@ -82,10 +90,12 @@ data_server
 
 - `exchange`
 - `symbol`
+- `status`（新增：`ok` 或 `data_unavailable`）
 - `msl`
 - `state_features`
 - `anomaly_flags`
 - `raw_market_structure`
+- `reason_code` / `degraded_reasons`（仅在 `data_unavailable` 场景）
 
 ## 目录说明
 
@@ -99,6 +109,8 @@ market_state_engine/
   contracts.py
   engine.py
   msl.py
+  text/
+    test_market_state_data_unavailable.py
   docs/
     api.md
     boundaries.md
@@ -122,6 +134,12 @@ market_state_engine/
 
 - `GET /internal/feature-service/raw-structure/{exchange}/{symbol}`
 
+上游不可用处理（新增）：
+
+- 当 `feature_service` 返回 `503 feature_data_unavailable` 时，`market_state_engine` 会短路状态推断
+- 接口返回 `200`，但 `status=data_unavailable`
+- 下游可据此快速识别“数据不可用”而不是“中性状态”
+
 ### 对 `agent_server_new`
 
 `market_state_engine` 只输出状态层 contract，不输出交易动作。
@@ -142,6 +160,10 @@ market_state_engine/
 - 独立 contract
 - 独立服务骨架
 - HTTP raw structure provider
+- 正常分支与短路分支统一状态语义（`status=ok` / `status=data_unavailable`）
+- 已补充跨服务契约测试（`feature_service -> market_state_engine`）覆盖
+  - 新契约解析：`meta + data.raw_market_structure`
+  - 上游 503 映射：`feature_data_unavailable -> data_unavailable`
 
 当前仍是过渡阶段：
 

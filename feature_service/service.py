@@ -8,6 +8,15 @@ from feature_service.ports.horizons_provider import HorizonsProvider
 from feature_service.ports.indicators_provider import IndicatorsProvider
 from feature_service.ports.open_interest_provider import OpenInterestProvider
 from feature_service.ports.orderbook_provider import OrderbookProvider
+from feature_service.normalizers.response_normalizer import (
+    normalize_degraded_reasons,
+    normalize_exchange,
+    normalize_features_payload,
+    normalize_raw_market_structure,
+    normalize_symbol,
+)
+from feature_service.providers.bundle import ProviderBundle
+from feature_service.providers.degradation_state import reset_degradation_state, snapshot_degradation_reasons
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -23,6 +32,16 @@ def _safe_float(x: Any, default: float = 0.0) -> float:
 
 def _safe_list(x: Any) -> list[Any]:
     return x if isinstance(x, list) else []
+
+
+class FeatureDataUnavailableError(RuntimeError):
+    """关键结构数据不可用时抛出，交由路由层映射为标准 HTTP 错误。"""
+
+    def __init__(self, *, exchange: str, symbol: str, degraded_reasons: list[str]) -> None:
+        self.exchange = exchange
+        self.symbol = symbol
+        self.degraded_reasons = degraded_reasons
+        super().__init__("feature_data_unavailable")
 
 
 def _confidence_from_level(level: str) -> Dict[str, Any]:
@@ -373,6 +392,17 @@ def _derive_pre_decision_metrics(pre: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _is_core_structure_unavailable(raw_market_structure: Mapping[str, Any]) -> bool:
+    # 关键结构都为空时视为不可用，避免下游把“空结构”误判为“稳定结构”。
+    raw = _safe_dict(raw_market_structure)
+    return (
+        not _safe_dict(raw.get("orderbook"))
+        and not _safe_dict(raw.get("open_interest"))
+        and not _safe_dict(raw.get("horizons"))
+        and not _safe_dict(raw.get("behavioral"))
+    )
+
+
 class FeatureService:
     """Feature Layer：消费底层结构输出并组装 raw_market_structure / feature snapshot。"""
 
@@ -385,11 +415,32 @@ class FeatureService:
         behavior_provider: BehaviorProvider,
         indicators_provider: IndicatorsProvider,
     ) -> None:
+        self._assert_provider(orderbook_provider, "orderbook_provider", "get_orderbook")
+        self._assert_provider(open_interest_provider, "open_interest_provider", "get_open_interest")
+        self._assert_provider(horizons_provider, "horizons_provider", "get_horizons")
+        self._assert_provider(behavior_provider, "behavior_provider", "get_behavior")
+        self._assert_provider(indicators_provider, "indicators_provider", "get_indicators")
         self._orderbook_provider = orderbook_provider
         self._open_interest_provider = open_interest_provider
         self._horizons_provider = horizons_provider
         self._behavior_provider = behavior_provider
         self._indicators_provider = indicators_provider
+
+    @classmethod
+    def from_bundle(cls, bundle: ProviderBundle) -> "FeatureService":
+        return cls(
+            orderbook_provider=bundle.orderbook_provider,
+            open_interest_provider=bundle.open_interest_provider,
+            horizons_provider=bundle.horizons_provider,
+            behavior_provider=bundle.behavior_provider,
+            indicators_provider=bundle.indicators_provider,
+        )
+
+    @staticmethod
+    def _assert_provider(provider: Any, provider_name: str, method_name: str) -> None:
+        method = getattr(provider, method_name, None)
+        if not callable(method):
+            raise TypeError(f"{provider_name} must implement callable {method_name}()")
 
     async def _assemble_raw_market_structure(self, exchange: str, symbol: str) -> Dict[str, Any]:
         orderbook_out, open_interest_out, horizons_out, behavior_out = await asyncio.gather(
@@ -431,40 +482,69 @@ class FeatureService:
         }
 
     async def get_raw_structure(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        raw_market_structure = await self._assemble_raw_market_structure(exchange, symbol)
+        reset_degradation_state()
+        exchange_norm = normalize_exchange(exchange)
+        symbol_norm = normalize_symbol(symbol)
+        raw_market_structure = await self._assemble_raw_market_structure(exchange_norm, symbol_norm)
+        degraded_reasons = normalize_degraded_reasons(snapshot_degradation_reasons())
+        normalized_raw = normalize_raw_market_structure(raw_market_structure, symbol=symbol_norm)
+        if _is_core_structure_unavailable(normalized_raw):
+            raise FeatureDataUnavailableError(
+                exchange=exchange_norm,
+                symbol=symbol_norm,
+                degraded_reasons=degraded_reasons,
+            )
+
         return {
-            "exchange": exchange,
-            "symbol": symbol,
-            "raw_market_structure": raw_market_structure,
+            "exchange": exchange_norm,
+            "symbol": symbol_norm,
+            "raw_market_structure": normalized_raw,
+            "degraded": bool(degraded_reasons),
+            "degraded_reasons": degraded_reasons,
         }
 
     async def get_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
+        reset_degradation_state()
+        exchange_norm = normalize_exchange(exchange)
+        symbol_norm = normalize_symbol(symbol)
         raw_market_structure, indicators = await asyncio.gather(
-            self._assemble_raw_market_structure(exchange, symbol),
-            self._indicators_provider.get_indicators(exchange, symbol),
+            self._assemble_raw_market_structure(exchange_norm, symbol_norm),
+            self._indicators_provider.get_indicators(exchange_norm, symbol_norm),
         )
+        degraded_reasons = normalize_degraded_reasons(snapshot_degradation_reasons())
         pre = raw_market_structure.get("pre_decision_structure")
         horizons = raw_market_structure.get("horizons")
         orderbook = raw_market_structure.get("orderbook")
         open_interest = raw_market_structure.get("open_interest")
         behavioral = raw_market_structure.get("behavioral")
-        return {
-            "exchange": exchange,
-            "symbol": symbol,
-            "features": {
-                "indicators": dict(indicators or {}),
-                "derived_metrics": {
-                    "candidate_horizons": list(raw_market_structure.get("candidate_horizons") or []) if isinstance(raw_market_structure, dict) else [],
-                    "indicator_metrics": _derive_indicator_metrics(dict(indicators or {})),
-                    "horizon_metrics": _derive_horizon_metrics(_safe_dict(horizons)),
-                    "orderbook_metrics": _derive_orderbook_metrics(_safe_dict(orderbook)),
-                    "open_interest_metrics": _derive_open_interest_metrics(_safe_dict(open_interest)),
-                    "behavior_metrics": _derive_behavior_metrics(_safe_dict(behavioral)),
-                    "pre_decision_metrics": _derive_pre_decision_metrics(_safe_dict(pre)),
-                },
-                "structure_snapshot": {
-                    "pre_decision_structure": pre if isinstance(pre, dict) else {},
-                    "horizons": horizons if isinstance(horizons, dict) else {},
-                },
+        features_payload = {
+            "indicators": dict(indicators or {}),
+            "derived_metrics": {
+                "candidate_horizons": list(raw_market_structure.get("candidate_horizons") or []) if isinstance(raw_market_structure, dict) else [],
+                "indicator_metrics": _derive_indicator_metrics(dict(indicators or {})),
+                "horizon_metrics": _derive_horizon_metrics(_safe_dict(horizons)),
+                "orderbook_metrics": _derive_orderbook_metrics(_safe_dict(orderbook)),
+                "open_interest_metrics": _derive_open_interest_metrics(_safe_dict(open_interest)),
+                "behavior_metrics": _derive_behavior_metrics(_safe_dict(behavioral)),
+                "pre_decision_metrics": _derive_pre_decision_metrics(_safe_dict(pre)),
             },
+            "structure_snapshot": {
+                "pre_decision_structure": pre if isinstance(pre, dict) else {},
+                "horizons": horizons if isinstance(horizons, dict) else {},
+            },
+        }
+        normalized_raw = normalize_raw_market_structure(raw_market_structure, symbol=symbol_norm)
+        if _is_core_structure_unavailable(normalized_raw):
+            raise FeatureDataUnavailableError(
+                exchange=exchange_norm,
+                symbol=symbol_norm,
+                degraded_reasons=degraded_reasons,
+            )
+
+        return {
+            "exchange": exchange_norm,
+            "symbol": symbol_norm,
+            "degraded": bool(degraded_reasons),
+            "degraded_reasons": degraded_reasons,
+            "features": normalize_features_payload(features_payload),
         }

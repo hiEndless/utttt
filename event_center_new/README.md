@@ -1,5 +1,7 @@
 # event_center_new
 
+项目级新架构总览：`/ARCHITECTURE_NEW.md`
+
 `event_center_new` 是目标架构中的 **Event Center**，只负责事件层，不负责市场状态归纳，不负责交易决策，不负责执行。
 
 目标收敛架构：
@@ -59,9 +61,15 @@ data_server
 输出给两个下游：
 
 1. `market_state_engine`
-   - 消费 selected events / evidence / correlation groups / priority hints
+   - 仅消费“结构相关事件”（如指标/波动/OI/流动性/结构破位）
 2. `agent_server_new`
-   - 消费 signal_event / active_events
+   - 消费全部决策事件输入
+   - 包含“外部事件”（舆情/链上/新闻等）与结构事件
+
+冻结流向约定：
+
+- 结构事件：`event_center_new -> market_state_engine -> agent_server_new`
+- 外部事件（舆情/链上/新闻）：`event_center_new -> agent_server_new`
 
 建议输出拆成两类：
 
@@ -283,4 +291,3 @@ event_center_new/
 `event_center_new` 最终应该成为：
 
 > 一个独立的事件中台，负责把多源原始输入整理成可消费、可追踪、可排序的事件流，为 `market_state_engine` 和 `agent_server_new` 提供干净事件输入。
-

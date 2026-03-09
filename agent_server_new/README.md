@@ -1,5 +1,7 @@
 # agent_server_new
 
+项目级新架构总览：`/ARCHITECTURE_NEW.md`
+
 `agent_server_new` 是目标架构中的 **Decision Agent**，只负责决策层，不再承载长期稳定的状态生产职责，也不负责真实执行。
 
 目标收敛架构：
