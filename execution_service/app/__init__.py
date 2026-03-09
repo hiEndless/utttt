@@ -14,6 +14,7 @@ from execution_service.adapters.redis_state_providers import (
     RedisRiskPolicyProvider,
     create_redis_client_from_env,
 )
+from execution_service.adapters.mock_execution_sink import MockExecutionSink
 from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
 from execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
@@ -50,10 +51,30 @@ def create_app() -> FastAPI:
         risk_policy_provider = StubRiskPolicyProvider()
         logger.info("execution_service 使用 Stub 状态提供器")
 
+    submit_enabled = str(os.getenv("EXECUTION_SUBMIT_ENABLED", "false") or "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "mock") or "mock").strip().lower()
+    execution_sink = None
+    if submit_enabled:
+        if sink_mode == "mock":
+            execution_sink = MockExecutionSink(
+                venue=str(os.getenv("EXECUTION_SINK_MOCK_VENUE", "mock_exchange") or "mock_exchange").strip()
+            )
+            logger.info("execution_service 启用执行下沉，mode=mock")
+        else:
+            logger.warning("execution_service submit 已启用，但未识别 sink_mode=%s，回退禁用 submit", sink_mode)
+            submit_enabled = False
+
     service = ExecutionService(
         position_provider=position_provider,
         account_provider=account_provider,
         risk_policy_provider=risk_policy_provider,
+        execution_sink=execution_sink,
+        submit_enabled=submit_enabled,
     )
     app = FastAPI(
         title="execution_service",

@@ -80,6 +80,13 @@
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
 
+说明：
+- 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。
+- 下沉失败时会降级为：
+  - `execution_action=skip`
+  - `reject_reason=execution_submit_failed`
+  - `applied_risk_rules` 追加 `execution_submit_fallback`
+
 建议标准拒绝码（首批冻结）：
 
 - `position_limit_reached`
@@ -135,3 +142,6 @@
 - `EXECUTION_POSITION_KEY_TEMPLATE`
 - `EXECUTION_ACCOUNT_KEY_TEMPLATE`
 - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`
+- `EXECUTION_SUBMIT_ENABLED`
+- `EXECUTION_SINK_MODE`
+- `EXECUTION_SINK_MOCK_VENUE`

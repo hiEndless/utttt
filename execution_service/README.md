@@ -99,6 +99,10 @@ execution_service/
   - `EXECUTION_POSITION_KEY_TEMPLATE`（默认 `execution:position:{exchange}:{symbol}`）
   - `EXECUTION_ACCOUNT_KEY_TEMPLATE`（默认 `execution:account:{exchange}`）
   - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
+- 执行下沉（可选）：
+  - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
+  - `EXECUTION_SINK_MODE=mock`（当前支持 `mock`）
+  - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
 
 ## Agent 联调（当前）
 
