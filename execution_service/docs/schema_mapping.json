@@ -18,6 +18,28 @@
         "cross_horizon_policy",
         "risk_hints",
         "trace_id"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.direction_intent.enum",
+          "expected": ["long", "short", "none"]
+        },
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.confidence.properties.level.enum",
+          "expected": ["low", "medium", "high"]
+        },
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.confidence.properties.score.minimum",
+          "expected": 0.0
+        },
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.confidence.properties.score.maximum",
+          "expected": 1.0
+        }
       ]
     },
     {
@@ -34,6 +56,23 @@
         "applied_risk_rules",
         "order_result",
         "notes"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.execution_action.enum",
+          "expected": ["add", "reduce", "hold", "exit", "skip"]
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.reject_reason.enum",
+          "expected": [null, "position_limit_reached", "cooldown_active", "max_drawdown_exceeded", "direction_conflict_with_position", "execution_submit_failed", "idempotency_in_progress"]
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        }
       ]
     },
     {

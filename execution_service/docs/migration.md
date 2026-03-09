@@ -67,6 +67,7 @@
 44. 已抽取统一 schema 校验工具，减少 execution 契约测试重复逻辑并避免后续漏改
 45. `schema_mapping.json` 已显式登记 `RetryMeta` 与 `$ref` 引用来源，并通过测试强校验引用路径与期望值
 46. `schema_mapping.references` 已支持结构化 JSON 值校验（非仅字符串），并新增 `DecisionState` 关键字段（`status/source`）断言
+47. `DecisionIntent/ExecutionResult` 已补齐关键引用断言（方向/置信度/动作/拒绝码/retry_meta `$ref`），提升 breaking 契约防漂移能力
 
 ## 关键收敛决议（冻结）
 
