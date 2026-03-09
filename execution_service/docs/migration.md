@@ -57,6 +57,7 @@
 34. reconcile 已支持错误分级重试（指数退避），并在响应中输出 `retry_meta`
 35. reconcile 失败已标准化为业务响应（`status=failed`），降低下游 502 分支复杂度
 36. reconcile 错误码字段已统一为 `reason_code`，并覆盖 `reconcile_in_progress` 场景
+37. reconcile `reason_code` 已抽为代码常量，并由测试强校验与 schema 枚举一致
 
 ## 关键收敛决议（冻结）
 

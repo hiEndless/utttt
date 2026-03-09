@@ -50,3 +50,4 @@
 - [x] Task 48: 增加 reconcile 错误分级重试（指数退避）并输出 `retry_meta`。
 - [x] Task 49: reconcile 失败改为标准化业务响应（`status=failed`）并补测试与文档。
 - [x] Task 50: reconcile 标准化失败码统一到 `reason_code`（包含 `reconcile_in_progress`）。
+- [x] Task 51: reconcile `reason_code` 抽为常量并增加常量-schema 一致性测试。

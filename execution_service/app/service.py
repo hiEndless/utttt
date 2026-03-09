@@ -7,6 +7,11 @@ from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
 from execution_service.domain.decision_engine import ExecutionDecisionEngine
+from execution_service.domain.reconcile_codes import (
+    RECONCILE_REASON_IN_PROGRESS,
+    RECONCILE_REASON_NON_RETRYABLE_ERROR,
+    RECONCILE_REASON_RETRY_EXHAUSTED,
+)
 from execution_service.ports.execution_sink import ExecutionSink
 from execution_service.ports.execution_state_store import ExecutionStateStore
 from execution_service.ports.idempotency_store import IdempotencyStore
@@ -184,7 +189,7 @@ class ExecutionService:
                     "order_id": order_id,
                     "status": "submitted",
                     "idempotency_hit": False,
-                    "reason_code": "reconcile_in_progress",
+                    "reason_code": RECONCILE_REASON_IN_PROGRESS,
                     "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
                     "ts": int(time.time() * 1000),
                 }
@@ -255,7 +260,7 @@ class ExecutionService:
                         "symbol": str(payload.get("symbol") or "").strip().upper() or None,
                         "status": "failed",
                         "reason_code": (
-                            "reconcile_retry_exhausted" if retryable else "reconcile_non_retryable_error"
+                            RECONCILE_REASON_RETRY_EXHAUSTED if retryable else RECONCILE_REASON_NON_RETRYABLE_ERROR
                         ),
                         "error_message": last_error,
                         "retry_meta": {

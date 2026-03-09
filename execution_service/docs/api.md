@@ -167,6 +167,7 @@
 - `reconcile` 已接入 `order_id` 幂等：相同 `order_id` 二次调用优先返回缓存结果，并标记 `idempotency_hit=true`。
 - `reconcile` 支持错误分级重试：可重试错误会按指数退避重试，并在响应 `retry_meta` 中记录尝试轨迹。
 - 对账失败场景返回业务响应 `status=failed`（HTTP 200），减少下游对 502 的分支处理。
+- `reason_code` 枚举由 `execution_service/domain/reconcile_codes.py` 单点定义，并由测试校验与 schema 一致。
 
 ## 调试状态快照
 
