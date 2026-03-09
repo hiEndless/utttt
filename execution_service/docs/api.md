@@ -101,7 +101,7 @@
 
 ## 调试状态快照
 
-- `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false`
+- `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
 
 返回示例：
 
@@ -132,6 +132,7 @@
 
 说明：
 - `redact=true` 时会脱敏敏感字段（如 `account_equity/available_balance/unrealized_pnl`）
+- 传入 `decision_id` 时返回 `decision_state`，用于查看状态机快照（`pending/submitted/failed/skipped/decided`）
 
 ## 状态提供器模式
 
@@ -156,3 +157,8 @@
 - `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE`
 - `EXECUTION_IDEMPOTENCY_TTL_S`
 - `EXECUTION_IDEMPOTENCY_LOCK_TTL_S`
+- `EXECUTION_STATE_MACHINE_ENABLED`
+- `EXECUTION_STATE_MACHINE_MODE`
+- `EXECUTION_STATE_MACHINE_REDIS_URL`
+- `EXECUTION_STATE_MACHINE_KEY_TEMPLATE`
+- `EXECUTION_STATE_MACHINE_TTL_S`

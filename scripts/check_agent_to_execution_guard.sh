@@ -18,6 +18,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   execution_service/text/test_execution_decision_engine.py \
   execution_service/text/test_execution_api.py \
   execution_service/text/test_execution_idempotency.py \
+  execution_service/text/test_execution_state_machine.py \
   execution_service/text/test_execution_submit_flow.py \
   execution_service/text/test_stub_state_providers.py \
   execution_service/text/test_agent_to_execution_smoke.py \

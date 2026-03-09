@@ -16,6 +16,7 @@ from execution_service.adapters.redis_state_providers import (
 )
 from execution_service.adapters.mock_execution_sink import MockExecutionSink
 from execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
+from execution_service.adapters.execution_state_store import InMemoryExecutionStateStore, RedisExecutionStateStore
 from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
 from execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
@@ -102,6 +103,39 @@ def create_app() -> FastAPI:
             idempotency_store = InMemoryIdempotencyStore()
             logger.info("execution_service 启用幂等缓存，mode=memory")
 
+    execution_state_enabled = str(os.getenv("EXECUTION_STATE_MACHINE_ENABLED", "true") or "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    execution_state_mode = str(os.getenv("EXECUTION_STATE_MACHINE_MODE", "memory") or "memory").strip().lower()
+    execution_state_store = None
+    if execution_state_enabled:
+        if execution_state_mode == "redis":
+            redis_url = str(
+                os.getenv(
+                    "EXECUTION_STATE_MACHINE_REDIS_URL",
+                    (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0"),
+                )
+                or (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0")
+            ).strip()
+            key_template = str(
+                os.getenv("EXECUTION_STATE_MACHINE_KEY_TEMPLATE", "execution:state:{decision_id}")
+                or "execution:state:{decision_id}"
+            ).strip()
+            ttl_s = int(str(os.getenv("EXECUTION_STATE_MACHINE_TTL_S", "86400") or "86400"))
+            state_client = redis_client if (redis_client is not None and cfg is not None and redis_url == cfg.redis_url) else create_redis_client_from_env(redis_url)
+            execution_state_store = RedisExecutionStateStore(
+                redis_client=state_client,
+                key_template=key_template,
+                ttl_s=ttl_s,
+            )
+            logger.info("execution_service 启用执行状态机存储，mode=redis ttl=%s", ttl_s)
+        else:
+            execution_state_store = InMemoryExecutionStateStore()
+            logger.info("execution_service 启用执行状态机存储，mode=memory")
+
     service = ExecutionService(
         position_provider=position_provider,
         account_provider=account_provider,
@@ -110,6 +144,7 @@ def create_app() -> FastAPI:
         submit_enabled=submit_enabled,
         idempotency_store=idempotency_store,
         idempotency_lock_ttl_s=int(str(os.getenv("EXECUTION_IDEMPOTENCY_LOCK_TTL_S", "30") or "30")),
+        execution_state_store=execution_state_store,
     )
     app = FastAPI(
         title="execution_service",

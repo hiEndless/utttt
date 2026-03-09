@@ -110,6 +110,12 @@ execution_service/
   - `EXECUTION_IDEMPOTENCY_KEY_TEMPLATE`（默认 `execution:idempotency:{decision_id}`）
   - `EXECUTION_IDEMPOTENCY_TTL_S`（默认 `3600`）
   - `EXECUTION_IDEMPOTENCY_LOCK_TTL_S`（默认 `30`）
+- 执行状态机存储（建议开启）：
+  - `EXECUTION_STATE_MACHINE_ENABLED=true|false`（默认 `true`）
+  - `EXECUTION_STATE_MACHINE_MODE=memory|redis`（默认 `memory`）
+  - `EXECUTION_STATE_MACHINE_REDIS_URL`（当 mode=redis）
+  - `EXECUTION_STATE_MACHINE_KEY_TEMPLATE`（默认 `execution:state:{decision_id}`）
+  - `EXECUTION_STATE_MACHINE_TTL_S`（默认 `86400`）
 
 ## Agent 联调（当前）
 

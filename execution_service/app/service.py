@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
 from execution_service.domain.decision_engine import ExecutionDecisionEngine
 from execution_service.ports.execution_sink import ExecutionSink
+from execution_service.ports.execution_state_store import ExecutionStateStore
 from execution_service.ports.idempotency_store import IdempotencyStore
 from execution_service.ports.account_state_provider import AccountStateProvider
 from execution_service.ports.position_state_provider import PositionStateProvider
@@ -25,6 +26,7 @@ class ExecutionService:
         submit_enabled: bool = False,
         idempotency_store: IdempotencyStore | None = None,
         idempotency_lock_ttl_s: int = 30,
+        execution_state_store: ExecutionStateStore | None = None,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
@@ -33,6 +35,7 @@ class ExecutionService:
         self._submit_enabled = bool(submit_enabled)
         self._idempotency_store = idempotency_store
         self._idempotency_lock_ttl_s = int(idempotency_lock_ttl_s)
+        self._execution_state_store = execution_state_store
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
@@ -58,6 +61,7 @@ class ExecutionService:
                         "notes": "相同 decision_id 正在处理，请稍后重试",
                     }
                 )
+        await self._save_state(decision.decision_id, {"status": "pending"})
 
         try:
             position_state = await self._position_provider.get_position_state(
@@ -107,12 +111,27 @@ class ExecutionService:
 
             if self._idempotency_store is not None:
                 await self._idempotency_store.save_result(decision.decision_id, result.to_dict())
+            await self._save_state(
+                decision.decision_id,
+                {
+                    "status": _derive_execution_status(result),
+                    "execution_action": result.execution_action,
+                    "reject_reason": result.reject_reason,
+                },
+            )
             return result
         finally:
             if self._idempotency_store is not None and lock_acquired:
                 await self._idempotency_store.release_lock(decision.decision_id)
 
-    async def get_debug_state(self, *, exchange: str, symbol: str, redact: bool = False) -> Dict[str, Any]:
+    async def get_debug_state(
+        self,
+        *,
+        exchange: str,
+        symbol: str,
+        redact: bool = False,
+        decision_id: str | None = None,
+    ) -> Dict[str, Any]:
         """只读调试视图：便于联调时检查 execution 输入状态。"""
 
         position_state = await self._position_provider.get_position_state(exchange, symbol)
@@ -122,7 +141,7 @@ class ExecutionService:
         account_state_out = dict(account_state or {})
         if redact:
             _apply_redaction(position_state_out, account_state_out)
-        return {
+        out = {
             "exchange": exchange,
             "symbol": symbol,
             "position_state": position_state_out,
@@ -131,6 +150,27 @@ class ExecutionService:
             "redacted": bool(redact),
             "ts": int(time.time() * 1000),
         }
+        if decision_id and self._execution_state_store is not None:
+            out["decision_state"] = await self._execution_state_store.get_state(str(decision_id))
+        return out
+
+    async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
+        if self._execution_state_store is None:
+            return
+        payload = dict(state or {})
+        payload["decision_id"] = str(decision_id)
+        payload["updated_at_ms"] = int(time.time() * 1000)
+        await self._execution_state_store.save_state(str(decision_id), payload)
+
+
+def _derive_execution_status(result: ExecutionResult) -> str:
+    if result.reject_reason == "execution_submit_failed":
+        return "failed"
+    if result.reject_reason:
+        return "skipped"
+    if result.execution_action in {"add", "reduce", "exit"} and result.order_result is not None:
+        return "submitted"
+    return "decided"
 
 
 def _apply_redaction(position_state: Dict[str, Any], account_state: Dict[str, Any]) -> None:

@@ -36,7 +36,12 @@ def create_router(service: ExecutionService) -> APIRouter:
         return result.to_dict()
 
     @router.get("/debug/state/{exchange}/{symbol}")
-    async def debug_state(exchange: str, symbol: str, redact: bool = False) -> Dict[str, Any]:
+    async def debug_state(
+        exchange: str,
+        symbol: str,
+        redact: bool = False,
+        decision_id: str | None = None,
+    ) -> Dict[str, Any]:
         exchange_normalized = str(exchange or "").strip()
         symbol_normalized = str(symbol or "").strip().upper()
         if not exchange_normalized:
@@ -48,6 +53,7 @@ def create_router(service: ExecutionService) -> APIRouter:
                 exchange=exchange_normalized,
                 symbol=symbol_normalized,
                 redact=bool(redact),
+                decision_id=(str(decision_id).strip() if decision_id else None),
             )
         except Exception as exc:  # pragma: no cover
             raise HTTPException(status_code=502, detail=f"execution_debug_state_failed:{exc}") from exc

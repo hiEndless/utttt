@@ -89,3 +89,25 @@ def test_debug_state_redacted() -> None:
     assert data["redacted"] is True
     assert data["account_state"]["account_equity"] == "***"
     assert data["account_state"]["available_balance"] == "***"
+
+
+def test_debug_state_with_decision_id() -> None:
+    client = TestClient(create_app())
+    decide_resp = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-debug-001",
+            "exchange": "binance",
+            "symbol": "ETHUSDT",
+            "direction_intent": "none",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert decide_resp.status_code == 200
+    response = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-debug-001")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data.get("decision_state"), dict)
+    assert data["decision_state"]["decision_id"] == "dec-debug-001"

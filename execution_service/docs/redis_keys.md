@@ -74,6 +74,18 @@ value(JSON)：
 - `execution:idempotency:dec-001`
 - `execution:idempotency:lock:dec-001`
 
+状态机存储（可选，mode=redis）：
+
+- `EXECUTION_STATE_MACHINE_ENABLED=true`
+- `EXECUTION_STATE_MACHINE_MODE=redis`
+- `EXECUTION_STATE_MACHINE_REDIS_URL=redis://127.0.0.1:6379/0`
+- `EXECUTION_STATE_MACHINE_KEY_TEMPLATE=execution:state:{decision_id}`
+- `EXECUTION_STATE_MACHINE_TTL_S=86400`
+
+对应 key 示例：
+
+- `execution:state:dec-001`
+
 ## 5) 说明
 
 - 建议由下游账户/仓位同步任务持续刷新这些键。

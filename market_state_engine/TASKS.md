@@ -136,3 +136,4 @@
 - [x] Task 120: execution_service 接入可选 ExecutionSink 下沉流程（mock）并补提交成功/失败回归测试。
 - [x] Task 121: execution_service 接入 `decision_id` 幂等缓存（memory/redis）并补重复 submit 防重回归测试。
 - [x] Task 122: execution_service 接入 `decision_id` 处理锁（lock TTL），并补并发防重行为回归测试。
+- [x] Task 123: execution_service 接入执行状态机存储（memory/redis），并在 debug 接口支持按 `decision_id` 查询状态。
