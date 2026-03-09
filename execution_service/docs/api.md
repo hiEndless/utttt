@@ -129,6 +129,7 @@
   "order_id": "mock-order-001",
   "decision_id": "dec-001",
   "exchange": "binance",
+  "account_id": "main",
   "symbol": "ETHUSDT"
 }
 ```
@@ -141,6 +142,7 @@
   "venue": "mock_exchange",
   "order_id": "mock-order-001",
   "decision_id": "dec-001",
+  "account_id": "main",
   "exchange": "binance",
   "symbol": "ETHUSDT",
   "status": "filled",
@@ -220,6 +222,7 @@
 - `redact=true` 时会脱敏敏感字段（如 `account_equity/available_balance/unrealized_pnl`）
 - 传入 `decision_id` 时返回 `decision_state`，用于查看状态机快照（`pending/submitted/failed/skipped/decided`）
 - `decision_state` 当前包含：
+  - `account_id`: 账户作用域标识（当前默认 `main`）
   - `status`: 当前状态
   - `last_transition`: 最近一次状态跃迁
   - `attempts`: submit 尝试次数（未 submit 为 `0`）
@@ -305,9 +308,9 @@
 
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
 | --- | --- | --- | --- | --- | --- |
-| DecisionIntent | `decision_id` `exchange` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
+| DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
 | ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
-| DecisionState | `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
+| DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
 
 说明：
 - schema 用于契约冻结与守卫检查。

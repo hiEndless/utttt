@@ -15,6 +15,7 @@ def test_decision_state_schema_samples() -> None:
 
     good = {
         "decision_id": "dec-001",
+        "account_id": "main",
         "status": "submitted",
         "last_transition": "submitted",
         "execution_action": "add",
@@ -32,6 +33,7 @@ def test_decision_state_schema_samples() -> None:
 
     good_reconciled = {
         "decision_id": "dec-001",
+        "account_id": "main",
         "status": "filled",
         "last_transition": "filled",
         "attempts": 1,
@@ -44,6 +46,7 @@ def test_decision_state_schema_samples() -> None:
 
     bad = {
         "decision_id": "dec-002",
+        "account_id": "main",
         "status": "submitted",
         "last_transition": "submitted",
         "attempts": 1,

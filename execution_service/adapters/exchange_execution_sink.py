@@ -49,6 +49,7 @@ class ExchangeExecutionSink:
                 "order_id": order_id,
                 "decision_id": decision.decision_id,
                 "exchange": decision.exchange,
+                "account_id": decision.account_id,
                 "symbol": decision.symbol.upper(),
                 "execution_action": execution_action,
                 "status": RECONCILE_STATUS_SUBMITTED,
@@ -66,6 +67,7 @@ class ExchangeExecutionSink:
             "order_id": str(out.get("orderId") or order_id),
             "decision_id": decision.decision_id,
             "exchange": decision.exchange,
+            "account_id": decision.account_id,
             "symbol": decision.symbol.upper(),
             "execution_action": execution_action,
             "status": RECONCILE_STATUS_SUBMITTED,
@@ -77,6 +79,7 @@ class ExchangeExecutionSink:
     async def reconcile(self, order_id: str, payload: Mapping[str, Any]) -> Dict[str, Any]:
         decision_id = str(payload.get("decision_id") or "").strip()
         exchange = str(payload.get("exchange") or "").strip()
+        account_id = str(payload.get("account_id") or "").strip()
         symbol = str(payload.get("symbol") or "").strip().upper()
         if self.dry_run:
             # 中文注释：dry-run 对账返回占位状态，避免引入真实交易所依赖。
@@ -86,6 +89,7 @@ class ExchangeExecutionSink:
                 "venue": self.venue,
                 "order_id": str(order_id),
                 "decision_id": decision_id or None,
+                "account_id": account_id or None,
                 "exchange": exchange or None,
                 "symbol": symbol or None,
                 "status": RECONCILE_STATUS_SUBMITTED,
@@ -109,6 +113,7 @@ class ExchangeExecutionSink:
             "venue": self.venue,
             "order_id": str(order_id),
             "decision_id": decision_id or None,
+            "account_id": account_id or None,
             "exchange": exchange or None,
             "symbol": symbol or None,
             "status": reconcile_status,

@@ -90,6 +90,7 @@ class ExecutionService:
             decision.decision_id,
             {
                 "status": "pending",
+                "account_id": account_id,
                 "source": "execution_service",
                 "trace_id": decision.trace_id,
             },
@@ -127,6 +128,7 @@ class ExecutionService:
                 {
                     "status": _derive_execution_status(result),
                     "last_transition": _derive_execution_status(result),
+                    "account_id": account_id,
                     "execution_action": result.execution_action,
                     "reject_reason": result.reject_reason,
                     "attempts": _extract_attempts(result),
@@ -176,6 +178,7 @@ class ExecutionService:
 
     async def reconcile_order(self, payload: Mapping[str, Any]) -> Dict[str, Any]:
         order_id = str(payload.get("order_id") or "").strip()
+        account_id = str(payload.get("account_id") or "").strip() or "main"
         if not order_id:
             raise ValueError("order_id 不能为空")
         cache_key = _reconcile_cache_key(order_id)
@@ -199,6 +202,7 @@ class ExecutionService:
                 return {
                     "mode": _infer_sink_mode(self._execution_sink),
                     "order_id": order_id,
+                    "account_id": account_id,
                     "status": RECONCILE_STATUS_SUBMITTED,
                     "idempotency_hit": False,
                     "reason_code": RECONCILE_REASON_IN_PROGRESS,
@@ -218,6 +222,7 @@ class ExecutionService:
             )
             out.setdefault("mode", _infer_sink_mode(self._execution_sink))
             out.setdefault("order_id", order_id)
+            out.setdefault("account_id", account_id)
             out.setdefault("ts", int(time.time() * 1000))
             out["idempotency_hit"] = False
             decision_id = str(out.get("decision_id") or payload.get("decision_id") or "").strip()
@@ -228,6 +233,7 @@ class ExecutionService:
                     {
                         "status": reconcile_status,
                         "last_transition": reconcile_status,
+                        "account_id": account_id,
                         "source": "execution_service",
                         "trace_id": str(payload.get("trace_id") or "").strip() or None,
                         "reconcile_order_id": order_id,
@@ -267,6 +273,7 @@ class ExecutionService:
                 if (not retryable) or attempts >= max_attempts:
                     return {
                         "order_id": str(order_id),
+                        "account_id": str(payload.get("account_id") or "").strip() or "main",
                         "decision_id": str(payload.get("decision_id") or "").strip() or None,
                         "exchange": str(payload.get("exchange") or "").strip() or None,
                         "symbol": str(payload.get("symbol") or "").strip().upper() or None,
@@ -304,6 +311,7 @@ class ExecutionService:
         payload = dict(prev or {})
         payload.update(dict(state or {}))
         payload["decision_id"] = str(decision_id)
+        payload["account_id"] = str(payload.get("account_id") or "").strip() or "main"
         payload["updated_at_ms"] = int(time.time() * 1000)
         await self._execution_state_store.save_state(str(decision_id), payload)
 
@@ -457,4 +465,3 @@ def _infer_sink_mode(execution_sink: Any) -> str:
     if "exchange" in cls_name:
         return "exchange_skeleton"
     return "mock"
-

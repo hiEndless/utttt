@@ -18,6 +18,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "venue": "mock_exchange",
         "order_id": "mock-order-001",
         "decision_id": "dec-001",
+        "account_id": "main",
         "exchange": "binance",
         "symbol": "ETHUSDT",
         "status": "filled",
@@ -36,6 +37,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "venue": "binance",
         "order_id": "binance-ord-001",
         "decision_id": "dec-002",
+        "account_id": "main",
         "exchange": "binance",
         "symbol": "ETHUSDT",
         "status": "submitted",
@@ -53,6 +55,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
     good_failed = {
         "mode": "mock",
         "order_id": "mock-order-err-001",
+        "account_id": "main",
         "status": "failed",
         "reason_code": "reconcile_non_retryable_error",
         "error_message": "invalid_order_id",

@@ -95,6 +95,7 @@
       "code": "execution_service/app/service.py",
       "symbol": "_save_state",
       "fields": [
+        "account_id",
         "status",
         "last_transition",
         "attempts",
@@ -114,6 +115,11 @@
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.source.const",
           "expected": "execution_service"
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.account_id.minLength",
+          "expected": 1
         }
       ]
     },
@@ -156,6 +162,7 @@
         "venue",
         "order_id",
         "decision_id",
+        "account_id",
         "exchange",
         "symbol",
         "status",

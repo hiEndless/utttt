@@ -5,6 +5,7 @@
   "additionalProperties": true,
   "required": [
     "decision_id",
+    "account_id",
     "status",
     "last_transition",
     "attempts",
@@ -13,6 +14,10 @@
   ],
   "properties": {
     "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "account_id": {
       "type": "string",
       "minLength": 1
     },

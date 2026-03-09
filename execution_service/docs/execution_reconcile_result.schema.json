@@ -24,6 +24,9 @@
     "decision_id": {
       "type": ["string", "null"]
     },
+    "account_id": {
+      "type": ["string", "null"]
+    },
     "exchange": {
       "type": ["string", "null"]
     },

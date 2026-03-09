@@ -134,6 +134,7 @@ def test_debug_state_with_decision_id() -> None:
     assert data["decision_state"]["decision_id"] == "dec-debug-001"
     assert data["decision_state"]["last_transition"] in {"decided", "skipped"}
     assert "attempts" in data["decision_state"]
+    assert data["decision_state"]["account_id"] == "main"
     assert data["decision_state"]["source"] == "execution_service"
     assert data["decision_state"]["trace_id"] == "trace-debug-001"
 
@@ -197,6 +198,7 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
             "order_id": order_id,
             "decision_id": "dec-reconcile-001",
             "exchange": "binance",
+            "account_id": "main",
             "symbol": "ETHUSDT",
             "trace_id": "trace-reconcile-001",
         },
@@ -204,12 +206,14 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
     assert reconcile_resp.status_code == 200
     reconcile_data = reconcile_resp.json()
     assert reconcile_data["status"] == "filled"
+    assert reconcile_data["account_id"] == "main"
 
     debug_resp = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-reconcile-001")
     assert debug_resp.status_code == 200
     debug_data = debug_resp.json()
     assert isinstance(debug_data.get("decision_state"), dict)
     assert debug_data["decision_state"]["status"] == "filled"
+    assert debug_data["decision_state"]["account_id"] == "main"
     assert debug_data["decision_state"]["last_transition"] == "filled"
     assert debug_data["decision_state"]["reconcile_order_id"] == order_id
 
@@ -222,6 +226,7 @@ def test_reconcile_order_id_idempotency(monkeypatch: pytest.MonkeyPatch) -> None
         "order_id": "mock-order-idem-001",
         "decision_id": "dec-idem-001",
         "exchange": "binance",
+        "account_id": "main",
         "symbol": "ETHUSDT",
     }
     first = client.post("/internal/execution/reconcile", json=payload)

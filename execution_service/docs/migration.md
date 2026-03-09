@@ -77,6 +77,7 @@
 54. execution 输出已新增 `signal_result`（模拟信号结构），可直接供下游消费而不依赖真实交易下沉
 55. `signal_result` 已冻结为独立 schema 并纳入守卫/索引；因 `ExecutionResult` 契约 breaking 变更，schema mapping 已升版至 `v4`
 56. `account_id` 已正式纳入 `DecisionIntent` 契约与 schema/mapping，schema mapping 版本已升至 `v5`
+57. `account_id` 已贯通到 `decision_state` 与 `reconcile` 写回链路，调试快照可按账户维度稳定追踪
 
 ## 关键收敛决议（冻结）
 
