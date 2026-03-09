@@ -69,7 +69,14 @@ class ExecutionService:
                         "notes": "相同 decision_id 正在处理，请稍后重试",
                     }
                 )
-        await self._save_state(decision.decision_id, {"status": "pending"})
+        await self._save_state(
+            decision.decision_id,
+            {
+                "status": "pending",
+                "source": "execution_service",
+                "trace_id": decision.trace_id,
+            },
+        )
 
         try:
             position_state = await self._position_provider.get_position_state(
@@ -107,6 +114,8 @@ class ExecutionService:
                     "attempts": _extract_attempts(result),
                     "submitted_at_ms": _extract_submitted_at_ms(result),
                     "last_error": _extract_last_error(result),
+                    "source": "execution_service",
+                    "trace_id": decision.trace_id,
                 },
             )
             return result

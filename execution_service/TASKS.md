@@ -27,3 +27,4 @@
 - [x] Task 25: submit 下沉支持重试（指数退避 + 最大次数）并在 `order_result.retry_meta` 输出重试轨迹。
 - [x] Task 26: 扩展状态机快照字段（`attempts/submitted_at_ms/last_error/last_transition`）并同步测试与 API 文档。
 - [x] Task 27: 增加状态机跃迁合法性校验（终态不可回跳）并补测试与文档。
+- [x] Task 28: 状态机快照增加 `trace_id/source` 追踪字段并同步测试与文档。

@@ -105,6 +105,7 @@ def test_debug_state_with_decision_id() -> None:
             "confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
+            "trace_id": "trace-debug-001",
         },
     )
     assert decide_resp.status_code == 200
@@ -115,3 +116,5 @@ def test_debug_state_with_decision_id() -> None:
     assert data["decision_state"]["decision_id"] == "dec-debug-001"
     assert data["decision_state"]["last_transition"] in {"decided", "skipped"}
     assert "attempts" in data["decision_state"]
+    assert data["decision_state"]["source"] == "execution_service"
+    assert data["decision_state"]["trace_id"] == "trace-debug-001"

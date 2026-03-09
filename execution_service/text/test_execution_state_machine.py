@@ -57,6 +57,7 @@ def test_state_machine_submitted_status() -> None:
     assert state["attempts"] == 1
     assert isinstance(state["submitted_at_ms"], int)
     assert state["last_error"] == ""
+    assert state["source"] == "execution_service"
 
 
 def test_state_machine_failed_status_on_submit_error() -> None:
