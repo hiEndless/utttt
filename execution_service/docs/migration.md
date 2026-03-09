@@ -83,6 +83,7 @@
 60. `risk_checks.check` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
 61. `risk_checks.message_zh` 已冻结为必填中文说明字段，确保风控检查项具备可读诊断信息
 62. `risk_checks.scope/status` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
+63. `risk_checks.message_zh` 文案模板已收敛为常量并新增模板稳定性测试，减少多处拼接导致的格式漂移
 
 ## 关键收敛决议（冻结）
 

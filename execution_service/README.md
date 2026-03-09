@@ -104,6 +104,7 @@ execution_service/
 - `risk_checks.check` 已收敛为常量枚举，并由测试强校验与 schema 一致。
 - `risk_checks.message_zh` 已冻结为必填字段，统一输出中文检查说明，便于日志与人工排障阅读。
 - `risk_checks.scope/status` 已收敛为常量枚举，并由契约测试校验与 schema 一致，降低实现漂移风险。
+- `risk_checks.message_zh` 文案模板已收敛为常量定义，避免不同规则输出格式不一致。
 
 ## 最小接口（当前）
 
