@@ -63,6 +63,7 @@ class ExecutionService:
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
+        account_id = _resolve_account_id(payload)
         lock_acquired = False
         if self._idempotency_store is not None:
             cached = await self._idempotency_store.get_result(decision.decision_id)
@@ -98,8 +99,9 @@ class ExecutionService:
             position_state = await self._position_provider.get_position_state(
                 decision.exchange,
                 decision.symbol,
+                account_id=account_id,
             )
-            account_state = await self._account_provider.get_account_state(decision.exchange)
+            account_state = await self._account_provider.get_account_state(decision.exchange, account_id=account_id)
             risk_policy = await self._risk_policy_provider.get_risk_policy(
                 decision.exchange,
                 decision.symbol,
@@ -144,13 +146,15 @@ class ExecutionService:
         *,
         exchange: str,
         symbol: str,
+        account_id: str = "main",
         redact: bool = False,
         decision_id: str | None = None,
     ) -> Dict[str, Any]:
         """只读调试视图：便于联调时检查 execution 输入状态。"""
 
-        position_state = await self._position_provider.get_position_state(exchange, symbol)
-        account_state = await self._account_provider.get_account_state(exchange)
+        account_id = str(account_id or "").strip() or "main"
+        position_state = await self._position_provider.get_position_state(exchange, symbol, account_id=account_id)
+        account_state = await self._account_provider.get_account_state(exchange, account_id=account_id)
         risk_policy = await self._risk_policy_provider.get_risk_policy(exchange, symbol)
         position_state_out = dict(position_state or {})
         account_state_out = dict(account_state or {})
@@ -158,6 +162,7 @@ class ExecutionService:
             _apply_redaction(position_state_out, account_state_out)
         out = {
             "exchange": exchange,
+            "account_id": account_id,
             "symbol": symbol,
             "position_state": position_state_out,
             "account_state": account_state_out,
@@ -452,3 +457,8 @@ def _infer_sink_mode(execution_sink: Any) -> str:
     if "exchange" in cls_name:
         return "exchange_skeleton"
     return "mock"
+
+
+def _resolve_account_id(payload: Mapping[str, Any]) -> str:
+    account_id = str(payload.get("account_id") or "").strip()
+    return account_id or "main"

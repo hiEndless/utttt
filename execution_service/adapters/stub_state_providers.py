@@ -19,7 +19,12 @@ class StubPositionStateProvider:
     )
     symbol_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
-    async def get_position_state(self, exchange: str, symbol: str) -> Dict[str, Any]:
+    async def get_position_state(
+        self,
+        exchange: str,
+        symbol: str,
+        account_id: str = "main",
+    ) -> Dict[str, Any]:
         # 按 symbol 覆盖，便于构造不同仓位场景。
         base = dict(self.default_state)
         override = self.symbol_overrides.get(symbol)
@@ -27,6 +32,7 @@ class StubPositionStateProvider:
             base.update(override)
         base["exchange"] = exchange
         base["symbol"] = symbol
+        base["account_id"] = account_id
         return base
 
 
@@ -45,12 +51,13 @@ class StubAccountStateProvider:
     )
     exchange_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
-    async def get_account_state(self, exchange: str) -> Dict[str, Any]:
+    async def get_account_state(self, exchange: str, account_id: str = "main") -> Dict[str, Any]:
         state = dict(self.default_state)
         override = self.exchange_overrides.get(exchange)
         if override:
             state.update(override)
         state["exchange"] = exchange
+        state["account_id"] = account_id
         return state
 
 

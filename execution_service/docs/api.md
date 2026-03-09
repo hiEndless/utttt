@@ -176,6 +176,7 @@
 ## 调试状态快照
 
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
+  - 可选：`account_id`（默认 `main`）
 - `decision_state` JSON Schema：`execution_service/docs/decision_state.schema.json`
 
 返回示例：
@@ -183,6 +184,7 @@
 ```json
 {
   "exchange": "binance",
+  "account_id": "main",
   "symbol": "ETHUSDT",
   "position_state": {
     "position_side": "flat",
@@ -278,6 +280,10 @@
   - 1) `avgPrice`
   - 2) `cummulativeQuoteQty / executedQty`
   - 3) `price`
+
+补充说明（account scope）：
+- execution 读取仓位/账户状态时已支持 `account_id` 作用域（当前默认 `main`）。
+- Redis 默认 key 模板已包含 `{account_id}`，但也兼容自定义模板（可按需回退到旧模板）。
 
 ## Schema 与字段来源映射
 

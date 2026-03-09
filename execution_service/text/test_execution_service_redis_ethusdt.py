@@ -26,8 +26,9 @@ def test_execution_service_ethusdt_with_redis_data() -> None:
     async def _run() -> None:
         redis_url = str(os.getenv("EXECUTION_REDIS_URL", "redis://127.0.0.1:6379/0") or "redis://127.0.0.1:6379/0").strip()
         redis = Redis.from_url(redis_url, decode_responses=True)
-        position_key = "execution:position:binance:ETHUSDT"
-        account_key = "execution:account:binance"
+        account_id = "main"
+        position_key = f"execution:position:binance:{account_id}:ETHUSDT"
+        account_key = f"execution:account:binance:{account_id}"
         risk_key = "execution:risk_policy:binance:ETHUSDT"
 
         try:

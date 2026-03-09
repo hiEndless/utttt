@@ -40,8 +40,8 @@ class RedisExecutionStateConfig:
 
     redis_url: str
     decode_responses: bool = True
-    position_key_template: str = "execution:position:{exchange}:{symbol}"
-    account_key_template: str = "execution:account:{exchange}"
+    position_key_template: str = "execution:position:{exchange}:{account_id}:{symbol}"
+    account_key_template: str = "execution:account:{exchange}:{account_id}"
     risk_policy_key_template: str = "execution:risk_policy:{exchange}:{symbol}"
 
     @classmethod
@@ -50,11 +50,12 @@ class RedisExecutionStateConfig:
             redis_url=str(os.getenv("EXECUTION_REDIS_URL", "redis://127.0.0.1:6379/0") or "redis://127.0.0.1:6379/0").strip(),
             decode_responses=True,
             position_key_template=str(
-                os.getenv("EXECUTION_POSITION_KEY_TEMPLATE", "execution:position:{exchange}:{symbol}")
-                or "execution:position:{exchange}:{symbol}"
+                os.getenv("EXECUTION_POSITION_KEY_TEMPLATE", "execution:position:{exchange}:{account_id}:{symbol}")
+                or "execution:position:{exchange}:{account_id}:{symbol}"
             ).strip(),
             account_key_template=str(
-                os.getenv("EXECUTION_ACCOUNT_KEY_TEMPLATE", "execution:account:{exchange}") or "execution:account:{exchange}"
+                os.getenv("EXECUTION_ACCOUNT_KEY_TEMPLATE", "execution:account:{exchange}:{account_id}")
+                or "execution:account:{exchange}:{account_id}"
             ).strip(),
             risk_policy_key_template=str(
                 os.getenv(
@@ -73,18 +74,19 @@ class RedisPositionStateProvider:
         self,
         *,
         redis_client: Redis,
-        key_template: str = "execution:position:{exchange}:{symbol}",
+        key_template: str = "execution:position:{exchange}:{account_id}:{symbol}",
     ) -> None:
         self._redis = redis_client
         self._key_template = key_template
 
-    async def get_position_state(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        key = self._key_template.format(exchange=exchange, symbol=symbol)
+    async def get_position_state(self, exchange: str, symbol: str, account_id: str = "main") -> Dict[str, Any]:
+        key = self._key_template.format(exchange=exchange, account_id=account_id, symbol=symbol)
         raw = await self._redis.get(key)
         payload = _safe_json_load(raw)
         # 中文注释：保证关键字段有默认值，避免裁决器遇到缺失字段崩溃。
         return {
             "exchange": exchange,
+            "account_id": account_id,
             "symbol": symbol,
             "position_side": str(payload.get("position_side", "flat") or "flat").lower(),
             "position_size": _to_float(payload.get("position_size"), 0.0),
@@ -101,17 +103,18 @@ class RedisAccountStateProvider:
         self,
         *,
         redis_client: Redis,
-        key_template: str = "execution:account:{exchange}",
+        key_template: str = "execution:account:{exchange}:{account_id}",
     ) -> None:
         self._redis = redis_client
         self._key_template = key_template
 
-    async def get_account_state(self, exchange: str) -> Dict[str, Any]:
-        key = self._key_template.format(exchange=exchange)
+    async def get_account_state(self, exchange: str, account_id: str = "main") -> Dict[str, Any]:
+        key = self._key_template.format(exchange=exchange, account_id=account_id)
         raw = await self._redis.get(key)
         payload = _safe_json_load(raw)
         return {
             "exchange": exchange,
+            "account_id": account_id,
             "account_equity": _to_float(payload.get("account_equity"), 0.0),
             "available_balance": _to_float(payload.get("available_balance"), 0.0),
             "margin_ratio": _to_float(payload.get("margin_ratio"), 0.0),

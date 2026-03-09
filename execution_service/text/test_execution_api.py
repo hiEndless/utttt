@@ -78,6 +78,7 @@ def test_debug_state_success() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["exchange"] == "binance"
+    assert data["account_id"] == "main"
     assert data["symbol"] == "ETHUSDT"
     assert isinstance(data["position_state"], dict)
     assert isinstance(data["account_state"], dict)
@@ -92,6 +93,16 @@ def test_debug_state_redacted() -> None:
     assert data["redacted"] is True
     assert data["account_state"]["account_equity"] == "***"
     assert data["account_state"]["available_balance"] == "***"
+
+
+def test_debug_state_with_account_id() -> None:
+    client = TestClient(create_app())
+    response = client.get("/internal/execution/debug/state/binance/ETHUSDT?account_id=sub_1")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["account_id"] == "sub_1"
+    assert data["position_state"]["account_id"] == "sub_1"
+    assert data["account_state"]["account_id"] == "sub_1"
 
 
 def test_debug_state_with_decision_id() -> None:

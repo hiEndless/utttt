@@ -6,8 +6,8 @@
 
 ## 1) 仓位状态
 
-- key 模板：`execution:position:{exchange}:{symbol}`
-- 默认示例：`execution:position:binance:ETHUSDT`
+- key 模板：`execution:position:{exchange}:{account_id}:{symbol}`
+- 默认示例：`execution:position:binance:main:ETHUSDT`
 
 value(JSON)：
 
@@ -23,8 +23,8 @@ value(JSON)：
 
 ## 2) 账户状态
 
-- key 模板：`execution:account:{exchange}`
-- 默认示例：`execution:account:binance`
+- key 模板：`execution:account:{exchange}:{account_id}`
+- 默认示例：`execution:account:binance:main`
 
 value(JSON)：
 
@@ -56,8 +56,8 @@ value(JSON)：
 
 - `EXECUTION_STATE_PROVIDER_MODE=redis`
 - `EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0`
-- `EXECUTION_POSITION_KEY_TEMPLATE=execution:position:{exchange}:{symbol}`
-- `EXECUTION_ACCOUNT_KEY_TEMPLATE=execution:account:{exchange}`
+- `EXECUTION_POSITION_KEY_TEMPLATE=execution:position:{exchange}:{account_id}:{symbol}`
+- `EXECUTION_ACCOUNT_KEY_TEMPLATE=execution:account:{exchange}:{account_id}`
 - `EXECUTION_RISK_POLICY_KEY_TEMPLATE=execution:risk_policy:{exchange}:{symbol}`
 
 幂等缓存（可选，mode=redis）：
@@ -89,4 +89,5 @@ value(JSON)：
 ## 5) 说明
 
 - 建议由下游账户/仓位同步任务持续刷新这些键。
+- `account_id` 当前默认 `main`，后续可平滑扩展到多账户。
 - 若键缺失，provider 会使用默认值回退，裁决逻辑仍可运行，但风险精度会下降。

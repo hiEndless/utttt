@@ -17,16 +17,18 @@ def test_stub_position_provider_with_symbol_override() -> None:
     provider = StubPositionStateProvider(
         symbol_overrides={"ETHUSDT": {"position_size": 0.8, "position_side": "long"}}
     )
-    state = asyncio.run(provider.get_position_state("binance", "ETHUSDT"))
+    state = asyncio.run(provider.get_position_state("binance", "ETHUSDT", account_id="main"))
     assert state["position_side"] == "long"
     assert state["position_size"] == 0.8
     assert state["exchange"] == "binance"
+    assert state["account_id"] == "main"
 
 
 def test_stub_account_provider_with_exchange_override() -> None:
     provider = StubAccountStateProvider(
         exchange_overrides={"binance": {"current_drawdown_ratio": 0.11}}
     )
-    state = asyncio.run(provider.get_account_state("binance"))
+    state = asyncio.run(provider.get_account_state("binance", account_id="main"))
     assert state["exchange"] == "binance"
     assert state["current_drawdown_ratio"] == 0.11
+    assert state["account_id"] == "main"

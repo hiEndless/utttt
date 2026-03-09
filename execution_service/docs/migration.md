@@ -72,6 +72,7 @@
 49. `ExchangeExecutionSink` 已支持可配置 `dry_run` 与 Binance 签名请求骨架，并新增单测覆盖下单参数构建逻辑
 50. `ExchangeExecutionSink.reconcile` 已支持 Binance 原始状态到标准状态映射，并返回 `exchange_status_raw` 便于联调排障
 51. `ExchangeExecutionSink.reconcile` 已补齐 `avg_price` 多源回退计算，降低市价单回执均价缺失概率
+52. execution 已引入 `account_id` 作用域（默认 `main`），并贯通到 position/account provider 与 debug 接口，兼容后续多账户扩展
 
 ## 关键收敛决议（冻结）
 

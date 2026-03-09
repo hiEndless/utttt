@@ -26,7 +26,7 @@ class _FakeRedis:
 def test_redis_position_provider_parse_and_defaults() -> None:
     client = _FakeRedis(
         {
-            "execution:position:binance:ETHUSDT": json.dumps(
+            "execution:position:binance:main:ETHUSDT": json.dumps(
                 {
                     "position_side": "long",
                     "position_size": 0.3,
@@ -37,20 +37,22 @@ def test_redis_position_provider_parse_and_defaults() -> None:
         }
     )
     provider = RedisPositionStateProvider(redis_client=client)  # type: ignore[arg-type]
-    out = asyncio.run(provider.get_position_state("binance", "ETHUSDT"))
+    out = asyncio.run(provider.get_position_state("binance", "ETHUSDT", account_id="main"))
     assert out["position_side"] == "long"
     assert out["position_size"] == 0.3
     assert out["max_position_size"] == 1.2
     assert out["cooldown_seconds_left"] == 5
+    assert out["account_id"] == "main"
 
 
 def test_redis_account_provider_fallback_when_key_missing() -> None:
     client = _FakeRedis({})
     provider = RedisAccountStateProvider(redis_client=client)  # type: ignore[arg-type]
-    out = asyncio.run(provider.get_account_state("binance"))
+    out = asyncio.run(provider.get_account_state("binance", account_id="main"))
     assert out["exchange"] == "binance"
     assert out["max_drawdown_ratio"] == 0.15
     assert out["current_drawdown_ratio"] == 0.0
+    assert out["account_id"] == "main"
 
 
 def test_redis_risk_policy_provider_parse() -> None:

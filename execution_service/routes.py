@@ -66,6 +66,7 @@ def create_router(service: ExecutionService) -> APIRouter:
     async def debug_state(
         exchange: str,
         symbol: str,
+        account_id: str = "main",
         redact: bool = False,
         decision_id: str | None = None,
     ) -> Dict[str, Any]:
@@ -79,6 +80,7 @@ def create_router(service: ExecutionService) -> APIRouter:
             return await service.get_debug_state(
                 exchange=exchange_normalized,
                 symbol=symbol_normalized,
+                account_id=(str(account_id).strip() or "main"),
                 redact=bool(redact),
                 decision_id=(str(decision_id).strip() if decision_id else None),
             )

@@ -106,8 +106,8 @@ execution_service/
 - `EXECUTION_STATE_PROVIDER_MODE=stub|redis`（默认 `stub`）
 - 当 `redis` 模式启用时：
   - `EXECUTION_REDIS_URL`（默认 `redis://127.0.0.1:6379/0`）
-  - `EXECUTION_POSITION_KEY_TEMPLATE`（默认 `execution:position:{exchange}:{symbol}`）
-  - `EXECUTION_ACCOUNT_KEY_TEMPLATE`（默认 `execution:account:{exchange}`）
+  - `EXECUTION_POSITION_KEY_TEMPLATE`（默认 `execution:position:{exchange}:{account_id}:{symbol}`）
+  - `EXECUTION_ACCOUNT_KEY_TEMPLATE`（默认 `execution:account:{exchange}:{account_id}`）
   - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
@@ -164,3 +164,4 @@ execution_service/
 - `ExchangeExecutionSink` 已支持 dry-run 请求快照与 Binance 签名请求骨架（真实请求需显式关闭 dry-run）
 - `ExchangeExecutionSink.reconcile` 已支持 Binance 状态映射到标准状态（并返回 `exchange_status_raw`）
 - `ExchangeExecutionSink.reconcile` 的 `avg_price` 已支持多源回退计算（`avgPrice`/`cummulativeQuoteQty÷executedQty`/`price`）
+- execution 内部作用域已引入 `account_id`（当前默认 `main`），为未来多账户扩展预留兼容位
