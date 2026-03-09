@@ -12,7 +12,12 @@ from typing import Any, Dict, Mapping
 import aiohttp
 
 from execution_service.domain.contracts import DecisionIntent
-from execution_service.domain.reconcile_statuses import RECONCILE_STATUS_SUBMITTED
+from execution_service.domain.reconcile_statuses import (
+    RECONCILE_STATUS_CANCELED,
+    RECONCILE_STATUS_FILLED,
+    RECONCILE_STATUS_REJECTED,
+    RECONCILE_STATUS_SUBMITTED,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +99,8 @@ class ExchangeExecutionSink:
         if not symbol:
             raise ValueError("reconcile 需要 symbol")
         out = await self._binance_query_order(symbol=symbol, order_id=str(order_id))
+        exchange_status_raw = str(out.get("status") or "").strip().upper()
+        reconcile_status = self._map_binance_status(exchange_status_raw)
         return {
             "mode": "exchange_skeleton",
             "dry_run": False,
@@ -102,11 +109,12 @@ class ExchangeExecutionSink:
             "decision_id": decision_id or None,
             "exchange": exchange or None,
             "symbol": symbol or None,
-            "status": RECONCILE_STATUS_SUBMITTED,
+            "status": reconcile_status,
             "filled_qty": float(out.get("executedQty") or 0.0),
             "avg_price": float(out.get("price") or 0.0) if str(out.get("price") or "").strip() else None,
             "ts": int(time.time() * 1000),
-            "note": "交易所查询回执（当前统一映射为 submitted）",
+            "exchange_status_raw": exchange_status_raw or None,
+            "note": f"交易所回执状态映射: {exchange_status_raw or 'UNKNOWN'} -> {reconcile_status}",
             "exchange_raw": out,
         }
 
@@ -212,3 +220,14 @@ class ExchangeExecutionSink:
         except aiohttp.ClientError as exc:
             logger.warning("交易所请求网络异常 method=%s path=%s err=%s", method, path, exc)
             raise RuntimeError(f"binance_network_error:{exc}") from exc
+
+    def _map_binance_status(self, raw_status: str) -> str:
+        status = str(raw_status or "").strip().upper()
+        if status in {"FILLED"}:
+            return RECONCILE_STATUS_FILLED
+        if status in {"CANCELED", "CANCELLED", "EXPIRED", "EXPIRED_IN_MATCH"}:
+            return RECONCILE_STATUS_CANCELED
+        if status in {"REJECTED"}:
+            return RECONCILE_STATUS_REJECTED
+        # 中文注释：未识别状态统一回退 submitted，避免误判终态。
+        return RECONCILE_STATUS_SUBMITTED

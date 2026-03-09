@@ -162,3 +162,4 @@ execution_service/
 - `DecisionIntent/ExecutionResult` 的关键枚举与边界也已纳入 `schema_mapping.references` 机器校验
 - `ExecutionReconcileResult` 也已纳入 `schema_mapping`，关键状态/错误码与 `retry_meta` 引用受守卫保护
 - `ExchangeExecutionSink` 已支持 dry-run 请求快照与 Binance 签名请求骨架（真实请求需显式关闭 dry-run）
+- `ExchangeExecutionSink.reconcile` 已支持 Binance 状态映射到标准状态（并返回 `exchange_status_raw`）

@@ -268,6 +268,12 @@
 补充说明（exchange sink）：
 - `dry_run=true` 时，`submit/reconcile` 不会请求真实交易所，会在返回结果中提供 `request` 快照用于联调核对。
 - `dry_run=false` 时，当前提供 Binance 签名请求骨架（`POST/GET /api/v3/order`），网络或鉴权异常将由 submit/reconcile 重试与降级逻辑统一处理。
+- `reconcile` 会将 Binance 原始状态映射为标准 `status`：
+  - `FILLED -> filled`
+  - `CANCELED/CANCELLED/EXPIRED/EXPIRED_IN_MATCH -> canceled`
+  - `REJECTED -> rejected`
+  - 其他状态回退 `submitted`
+- 对账返回会附加 `exchange_status_raw`，便于联调定位状态映射行为。
 
 ## Schema 与字段来源映射
 

@@ -70,6 +70,7 @@
 47. `DecisionIntent/ExecutionResult` 已补齐关键引用断言（方向/置信度/动作/拒绝码/retry_meta `$ref`），提升 breaking 契约防漂移能力
 48. `ExecutionReconcileResult` 已纳入 `schema_mapping`，并冻结 `status/reason_code/retry_meta` 关键断言
 49. `ExchangeExecutionSink` 已支持可配置 `dry_run` 与 Binance 签名请求骨架，并新增单测覆盖下单参数构建逻辑
+50. `ExchangeExecutionSink.reconcile` 已支持 Binance 原始状态到标准状态映射，并返回 `exchange_status_raw` 便于联调排障
 
 ## 关键收敛决议（冻结）
 

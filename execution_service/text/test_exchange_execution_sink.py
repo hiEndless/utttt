@@ -14,6 +14,21 @@ from execution_service.adapters.exchange_execution_sink import ExchangeExecution
 from execution_service.domain.contracts import DecisionIntent
 
 
+class _FakeBinanceReconcileSink(ExchangeExecutionSink):
+    def __init__(self, *, status: str) -> None:
+        super().__init__(venue="binance", dry_run=False, api_key="k", api_secret="s")
+        self._status = status
+
+    async def _binance_query_order(self, *, symbol: str, order_id: str):  # type: ignore[override]
+        return {
+            "symbol": symbol,
+            "orderId": order_id,
+            "status": self._status,
+            "executedQty": "0.25",
+            "price": "2000.0",
+        }
+
+
 def test_exchange_sink_submit_dry_run_add_long_builds_buy_market_order() -> None:
     sink = ExchangeExecutionSink(venue="binance", dry_run=True, default_order_qty=0.002)
     decision = DecisionIntent.from_dict(
@@ -91,3 +106,40 @@ def test_exchange_sink_reconcile_dry_run_placeholder() -> None:
     assert out["dry_run"] is True
     assert out["status"] == "submitted"
     assert "dry-run" in str(out.get("note") or "").lower()
+
+
+def test_exchange_sink_reconcile_maps_binance_filled_to_filled() -> None:
+    sink = _FakeBinanceReconcileSink(status="FILLED")
+    out = asyncio.run(
+        sink.reconcile(
+            "123456",
+            {"decision_id": "dec-004", "exchange": "binance", "symbol": "ETHUSDT"},
+        )
+    )
+    assert out["dry_run"] is False
+    assert out["status"] == "filled"
+    assert out["exchange_status_raw"] == "FILLED"
+
+
+def test_exchange_sink_reconcile_maps_binance_canceled_to_canceled() -> None:
+    sink = _FakeBinanceReconcileSink(status="CANCELED")
+    out = asyncio.run(
+        sink.reconcile(
+            "123457",
+            {"decision_id": "dec-005", "exchange": "binance", "symbol": "ETHUSDT"},
+        )
+    )
+    assert out["status"] == "canceled"
+    assert out["exchange_status_raw"] == "CANCELED"
+
+
+def test_exchange_sink_reconcile_unknown_status_fallback_submitted() -> None:
+    sink = _FakeBinanceReconcileSink(status="PARTIALLY_FILLED")
+    out = asyncio.run(
+        sink.reconcile(
+            "123458",
+            {"decision_id": "dec-006", "exchange": "binance", "symbol": "ETHUSDT"},
+        )
+    )
+    assert out["status"] == "submitted"
+    assert out["exchange_status_raw"] == "PARTIALLY_FILLED"
