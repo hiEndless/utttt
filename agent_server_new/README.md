@@ -4,6 +4,7 @@
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 本模块重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
 记忆层升级计划：`agent_server_new/docs/MEMORY_UPGRADE_PLAN.md`
+记忆归档代办：`agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`
 runner JSON 输出契约：`agent_server_new/docs/runner_output_contract.md`
 
 `agent_server_new` 是目标架构中的 **Decision Agent**，只负责决策层，不再承载长期稳定的状态生产职责，也不负责真实执行。
