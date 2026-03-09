@@ -81,6 +81,7 @@
 4. `applied_risk_rules`: 字符串数组
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
+7. JSON Schema：`execution_service/docs/execution_result.schema.json`
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。

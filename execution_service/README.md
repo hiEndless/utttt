@@ -36,6 +36,7 @@ execution_service/
     api.md
     boundaries.md
     decision_state.schema.json
+    execution_result.schema.json
     migration.md
   app/
     __init__.py
@@ -134,3 +135,4 @@ execution_service/
 - cURL 示例：`execution_service/docs/curl_examples.md`
 - HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - decision_state schema：`execution_service/docs/decision_state.schema.json`
+- execution_result schema：`execution_service/docs/execution_result.schema.json`

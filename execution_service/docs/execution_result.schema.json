@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "decision_id",
+    "execution_action",
+    "reject_reason",
+    "applied_risk_rules"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "execution_action": {
+      "type": "string",
+      "enum": ["add", "reduce", "hold", "exit", "skip"]
+    },
+    "reject_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "position_limit_reached",
+        "cooldown_active",
+        "max_drawdown_exceeded",
+        "direction_conflict_with_position",
+        "execution_submit_failed",
+        "idempotency_in_progress"
+      ]
+    },
+    "applied_risk_rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "order_result": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
