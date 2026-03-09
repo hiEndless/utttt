@@ -32,6 +32,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   execution_service/text/test_execution_result_schema.py \
   execution_service/text/test_execution_signal_result_schema.py \
   execution_service/text/test_risk_check_codes_contract.py \
+  execution_service/text/test_risk_check_meta_contract.py \
   execution_service/text/test_risk_policy_schema.py \
   execution_service/text/test_risk_policy_providers.py \
   execution_service/text/test_schema_mapping.py \

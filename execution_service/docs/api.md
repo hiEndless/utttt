@@ -111,6 +111,7 @@
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
   - `risk_checks`: 结构化风控检查明细（账户/仓位/symbol 维度）
     - `check` 枚举（冻结）：`account_drawdown_limit`、`account_available_balance`、`symbol_exposure_ratio`、`long_leg_position_limit`、`short_leg_position_limit`
+    - `scope/status` 枚举（冻结）：`account|symbol|position` 与 `pass|fail`
     - `message_zh`：必填中文说明，包含当前值与阈值，便于值班排障与联调定位
 
 建议标准拒绝码（首批冻结）：

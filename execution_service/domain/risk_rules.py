@@ -11,6 +11,13 @@ from execution_service.domain.risk_check_codes import (
     RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
     RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
 )
+from execution_service.domain.risk_check_meta import (
+    RISK_CHECK_SCOPE_ACCOUNT,
+    RISK_CHECK_SCOPE_POSITION,
+    RISK_CHECK_SCOPE_SYMBOL,
+    RISK_CHECK_STATUS_FAIL,
+    RISK_CHECK_STATUS_PASS,
+)
 
 
 @dataclass(frozen=True)
@@ -351,7 +358,7 @@ def _build_risk_checks(
     checks: list[Dict[str, Any]] = [
         {
             "check": RISK_CHECK_ACCOUNT_DRAWDOWN_LIMIT,
-            "scope": "account",
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
             "status": _status(current_drawdown_ratio < max_drawdown_ratio),
             "value": current_drawdown_ratio,
             "threshold": max_drawdown_ratio,
@@ -359,7 +366,7 @@ def _build_risk_checks(
         },
         {
             "check": RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
-            "scope": "account",
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
             "status": _status(available_balance >= min_available_balance),
             "value": available_balance,
             "threshold": min_available_balance,
@@ -367,7 +374,7 @@ def _build_risk_checks(
         },
         {
             "check": RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
-            "scope": "symbol",
+            "scope": RISK_CHECK_SCOPE_SYMBOL,
             "status": _status(symbol_exposure_ratio <= max_symbol_exposure_ratio),
             "value": symbol_exposure_ratio,
             "threshold": max_symbol_exposure_ratio,
@@ -378,7 +385,7 @@ def _build_risk_checks(
         checks.append(
             {
                 "check": RISK_CHECK_LONG_LEG_POSITION_LIMIT,
-                "scope": "position",
+                "scope": RISK_CHECK_SCOPE_POSITION,
                 "status": _status(long_position_size < max_long_position_size),
                 "value": long_position_size,
                 "threshold": max_long_position_size,
@@ -389,7 +396,7 @@ def _build_risk_checks(
         checks.append(
             {
                 "check": RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
-                "scope": "position",
+                "scope": RISK_CHECK_SCOPE_POSITION,
                 "status": _status(short_position_size < max_short_position_size),
                 "value": short_position_size,
                 "threshold": max_short_position_size,
@@ -400,4 +407,4 @@ def _build_risk_checks(
 
 
 def _status(passed: bool) -> str:
-    return "pass" if passed else "fail"
+    return RISK_CHECK_STATUS_PASS if passed else RISK_CHECK_STATUS_FAIL

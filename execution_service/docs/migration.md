@@ -82,6 +82,7 @@
 59. `risk_policy` 已冻结独立 schema，并接入守卫与 provider 默认值测试，策略字段定义统一收敛
 60. `risk_checks.check` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
 61. `risk_checks.message_zh` 已冻结为必填中文说明字段，确保风控检查项具备可读诊断信息
+62. `risk_checks.scope/status` 已收敛为常量枚举，并新增代码-契约一致性测试防止 schema/实现漂移
 
 ## 关键收敛决议（冻结）
 
