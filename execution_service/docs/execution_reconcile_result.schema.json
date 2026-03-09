@@ -43,6 +43,9 @@
     "note": {
       "type": "string"
     },
+    "idempotency_hit": {
+      "type": "boolean"
+    },
     "ts": {
       "type": "integer",
       "minimum": 1

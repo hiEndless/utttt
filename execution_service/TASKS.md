@@ -46,3 +46,4 @@
 - [x] Task 44: 增加 `reconcile` 回执对账接口与 `exchange` sink 骨架实现，并补测试与文档。
 - [x] Task 45: reconcile 回执结果写回状态机，并扩展终态（filled/canceled/rejected）与测试。
 - [x] Task 46: 冻结 `reconcile` 响应 schema 并接入守卫与索引文档。
+- [x] Task 47: 增加 `order_id` 维度 reconcile 幂等（缓存+锁）并补测试与文档。

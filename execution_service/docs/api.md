@@ -148,6 +148,7 @@
 
 说明：
 - 当 payload 或回执中携带 `decision_id` 且回执状态可识别时，服务会写回 `decision_state`（例如 `submitted -> filled`）。
+- `reconcile` 已接入 `order_id` 幂等：相同 `order_id` 二次调用优先返回缓存结果，并标记 `idempotency_hit=true`。
 
 ## 调试状态快照
 

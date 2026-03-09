@@ -157,30 +157,63 @@ class ExecutionService:
         order_id = str(payload.get("order_id") or "").strip()
         if not order_id:
             raise ValueError("order_id 不能为空")
+        cache_key = _reconcile_cache_key(order_id)
+        reconcile_lock_acquired = False
+        if self._idempotency_store is not None:
+            cached = await self._idempotency_store.get_result(cache_key)
+            if isinstance(cached, dict) and cached:
+                out_cached = dict(cached)
+                out_cached["idempotency_hit"] = True
+                return out_cached
+            reconcile_lock_acquired = await self._idempotency_store.try_acquire_lock(
+                cache_key,
+                self._idempotency_lock_ttl_s,
+            )
+            if not reconcile_lock_acquired:
+                cached_after_lock_fail = await self._idempotency_store.get_result(cache_key)
+                if isinstance(cached_after_lock_fail, dict) and cached_after_lock_fail:
+                    out_cached = dict(cached_after_lock_fail)
+                    out_cached["idempotency_hit"] = True
+                    return out_cached
+                return {
+                    "order_id": order_id,
+                    "status": "submitted",
+                    "idempotency_hit": False,
+                    "reject_reason": "reconcile_in_progress",
+                    "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
+                    "ts": int(time.time() * 1000),
+                }
         if self._execution_sink is None:
             raise RuntimeError("execution_sink_not_configured")
         reconcile_fn = getattr(self._execution_sink, "reconcile", None)
         if not callable(reconcile_fn):
             raise RuntimeError("execution_sink_reconcile_not_supported")
-        result = await reconcile_fn(order_id, payload)  # type: ignore[misc]
-        out = dict(result or {})
-        out.setdefault("order_id", order_id)
-        out.setdefault("ts", int(time.time() * 1000))
-        decision_id = str(out.get("decision_id") or payload.get("decision_id") or "").strip()
-        reconcile_status = _normalize_reconcile_status(str(out.get("status") or ""))
-        if decision_id and reconcile_status is not None:
-            await self._save_state(
-                decision_id,
-                {
-                    "status": reconcile_status,
-                    "last_transition": reconcile_status,
-                    "source": "execution_service",
-                    "trace_id": str(payload.get("trace_id") or "").strip() or None,
-                    "reconcile_order_id": order_id,
-                    "reconcile_status_raw": str(out.get("status") or "").strip().lower() or None,
-                },
-            )
-        return out
+        try:
+            result = await reconcile_fn(order_id, payload)  # type: ignore[misc]
+            out = dict(result or {})
+            out.setdefault("order_id", order_id)
+            out.setdefault("ts", int(time.time() * 1000))
+            out["idempotency_hit"] = False
+            decision_id = str(out.get("decision_id") or payload.get("decision_id") or "").strip()
+            reconcile_status = _normalize_reconcile_status(str(out.get("status") or ""))
+            if decision_id and reconcile_status is not None:
+                await self._save_state(
+                    decision_id,
+                    {
+                        "status": reconcile_status,
+                        "last_transition": reconcile_status,
+                        "source": "execution_service",
+                        "trace_id": str(payload.get("trace_id") or "").strip() or None,
+                        "reconcile_order_id": order_id,
+                        "reconcile_status_raw": str(out.get("status") or "").strip().lower() or None,
+                    },
+                )
+            if self._idempotency_store is not None:
+                await self._idempotency_store.save_result(cache_key, out)
+            return out
+        finally:
+            if self._idempotency_store is not None and reconcile_lock_acquired:
+                await self._idempotency_store.release_lock(cache_key)
 
     async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
         if self._execution_state_store is None:
@@ -324,3 +357,7 @@ def _normalize_reconcile_status(status: str) -> str | None:
             return "canceled"
         return normalized
     return None
+
+
+def _reconcile_cache_key(order_id: str) -> str:
+    return f"reconcile:{str(order_id).strip()}"

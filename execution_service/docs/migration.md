@@ -53,6 +53,7 @@
 30. execution 已新增 `POST /internal/execution/reconcile` 回执对账接口，支持 `mock/exchange_skeleton` sink
 31. reconcile 已支持写回 execution_state 终态（`filled/canceled/rejected`）并纳入状态机跃迁约束
 32. reconcile 响应契约已冻结为独立 schema，并接入守卫与项目文档索引
+33. reconcile 已接入 `order_id` 维度幂等（缓存+锁），避免重复写回覆盖状态
 
 ## 关键收敛决议（冻结）
 

@@ -193,3 +193,26 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
     assert debug_data["decision_state"]["status"] == "filled"
     assert debug_data["decision_state"]["last_transition"] == "filled"
     assert debug_data["decision_state"]["reconcile_order_id"] == order_id
+
+
+def test_reconcile_order_id_idempotency(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    client = TestClient(create_app())
+    payload = {
+        "order_id": "mock-order-idem-001",
+        "decision_id": "dec-idem-001",
+        "exchange": "binance",
+        "symbol": "ETHUSDT",
+    }
+    first = client.post("/internal/execution/reconcile", json=payload)
+    assert first.status_code == 200
+    first_data = first.json()
+    assert first_data["idempotency_hit"] is False
+
+    second = client.post("/internal/execution/reconcile", json=payload)
+    assert second.status_code == 200
+    second_data = second.json()
+    assert second_data["idempotency_hit"] is True
+    assert second_data["order_id"] == "mock-order-idem-001"
+    assert second_data["ts"] == first_data["ts"]
