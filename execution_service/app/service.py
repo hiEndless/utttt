@@ -98,8 +98,12 @@ class ExecutionService:
                 decision.decision_id,
                 {
                     "status": _derive_execution_status(result),
+                    "last_transition": _derive_execution_status(result),
                     "execution_action": result.execution_action,
                     "reject_reason": result.reject_reason,
+                    "attempts": _extract_attempts(result),
+                    "submitted_at_ms": _extract_submitted_at_ms(result),
+                    "last_error": _extract_last_error(result),
                 },
             )
             return result
@@ -154,6 +158,7 @@ class ExecutionService:
             try:
                 order_result = await self._execution_sink.submit(decision, result.execution_action)  # type: ignore[union-attr]
                 payload = dict(order_result or {})
+                payload["submitted_at_ms"] = int(time.time() * 1000)
                 payload["retry_meta"] = {
                     "attempts": attempts,
                     "max_retries": self._submit_max_retries,
@@ -215,3 +220,27 @@ def _apply_redaction(position_state: Dict[str, Any], account_state: Dict[str, An
     for key in ("account_equity", "available_balance"):
         if key in account_state:
             account_state[key] = "***"
+
+
+def _extract_attempts(result: ExecutionResult) -> int:
+    order_result = result.order_result if isinstance(result.order_result, dict) else {}
+    retry_meta = order_result.get("retry_meta") if isinstance(order_result.get("retry_meta"), dict) else {}
+    attempts = retry_meta.get("attempts")
+    if isinstance(attempts, int) and attempts >= 0:
+        return attempts
+    return 0
+
+
+def _extract_submitted_at_ms(result: ExecutionResult) -> int | None:
+    order_result = result.order_result if isinstance(result.order_result, dict) else {}
+    submitted_at_ms = order_result.get("submitted_at_ms")
+    if isinstance(submitted_at_ms, int) and submitted_at_ms > 0:
+        return submitted_at_ms
+    return None
+
+
+def _extract_last_error(result: ExecutionResult) -> str:
+    order_result = result.order_result if isinstance(result.order_result, dict) else {}
+    retry_meta = order_result.get("retry_meta") if isinstance(order_result.get("retry_meta"), dict) else {}
+    last_error = retry_meta.get("last_error")
+    return str(last_error) if last_error else ""

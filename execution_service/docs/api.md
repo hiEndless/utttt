@@ -139,6 +139,12 @@
 说明：
 - `redact=true` 时会脱敏敏感字段（如 `account_equity/available_balance/unrealized_pnl`）
 - 传入 `decision_id` 时返回 `decision_state`，用于查看状态机快照（`pending/submitted/failed/skipped/decided`）
+- `decision_state` 当前包含：
+  - `status`: 当前状态
+  - `last_transition`: 最近一次状态跃迁
+  - `attempts`: submit 尝试次数（未 submit 为 `0`）
+  - `submitted_at_ms`: 最近一次成功 submit 时间戳（未 submit 为 `null`）
+  - `last_error`: 最近一次 submit 错误文本（无错误为空字符串）
 
 ## 状态提供器模式
 

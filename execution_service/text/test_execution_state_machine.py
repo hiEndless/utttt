@@ -53,6 +53,10 @@ def test_state_machine_submitted_status() -> None:
     state = asyncio.run(store.get_state("dec-state-001"))
     assert isinstance(state, dict)
     assert state["status"] == "submitted"
+    assert state["last_transition"] == "submitted"
+    assert state["attempts"] == 1
+    assert isinstance(state["submitted_at_ms"], int)
+    assert state["last_error"] == ""
 
 
 def test_state_machine_failed_status_on_submit_error() -> None:
@@ -69,6 +73,10 @@ def test_state_machine_failed_status_on_submit_error() -> None:
     state = asyncio.run(store.get_state("dec-state-002"))
     assert isinstance(state, dict)
     assert state["status"] == "failed"
+    assert state["last_transition"] == "failed"
+    assert state["attempts"] == 1
+    assert state["submitted_at_ms"] is None
+    assert state["last_error"] == "down"
 
 
 def test_state_machine_skipped_status() -> None:
@@ -84,3 +92,5 @@ def test_state_machine_skipped_status() -> None:
     state = asyncio.run(store.get_state("dec-state-003"))
     assert isinstance(state, dict)
     assert state["status"] in {"decided", "skipped"}
+    assert state["attempts"] == 0
+    assert state["submitted_at_ms"] is None

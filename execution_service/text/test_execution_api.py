@@ -113,3 +113,5 @@ def test_debug_state_with_decision_id() -> None:
     data = response.json()
     assert isinstance(data.get("decision_state"), dict)
     assert data["decision_state"]["decision_id"] == "dec-debug-001"
+    assert data["decision_state"]["last_transition"] in {"decided", "skipped"}
+    assert "attempts" in data["decision_state"]
