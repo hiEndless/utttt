@@ -46,6 +46,14 @@
     "idempotency_hit": {
       "type": "boolean"
     },
+    "retry_meta": {
+      "type": "object",
+      "properties": {
+        "attempts": {"type": "integer", "minimum": 1},
+        "max_retries": {"type": "integer", "minimum": 0},
+        "status": {"type": "string", "enum": ["ok"]}
+      }
+    },
     "ts": {
       "type": "integer",
       "minimum": 1

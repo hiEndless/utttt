@@ -67,6 +67,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "filled_qty": 1.0,
         "avg_price": 1000.0,
         "idempotency_hit": False,
+        "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
         "ts": 1760000000000,
     }
     assert _validate(schema, good_mock)
@@ -83,6 +84,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "avg_price": None,
         "note": "占位",
         "idempotency_hit": True,
+        "retry_meta": {"attempts": 2, "max_retries": 2, "status": "ok"},
         "ts": 1760000000001,
     }
     assert _validate(schema, good_exchange)

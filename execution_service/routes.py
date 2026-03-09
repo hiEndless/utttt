@@ -56,6 +56,8 @@ def create_router(service: ExecutionService) -> APIRouter:
                 raise HTTPException(status_code=503, detail=msg) from exc
             if msg == "execution_sink_reconcile_not_supported":
                 raise HTTPException(status_code=501, detail=msg) from exc
+            if msg.startswith("execution_reconcile_failed:"):
+                raise HTTPException(status_code=502, detail=msg) from exc
             raise HTTPException(status_code=502, detail=f"execution_reconcile_failed:{exc}") from exc
         except Exception as exc:  # pragma: no cover
             raise HTTPException(status_code=502, detail=f"execution_reconcile_failed:{exc}") from exc

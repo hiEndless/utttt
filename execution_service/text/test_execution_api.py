@@ -146,6 +146,7 @@ def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
     assert data["mode"] == "mock"
     assert data["order_id"] == "mock-order-001"
     assert data["status"] == "filled"
+    assert data["retry_meta"]["attempts"] == 1
 
 
 def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -> None:

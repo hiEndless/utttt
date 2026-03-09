@@ -137,6 +137,7 @@
   "status": "filled",
   "filled_qty": 1.0,
   "avg_price": 1000.0,
+  "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
   "ts": 1760000000000
 }
 ```
@@ -149,6 +150,7 @@
 说明：
 - 当 payload 或回执中携带 `decision_id` 且回执状态可识别时，服务会写回 `decision_state`（例如 `submitted -> filled`）。
 - `reconcile` 已接入 `order_id` 幂等：相同 `order_id` 二次调用优先返回缓存结果，并标记 `idempotency_hit=true`。
+- `reconcile` 支持错误分级重试：可重试错误会按指数退避重试，并在响应 `retry_meta` 中记录尝试轨迹。
 
 ## 调试状态快照
 
@@ -221,6 +223,8 @@
 - `EXECUTION_SINK_EXCHANGE_VENUE`（当 `EXECUTION_SINK_MODE=exchange`）
 - `EXECUTION_SUBMIT_MAX_RETRIES`
 - `EXECUTION_SUBMIT_BACKOFF_BASE_S`
+- `EXECUTION_RECONCILE_MAX_RETRIES`
+- `EXECUTION_RECONCILE_BACKOFF_BASE_S`
 - `EXECUTION_IDEMPOTENCY_ENABLED`
 - `EXECUTION_IDEMPOTENCY_MODE`
 - `EXECUTION_IDEMPOTENCY_REDIS_URL`

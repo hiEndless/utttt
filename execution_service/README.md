@@ -114,6 +114,8 @@ execution_service/
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SUBMIT_MAX_RETRIES`（默认 `0`）
   - `EXECUTION_SUBMIT_BACKOFF_BASE_S`（默认 `0.2`）
+  - `EXECUTION_RECONCILE_MAX_RETRIES`（默认 `0`）
+  - `EXECUTION_RECONCILE_BACKOFF_BASE_S`（默认 `0.2`）
 - 幂等缓存（建议开启）：
   - `EXECUTION_IDEMPOTENCY_ENABLED=true|false`（默认 `true`）
   - `EXECUTION_IDEMPOTENCY_MODE=memory|redis`（默认 `memory`）

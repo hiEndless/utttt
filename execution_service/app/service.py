@@ -33,6 +33,8 @@ class ExecutionService:
         execution_state_store: ExecutionStateStore | None = None,
         submit_max_retries: int = 0,
         submit_backoff_base_s: float = 0.2,
+        reconcile_max_retries: int = 0,
+        reconcile_backoff_base_s: float = 0.2,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
@@ -44,6 +46,8 @@ class ExecutionService:
         self._execution_state_store = execution_state_store
         self._submit_max_retries = max(0, int(submit_max_retries))
         self._submit_backoff_base_s = max(0.0, float(submit_backoff_base_s))
+        self._reconcile_max_retries = max(0, int(reconcile_max_retries))
+        self._reconcile_backoff_base_s = max(0.0, float(reconcile_backoff_base_s))
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
         decision = DecisionIntent.from_dict(payload)
@@ -189,8 +193,11 @@ class ExecutionService:
         if not callable(reconcile_fn):
             raise RuntimeError("execution_sink_reconcile_not_supported")
         try:
-            result = await reconcile_fn(order_id, payload)  # type: ignore[misc]
-            out = dict(result or {})
+            out = await self._reconcile_with_retry(
+                reconcile_fn=reconcile_fn,
+                order_id=order_id,
+                payload=payload,
+            )
             out.setdefault("order_id", order_id)
             out.setdefault("ts", int(time.time() * 1000))
             out["idempotency_hit"] = False
@@ -214,6 +221,37 @@ class ExecutionService:
         finally:
             if self._idempotency_store is not None and reconcile_lock_acquired:
                 await self._idempotency_store.release_lock(cache_key)
+
+    async def _reconcile_with_retry(
+        self,
+        *,
+        reconcile_fn: Any,
+        order_id: str,
+        payload: Mapping[str, Any],
+    ) -> Dict[str, Any]:
+        attempts = 0
+        last_error = ""
+        max_attempts = 1 + self._reconcile_max_retries
+        while attempts < max_attempts:
+            attempts += 1
+            try:
+                out = dict(await reconcile_fn(order_id, payload) or {})
+                out["retry_meta"] = {
+                    "attempts": attempts,
+                    "max_retries": self._reconcile_max_retries,
+                    "status": "ok",
+                }
+                return out
+            except Exception as exc:  # pragma: no cover
+                last_error = str(exc)
+                retryable = _is_retryable_reconcile_error(exc)
+                if (not retryable) or attempts >= max_attempts:
+                    raise RuntimeError(
+                        f"execution_reconcile_failed:last_error={last_error};retryable={retryable};attempts={attempts}"
+                    ) from exc
+                backoff_s = self._reconcile_backoff_base_s * (2 ** (attempts - 1))
+                if backoff_s > 0:
+                    await asyncio.sleep(backoff_s)
 
     async def _save_state(self, decision_id: str, state: Dict[str, Any]) -> None:
         if self._execution_state_store is None:
@@ -361,3 +399,19 @@ def _normalize_reconcile_status(status: str) -> str | None:
 
 def _reconcile_cache_key(order_id: str) -> str:
     return f"reconcile:{str(order_id).strip()}"
+
+
+def _is_retryable_reconcile_error(exc: Exception) -> bool:
+    msg = str(exc or "").strip().lower()
+    retryable_signals = (
+        "timeout",
+        "timed out",
+        "too many requests",
+        "temporarily unavailable",
+        "temporarily_unavailable",
+        "connection reset",
+        "connection aborted",
+        "connection refused",
+        "429",
+    )
+    return any(token in msg for token in retryable_signals)
