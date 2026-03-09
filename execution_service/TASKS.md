@@ -36,3 +36,4 @@
 - [x] Task 34: 在 API 文档补充 schema 与字段来源映射表（schema -> code）。
 - [x] Task 35: 新增机器可校验 `schema_mapping.json` 并接入守卫脚本。
 - [x] Task 36: 增加 `schema_mapping_version` 并校验映射版本与 `/version` 一致。
+- [x] Task 37: 为 schema mapping 增加 `owner/change_policy` 并做强校验。

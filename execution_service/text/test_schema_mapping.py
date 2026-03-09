@@ -22,9 +22,13 @@ def test_schema_mapping_manifest_is_valid() -> None:
         schema_rel = str(item.get("schema") or "").strip()
         code_rel = str(item.get("code") or "").strip()
         symbol = str(item.get("symbol") or "").strip()
+        owner = str(item.get("owner") or "").strip()
+        change_policy = str(item.get("change_policy") or "").strip()
         fields = item.get("fields")
 
         assert name
+        assert owner
+        assert change_policy in {"breaking", "non_breaking"}
         assert schema_rel
         assert code_rel
         assert symbol

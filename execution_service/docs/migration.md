@@ -43,6 +43,7 @@
 20. execution API 文档已补充“schema 与字段来源映射表”，支持联调与评审快速追溯
 21. execution 已新增机器可校验 `schema_mapping.json`，并接入守卫防止表格/代码映射漂移
 22. execution `/version` 已透出 `schema_mapping_version`，并通过测试强校验与 mapping 文件版本一致
+23. schema_mapping 已新增 `owner/change_policy` 元数据，并由测试强校验变更责任与升级策略
 
 ## 关键收敛决议（冻结）
 

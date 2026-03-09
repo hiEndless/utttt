@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v1",
+  "schema_mapping_version": "execution-schema-mapping-v2",
   "ts": 1760000000000
 }
 ```
@@ -191,13 +191,14 @@
 
 机器可校验清单：`execution_service/docs/schema_mapping.json`
 
-| 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 |
-| --- | --- | --- | --- |
-| DecisionIntent | `decision_id` `exchange` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` |
-| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` |
-| DecisionState | `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 |
+| 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
+| --- | --- | --- | --- | --- | --- |
+| DecisionIntent | `decision_id` `exchange` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
+| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
+| DecisionState | `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
 
 说明：
 - schema 用于契约冻结与守卫检查。
 - 代码定义位置用于评审时追溯字段来源与语义变更点。
+- `owner/change_policy` 由 `schema_mapping.json` 统一管理并由测试强校验。
 - `schema_mapping.json.version` 必须与 `/internal/execution/version.schema_mapping_version` 保持一致。

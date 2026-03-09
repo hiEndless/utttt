@@ -1,8 +1,10 @@
 {
-  "version": "execution-schema-mapping-v1",
+  "version": "execution-schema-mapping-v2",
   "items": [
     {
       "name": "DecisionIntent",
+      "owner": "execution_service",
+      "change_policy": "breaking",
       "schema": "execution_service/docs/decision_intent.schema.json",
       "code": "execution_service/domain/contracts.py",
       "symbol": "DecisionIntent",
@@ -19,6 +21,8 @@
     },
     {
       "name": "ExecutionResult",
+      "owner": "execution_service",
+      "change_policy": "breaking",
       "schema": "execution_service/docs/execution_result.schema.json",
       "code": "execution_service/domain/contracts.py",
       "symbol": "ExecutionResult",
@@ -33,6 +37,8 @@
     },
     {
       "name": "DecisionState",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
       "schema": "execution_service/docs/decision_state.schema.json",
       "code": "execution_service/app/service.py",
       "symbol": "_save_state",
