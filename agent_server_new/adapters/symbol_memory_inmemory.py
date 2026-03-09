@@ -3,6 +3,8 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List
 
+from agent_server_new.domain.symbol_memory_summary import build_symbol_memory_summary
+
 
 def _safe_dict(value: Any) -> Dict[str, Any]:
     return dict(value) if isinstance(value, dict) else {}
@@ -43,16 +45,34 @@ class InMemorySymbolMemoryAdapter:
         if len(raw) > self._max_raw_per_symbol:
             raw = raw[-self._max_raw_per_symbol :]
         slot["raw"] = raw
+        slot["summary"] = build_symbol_memory_summary(
+            exchange=exchange,
+            symbol=symbol,
+            raw_records=raw,
+            window=self._max_raw_per_symbol,
+        )
 
-        signal = _safe_dict(entry.get("signal"))
-        plan = _safe_dict(entry.get("plan"))
-        slot["summary"] = {
-            "exchange": str(exchange or "").strip().lower(),
-            "symbol": str(symbol or "").strip().upper(),
-            "event_count": len(raw),
-            "last_decision_ts": entry_ts,
-            "last_signal_direction": str(signal.get("direction") or "none"),
-            "last_signal_verdict": str(signal.get("verdict") or "unknown"),
-            "last_plan_action": str(plan.get("action") or "hold"),
-            "last_plan_direction": str(plan.get("direction") or "none"),
-        }
+    async def list_symbols(self, limit: int = 1000) -> List[Dict[str, str]]:
+        lim = max(1, int(limit))
+        items: List[Dict[str, str]] = []
+        for key in list(self._store.keys())[:lim]:
+            if ":" not in key:
+                continue
+            exchange, symbol = key.split(":", 1)
+            items.append({"exchange": exchange, "symbol": symbol})
+        return items
+
+    async def rebuild_symbol_summary(self, exchange: str, symbol: str, *, window: int = 50) -> Dict[str, Any]:
+        key = self._key(exchange, symbol)
+        if key not in self._store:
+            self._store[key] = {"raw": [], "summary": {}}
+        slot = self._store[key]
+        raw: List[Dict[str, Any]] = list(slot.get("raw") or [])
+        summary = build_symbol_memory_summary(
+            exchange=exchange,
+            symbol=symbol,
+            raw_records=raw,
+            window=max(1, int(window)),
+        )
+        slot["summary"] = summary
+        return summary

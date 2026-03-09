@@ -15,6 +15,7 @@ class _FakeRedis:
         self._kv = {}
         self._lists = {}
         self._ttl = {}
+        self._sets = {}
 
     async def get(self, key: str):
         return self._kv.get(key)
@@ -39,6 +40,13 @@ class _FakeRedis:
 
     async def expire(self, key: str, ttl: int) -> None:
         self._ttl[key] = int(ttl)
+
+    async def sadd(self, key: str, value: str) -> None:
+        bucket = self._sets.setdefault(key, set())
+        bucket.add(value)
+
+    async def smembers(self, key: str):
+        return set(self._sets.get(key, set()))
 
 
 def test_redis_symbol_memory_adapter_record_and_read():
@@ -70,9 +78,11 @@ def test_redis_symbol_memory_adapter_record_and_read():
 
         raw_key = "agent:memory:raw:binance:ETHUSDT"
         summary_key = "agent:memory:summary:binance:ETHUSDT"
+        index_key = "agent:memory:symbols:index"
         assert redis._ttl[raw_key] == 777
         assert redis._ttl[summary_key] == 777
         assert len(redis._lists[raw_key]) == 3
         assert json.loads(redis._kv[summary_key])["last_plan_action"] == "add"
+        assert "binance:ETHUSDT" in redis._sets[index_key]
 
     asyncio.run(_run())

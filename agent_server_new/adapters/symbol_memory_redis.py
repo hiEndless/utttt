@@ -4,9 +4,11 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from redis.asyncio import Redis
+
+from agent_server_new.domain.symbol_memory_summary import build_symbol_memory_summary
 
 
 def _safe_dict(value: Any) -> Dict[str, Any]:
@@ -33,6 +35,7 @@ class RedisSymbolMemoryConfig:
     decode_responses: bool = True
     raw_key_template: str = "agent:memory:raw:{exchange}:{symbol}"
     summary_key_template: str = "agent:memory:summary:{exchange}:{symbol}"
+    symbol_index_key: str = "agent:memory:symbols:index"
     ttl_seconds: int = 604800
     raw_topk: int = 200
 
@@ -47,6 +50,10 @@ class RedisSymbolMemoryConfig:
             os.getenv("AGENT_SYMBOL_MEMORY_SUMMARY_KEY_TEMPLATE", "agent:memory:summary:{exchange}:{symbol}")
             or "agent:memory:summary:{exchange}:{symbol}"
         ).strip()
+        symbol_index_key = str(
+            os.getenv("AGENT_SYMBOL_MEMORY_INDEX_KEY", "agent:memory:symbols:index")
+            or "agent:memory:symbols:index"
+        ).strip()
         try:
             ttl_seconds = max(60, int(str(os.getenv("AGENT_SYMBOL_MEMORY_TTL_SECONDS", "604800") or "604800").strip()))
         except Exception:
@@ -60,6 +67,7 @@ class RedisSymbolMemoryConfig:
             decode_responses=True,
             raw_key_template=raw_key_template,
             summary_key_template=summary_key_template,
+            symbol_index_key=symbol_index_key,
             ttl_seconds=ttl_seconds,
             raw_topk=raw_topk,
         )
@@ -74,12 +82,14 @@ class RedisSymbolMemoryAdapter:
         redis_client: Redis,
         raw_key_template: str = "agent:memory:raw:{exchange}:{symbol}",
         summary_key_template: str = "agent:memory:summary:{exchange}:{symbol}",
+        symbol_index_key: str = "agent:memory:symbols:index",
         ttl_seconds: int = 604800,
         raw_topk: int = 200,
     ) -> None:
         self._redis = redis_client
         self._raw_key_template = raw_key_template
         self._summary_key_template = summary_key_template
+        self._symbol_index_key = str(symbol_index_key or "agent:memory:symbols:index")
         self._ttl_seconds = max(60, int(ttl_seconds))
         self._raw_topk = max(1, int(raw_topk))
 
@@ -114,8 +124,8 @@ class RedisSymbolMemoryAdapter:
 
     async def record_symbol_memory(self, exchange: str, symbol: str, payload: Dict[str, Any]) -> None:
         raw_key = self._raw_key(exchange, symbol)
-        summary_key = self._summary_key(exchange, symbol)
         ex, sym = self._normalize(exchange, symbol)
+        symbol_id = f"{ex}:{sym}"
 
         entry = _safe_dict(payload)
         entry_ts = int(entry.get("ts") or time.time() * 1000)
@@ -123,22 +133,42 @@ class RedisSymbolMemoryAdapter:
         await self._redis.lpush(raw_key, json.dumps(entry, ensure_ascii=False))
         await self._redis.ltrim(raw_key, 0, self._raw_topk - 1)
         await self._redis.expire(raw_key, self._ttl_seconds)
+        await self._redis.sadd(self._symbol_index_key, symbol_id)
+        await self.rebuild_symbol_summary(exchange, symbol, window=self._raw_topk)
 
-        signal = _safe_dict(entry.get("signal"))
-        plan = _safe_dict(entry.get("plan"))
-        summary = {
-            "exchange": ex,
-            "symbol": sym,
-            "last_decision_ts": entry_ts,
-            "last_signal_direction": str(signal.get("direction") or "none"),
-            "last_signal_verdict": str(signal.get("verdict") or "unknown"),
-            "last_plan_action": str(plan.get("action") or "hold"),
-            "last_plan_direction": str(plan.get("direction") or "none"),
-        }
-        # 这里使用 LLEN 保持 event_count 与实际 raw 长度一致。
-        summary["event_count"] = int(await self._redis.llen(raw_key))
+    async def list_symbols(self, limit: int = 1000) -> List[Dict[str, str]]:
+        lim = max(1, int(limit))
+        raw_items = list(await self._redis.smembers(self._symbol_index_key) or [])
+        out: List[Dict[str, str]] = []
+        for item in raw_items:
+            key = str(item or "").strip()
+            if ":" not in key:
+                continue
+            exchange, symbol = key.split(":", 1)
+            out.append({"exchange": exchange, "symbol": symbol})
+            if len(out) >= lim:
+                break
+        return out
+
+    async def rebuild_symbol_summary(self, exchange: str, symbol: str, *, window: int = 50) -> Dict[str, Any]:
+        raw_key = self._raw_key(exchange, symbol)
+        summary_key = self._summary_key(exchange, symbol)
+        raw_items = await self._redis.lrange(raw_key, 0, max(0, int(window) - 1))
+        parsed: List[Dict[str, Any]] = []
+        for item in list(raw_items or []):
+            payload = _safe_json_load(item)
+            if payload:
+                parsed.append(payload)
+        parsed.reverse()
+        summary = build_symbol_memory_summary(
+            exchange=exchange,
+            symbol=symbol,
+            raw_records=parsed,
+            window=max(1, int(window)),
+        )
         await self._redis.set(summary_key, json.dumps(summary, ensure_ascii=False))
         await self._redis.expire(summary_key, self._ttl_seconds)
+        return summary
 
 
 def create_redis_client_from_env(redis_url: Optional[str] = None) -> Redis:

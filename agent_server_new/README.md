@@ -149,6 +149,8 @@ signal_event + active_events + MSL
   - 记忆后端（`inmemory|redis`，默认：`inmemory`）
 - `AGENT_SYMBOL_MEMORY_REDIS_URL`
   - 当后端为 `redis` 时的连接地址（默认：`redis://127.0.0.1:6379/0`）
+- `AGENT_SYMBOL_MEMORY_INDEX_KEY`
+  - Redis 维护 symbol 列表的索引键（默认：`agent:memory:symbols:index`）
 - `AGENT_SYMBOL_MEMORY_CONTEXT_TOPK`
   - 注入到决策上下文的 recent memory 条数（默认：`5`）
 - `AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS`
@@ -179,6 +181,11 @@ signal_event + active_events + MSL
   - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
   - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
   - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
+
+## Memory Summary Runner
+
+- 一次执行：`python -m agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
+- 循环执行：`python -m agent_server_new.memory_summary_runner --loop --interval-s 60`
 
 ## One-shot Pipeline Smoke
 

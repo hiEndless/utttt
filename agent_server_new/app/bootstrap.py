@@ -57,6 +57,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
                 redis_client=redis_client,
                 raw_key_template=cfg.raw_key_template,
                 summary_key_template=cfg.summary_key_template,
+                symbol_index_key=cfg.symbol_index_key,
                 ttl_seconds=cfg.ttl_seconds,
                 raw_topk=cfg.raw_topk,
             )

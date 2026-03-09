@@ -87,6 +87,14 @@ Markdown 策略：
 3. 增加 `summary` 后台整理任务（规则化，不引入独立 agent）。
 4. 指标观测：记忆命中率、摘要长度、信号反转率变化。
 
+当前进度（2026-03-10）：
+
+1. `RedisSymbolMemoryAdapter` 已落地（含 TTL + Top-K + symbol index）。
+2. 上下文注入侧已落地 TTL/去重/Top-K 过滤。
+3. 已新增后台整理骨架：
+- job：`agent_server_new/app/jobs/symbol_memory_summary_job.py`
+- runner：`python -m agent_server_new.memory_summary_runner`
+
 ## Phase 2（生产增强，2-4 周）
 
 1. 增加 DB 归档（审计与复盘）。
