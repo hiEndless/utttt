@@ -46,6 +46,7 @@ jobs:
         run: |
           echo "event_center quick strict guard failed, see artifact: event-center-quick-strict-diagnostics"
           echo "download artifact then run:"
+          echo "  pwd"
           echo "  ls -la ."
           echo "  rg -n \"FAIL_CODE=\" quick_strict.log"
           exit 1
@@ -75,6 +76,7 @@ jobs:
         run: |
           echo "event_center quick lenient guard failed, see artifact: event-center-quick-lenient-diagnostics"
           echo "download artifact then run:"
+          echo "  pwd"
           echo "  ls -la ."
           echo "  rg -n \"FAIL_CODE=\" quick_lenient.log"
           exit 1

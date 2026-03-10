@@ -31,6 +31,7 @@ jobs:
         run: |
           echo "event_center full guard failed, see uploaded artifact: event-center-full-diagnostics"
           echo "download artifact then run:"
+          echo "  pwd"
           echo "  ls -la ."
           echo "  rg -n \"FAIL_CODE=\" full_guard.log"
           exit 1

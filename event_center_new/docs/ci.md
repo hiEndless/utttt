@@ -11,12 +11,12 @@
 - 失败诊断：
     - strict job 自动上传 `event-center-quick-strict-diagnostics`（目录 artifact，至少包含 `quick_strict.log`）
     - lenient job 自动上传 `event-center-quick-lenient-diagnostics`（目录 artifact，至少包含 `quick_lenient.log`）
-    - 失败收敛步骤会打印“先 `ls -la .` 再 `rg -n "FAIL_CODE=" ...`”的日志定位提示
+    - 失败收敛步骤会打印“先 `pwd`、`ls -la .`，再 `rg -n "FAIL_CODE=" ...`”的日志定位提示
 - full（全量严格）：
   - 工作流：`.github/workflows/event-center-full.yml`
   - 触发：`workflow_dispatch` / 每日定时 `cron`
 - 失败诊断：自动上传 artifact `event-center-full-diagnostics`（包含 `full_guard.log`）
-  - 失败收敛步骤会打印“先 `ls -la .` 再 `rg -n "FAIL_CODE=" full_guard.log`”的日志定位提示
+  - 失败收敛步骤会打印“先 `pwd`、`ls -la .`，再 `rg -n "FAIL_CODE=" full_guard.log`”的日志定位提示
 
 ## 2. 本地等价命令
 
