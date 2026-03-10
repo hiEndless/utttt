@@ -3,6 +3,15 @@ set -euo pipefail
 
 ENTRY="scripts/check_event_center_contract_guards.sh"
 TOP_ENTRY="scripts/check_new_arch_guards.sh"
+SHOW_LINKS="false"
+
+if [[ "${1:-}" == "--show-links" ]]; then
+  SHOW_LINKS="true"
+elif [[ -n "${1:-}" ]]; then
+  echo "[失败] 不支持的参数: $1"
+  echo "用法: bash scripts/check_event_center_guard_wiring.sh [--show-links]"
+  exit 1
+fi
 
 echo "[1/4] 检查 event_center 聚合入口存在"
 if ! test -f "$ENTRY"; then
@@ -22,6 +31,10 @@ fi
 if ! rg -q "check_event_center_runtime_family_guards\\.sh" "$ENTRY"; then
   echo "[失败] $ENTRY 未引用 check_event_center_runtime_family_guards.sh"
   exit 1
+fi
+if [[ "$SHOW_LINKS" == "true" ]]; then
+  echo "[调试] $ENTRY 关键引用："
+  rg -n "check_event_center_contract_schema_guards\\.sh|check_event_center_runtime_family_guards\\.sh|--quick" "$ENTRY"
 fi
 
 echo "[3/4] 校验总入口支持 quick 分支"
@@ -54,6 +67,10 @@ fi
 if ! rg -q -- "check_event_center_contract_guards\\.sh$" "$TOP_ENTRY"; then
   echo "[失败] $TOP_ENTRY 未透传 event_center 全量"
   exit 1
+fi
+if [[ "$SHOW_LINKS" == "true" ]]; then
+  echo "[调试] $TOP_ENTRY 关键引用："
+  rg -n -- "--event-center-quick|--event-center-only|check_event_center_contract_guards\\.sh" "$TOP_ENTRY"
 fi
 
 echo "[通过] event_center 守卫接线检查完成。"
