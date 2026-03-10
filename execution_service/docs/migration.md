@@ -89,6 +89,7 @@
 66. 裁决结果组装逻辑已拆分为独立 result builder，并纳入单测与守卫，`risk_rules` 仅保留规则判定职责
 67. `schema_mapping` 中 `ExecutionSignalResult` 的代码锚点已切换到 `risk_result_builder`，与最新实现保持一致
 68. 风控判定改为规则表驱动并冻结默认优先级；新增 `risk_policy.rule_priority_order` 可选覆盖（无效配置回退默认）
+69. 新增账户级组合风控阈值（`max_account_notional`/`max_margin_ratio`），并贯通到规则拒绝与 `risk_checks` 输出
 
 ## 关键收敛决议（冻结）
 

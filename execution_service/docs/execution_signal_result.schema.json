@@ -67,6 +67,8 @@
             "enum": [
               "account_drawdown_limit",
               "account_available_balance",
+              "account_notional_limit",
+              "account_margin_ratio_limit",
               "symbol_exposure_ratio",
               "long_leg_position_limit",
               "short_leg_position_limit"

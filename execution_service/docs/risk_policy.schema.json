@@ -23,15 +23,24 @@
     "allow_dual_side": {"type": "boolean"},
     "min_available_balance": {"type": "number", "minimum": 0},
     "max_symbol_exposure_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+    "max_account_notional": {"type": "number", "minimum": 0},
+    "max_margin_ratio": {"type": "number", "minimum": 0, "maximum": 1},
     "simulation_step_size": {"type": "number", "minimum": 0},
     "rule_priority_order": {
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["position_limit", "cooldown", "max_drawdown", "direction_conflict"]
+        "enum": [
+          "position_limit",
+          "cooldown",
+          "max_drawdown",
+          "account_notional",
+          "margin_ratio",
+          "direction_conflict"
+        ]
       },
-      "minItems": 4,
-      "maxItems": 4,
+      "minItems": 6,
+      "maxItems": 6,
       "uniqueItems": true
     }
   }

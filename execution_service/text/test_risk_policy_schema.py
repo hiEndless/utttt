@@ -23,8 +23,17 @@ def test_risk_policy_schema_samples() -> None:
         "allow_dual_side": True,
         "min_available_balance": 100.0,
         "max_symbol_exposure_ratio": 0.4,
+        "max_account_notional": 100000.0,
+        "max_margin_ratio": 0.5,
         "simulation_step_size": 0.1,
-        "rule_priority_order": ["position_limit", "cooldown", "max_drawdown", "direction_conflict"],
+        "rule_priority_order": [
+            "position_limit",
+            "cooldown",
+            "max_drawdown",
+            "account_notional",
+            "margin_ratio",
+            "direction_conflict",
+        ],
     }
     assert validate_payload_with_local_refs(schema, good, base_dir)
 
@@ -33,5 +42,12 @@ def test_risk_policy_schema_samples() -> None:
     assert not validate_payload_with_local_refs(schema, bad, base_dir)
 
     bad_order = dict(good)
-    bad_order["rule_priority_order"] = ["position_limit", "cooldown", "unknown_rule", "direction_conflict"]
+    bad_order["rule_priority_order"] = [
+        "position_limit",
+        "cooldown",
+        "unknown_rule",
+        "account_notional",
+        "margin_ratio",
+        "direction_conflict",
+    ]
     assert not validate_payload_with_local_refs(schema, bad_order, base_dir)

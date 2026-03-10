@@ -21,6 +21,10 @@ def test_build_risk_checks_includes_long_leg_and_message() -> None:
         max_drawdown_ratio=0.2,
         available_balance=100.0,
         min_available_balance=50.0,
+        account_notional=200.0,
+        max_account_notional=1000.0,
+        margin_ratio=0.2,
+        max_margin_ratio=0.8,
         symbol_exposure_ratio=0.2,
         max_symbol_exposure_ratio=0.5,
     )
@@ -39,13 +43,21 @@ def test_build_risk_checks_marks_failure_by_threshold() -> None:
         max_drawdown_ratio=0.2,
         available_balance=10.0,
         min_available_balance=50.0,
+        account_notional=2000.0,
+        max_account_notional=1000.0,
+        margin_ratio=0.9,
+        max_margin_ratio=0.8,
         symbol_exposure_ratio=0.6,
         max_symbol_exposure_ratio=0.5,
     )
     drawdown = next(c for c in checks if c["check"] == "account_drawdown_limit")
     short_leg = next(c for c in checks if c["check"] == "short_leg_position_limit")
+    account_notional = next(c for c in checks if c["check"] == "account_notional_limit")
+    margin_ratio = next(c for c in checks if c["check"] == "account_margin_ratio_limit")
     assert drawdown["status"] == "fail"
     assert short_leg["status"] == "fail"
+    assert account_notional["status"] == "fail"
+    assert margin_ratio["status"] == "fail"
 
 
 def test_build_risk_checks_items_match_signal_result_schema() -> None:
@@ -66,6 +78,10 @@ def test_build_risk_checks_items_match_signal_result_schema() -> None:
         max_drawdown_ratio=0.2,
         available_balance=100.0,
         min_available_balance=50.0,
+        account_notional=200.0,
+        max_account_notional=1000.0,
+        margin_ratio=0.2,
+        max_margin_ratio=0.8,
         symbol_exposure_ratio=0.2,
         max_symbol_exposure_ratio=0.5,
     )

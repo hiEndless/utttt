@@ -197,6 +197,8 @@ def test_custom_rule_priority_order_can_override_default() -> None:
                 "max_drawdown",
                 "position_limit",
                 "cooldown",
+                "account_notional",
+                "margin_ratio",
                 "direction_conflict",
             ]
         },
@@ -219,3 +221,36 @@ def test_invalid_custom_rule_priority_order_falls_back_to_default() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "position_limit_reached"
+
+
+def test_account_notional_rule_rejects_when_exceeded() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "long_position_size": 0.2,
+            "short_position_size": 0.1,
+            "gross_notional": 20000.0,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={"current_drawdown_ratio": 0.01, "max_drawdown_ratio": 0.5, "margin_ratio": 0.1},
+        risk_policy={"max_account_notional": 10000.0, "max_margin_ratio": 0.8},
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "account_notional_exceeded"
+
+
+def test_margin_ratio_rule_rejects_when_exceeded() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "long_position_size": 0.2,
+            "short_position_size": 0.1,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={"current_drawdown_ratio": 0.01, "max_drawdown_ratio": 0.5, "margin_ratio": 0.9},
+        risk_policy={"max_account_notional": 100000.0, "max_margin_ratio": 0.5},
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "account_margin_ratio_exceeded"

@@ -21,12 +21,16 @@ class RiskContext:
 RULE_POSITION_LIMIT = "position_limit"
 RULE_COOLDOWN = "cooldown"
 RULE_MAX_DRAWDOWN = "max_drawdown"
+RULE_ACCOUNT_NOTIONAL = "account_notional"
+RULE_MARGIN_RATIO = "margin_ratio"
 RULE_DIRECTION_CONFLICT = "direction_conflict"
 
 DEFAULT_RULE_PRIORITY_ORDER = (
     RULE_POSITION_LIMIT,
     RULE_COOLDOWN,
     RULE_MAX_DRAWDOWN,
+    RULE_ACCOUNT_NOTIONAL,
+    RULE_MARGIN_RATIO,
     RULE_DIRECTION_CONFLICT,
 )
 
@@ -100,9 +104,16 @@ def evaluate_risk_rules(
         1.0,
     )
     available_balance = _to_float(context.account_state.get("available_balance"), 0.0)
+    margin_ratio = _to_float(context.account_state.get("margin_ratio"), 0.0)
     min_available_balance = _to_float(context.risk_policy.get("min_available_balance"), 0.0)
     account_equity = _to_float(context.account_state.get("account_equity"), 0.0)
     gross_position_size = max(0.0, long_position_size) + max(0.0, short_position_size)
+    account_notional = _to_float(
+        context.position_state.get("gross_notional", context.position_state.get("account_notional", gross_position_size)),
+        gross_position_size,
+    )
+    max_account_notional = _to_float(context.risk_policy.get("max_account_notional"), 1_000_000_000.0)
+    max_margin_ratio = _to_float(context.risk_policy.get("max_margin_ratio"), 1.0)
     symbol_exposure_ratio = _resolve_symbol_exposure_ratio(
         context=context,
         gross_position_size=gross_position_size,
@@ -121,6 +132,10 @@ def evaluate_risk_rules(
         max_drawdown_ratio=max_drawdown_ratio,
         available_balance=available_balance,
         min_available_balance=min_available_balance,
+        account_notional=account_notional,
+        max_account_notional=max_account_notional,
+        margin_ratio=margin_ratio,
+        max_margin_ratio=max_margin_ratio,
         symbol_exposure_ratio=symbol_exposure_ratio,
         max_symbol_exposure_ratio=max_symbol_exposure_ratio,
     )
@@ -161,6 +176,14 @@ def evaluate_risk_rules(
         RULE_MAX_DRAWDOWN: lambda: _check_rule_max_drawdown(
             current_drawdown_ratio=current_drawdown_ratio,
             max_drawdown_ratio=max_drawdown_ratio,
+        ),
+        RULE_ACCOUNT_NOTIONAL: lambda: _check_rule_account_notional(
+            account_notional=account_notional,
+            max_account_notional=max_account_notional,
+        ),
+        RULE_MARGIN_RATIO: lambda: _check_rule_margin_ratio(
+            margin_ratio=margin_ratio,
+            max_margin_ratio=max_margin_ratio,
         ),
         RULE_DIRECTION_CONFLICT: lambda: _check_rule_direction_conflict(
             allow_dual_side=allow_dual_side,
@@ -324,5 +347,35 @@ def _check_rule_direction_conflict(
             "reject_reason": "direction_conflict_with_position",
             "applied_risk_rules": ["direction_conflict"],
             "notes": "当前持仓方向与新意图冲突，先减仓再观察",
+        }
+    return None
+
+
+def _check_rule_account_notional(
+    *,
+    account_notional: float,
+    max_account_notional: float,
+) -> Dict[str, Any] | None:
+    if account_notional > max_account_notional:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "account_notional_exceeded",
+            "applied_risk_rules": ["account_notional_limit"],
+            "notes": "账户总敞口超过阈值，禁止新增风险",
+        }
+    return None
+
+
+def _check_rule_margin_ratio(
+    *,
+    margin_ratio: float,
+    max_margin_ratio: float,
+) -> Dict[str, Any] | None:
+    if margin_ratio > max_margin_ratio:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "account_margin_ratio_exceeded",
+            "applied_risk_rules": ["account_margin_ratio_limit"],
+            "notes": "账户保证金率超过阈值，禁止新增风险",
         }
     return None

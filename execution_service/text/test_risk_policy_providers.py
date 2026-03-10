@@ -31,8 +31,17 @@ def test_stub_risk_policy_default_fields() -> None:
     assert out["allow_dual_side"] is False
     assert out["min_available_balance"] == 0.0
     assert out["max_symbol_exposure_ratio"] == 1.0
+    assert out["max_account_notional"] == 1000000000.0
+    assert out["max_margin_ratio"] == 1.0
     assert out["simulation_step_size"] == 0.1
-    assert out["rule_priority_order"] == ["position_limit", "cooldown", "max_drawdown", "direction_conflict"]
+    assert out["rule_priority_order"] == [
+        "position_limit",
+        "cooldown",
+        "max_drawdown",
+        "account_notional",
+        "margin_ratio",
+        "direction_conflict",
+    ]
 
 
 def test_redis_risk_policy_default_fields_when_key_missing() -> None:
@@ -46,8 +55,17 @@ def test_redis_risk_policy_default_fields_when_key_missing() -> None:
     assert out["allow_dual_side"] is False
     assert out["min_available_balance"] == 0.0
     assert out["max_symbol_exposure_ratio"] == 1.0
+    assert out["max_account_notional"] == 1000000000.0
+    assert out["max_margin_ratio"] == 1.0
     assert out["simulation_step_size"] == 0.1
-    assert out["rule_priority_order"] == ["position_limit", "cooldown", "max_drawdown", "direction_conflict"]
+    assert out["rule_priority_order"] == [
+        "position_limit",
+        "cooldown",
+        "max_drawdown",
+        "account_notional",
+        "margin_ratio",
+        "direction_conflict",
+    ]
 
 
 def test_redis_risk_policy_parse_extended_fields() -> None:
@@ -62,8 +80,17 @@ def test_redis_risk_policy_parse_extended_fields() -> None:
                 "allow_dual_side": True,
                 "min_available_balance": 120.0,
                 "max_symbol_exposure_ratio": 0.35,
+                "max_account_notional": 50000.0,
+                "max_margin_ratio": 0.5,
                 "simulation_step_size": 0.2,
-                "rule_priority_order": ["max_drawdown", "position_limit", "cooldown", "direction_conflict"],
+                "rule_priority_order": [
+                    "max_drawdown",
+                    "position_limit",
+                    "cooldown",
+                    "account_notional",
+                    "margin_ratio",
+                    "direction_conflict",
+                ],
             }
         )
     }
@@ -77,5 +104,14 @@ def test_redis_risk_policy_parse_extended_fields() -> None:
     assert out["allow_dual_side"] is True
     assert out["min_available_balance"] == 120.0
     assert out["max_symbol_exposure_ratio"] == 0.35
+    assert out["max_account_notional"] == 50000.0
+    assert out["max_margin_ratio"] == 0.5
     assert out["simulation_step_size"] == 0.2
-    assert out["rule_priority_order"] == ["max_drawdown", "position_limit", "cooldown", "direction_conflict"]
+    assert out["rule_priority_order"] == [
+        "max_drawdown",
+        "position_limit",
+        "cooldown",
+        "account_notional",
+        "margin_ratio",
+        "direction_conflict",
+    ]

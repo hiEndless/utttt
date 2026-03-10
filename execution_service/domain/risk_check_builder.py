@@ -5,6 +5,8 @@ from typing import Any, Dict
 from execution_service.domain.risk_check_codes import (
     RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
     RISK_CHECK_ACCOUNT_DRAWDOWN_LIMIT,
+    RISK_CHECK_ACCOUNT_MARGIN_RATIO_LIMIT,
+    RISK_CHECK_ACCOUNT_NOTIONAL_LIMIT,
     RISK_CHECK_LONG_LEG_POSITION_LIMIT,
     RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
     RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
@@ -12,6 +14,8 @@ from execution_service.domain.risk_check_codes import (
 from execution_service.domain.risk_check_messages import (
     RISK_MSG_ACCOUNT_AVAILABLE_BALANCE,
     RISK_MSG_ACCOUNT_DRAWDOWN,
+    RISK_MSG_ACCOUNT_MARGIN_RATIO_LIMIT,
+    RISK_MSG_ACCOUNT_NOTIONAL_LIMIT,
     RISK_MSG_LONG_LEG_POSITION_LIMIT,
     RISK_MSG_SHORT_LEG_POSITION_LIMIT,
     RISK_MSG_SYMBOL_EXPOSURE_RATIO,
@@ -36,6 +40,10 @@ def build_risk_checks(
     max_drawdown_ratio: float,
     available_balance: float,
     min_available_balance: float,
+    account_notional: float,
+    max_account_notional: float,
+    margin_ratio: float,
+    max_margin_ratio: float,
     symbol_exposure_ratio: float,
     max_symbol_exposure_ratio: float,
 ) -> list[Dict[str, Any]]:
@@ -73,6 +81,28 @@ def build_risk_checks(
                 threshold=max_symbol_exposure_ratio,
             ),
         },
+        {
+            "check": RISK_CHECK_ACCOUNT_NOTIONAL_LIMIT,
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
+            "status": _status(account_notional <= max_account_notional),
+            "value": account_notional,
+            "threshold": max_account_notional,
+            "message_zh": RISK_MSG_ACCOUNT_NOTIONAL_LIMIT.format(
+                value=account_notional,
+                threshold=max_account_notional,
+            ),
+        },
+        {
+            "check": RISK_CHECK_ACCOUNT_MARGIN_RATIO_LIMIT,
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
+            "status": _status(margin_ratio <= max_margin_ratio),
+            "value": margin_ratio,
+            "threshold": max_margin_ratio,
+            "message_zh": RISK_MSG_ACCOUNT_MARGIN_RATIO_LIMIT.format(
+                value=margin_ratio,
+                threshold=max_margin_ratio,
+            ),
+        },
     ]
     if direction == "long":
         checks.append(
@@ -107,4 +137,3 @@ def build_risk_checks(
 
 def _status(passed: bool) -> str:
     return RISK_CHECK_STATUS_PASS if passed else RISK_CHECK_STATUS_FAIL
-

@@ -164,10 +164,19 @@ class RedisRiskPolicyProvider:
             "allow_dual_side": bool(payload.get("allow_dual_side", False)),
             "min_available_balance": _to_float(payload.get("min_available_balance"), 0.0),
             "max_symbol_exposure_ratio": _to_float(payload.get("max_symbol_exposure_ratio"), 1.0),
+            "max_account_notional": _to_float(payload.get("max_account_notional"), 1000000000.0),
+            "max_margin_ratio": _to_float(payload.get("max_margin_ratio"), 1.0),
             "simulation_step_size": _to_float(payload.get("simulation_step_size"), 0.1),
             "rule_priority_order": _to_str_list(
                 payload.get("rule_priority_order"),
-                ["position_limit", "cooldown", "max_drawdown", "direction_conflict"],
+                [
+                    "position_limit",
+                    "cooldown",
+                    "max_drawdown",
+                    "account_notional",
+                    "margin_ratio",
+                    "direction_conflict",
+                ],
             ),
         }
 

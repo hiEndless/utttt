@@ -81,3 +81,4 @@
 - [x] Task 79: 为 `risk_check_builder` 增加与 `execution_signal_result` schema 的逐项契约校验测试，保证 builder 产物持续合规。
 - [x] Task 80: 将裁决结果组装逻辑从 `risk_rules` 拆分到独立 result builder，并新增 builder 单测与守卫接入。
 - [x] Task 81: 将规则优先级改为规则表驱动（默认冻结），支持 `rule_priority_order` 可选覆盖并补 provider/schema/测试。
+- [x] Task 82: 增加账户级组合风控阈值（`max_account_notional`/`max_margin_ratio`），贯通规则、risk_checks、provider、schema 与文档。

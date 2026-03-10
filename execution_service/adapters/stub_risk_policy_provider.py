@@ -18,8 +18,17 @@ class StubRiskPolicyProvider:
             "allow_dual_side": False,
             "min_available_balance": 0.0,
             "max_symbol_exposure_ratio": 1.0,
+            "max_account_notional": 1000000000.0,
+            "max_margin_ratio": 1.0,
             "simulation_step_size": 0.1,
-            "rule_priority_order": ["position_limit", "cooldown", "max_drawdown", "direction_conflict"],
+            "rule_priority_order": [
+                "position_limit",
+                "cooldown",
+                "max_drawdown",
+                "account_notional",
+                "margin_ratio",
+                "direction_conflict",
+            ],
         }
     )
     symbol_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
