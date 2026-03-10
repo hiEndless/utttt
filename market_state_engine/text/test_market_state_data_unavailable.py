@@ -166,6 +166,23 @@ def test_market_state_route_returns_ok_status():
     assert body["status"] == "ok"
     assert body["exchange"] == "binance"
     assert body["symbol"] == "ETHUSDT"
+    assert isinstance(body["ts"], int)
+    assert body["ts_ms"] == body["ts"]
+
+
+def test_market_state_route_healthz_exposes_ts_ms_alias():
+    app = FastAPI()
+    service = MarketStateService(raw_structure_provider=_OkRawProvider())
+    app.include_router(create_router(service))
+    client = TestClient(app)
+
+    resp = client.get("/internal/market-state/healthz")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert body["service"] == "market_state_engine"
+    assert isinstance(body["ts"], int)
+    assert body["ts_ms"] == body["ts"]
 
 
 def test_market_state_service_ignores_external_event_fields():

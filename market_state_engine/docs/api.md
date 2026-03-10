@@ -28,7 +28,8 @@ MSL 契约文件：
 {
   "ok": true,
   "service": "market_state_engine",
-  "ts": 1741411200000
+  "ts": 1741411200000,
+  "ts_ms": 1741411200000
 }
 ```
 
@@ -74,7 +75,8 @@ MSL 契约文件：
     "policy_reason": "timeframe_mixed"
   },
   "raw_market_structure": {},
-  "ts": 1741411200000
+  "ts": 1741411200000,
+  "ts_ms": 1741411200000
 }
 ```
 
@@ -155,7 +157,8 @@ MSL 契约文件：
     "policy_reason": "insufficient_evidence"
   },
   "raw_market_structure": {},
-  "ts": 1741411200000
+  "ts": 1741411200000,
+  "ts_ms": 1741411200000
 }
 ```
 

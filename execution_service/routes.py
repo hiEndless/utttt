@@ -20,10 +20,12 @@ def create_router(service: ExecutionService) -> APIRouter:
 
     @router.get("/healthz")
     async def healthz() -> Dict[str, Any]:
-        return {"ok": True, "service": "execution_service", "ts": int(time.time() * 1000)}
+        now_ms = int(time.time() * 1000)
+        return {"ok": True, "service": "execution_service", "ts": now_ms, "ts_ms": now_ms}
 
     @router.get("/version")
     async def version() -> Dict[str, Any]:
+        now_ms = int(time.time() * 1000)
         return {
             "service": "execution_service",
             "contract_version": CONTRACT_VERSION,
@@ -31,7 +33,8 @@ def create_router(service: ExecutionService) -> APIRouter:
             "state_machine_version": STATE_MACHINE_VERSION,
             "idempotency_version": IDEMPOTENCY_VERSION,
             "schema_mapping_version": SCHEMA_MAPPING_VERSION,
-            "ts": int(time.time() * 1000),
+            "ts": now_ms,
+            "ts_ms": now_ms,
         }
 
     @router.post("/decide")

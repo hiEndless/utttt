@@ -194,7 +194,10 @@ def _publish_runner_health(layer_store: object | None, *, payload: dict, key: st
         return
     try:
         out = dict(payload)
-        out["updated_ms"] = int(time.time() * 1000)
+        now_ms = int(time.time() * 1000)
+        out["updated_ms"] = now_ms
+        # 显式语义别名：资源快照更新时间（兼容保留 updated_ms）。
+        out["updated_at_ms"] = now_ms
         writer(out, key=key)
     except Exception as exc:  # noqa: BLE001
         logger.warning("写入 runner health 失败 key=%s err=%s", key, exc)

@@ -90,6 +90,8 @@ def test_publish_runner_health_uses_store_writer() -> None:
     assert key == "ec:test:health"
     assert payload["heartbeat"] == 1
     assert isinstance(payload.get("updated_ms"), int)
+    assert isinstance(payload.get("updated_at_ms"), int)
+    assert payload["updated_at_ms"] == payload["updated_ms"]
 
 
 def test_run_self_check_writes_health_status() -> None:

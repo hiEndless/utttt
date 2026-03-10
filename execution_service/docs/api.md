@@ -9,7 +9,9 @@
 ```json
 {
   "ok": true,
-  "service": "execution_service"
+  "service": "execution_service",
+  "ts": 1760000000000,
+  "ts_ms": 1760000000000
 }
 ```
 
@@ -27,7 +29,8 @@
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
   "schema_mapping_version": "execution-schema-mapping-v9",
-  "ts": 1760000000000
+  "ts": 1760000000000,
+  "ts_ms": 1760000000000
 }
 ```
 

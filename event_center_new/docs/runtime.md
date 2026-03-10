@@ -92,11 +92,13 @@ python3 -m event_center_new.main
 - `run_count`
 - `error_count`
 - `last_error`
-- `updated_ms`
+- `updated_ms`（保留）
+- `updated_at_ms`（语义别名）
 
 自检模式写入最小状态：
 
 - `status=ok`
 - `self_check_only=true`
 - `checked_ms`
-- `updated_ms`
+- `updated_ms`（保留）
+- `updated_at_ms`（语义别名）

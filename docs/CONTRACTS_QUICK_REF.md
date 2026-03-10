@@ -1,6 +1,6 @@
 # UTaker 联调契约速查（新架构）
 
-更新时间：2026-03-09
+更新时间：2026-03-11
 统一契约入口：`docs/CONTRACT_INDEX.md`
 
 ## 1. 服务调用顺序
@@ -56,6 +56,7 @@ agent_server_new -> execution_service
 
 ### 3.1 健康检查
 - `GET /internal/market-state/healthz`
+- 响应时间字段兼容：`ts`（保留）+ `ts_ms`（新增语义别名）
 
 ### 3.2 状态查询
 - `GET /internal/market-state/{exchange}/{symbol}`
@@ -68,6 +69,7 @@ agent_server_new -> execution_service
   - `anomaly_flags`
   - `raw_market_structure`
   - `ts`
+  - `ts_ms`（`ts` 的语义别名）
 
 ### 3.3 上游不可用时约定
 - 当 feature 层返回 `503 feature_data_unavailable`：
@@ -131,6 +133,7 @@ agent_server_new -> execution_service
 - `applied_risk_rules`
 - `order_result`（可选）
 - `signal_result`（模拟信号结构）
+- 时间字段兼容：`/healthz`、`/version` 返回 `ts` + `ts_ms`
 
 执行层新增回执对账接口（骨架）：
 - `POST /internal/execution/reconcile`

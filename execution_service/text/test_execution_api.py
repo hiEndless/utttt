@@ -20,6 +20,8 @@ def test_healthz() -> None:
     data = response.json()
     assert data["ok"] is True
     assert data["service"] == "execution_service"
+    assert isinstance(data["ts"], int)
+    assert data["ts_ms"] == data["ts"]
 
 
 def test_version() -> None:
@@ -33,6 +35,8 @@ def test_version() -> None:
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
     assert data["schema_mapping_version"] == "execution-schema-mapping-v9"
+    assert isinstance(data["ts"], int)
+    assert data["ts_ms"] == data["ts"]
 
 
 def test_decide_success() -> None:

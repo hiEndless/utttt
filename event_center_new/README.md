@@ -384,7 +384,7 @@ python3 -m event_center_new.main
 - `error_count`: 累计事件处理异常数
 - `last_error`: 最近一次异常摘要
 
-当启用 Redis layer store 时，每轮还会把健康快照写入 `EVENT_CENTER_HEALTH_KEY`（JSON，含 `updated_ms`）。
+当启用 Redis layer store 时，每轮还会把健康快照写入 `EVENT_CENTER_HEALTH_KEY`（JSON，含 `updated_ms` 与 `updated_at_ms`）。
 
 最小回放用法（Python）：
 

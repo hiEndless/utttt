@@ -13,7 +13,8 @@ def create_router(service: MarketStateService) -> APIRouter:
 
     @router.get("/healthz")
     async def healthz() -> Dict[str, Any]:
-        return {"ok": True, "service": "market_state_engine", "ts": int(time.time() * 1000)}
+        now_ms = int(time.time() * 1000)
+        return {"ok": True, "service": "market_state_engine", "ts": now_ms, "ts_ms": now_ms}
 
     @router.get("/{exchange}/{symbol}")
     async def get_market_state(exchange: str, symbol: str) -> Dict[str, Any]:
@@ -29,9 +30,11 @@ def create_router(service: MarketStateService) -> APIRouter:
         except TypeError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+        now_ms = int(time.time() * 1000)
         return {
             **data,
-            "ts": int(time.time() * 1000),
+            "ts": now_ms,
+            "ts_ms": now_ms,
         }
 
     return router

@@ -21,6 +21,12 @@
   - `msl` 必须包含核心字段（`version/timestamp/symbol/...`）
   - 校验失败不抛错，追加 `anomaly_flags`，便于观测和回放告警。
 
+4. 时间字段兼容别名（非破坏）
+- `event_center_new` runner health 同时写入 `updated_ms` 与 `updated_at_ms`。
+- `market_state_engine` `/healthz` 与状态查询响应同时返回 `ts` 与 `ts_ms`。
+- `execution_service` `/healthz` 与 `/version` 同时返回 `ts` 与 `ts_ms`。
+- `agent_server_new.strategy_gate_v2` 时间读取优先 `ts_ms`，兼容 `timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
+
 ## P1（下一步建议）
 
 1. 给 MSL 增加独立 JSON Schema

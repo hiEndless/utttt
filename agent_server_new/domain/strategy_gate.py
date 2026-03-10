@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -47,9 +48,9 @@ def strategy_gate_v2(
     reasons: List[str] = []
     anomalies = set([str(x) for x in list(msl.anomalies or []) if x])
 
-    ts = signal_event.get("ts") or signal_event.get("timestamp") or signal_event.get("timestamp_ms")
+    signal_ts_ms = _extract_signal_event_ts_ms(signal_event)
     try:
-        age_ms = int(msl.ts) - int(ts) if ts is not None else None
+        age_ms = int(msl.ts) - int(signal_ts_ms) if signal_ts_ms is not None else None
     except Exception:
         age_ms = None
     if age_ms is not None and age_ms > 10 * 60 * 1000:
@@ -71,3 +72,29 @@ def strategy_gate_v2(
     if reasons:
         return StrategyGateResult(allowed=False, reasons=reasons)
     return StrategyGateResult(allowed=True, reasons=[])
+
+
+def _extract_signal_event_ts_ms(signal_event: Dict[str, Any]) -> int | None:
+    for key in ("ts_ms", "timestamp_ms", "ts", "generated_at_ms"):
+        raw = signal_event.get(key)
+        if raw is None:
+            continue
+        try:
+            return int(raw)
+        except Exception:
+            continue
+    raw_ts = signal_event.get("timestamp")
+    if raw_ts is None:
+        return None
+    s = str(raw_ts or "").strip()
+    if not s:
+        return None
+    try:
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        dt = datetime.datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return int(dt.timestamp() * 1000)
+    except Exception:
+        return None
