@@ -23,6 +23,8 @@ RULE_COOLDOWN = "cooldown"
 RULE_MAX_DRAWDOWN = "max_drawdown"
 RULE_ACCOUNT_NOTIONAL = "account_notional"
 RULE_MARGIN_RATIO = "margin_ratio"
+RULE_DAILY_LOSS = "daily_loss"
+RULE_CONSECUTIVE_LOSS = "consecutive_loss"
 RULE_DIRECTION_CONFLICT = "direction_conflict"
 
 DEFAULT_RULE_PRIORITY_ORDER = (
@@ -31,6 +33,8 @@ DEFAULT_RULE_PRIORITY_ORDER = (
     RULE_MAX_DRAWDOWN,
     RULE_ACCOUNT_NOTIONAL,
     RULE_MARGIN_RATIO,
+    RULE_DAILY_LOSS,
+    RULE_CONSECUTIVE_LOSS,
     RULE_DIRECTION_CONFLICT,
 )
 
@@ -105,6 +109,8 @@ def evaluate_risk_rules(
     )
     available_balance = _to_float(context.account_state.get("available_balance"), 0.0)
     margin_ratio = _to_float(context.account_state.get("margin_ratio"), 0.0)
+    daily_loss = _resolve_daily_loss(context.account_state)
+    consecutive_loss_count = _to_float(context.account_state.get("consecutive_loss_count"), 0.0)
     min_available_balance = _to_float(context.risk_policy.get("min_available_balance"), 0.0)
     account_equity = _to_float(context.account_state.get("account_equity"), 0.0)
     gross_position_size = max(0.0, long_position_size) + max(0.0, short_position_size)
@@ -114,6 +120,8 @@ def evaluate_risk_rules(
     )
     max_account_notional = _to_float(context.risk_policy.get("max_account_notional"), 1_000_000_000.0)
     max_margin_ratio = _to_float(context.risk_policy.get("max_margin_ratio"), 1.0)
+    max_daily_loss = _to_float(context.risk_policy.get("max_daily_loss"), 1_000_000_000.0)
+    max_consecutive_loss_count = _to_float(context.risk_policy.get("max_consecutive_loss_count"), 1_000_000_000.0)
     symbol_exposure_ratio = _resolve_symbol_exposure_ratio(
         context=context,
         gross_position_size=gross_position_size,
@@ -136,6 +144,10 @@ def evaluate_risk_rules(
         max_account_notional=max_account_notional,
         margin_ratio=margin_ratio,
         max_margin_ratio=max_margin_ratio,
+        daily_loss=daily_loss,
+        max_daily_loss=max_daily_loss,
+        consecutive_loss_count=consecutive_loss_count,
+        max_consecutive_loss_count=max_consecutive_loss_count,
         symbol_exposure_ratio=symbol_exposure_ratio,
         max_symbol_exposure_ratio=max_symbol_exposure_ratio,
     )
@@ -184,6 +196,14 @@ def evaluate_risk_rules(
         RULE_MARGIN_RATIO: lambda: _check_rule_margin_ratio(
             margin_ratio=margin_ratio,
             max_margin_ratio=max_margin_ratio,
+        ),
+        RULE_DAILY_LOSS: lambda: _check_rule_daily_loss(
+            daily_loss=daily_loss,
+            max_daily_loss=max_daily_loss,
+        ),
+        RULE_CONSECUTIVE_LOSS: lambda: _check_rule_consecutive_loss(
+            consecutive_loss_count=consecutive_loss_count,
+            max_consecutive_loss_count=max_consecutive_loss_count,
         ),
         RULE_DIRECTION_CONFLICT: lambda: _check_rule_direction_conflict(
             allow_dual_side=allow_dual_side,
@@ -261,6 +281,14 @@ def _resolve_symbol_exposure_ratio(
     if account_equity <= 0:
         return 0.0
     return gross_position_size / account_equity
+
+
+def _resolve_daily_loss(account_state: Dict[str, Any]) -> float:
+    explicit_daily_loss = account_state.get("daily_loss")
+    if explicit_daily_loss is not None:
+        return max(0.0, _to_float(explicit_daily_loss, 0.0))
+    daily_realized_pnl = _to_float(account_state.get("daily_realized_pnl"), 0.0)
+    return max(0.0, -daily_realized_pnl)
 
 
 def _resolve_rule_priority_order(risk_policy: Dict[str, Any]) -> tuple[str, ...]:
@@ -377,5 +405,35 @@ def _check_rule_margin_ratio(
             "reject_reason": "account_margin_ratio_exceeded",
             "applied_risk_rules": ["account_margin_ratio_limit"],
             "notes": "账户保证金率超过阈值，禁止新增风险",
+        }
+    return None
+
+
+def _check_rule_daily_loss(
+    *,
+    daily_loss: float,
+    max_daily_loss: float,
+) -> Dict[str, Any] | None:
+    if daily_loss > max_daily_loss:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "daily_loss_exceeded",
+            "applied_risk_rules": ["account_daily_loss_limit"],
+            "notes": "账户当日亏损超过阈值，禁止新增风险",
+        }
+    return None
+
+
+def _check_rule_consecutive_loss(
+    *,
+    consecutive_loss_count: float,
+    max_consecutive_loss_count: float,
+) -> Dict[str, Any] | None:
+    if consecutive_loss_count > max_consecutive_loss_count:
+        return {
+            "execution_action": "skip",
+            "reject_reason": "consecutive_loss_exceeded",
+            "applied_risk_rules": ["account_consecutive_loss_limit"],
+            "notes": "账户连续亏损次数超过阈值，禁止新增风险",
         }
     return None

@@ -199,6 +199,8 @@ def test_custom_rule_priority_order_can_override_default() -> None:
                 "cooldown",
                 "account_notional",
                 "margin_ratio",
+                "daily_loss",
+                "consecutive_loss",
                 "direction_conflict",
             ]
         },
@@ -254,3 +256,57 @@ def test_margin_ratio_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "account_margin_ratio_exceeded"
+
+
+def test_daily_loss_rule_rejects_when_exceeded() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "long_position_size": 0.2,
+            "short_position_size": 0.1,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={
+            "current_drawdown_ratio": 0.01,
+            "max_drawdown_ratio": 0.5,
+            "margin_ratio": 0.1,
+            "daily_loss": 300.0,
+            "consecutive_loss_count": 1,
+        },
+        risk_policy={
+            "max_account_notional": 100000.0,
+            "max_margin_ratio": 0.8,
+            "max_daily_loss": 200.0,
+            "max_consecutive_loss_count": 5,
+        },
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "daily_loss_exceeded"
+
+
+def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "long_position_size": 0.2,
+            "short_position_size": 0.1,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={
+            "current_drawdown_ratio": 0.01,
+            "max_drawdown_ratio": 0.5,
+            "margin_ratio": 0.1,
+            "daily_loss": 100.0,
+            "consecutive_loss_count": 4,
+        },
+        risk_policy={
+            "max_account_notional": 100000.0,
+            "max_margin_ratio": 0.8,
+            "max_daily_loss": 200.0,
+            "max_consecutive_loss_count": 3,
+        },
+    )
+    assert result.execution_action == "skip"
+    assert result.reject_reason == "consecutive_loss_exceeded"

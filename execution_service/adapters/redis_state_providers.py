@@ -134,6 +134,8 @@ class RedisAccountStateProvider:
             "margin_ratio": _to_float(payload.get("margin_ratio"), 0.0),
             "max_drawdown_ratio": _to_float(payload.get("max_drawdown_ratio"), 0.15),
             "current_drawdown_ratio": _to_float(payload.get("current_drawdown_ratio"), 0.0),
+            "daily_loss": _to_float(payload.get("daily_loss"), 0.0),
+            "consecutive_loss_count": _to_int(payload.get("consecutive_loss_count"), 0),
         }
 
 
@@ -166,6 +168,8 @@ class RedisRiskPolicyProvider:
             "max_symbol_exposure_ratio": _to_float(payload.get("max_symbol_exposure_ratio"), 1.0),
             "max_account_notional": _to_float(payload.get("max_account_notional"), 1000000000.0),
             "max_margin_ratio": _to_float(payload.get("max_margin_ratio"), 1.0),
+            "max_daily_loss": _to_float(payload.get("max_daily_loss"), 1000000000.0),
+            "max_consecutive_loss_count": _to_int(payload.get("max_consecutive_loss_count"), 1000000000),
             "simulation_step_size": _to_float(payload.get("simulation_step_size"), 0.1),
             "rule_priority_order": _to_str_list(
                 payload.get("rule_priority_order"),
@@ -175,6 +179,8 @@ class RedisRiskPolicyProvider:
                     "max_drawdown",
                     "account_notional",
                     "margin_ratio",
+                    "daily_loss",
+                    "consecutive_loss",
                     "direction_conflict",
                 ],
             ),

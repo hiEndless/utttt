@@ -20,6 +20,8 @@ class StubRiskPolicyProvider:
             "max_symbol_exposure_ratio": 1.0,
             "max_account_notional": 1000000000.0,
             "max_margin_ratio": 1.0,
+            "max_daily_loss": 1000000000.0,
+            "max_consecutive_loss_count": 1000000000,
             "simulation_step_size": 0.1,
             "rule_priority_order": [
                 "position_limit",
@@ -27,6 +29,8 @@ class StubRiskPolicyProvider:
                 "max_drawdown",
                 "account_notional",
                 "margin_ratio",
+                "daily_loss",
+                "consecutive_loss",
                 "direction_conflict",
             ],
         }

@@ -58,6 +58,8 @@ def test_redis_account_provider_fallback_when_key_missing() -> None:
     assert out["exchange"] == "binance"
     assert out["max_drawdown_ratio"] == 0.15
     assert out["current_drawdown_ratio"] == 0.0
+    assert out["daily_loss"] == 0.0
+    assert out["consecutive_loss_count"] == 0
     assert out["account_id"] == "main"
 
 
@@ -85,6 +87,8 @@ def test_redis_risk_policy_provider_parse() -> None:
     assert out["max_symbol_exposure_ratio"] == 0.4
     assert out["max_account_notional"] == 1000000000.0
     assert out["max_margin_ratio"] == 1.0
+    assert out["max_daily_loss"] == 1000000000.0
+    assert out["max_consecutive_loss_count"] == 1000000000
     assert out["simulation_step_size"] == 0.15
     assert out["rule_priority_order"] == [
         "position_limit",
@@ -92,6 +96,8 @@ def test_redis_risk_policy_provider_parse() -> None:
         "max_drawdown",
         "account_notional",
         "margin_ratio",
+        "daily_loss",
+        "consecutive_loss",
         "direction_conflict",
     ]
 
@@ -101,7 +107,7 @@ def test_redis_risk_policy_provider_parse_rule_priority_order_from_csv() -> None
         {
             "execution:risk_policy:binance:ETHUSDT": json.dumps(
                 {
-                    "rule_priority_order": "max_drawdown,position_limit,cooldown,account_notional,margin_ratio,direction_conflict",
+                    "rule_priority_order": "max_drawdown,position_limit,cooldown,account_notional,margin_ratio,daily_loss,consecutive_loss,direction_conflict",
                 }
             )
         }
@@ -114,5 +120,7 @@ def test_redis_risk_policy_provider_parse_rule_priority_order_from_csv() -> None
         "cooldown",
         "account_notional",
         "margin_ratio",
+        "daily_loss",
+        "consecutive_loss",
         "direction_conflict",
     ]

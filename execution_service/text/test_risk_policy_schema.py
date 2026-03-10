@@ -25,6 +25,8 @@ def test_risk_policy_schema_samples() -> None:
         "max_symbol_exposure_ratio": 0.4,
         "max_account_notional": 100000.0,
         "max_margin_ratio": 0.5,
+        "max_daily_loss": 2000.0,
+        "max_consecutive_loss_count": 3,
         "simulation_step_size": 0.1,
         "rule_priority_order": [
             "position_limit",
@@ -32,6 +34,8 @@ def test_risk_policy_schema_samples() -> None:
             "max_drawdown",
             "account_notional",
             "margin_ratio",
+            "daily_loss",
+            "consecutive_loss",
             "direction_conflict",
         ],
     }
@@ -48,6 +52,8 @@ def test_risk_policy_schema_samples() -> None:
         "unknown_rule",
         "account_notional",
         "margin_ratio",
+        "daily_loss",
+        "consecutive_loss",
         "direction_conflict",
     ]
     assert not validate_payload_with_local_refs(schema, bad_order, base_dir)

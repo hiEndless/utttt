@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v6",
+  "version": "execution-schema-mapping-v7",
   "last_updated": "2026-03-10",
   "items": [
     {
@@ -73,7 +73,7 @@
         {
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.reject_reason.enum",
-          "expected": [null, "position_limit_reached", "cooldown_active", "max_drawdown_exceeded", "account_notional_exceeded", "account_margin_ratio_exceeded", "direction_conflict_with_position", "execution_submit_failed", "idempotency_in_progress"]
+          "expected": [null, "position_limit_reached", "cooldown_active", "max_drawdown_exceeded", "account_notional_exceeded", "account_margin_ratio_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded", "direction_conflict_with_position", "execution_submit_failed", "idempotency_in_progress"]
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",
@@ -141,6 +141,8 @@
         "max_symbol_exposure_ratio",
         "max_account_notional",
         "max_margin_ratio",
+        "max_daily_loss",
+        "max_consecutive_loss_count",
         "simulation_step_size",
         "rule_priority_order"
       ],
@@ -163,7 +165,7 @@
         {
           "schema": "execution_service/docs/risk_policy.schema.json",
           "json_path": "properties.rule_priority_order.items.enum",
-          "expected": ["position_limit", "cooldown", "max_drawdown", "account_notional", "margin_ratio", "direction_conflict"]
+          "expected": ["position_limit", "cooldown", "max_drawdown", "account_notional", "margin_ratio", "daily_loss", "consecutive_loss", "direction_conflict"]
         }
       ]
     },
@@ -276,6 +278,8 @@
             "account_available_balance",
             "account_notional_limit",
             "account_margin_ratio_limit",
+            "account_daily_loss_limit",
+            "account_consecutive_loss_limit",
             "symbol_exposure_ratio",
             "long_leg_position_limit",
             "short_leg_position_limit"

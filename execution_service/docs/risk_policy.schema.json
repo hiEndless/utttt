@@ -25,6 +25,8 @@
     "max_symbol_exposure_ratio": {"type": "number", "minimum": 0, "maximum": 1},
     "max_account_notional": {"type": "number", "minimum": 0},
     "max_margin_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+    "max_daily_loss": {"type": "number", "minimum": 0},
+    "max_consecutive_loss_count": {"type": "integer", "minimum": 0},
     "simulation_step_size": {"type": "number", "minimum": 0},
     "rule_priority_order": {
       "type": "array",
@@ -36,11 +38,13 @@
           "max_drawdown",
           "account_notional",
           "margin_ratio",
+          "daily_loss",
+          "consecutive_loss",
           "direction_conflict"
         ]
       },
-      "minItems": 6,
-      "maxItems": 6,
+      "minItems": 8,
+      "maxItems": 8,
       "uniqueItems": true
     }
   }

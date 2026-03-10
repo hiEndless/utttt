@@ -4,6 +4,8 @@ from typing import Any, Dict
 
 from execution_service.domain.risk_check_codes import (
     RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
+    RISK_CHECK_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
+    RISK_CHECK_ACCOUNT_DAILY_LOSS_LIMIT,
     RISK_CHECK_ACCOUNT_DRAWDOWN_LIMIT,
     RISK_CHECK_ACCOUNT_MARGIN_RATIO_LIMIT,
     RISK_CHECK_ACCOUNT_NOTIONAL_LIMIT,
@@ -13,6 +15,8 @@ from execution_service.domain.risk_check_codes import (
 )
 from execution_service.domain.risk_check_messages import (
     RISK_MSG_ACCOUNT_AVAILABLE_BALANCE,
+    RISK_MSG_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
+    RISK_MSG_ACCOUNT_DAILY_LOSS_LIMIT,
     RISK_MSG_ACCOUNT_DRAWDOWN,
     RISK_MSG_ACCOUNT_MARGIN_RATIO_LIMIT,
     RISK_MSG_ACCOUNT_NOTIONAL_LIMIT,
@@ -44,6 +48,10 @@ def build_risk_checks(
     max_account_notional: float,
     margin_ratio: float,
     max_margin_ratio: float,
+    daily_loss: float,
+    max_daily_loss: float,
+    consecutive_loss_count: float,
+    max_consecutive_loss_count: float,
     symbol_exposure_ratio: float,
     max_symbol_exposure_ratio: float,
 ) -> list[Dict[str, Any]]:
@@ -101,6 +109,28 @@ def build_risk_checks(
             "message_zh": RISK_MSG_ACCOUNT_MARGIN_RATIO_LIMIT.format(
                 value=margin_ratio,
                 threshold=max_margin_ratio,
+            ),
+        },
+        {
+            "check": RISK_CHECK_ACCOUNT_DAILY_LOSS_LIMIT,
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
+            "status": _status(daily_loss <= max_daily_loss),
+            "value": daily_loss,
+            "threshold": max_daily_loss,
+            "message_zh": RISK_MSG_ACCOUNT_DAILY_LOSS_LIMIT.format(
+                value=daily_loss,
+                threshold=max_daily_loss,
+            ),
+        },
+        {
+            "check": RISK_CHECK_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
+            "scope": RISK_CHECK_SCOPE_ACCOUNT,
+            "status": _status(consecutive_loss_count <= max_consecutive_loss_count),
+            "value": consecutive_loss_count,
+            "threshold": max_consecutive_loss_count,
+            "message_zh": RISK_MSG_ACCOUNT_CONSECUTIVE_LOSS_LIMIT.format(
+                value=consecutive_loss_count,
+                threshold=max_consecutive_loss_count,
             ),
         },
     ]
