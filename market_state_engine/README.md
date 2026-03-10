@@ -248,6 +248,8 @@ market_state_engine/
   - `service.py` 可选融合 selected_event 摘要到 `state_features.evidence`
   - 读取失败降级策略：不抛错，追加 `anomaly_flags=selected_events_unavailable`
   - 读取成功标记：`anomaly_flags=selected_event_context_attached`
+  - 版本缺失告警策略：当 `trace.schema_version` 缺失时，追加 `anomaly_flags=selected_events_unversioned`，
+    并记录 `state_features.evidence.selected_events_unversioned_count` 与告警日志 `code=MSE_SELECTED_EVENTS_UNVERSIONED`
   - `app.py` 支持环境变量装配：
     - `MSE_SELECTED_EVENT_PROVIDER_MODE=none|redis`
     - `MSE_SELECTED_EVENT_REDIS_URL`

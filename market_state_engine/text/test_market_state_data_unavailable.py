@@ -303,3 +303,28 @@ def test_market_state_service_marks_unversioned_selected_events():
         assert "selected_events_unversioned" in list(out.get("anomaly_flags") or [])
 
     asyncio.run(_run())
+
+
+def test_market_state_service_logs_alert_for_unversioned_selected_events(monkeypatch):
+    async def _run():
+        import market_state_engine.service as mod
+
+        captured = []
+
+        def _fake_warning(msg, *args, **kwargs):  # noqa: ANN001, ARG001
+            text = str(msg)
+            if args:
+                text = text % args
+            captured.append(text)
+
+        monkeypatch.setattr(mod.logger, "warning", _fake_warning)
+        service = MarketStateService(
+            raw_structure_provider=_OkRawProvider(),
+            selected_event_provider=_SelectedEventProviderMissingTraceVersion(),
+        )
+        service._engine = _FakeEngine()
+        out = await service.get_market_state("binance", "ETHUSDT")
+        assert out.get("status") == "ok"
+        assert any("MSE_SELECTED_EVENTS_UNVERSIONED" in line for line in captured)
+
+    asyncio.run(_run())

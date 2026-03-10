@@ -25,6 +25,7 @@ _EXTERNAL_INPUT_IGNORED_FLAG = "external_event_input_ignored"
 _SELECTED_EVENTS_ATTACHED_FLAG = "selected_event_context_attached"
 _SELECTED_EVENTS_UNAVAILABLE_FLAG = "selected_events_unavailable"
 _SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
+_ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
 
 logger = logging.getLogger("market_state_engine")
 
@@ -277,6 +278,13 @@ class MarketStateService:
             sf_evidence.update(selected_evidence)
             if int(selected_evidence.get("selected_events_unversioned_count") or 0) > 0:
                 anomaly_flags = sorted(set([*anomaly_flags, _SELECTED_EVENTS_UNVERSIONED_FLAG]))
+                logger.warning(
+                    "告警 code=%s exchange=%s symbol=%s unversioned_count=%s",
+                    _ALERT_CODE_SELECTED_UNVERSIONED,
+                    exchange,
+                    symbol,
+                    int(selected_evidence.get("selected_events_unversioned_count") or 0),
+                )
             state_features_payload["evidence"] = sf_evidence
         elif selected_events_error_flag:
             anomaly_flags = sorted(set([*anomaly_flags, selected_events_error_flag]))
