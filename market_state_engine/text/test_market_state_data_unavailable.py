@@ -93,6 +93,8 @@ class _SelectedEventProviderOk:
                 "direction_hint": "bullish",
                 "priority": "high",
                 "context_snapshot": {"x": 1},
+                "source": {"name": "event_center_new", "category": "technical"},
+                "trace": {"schema_version": "selected-v2"},
                 "route": {"to": "market_state_engine"},
             }
         ]
@@ -249,6 +251,8 @@ def test_market_state_service_attaches_selected_event_evidence():
         evidence = ((out.get("state_features") or {}).get("evidence") or {})
         assert evidence.get("selected_events_count") == 1
         assert "breakout_signal" in list(evidence.get("selected_event_types") or [])
+        assert "event_center_new" in list(evidence.get("selected_event_sources") or [])
+        assert "selected-v2" in list(evidence.get("selected_event_schema_versions") or [])
         assert "selected_event_context_attached" in list(out.get("anomaly_flags") or [])
 
     asyncio.run(_run())

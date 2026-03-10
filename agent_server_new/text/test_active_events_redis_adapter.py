@@ -63,6 +63,8 @@ def test_redis_active_events_provider_normalizes_selected_event_fields():
                         "selected_type": "event.selected",
                         "direction_hint": "bullish",
                         "priority": "high",
+                        "source": "event_center_new",
+                        "trace": {"schema_version": "selected-v2"},
                         "context_snapshot": {"reason": "test"},
                         "route": {"horizon": "5m"},
                     }
@@ -82,4 +84,6 @@ def test_redis_active_events_provider_normalizes_selected_event_fields():
     assert one["direction"] == "bullish"
     assert one["score"] == 0.9
     assert one["timeframe"] == "5m"
-    assert one["evidence"] == {"reason": "test"}
+    assert dict(one["evidence"]).get("reason") == "test"
+    assert one["source"] == "event_center_new"
+    assert dict(one["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"

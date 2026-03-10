@@ -29,6 +29,8 @@ def test_agent_active_events_minimal_schema_is_stable() -> None:
         "selected_type": "event.selected",
         "direction_hint": "bearish",
         "priority": "medium",
+        "source": "event_center_new",
+        "trace": {"schema_version": "selected-v2"},
         "context_snapshot": {"why": "contract-guard"},
         "route": {"horizon": "15m"},
     }
@@ -42,3 +44,5 @@ def test_agent_active_events_minimal_schema_is_stable() -> None:
     assert normalized["type"] == "event.selected"
     assert normalized["direction"] == "bearish"
     assert normalized["score"] == 0.6
+    assert normalized["source"] == "event_center_new"
+    assert dict(normalized["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"

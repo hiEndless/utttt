@@ -187,12 +187,32 @@ class MarketStateService:
             set([str(x.get("direction_hint") or "").strip() for x in selected_events if str(x.get("direction_hint") or "").strip()])
         )
         assets = sorted(set([str(x.get("asset") or "").strip() for x in selected_events if str(x.get("asset") or "").strip()]))
+        sources = sorted(
+            set(
+                [
+                    str((x.get("source") or {}).get("name") or x.get("source") or "").strip()
+                    for x in selected_events
+                    if str((x.get("source") or {}).get("name") or x.get("source") or "").strip()
+                ]
+            )
+        )
+        schema_versions = sorted(
+            set(
+                [
+                    str((x.get("trace") or {}).get("schema_version") or "").strip()
+                    for x in selected_events
+                    if str((x.get("trace") or {}).get("schema_version") or "").strip()
+                ]
+            )
+        )
         return {
             "selected_events_count": int(len(selected_events)),
             "selected_event_types": event_types,
             "selected_event_priorities": priorities,
             "selected_event_directions": directions,
             "selected_event_assets": assets,
+            "selected_event_sources": sources,
+            "selected_event_schema_versions": schema_versions,
             "selected_events_preview": selected_events[:3],
         }
 

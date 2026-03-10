@@ -147,6 +147,10 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         evidence = payload.get("evidence")
         if evidence is None:
             evidence = payload.get("context_snapshot")
+        evidence_obj = evidence if isinstance(evidence, dict) else {}
+        trace_obj = payload.get("trace")
+        if isinstance(trace_obj, dict) and "trace" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "trace": dict(trace_obj)}
         event_id = str(payload.get("event_id") or payload.get("id") or stream_id).strip() or str(stream_id)
         source = str(payload.get("source") or "event_center_new").strip() or "event_center_new"
         return {
@@ -157,5 +161,5 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
             "direction": direction,
             "score": score,
             "timeframe": timeframe,
-            "evidence": evidence if isinstance(evidence, dict) else {},
+            "evidence": evidence_obj,
         }

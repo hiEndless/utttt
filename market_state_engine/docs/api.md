@@ -90,6 +90,9 @@ MSL 契约文件：
 - `state_features`
   - 引擎聚合后的中间状态特征
   - 语义约定：`risk_flags` 为 `array[string]`；若需保留 map 明细使用 `risk_metrics`
+  - 当接入 `selected_event_provider` 时，`state_features.evidence` 额外包含：
+    - `selected_event_sources`（来源集合）
+    - `selected_event_schema_versions`（trace.schema_version 集合）
 - `msl_meta`
   - `schema_version`：MSL 契约版本（当前主分支为 `2`）
   - `inference_version`：推断生成器版本（如 `msl_generator_v1` / `msl_generator_v2`）

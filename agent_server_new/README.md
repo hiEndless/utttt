@@ -56,6 +56,7 @@ data_server
 1. `event_center_new`
    - `signal_event`
    - `active_events`（消费侧最小字段白名单：`event_id/source/type/asset/direction/score/timeframe/evidence`）
+   - `active_events.evidence` 可携带 `trace` 摘要（如 `schema_version`）用于回放追溯
    - 外部事件（舆情/链上/新闻等）
 2. `market_state_engine`
    - `MSL`（由结构事件与结构特征归纳后的状态）
