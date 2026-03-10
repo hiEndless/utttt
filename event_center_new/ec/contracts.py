@@ -103,4 +103,6 @@ class SelectedEvent:
     priority: Priority
     context_snapshot: EventContextSnapshot
     trigger_event: EventEnvelope | None = None
+    source: EventSource | None = None
+    trace: EventTrace | None = None
     route: dict[str, Any] = field(default_factory=dict)

@@ -31,7 +31,7 @@ def test_selected_event_schema_required_and_allowed_fields() -> None:
         "context_snapshot",
         "route",
     }
-    assert set(props.keys()) == set(required) | {"trigger_event"}
+    assert set(props.keys()) == set(required) | {"trigger_event", "source", "trace"}
 
 
 def test_selected_event_schema_core_enums() -> None:
@@ -39,6 +39,15 @@ def test_selected_event_schema_core_enums() -> None:
     props = schema.get("properties") or {}
     assert props.get("direction_hint", {}).get("enum") == ["bullish", "bearish", "neutral", "mixed"]
     assert props.get("priority", {}).get("enum") == ["low", "medium", "high"]
+
+
+def test_selected_event_schema_optional_source_trace_shape() -> None:
+    schema = _load_schema()
+    props = schema.get("properties") or {}
+    source = props.get("source") or {}
+    trace = props.get("trace") or {}
+    assert set((source.get("properties") or {}).keys()) == {"name", "category"}
+    assert "schema_version" in set((trace.get("properties") or {}).keys())
 
 
 def test_validate_selected_contract_reports_missing_required_fields() -> None:

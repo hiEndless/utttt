@@ -143,6 +143,8 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 | priority | str | 低/中/高 |
 | context_snapshot | EventContextSnapshot | 下游消费的快照（可裁剪字段） |
 | trigger_event | EventEnvelope | 若为触发型输出，附带触发事件摘要 |
+| source | object/null | 来源摘要（`name/category`），默认透传 trigger_event.source |
+| trace | object/null | 追踪摘要（含 `schema_version`），默认透传 trigger_event.trace |
 | route | dict | 下游路由（agent/rules/alerts 等） |
 
 契约文件：

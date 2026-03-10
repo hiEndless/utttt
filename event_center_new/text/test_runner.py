@@ -71,6 +71,8 @@ def test_runner_end_to_end_bullish_selected() -> None:
     out = selected[0]
     assert out["asset"] == "ETHUSDT"
     assert out["direction_hint"] in {"bullish", "mixed"}
+    assert dict(out.get("source") or {}).get("name") == "feature_service"
+    assert "schema_version" in set(dict(out.get("trace") or {}).keys())
     assert isinstance(out["context_snapshot"]["key_evidences"], list)
     assert len(store.raw) == 1
     assert len(store.normalized) == 1

@@ -188,6 +188,7 @@ event_center_new/
 
 当前已落地：
 - `event_center_new/docs/selected_event.schema.json`
+- `SelectedEvent` 顶层可选字段已冻结：`source/trace`（用于下游入库与回放追溯）
 - 下游消费视角守卫：`event_center_new/text/test_selected_event_downstream_consumer_contract.py`
   - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
 - 状态层消费视角守卫：`event_center_new/text/test_selected_event_state_consumer_contract.py`

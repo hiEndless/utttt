@@ -165,5 +165,7 @@ class DeterministicFinalGate(FinalGate):
             priority=priority,  # type: ignore[arg-type]
             context_snapshot=inp.context,
             trigger_event=inp.trigger_event,
+            source=None if inp.trigger_event is None else inp.trigger_event.source,
+            trace=None if inp.trigger_event is None else inp.trigger_event.trace,
             route=route,
         )

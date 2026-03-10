@@ -58,6 +58,42 @@
     "trigger_event": {
       "type": ["object", "null"]
     },
+    "source": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["name", "category"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "trace": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "dedup_key": {
+          "type": ["string", "null"]
+        },
+        "correlation_id": {
+          "type": ["string", "null"]
+        },
+        "parent_id": {
+          "type": ["string", "null"]
+        },
+        "produced_by": {
+          "type": ["string", "null"]
+        },
+        "schema_version": {
+          "type": ["string", "null"]
+        }
+      }
+    },
     "route": {
       "type": "object",
       "additionalProperties": true,
