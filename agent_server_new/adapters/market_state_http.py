@@ -17,6 +17,22 @@ from market_state_engine.contracts import (
     VolatilityState,
 )
 
+_MSL_REQUIRED_FIELDS = {
+    "version",
+    "timestamp",
+    "symbol",
+    "market_regime",
+    "liquidity_state",
+    "positioning_state",
+    "volatility_state",
+    "risk_state",
+    "market_structure_state",
+    "key_levels",
+    "anomalies",
+    "summary",
+}
+_MSL_SUPPORTED_SCHEMA_VERSIONS = {1, 2}
+
 
 def _build_msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     mr = d.get("market_regime") or {}
@@ -75,6 +91,35 @@ def _build_msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     )
 
 
+def _collect_msl_contract_anomalies(*, data: Dict[str, Any]) -> list[str]:
+    anomalies: list[str] = []
+    msl_raw = dict(data.get("msl") or {})
+    msl_meta = dict(data.get("msl_meta") or {})
+
+    missing = sorted([k for k in _MSL_REQUIRED_FIELDS if k not in msl_raw])
+    if missing:
+        anomalies.append("msl_contract_missing_required_fields")
+
+    schema_version_raw = msl_meta.get("schema_version")
+    schema_version = None
+    try:
+        schema_version = int(schema_version_raw)
+    except Exception:
+        schema_version = None
+    if schema_version is None:
+        anomalies.append("msl_meta_schema_version_missing")
+    elif schema_version not in _MSL_SUPPORTED_SCHEMA_VERSIONS:
+        anomalies.append("msl_meta_schema_version_unsupported")
+    else:
+        try:
+            msl_version = int(msl_raw.get("version"))
+        except Exception:
+            msl_version = None
+        if msl_version != schema_version:
+            anomalies.append("msl_version_schema_version_mismatch")
+    return sorted(set([x for x in anomalies if x]))
+
+
 class HttpMarketStateProvider(MarketStateProvider):
     """通过 HTTP 访问独立的 market_state_engine 服务。"""
 
@@ -99,6 +144,9 @@ class HttpMarketStateProvider(MarketStateProvider):
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()
+        data = dict(data or {})
+        anomaly_flags = [str(x) for x in list(data.get("anomaly_flags") or []) if x]
+        anomaly_flags.extend(_collect_msl_contract_anomalies(data=data))
 
         return MarketStateSnapshot(
             exchange=str(data.get("exchange") or exchange),
@@ -109,6 +157,6 @@ class HttpMarketStateProvider(MarketStateProvider):
             msl_bundle_meta=dict(data.get("msl_bundle_meta") or {}),
             cross_horizon=dict(data.get("cross_horizon") or {}),
             state_features=dict(data.get("state_features") or {}),
-            anomaly_flags=[str(x) for x in list(data.get("anomaly_flags") or []) if x],
+            anomaly_flags=sorted(set([x for x in anomaly_flags if x])),
             raw_market_structure=dict(data.get("raw_market_structure") or {}),
         )

@@ -55,13 +55,8 @@ class RedisSelectedEventProvider(SelectedEventProvider):
             if not isinstance(payload, dict):
                 continue
 
-            asset = str(payload.get("asset") or "").strip().lower()
-            if not asset:
-                continue
-            # 中文注释：asset 形态可能是 "binance:ETHUSDT" 或仅 symbol，使用宽松匹配。
-            matches_symbol = symbol_norm in asset
-            matches_exchange = (exchange_norm in asset) if exchange_norm else True
-            if not (matches_symbol and matches_exchange):
+            asset = str(payload.get("asset") or "").strip()
+            if not self._matches_asset(asset=asset, exchange=exchange_norm, symbol=symbol_norm):
                 continue
 
             matched.append(payload)
@@ -69,3 +64,16 @@ class RedisSelectedEventProvider(SelectedEventProvider):
                 break
 
         return matched
+
+    @staticmethod
+    def _matches_asset(*, asset: str, exchange: str, symbol: str) -> bool:
+        asset_norm = str(asset or "").strip().lower()
+        if not asset_norm:
+            return False
+        if ":" in asset_norm:
+            ex, sym = asset_norm.split(":", 1)
+            if not sym:
+                return False
+            return (not exchange or ex == exchange) and sym == symbol
+        # 仅 symbol 形态时也必须精确匹配，禁止子串匹配导致的误判。
+        return asset_norm == symbol

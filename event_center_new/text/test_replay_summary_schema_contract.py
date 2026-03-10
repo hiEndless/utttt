@@ -25,6 +25,12 @@ def test_replay_summary_schema_surface() -> None:
     assert required == props
     assert "replay_selected" not in props
     assert "online_selected" not in props
+    assert (
+        schema.get("properties", {})
+        .get("diffs", {})
+        .get("items", {})
+        .get("type")
+    ) == "string"
 
 
 def test_summary_only_output_matches_schema_surface() -> None:

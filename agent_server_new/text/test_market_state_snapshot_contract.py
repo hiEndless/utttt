@@ -129,3 +129,93 @@ def test_http_market_state_provider_from_env(monkeypatch):
     p = HttpMarketStateProvider.from_env()
     assert p._base_url == "http://localhost:9999"  # noqa: SLF001
     assert float(p._timeout_s) == 3.5  # noqa: SLF001
+
+
+def test_http_market_state_provider_marks_msl_contract_missing_fields(monkeypatch):
+    payload = {
+        "exchange": "binance",
+        "symbol": "ETHUSDT",
+        "msl": {"version": 2, "timestamp": "2026-03-09T12:00:00Z", "symbol": "ETHUSDT"},
+        "msl_meta": {"schema_version": 2, "inference_version": "msl_generator_v2"},
+        "state_features": {},
+        "anomaly_flags": [],
+        "raw_market_structure": {},
+    }
+
+    class _Resp:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class _Client:
+        def __init__(self, *args, **kwargs):  # noqa: ANN003
+            _ = (args, kwargs)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):  # noqa: ANN001
+            _ = (exc_type, exc, tb)
+            return False
+
+        async def get(self, url: str):
+            _ = url
+            return _Resp()
+
+    import agent_server_new.adapters.market_state_http as mod
+
+    monkeypatch.setattr(mod.httpx, "AsyncClient", _Client)
+
+    async def _run():
+        provider = HttpMarketStateProvider("http://127.0.0.1:8080")
+        snap = await provider.get_market_state("binance", "ETHUSDT")
+        assert "msl_contract_missing_required_fields" in set(snap.anomaly_flags)
+
+    asyncio.run(_run())
+
+
+def test_http_market_state_provider_marks_schema_version_unsupported(monkeypatch):
+    payload = {
+        "exchange": "binance",
+        "symbol": "ETHUSDT",
+        "msl": _sample_msl(),
+        "msl_meta": {"schema_version": 99, "inference_version": "msl_generator_v99"},
+        "state_features": {},
+        "anomaly_flags": [],
+        "raw_market_structure": {},
+    }
+
+    class _Resp:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class _Client:
+        def __init__(self, *args, **kwargs):  # noqa: ANN003
+            _ = (args, kwargs)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):  # noqa: ANN001
+            _ = (exc_type, exc, tb)
+            return False
+
+        async def get(self, url: str):
+            _ = url
+            return _Resp()
+
+    import agent_server_new.adapters.market_state_http as mod
+
+    monkeypatch.setattr(mod.httpx, "AsyncClient", _Client)
+
+    async def _run():
+        provider = HttpMarketStateProvider("http://127.0.0.1:8080")
+        snap = await provider.get_market_state("binance", "ETHUSDT")
+        assert "msl_meta_schema_version_unsupported" in set(snap.anomaly_flags)
+
+    asyncio.run(_run())

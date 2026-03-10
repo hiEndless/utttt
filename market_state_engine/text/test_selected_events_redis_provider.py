@@ -42,3 +42,20 @@ def test_selected_events_redis_provider_ignores_invalid_payload():
 
     out = asyncio.run(provider.get_selected_events("binance", "ETHUSDT", limit=10))
     assert out == []
+
+
+def test_selected_events_redis_provider_exact_match_only():
+    rows = [
+        ("1-0", {"payload": json.dumps({"asset": "binance:ETHUSDT", "selected_type": "ok"})}),
+        ("2-0", {"payload": json.dumps({"asset": "binance:ETH", "selected_type": "bad_substring"})}),
+        ("3-0", {"payload": json.dumps({"asset": "ETHUSDT", "selected_type": "ok_symbol_only"})}),
+        ("4-0", {"payload": json.dumps({"asset": "BINANCE:ethusdt", "selected_type": "ok_case_insensitive"})}),
+    ]
+    provider = RedisSelectedEventProvider(client=_FakeRedisClient(rows))
+
+    out = asyncio.run(provider.get_selected_events("binance", "ETHUSDT", limit=10))
+    assets = [str(x.get("asset")) for x in out]
+    assert "binance:ETH" not in assets
+    assert "binance:ETHUSDT" in assets
+    assert "ETHUSDT" in assets
+    assert "BINANCE:ethusdt" in assets
