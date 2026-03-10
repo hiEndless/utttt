@@ -14,23 +14,32 @@ if ! test -f "$SNAPSHOT_LINES"; then
   exit 1
 fi
 
-echo "[2/4] 提取守卫脚本 --help 的失败码"
-help_codes="$(bash "$GUARD_SCRIPT" --help | rg -o "EC_GUARD_[A-Z_]+" | sort -u || true)"
+echo "[2/5] 提取守卫脚本 --help 的失败码（保序）"
+help_codes="$(bash "$GUARD_SCRIPT" --help | rg -o "EC_GUARD_[A-Z_]+" || true)"
 if [[ -z "$help_codes" ]]; then
-  echo "[失败] 未从 --help 提取到失败码"
+  echo "[失败] 未从 --help 提取到失败码（保序）"
   exit 1
 fi
 
-echo "[3/4] 提取快照关键行文件中的失败码"
-snapshot_codes="$(rg -o "EC_GUARD_[A-Z_]+" "$SNAPSHOT_LINES" | sort -u || true)"
+echo "[3/5] 提取快照关键行文件中的失败码（保序）"
+snapshot_codes="$(rg -o "EC_GUARD_[A-Z_]+" "$SNAPSHOT_LINES" || true)"
 if [[ -z "$snapshot_codes" ]]; then
-  echo "[失败] 未从快照关键行文件提取到失败码"
+  echo "[失败] 未从快照关键行文件提取到失败码（保序）"
   exit 1
 fi
 
-echo "[4/4] 比对失败码集合一致性"
+echo "[4/5] 比对失败码数量一致性"
+help_count="$(echo "$help_codes" | wc -l | tr -d ' ')"
+snapshot_count="$(echo "$snapshot_codes" | wc -l | tr -d ' ')"
+if [[ "$help_count" != "$snapshot_count" ]]; then
+  echo "[失败] --help 与快照关键行文件失败码数量不一致"
+  echo "help_count=$help_count snapshot_count=$snapshot_count"
+  exit 1
+fi
+
+echo "[5/5] 比对失败码顺序一致性"
 if [[ "$help_codes" != "$snapshot_codes" ]]; then
-  echo "[失败] --help 与快照关键行文件失败码不一致"
+  echo "[失败] --help 与快照关键行文件失败码顺序不一致"
   echo "--- help codes ---"
   echo "$help_codes"
   echo "--- snapshot codes ---"
