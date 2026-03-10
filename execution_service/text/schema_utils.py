@@ -4,14 +4,45 @@ from typing import Any, Dict
 
 
 def validate_payload_with_local_refs(schema: Dict[str, Any], payload: Dict[str, Any], base_dir: Path) -> bool:
-    """最小 JSON Schema 校验器：支持类型/枚举/边界/required/items/const 与同目录本地 $ref。"""
+    """最小 JSON Schema 校验器：支持类型/枚举/边界/required/items/const 与同目录本地 $ref（含 JSON Pointer）。"""
+
+    def _json_pointer_get(doc: Any, pointer: str) -> Any:
+        if not pointer or pointer == "/":
+            return doc
+        current = doc
+        for raw in pointer.lstrip("/").split("/"):
+            token = raw.replace("~1", "/").replace("~0", "~")
+            if isinstance(current, dict):
+                if token not in current:
+                    return {}
+                current = current[token]
+                continue
+            if isinstance(current, list):
+                try:
+                    idx = int(token)
+                except (TypeError, ValueError):
+                    return {}
+                if idx < 0 or idx >= len(current):
+                    return {}
+                current = current[idx]
+                continue
+            return {}
+        return current
 
     def _resolve_ref(node: Dict[str, Any]) -> Dict[str, Any]:
         ref = node.get("$ref")
         if not isinstance(ref, str):
             return node
-        ref_path = (base_dir / ref).resolve()
-        return json.loads(ref_path.read_text(encoding="utf-8"))
+        ref_path_part, _, fragment = ref.partition("#")
+        if ref_path_part:
+            ref_path = (base_dir / ref_path_part).resolve()
+            target = json.loads(ref_path.read_text(encoding="utf-8"))
+        else:
+            target = schema
+        if fragment:
+            resolved = _json_pointer_get(target, fragment)
+            return dict(resolved) if isinstance(resolved, dict) else {}
+        return dict(target) if isinstance(target, dict) else {}
 
     def _type_ok(type_node: Any, value: Any) -> bool:
         if isinstance(type_node, list):

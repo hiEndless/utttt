@@ -129,6 +129,7 @@
     - `risk_state_change_reason`：标准原因码（`reject_frozen|reject_reduce_only|pressure_warn|hysteresis_soften|default_normal`）
     - `risk_state_change_reason_zh`：与原因码对应的中文解释
     - 以上原因码与中文解释由代码常量单点维护，并通过契约测试校验与 schema 一致
+    - `risk_state_change_reason(_zh)` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_state_change_reason.schema.json`
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
     - `evaluation_trace`：按规则顺序记录每条规则的 `order`、`scope`、`pass/fail`、`value/threshold` 与 `note_zh`
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`

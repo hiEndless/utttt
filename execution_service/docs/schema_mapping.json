@@ -135,13 +135,13 @@
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason.enum",
-          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_code"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.minLength",
-          "expected": 1
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_zh"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -331,18 +331,42 @@
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason.enum",
-          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_code"
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.minLength",
-          "expected": 1
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_zh"
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.properties.evaluation_trace.items.required",
           "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
+        }
+      ]
+    },
+    {
+      "name": "RiskStateChangeReason",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/risk_state_change_reason.schema.json",
+      "code": "execution_service/domain/risk_state_change_reasons.py",
+      "symbol": "RISK_STATE_CHANGE_REASONS",
+      "fields": [
+        "reason_code",
+        "reason_zh"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/risk_state_change_reason.schema.json",
+          "json_path": "properties.reason_code.enum",
+          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
+        },
+        {
+          "schema": "execution_service/docs/risk_state_change_reason.schema.json",
+          "json_path": "properties.reason_zh.minLength",
+          "expected": 1
         }
       ]
     }

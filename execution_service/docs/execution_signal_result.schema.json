@@ -102,8 +102,8 @@
         "previous_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
         "current_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
         "risk_state_changed": {"type": "boolean"},
-        "risk_state_change_reason": {"type": "string", "enum": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]},
-        "risk_state_change_reason_zh": {"type": "string", "minLength": 1},
+        "risk_state_change_reason": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_code"},
+        "risk_state_change_reason_zh": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_zh"},
         "matched_at_ms": {"type": "integer", "minimum": 1},
         "evaluation_trace": {
           "type": "array",

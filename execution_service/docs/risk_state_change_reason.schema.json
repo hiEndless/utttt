@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RiskStateChangeReason",
+  "type": "object",
+  "properties": {
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "reject_frozen",
+        "reject_reduce_only",
+        "pressure_warn",
+        "hysteresis_soften",
+        "default_normal"
+      ]
+    },
+    "reason_zh": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

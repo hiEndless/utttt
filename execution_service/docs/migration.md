@@ -108,6 +108,8 @@
 85. `rule_debug` 已增加 `risk_state_change_reason_zh` 中文解释字段，便于日志与告警直接展示
 86. `risk_state_change_reason` 及中文解释已收敛到单点常量模块，并新增常量-契约一致性测试
 87. `risk_state` 四态已收敛到单点常量模块，并新增常量-契约一致性测试
+88. `risk_state_change_reason(_zh)` 已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
+89. 本地 schema 校验工具已支持带 JSON Pointer 的 `$ref`（`#/properties/...`），可稳定校验子 schema 复用
 
 ## 关键收敛决议（冻结）
 
