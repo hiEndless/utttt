@@ -183,6 +183,7 @@ class ExecutionService:
         account_state_out = dict(account_state or {})
         if redact:
             _apply_redaction(position_state_out, account_state_out)
+        confidence_metrics = await self._confidence_metrics_store.snapshot()
         out = {
             "exchange": exchange,
             "account_id": account_id,
@@ -190,6 +191,7 @@ class ExecutionService:
             "position_state": position_state_out,
             "account_state": account_state_out,
             "risk_policy": dict(risk_policy or {}),
+            "confidence_migration": _build_confidence_migration_view(confidence_metrics),
             "redacted": bool(redact),
             "ts": int(time.time() * 1000),
         }
@@ -499,6 +501,20 @@ def _build_policy_snapshot(risk_policy: Mapping[str, Any]) -> Dict[str, str]:
         "policy_version": policy_version,
         "ruleset_hash": ruleset_hash,
     }
+
+
+def _build_confidence_migration_view(metrics: Mapping[str, Any]) -> Dict[str, Any]:
+    m = {
+        "decide_requests_total": int((metrics or {}).get("decide_requests_total") or 0),
+        "confidence_only_requests": int((metrics or {}).get("confidence_only_requests") or 0),
+        "decision_confidence_requests": int((metrics or {}).get("decision_confidence_requests") or 0),
+        "confidence_alias_mismatch_rejections": int((metrics or {}).get("confidence_alias_mismatch_rejections") or 0),
+    }
+    readiness = {
+        "confidence_only_zero": m["confidence_only_requests"] == 0,
+        "alias_mismatch_zero": m["confidence_alias_mismatch_rejections"] == 0,
+    }
+    return {"metrics": m, "v2_cutover_readiness": readiness}
 
 
 def _normalize_reconcile_status(status: str) -> str | None:

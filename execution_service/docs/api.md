@@ -271,6 +271,18 @@
     "max_position_size": 1.0,
     "max_drawdown_ratio": 0.2
   },
+  "confidence_migration": {
+    "metrics": {
+      "decide_requests_total": 3,
+      "confidence_only_requests": 1,
+      "decision_confidence_requests": 2,
+      "confidence_alias_mismatch_rejections": 1
+    },
+    "v2_cutover_readiness": {
+      "confidence_only_zero": false,
+      "alias_mismatch_zero": false
+    }
+  },
   "redacted": false,
   "ts": 1760000000000
 }
@@ -293,6 +305,9 @@
   - `policy_snapshot`: 最近一次裁决生效策略快照（`policy_version/ruleset_hash`）
   - `reconcile_order_id`: 最近一次回执对账的订单号（如有）
   - `reconcile_status_raw`: 最近一次回执原始状态（如有）
+- `confidence_migration`：
+  - `metrics`: confidence 迁移计数快照（与 `/debug/confidence-metrics` 同口径）
+  - `v2_cutover_readiness`: 基于当前计数的门槛布尔摘要（`confidence_only_zero/alias_mismatch_zero`）
 - 状态机跃迁规则（冻结）：
   - `pending -> pending/submitted/failed/skipped/decided`
   - `submitted -> submitted/filled/canceled/rejected/failed`

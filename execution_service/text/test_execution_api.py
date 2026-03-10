@@ -174,6 +174,33 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     assert body["ts_ms"] == body["ts"]
 
 
+def test_debug_state_includes_confidence_migration_readiness() -> None:
+    client = TestClient(create_app())
+    client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-ready-001",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    resp = client.get("/internal/execution/debug/state/binance/ETHUSDT")
+    assert resp.status_code == 200
+    body = resp.json()
+    cm = dict(body.get("confidence_migration") or {})
+    metrics = dict(cm.get("metrics") or {})
+    readiness = dict(cm.get("v2_cutover_readiness") or {})
+    assert metrics["decide_requests_total"] >= 1
+    assert metrics["confidence_only_requests"] >= 1
+    assert isinstance(readiness.get("confidence_only_zero"), bool)
+    assert isinstance(readiness.get("alias_mismatch_zero"), bool)
+
+
 def test_debug_state_success() -> None:
     client = TestClient(create_app())
     response = client.get("/internal/execution/debug/state/binance/ETHUSDT")
@@ -185,6 +212,9 @@ def test_debug_state_success() -> None:
     assert isinstance(data["position_state"], dict)
     assert isinstance(data["account_state"], dict)
     assert isinstance(data["risk_policy"], dict)
+    assert isinstance(data.get("confidence_migration"), dict)
+    assert isinstance(data["confidence_migration"].get("metrics"), dict)
+    assert isinstance(data["confidence_migration"].get("v2_cutover_readiness"), dict)
 
 
 def test_debug_state_redacted() -> None:
@@ -254,6 +284,7 @@ def test_debug_state_with_decision_id() -> None:
     assert isinstance(data["decision_state"].get("policy_snapshot"), dict)
     assert data["decision_state"]["policy_snapshot"]["policy_version"]
     assert data["decision_state"]["policy_snapshot"]["ruleset_hash"]
+    assert isinstance(data.get("confidence_migration"), dict)
 
 
 def test_reconcile_sink_not_configured() -> None:
