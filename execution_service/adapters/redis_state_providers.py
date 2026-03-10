@@ -7,6 +7,8 @@ from typing import Any, Dict, Optional
 
 from redis.asyncio import Redis
 
+RISK_STATES = {"normal", "warn", "reduce_only", "frozen"}
+
 
 def _to_float(value: Any, default: float) -> float:
     try:
@@ -43,6 +45,14 @@ def _to_str_list(value: Any, default: list[str]) -> list[str]:
         result = [x.strip() for x in value.split(",") if x.strip()]
         return result or list(default)
     return list(default)
+
+
+def _normalize_risk_state(value: Any) -> str:
+    candidate = str(value or "normal").strip().lower()
+    if candidate in RISK_STATES:
+        return candidate
+    # 中文注释：风险状态字段异常时回退 normal，避免污染后续风控态势判断。
+    return "normal"
 
 
 @dataclass
@@ -136,7 +146,7 @@ class RedisAccountStateProvider:
             "current_drawdown_ratio": _to_float(payload.get("current_drawdown_ratio"), 0.0),
             "daily_loss": _to_float(payload.get("daily_loss"), 0.0),
             "consecutive_loss_count": _to_int(payload.get("consecutive_loss_count"), 0),
-            "risk_state": str(payload.get("risk_state", "normal") or "normal").strip().lower(),
+            "risk_state": _normalize_risk_state(payload.get("risk_state", "normal")),
         }
 
 

@@ -107,6 +107,7 @@
   - `signal_action`: `add_long|add_short|reduce_long|reduce_short|hold|skip|exit_all`
   - `risk_state`: `normal|warn|reduce_only|frozen`
     - 风险状态包含前态记忆与降级防抖：上一拍为 `frozen/reduce_only` 时，本拍即使规则压力消失，也先过渡到 `warn`，避免状态抖动
+    - Redis `account_state.risk_state` 非法值会自动归一化为 `normal`
   - `mode`: 当前固定 `simulated`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）

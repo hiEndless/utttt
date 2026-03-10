@@ -100,6 +100,7 @@
 77. `evaluation_trace` 已增加 `order` 顺序索引，支持按规则顺序稳定回放与定位
 78. 引入标准化 `risk_state`（`normal|warn|reduce_only|frozen`），并贯通到 `signal_result` 与 `decision_state`
 79. `risk_state` 已增加前态记忆与降级防抖（`frozen/reduce_only` 不会单拍直接回落 `normal`），并在 provider 中持久化读取
+80. Redis 账户 provider 已对 `risk_state` 进行枚举归一化，非法值自动回退 `normal`
 
 ## 关键收敛决议（冻结）
 

@@ -64,6 +64,21 @@ def test_redis_account_provider_fallback_when_key_missing() -> None:
     assert out["account_id"] == "main"
 
 
+def test_redis_account_provider_normalizes_invalid_risk_state() -> None:
+    client = _FakeRedis(
+        {
+            "execution:account:binance:main": json.dumps(
+                {
+                    "risk_state": "UNKNOWN_STATE",
+                }
+            )
+        }
+    )
+    provider = RedisAccountStateProvider(redis_client=client)  # type: ignore[arg-type]
+    out = asyncio.run(provider.get_account_state("binance", account_id="main"))
+    assert out["risk_state"] == "normal"
+
+
 def test_redis_risk_policy_provider_parse() -> None:
     client = _FakeRedis(
         {
