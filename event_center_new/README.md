@@ -357,6 +357,8 @@ python3 -m event_center_new.replay_main \
   --end-ms 1773154999999 \
   --ignore-field ts_ms \
   --ignore-field trigger_event.ts_ms \
+  --fail-on-contract \
+  --fail-on-diff \
   --output /tmp/event_replay_report.json
 ```
 

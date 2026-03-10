@@ -21,7 +21,8 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   event_center_new/text/test_runner.py \
   event_center_new/text/test_redis_layer_store.py \
   event_center_new/text/test_replay.py \
-  event_center_new/text/test_replay_cli.py
+  event_center_new/text/test_replay_cli.py \
+  event_center_new/text/test_replay_main.py
 
 echo "[3/3] 校验 replay CLI 参数"
 python3 -m event_center_new.replay_main --help >/dev/null
