@@ -139,6 +139,7 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 | selected_type | str | 如 `market.structure_event` / `macro.trigger_event` |
 | asset | str | 标的 |
 | ts_ms | int | 时间 |
+| direction_hint | str | `bullish/bearish/neutral/mixed`，事件方向倾向（非交易结论） |
 | priority | str | 低/中/高 |
 | context_snapshot | EventContextSnapshot | 下游消费的快照（可裁剪字段） |
 | trigger_event | EventEnvelope | 若为触发型输出，附带触发事件摘要 |
@@ -167,6 +168,20 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 | 条件 | `context_snapshot.key_evidences` / `context_snapshot.conflicts` | 生成信号的证据与冲突摘要 |
 | 周期 | `evidence.horizon` / `evidence.ttl_ms` | 生效周期与衰减窗口 |
 | 引用 | `evidence.source_refs` | 回指原始事件 ID 与来源 |
+
+---
+
+## 4.1 mixed 方向输出策略（强约束）
+
+当 `direction_hint=mixed` 时：
+
+1. 允许输出到 `SelectedEvent`，但应降级 `priority` 或打 `review_required=true`
+2. 必须携带 `context_snapshot.conflicts`，不允许仅给方向不给冲突依据
+3. 默认优先路由到状态层融合，不直接当作单边交易触发
+4. 仅当满足噪声丢弃条件时可不输出：
+   - `importance` 低
+   - `strength` 低
+   - 证据数量不足或窗口一致性过低
 
 ---
 

@@ -246,6 +246,23 @@ event_center_new/
 - 差异对比
 - 审计解释
 
+## mixed 方向处理约定（新增）
+
+`direction_hint=mixed` 不等于“无信号”，表示证据存在冲突且当前无法收敛为单边结论。
+
+处理规则：
+
+1. `mixed` 允许进入 `select` 输出，但必须降权
+2. `mixed` 输出必须携带 `conflicts` 与关键证据摘要
+3. `mixed` 默认路由到 `market_state_engine` 做进一步融合
+4. 仅“噪声型 mixed”可丢弃（低强度、低重要性、证据数量不足）
+
+推荐附加字段：
+
+- `direction_hint`: `bullish|bearish|neutral|mixed`
+- `review_required`: `true|false`（`mixed` 通常为 `true`）
+- `drop_reason`: 丢弃时的结构化原因码
+
 ## 与其他服务的接口约定
 
 ### 对 `feature_service`
