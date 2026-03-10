@@ -155,6 +155,7 @@ event_center_new(signal_event + active_events)
 - Event 事件契约：`event_center_new/docs/schema.md`
 - Event 重构说明：`event_center_new/docs/refactor.md`
 - Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Agent AI 自适应预留：`agent_server_new/docs/AI_ADAPTIVE_RESERVE_PLAN.md`
 - Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
 - Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
 - Execution API（草案）：`execution_service/docs/api.md`
