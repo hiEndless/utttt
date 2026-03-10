@@ -115,6 +115,10 @@
     - `message_zh`：必填中文说明，包含当前值与阈值，便于值班排障与联调定位；文案模板由代码常量统一维护
     - 生成实现：`risk_checks` 由独立 builder 统一构造，保证裁决逻辑与检查项生成逻辑解耦
   - `signal_result` 组装由独立 result builder 统一处理，确保 `signal_action/scope/position_after_simulation` 结构稳定
+  - `rule_debug`（可选调试字段）：
+    - `hit_rule`：命中的规则名（未命中时为 `passed_all_rules/none_intent/dual_side_hedge_mode` 等流程标识）
+    - `rule_priority_order`：本次裁决实际使用的规则优先级顺序
+    - `hit_rule_value/hit_rule_threshold`：命中规则的值与阈值（如适用）
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`
     - 可选覆盖：`risk_policy.rule_priority_order`（必须提供八项完整排列，否则自动回退默认）
 

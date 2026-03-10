@@ -39,6 +39,21 @@ def test_execution_signal_result_schema_samples() -> None:
                 "message_zh": "账户回撤检查: 当前=0.0500, 阈值=0.2000",
             }
         ],
+        "rule_debug": {
+            "hit_rule": "passed_all_rules",
+            "rule_priority_order": [
+                "position_limit",
+                "cooldown",
+                "max_drawdown",
+                "account_notional",
+                "margin_ratio",
+                "daily_loss",
+                "consecutive_loss",
+                "direction_conflict",
+            ],
+            "hit_rule_value": None,
+            "hit_rule_threshold": None,
+        },
     }
     assert validate_payload_with_local_refs(schema, good, base_dir)
 
@@ -66,5 +81,11 @@ def test_execution_signal_result_schema_samples() -> None:
                 "threshold": 0.2
             }
         ],
+        "rule_debug": {
+            "hit_rule": "",
+            "rule_priority_order": [],
+            "hit_rule_value": None,
+            "hit_rule_threshold": None,
+        },
     }
     assert not validate_payload_with_local_refs(schema, bad, base_dir)

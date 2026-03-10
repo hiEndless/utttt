@@ -83,6 +83,19 @@
           "message_zh": {"type": "string", "minLength": 1}
         }
       }
+    },
+    "rule_debug": {
+      "type": "object",
+      "required": ["hit_rule", "rule_priority_order"],
+      "properties": {
+        "hit_rule": {"type": "string", "minLength": 1},
+        "rule_priority_order": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "hit_rule_value": {"type": ["number", "null"]},
+        "hit_rule_threshold": {"type": ["number", "null"]}
+      }
     }
   }
 }

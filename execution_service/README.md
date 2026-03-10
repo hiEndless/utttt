@@ -112,6 +112,7 @@ execution_service/
   默认顺序冻结为 `position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`，
   可通过 `risk_policy.rule_priority_order` 提供完整自定义顺序（无效配置自动回退默认）。
 - 账户级组合风控阈值已支持：`max_account_notional`、`max_margin_ratio`、`max_daily_loss`、`max_consecutive_loss_count`，并纳入 `risk_checks` 结构化输出。
+- `signal_result` 已支持可选 `rule_debug` 调试字段，输出命中规则名、规则顺序与命中值/阈值，便于联调回放。
 
 ## 最小接口（当前）
 

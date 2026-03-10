@@ -46,6 +46,7 @@ def test_risk_result_builder_builds_signal_scope_and_positions() -> None:
     assert signal["signal_action"] == "add_long"
     assert signal["position_before"]["mode"] == "hedge"
     assert abs(signal["position_after_simulation"]["long_position_size"] - 0.3) < 1e-9
+    assert signal["rule_debug"]["hit_rule"] == "none"
 
 
 def test_risk_result_builder_reduce_short_in_dual_side() -> None:
@@ -63,7 +64,12 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
         reject_reason=None,
         applied_risk_rules=["direction_conflict"],
         notes="reduce",
+        hit_rule="direction_conflict",
+        rule_priority_order=["position_limit", "cooldown"],
+        hit_rule_value=1.0,
+        hit_rule_threshold=0.0,
     )
     signal = result["signal_result"]
     assert signal["signal_action"] == "reduce_short"
     assert abs(signal["position_after_simulation"]["short_position_size"] - 0.3) < 1e-9
+    assert signal["rule_debug"]["hit_rule"] == "direction_conflict"

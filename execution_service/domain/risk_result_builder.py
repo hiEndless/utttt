@@ -20,6 +20,10 @@ def build_risk_decision_result(
     reject_reason: str | None,
     applied_risk_rules: List[str],
     notes: str,
+    rule_priority_order: List[str] | None = None,
+    hit_rule: str | None = None,
+    hit_rule_value: float | None = None,
+    hit_rule_threshold: float | None = None,
 ) -> Dict[str, Any]:
     signal_action = _build_signal_action(
         execution_action=execution_action,
@@ -39,6 +43,12 @@ def build_risk_decision_result(
         short_position_size=short_position_size,
         step_size=step_size,
     )
+    rule_debug = {
+        "hit_rule": str(hit_rule or "none"),
+        "rule_priority_order": list(rule_priority_order or []),
+        "hit_rule_value": hit_rule_value,
+        "hit_rule_threshold": hit_rule_threshold,
+    }
     return {
         "execution_action": execution_action,
         "reject_reason": reject_reason,
@@ -54,6 +64,7 @@ def build_risk_decision_result(
             "position_before": position_before,
             "position_after_simulation": position_after,
             "risk_checks": list(risk_checks),
+            "rule_debug": rule_debug,
         },
         "notes": notes,
     }
@@ -115,4 +126,3 @@ def _simulate_position_after(
         "short_position_size": short_after,
         "net_position_size": long_after - short_after,
     }
-

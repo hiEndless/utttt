@@ -252,7 +252,8 @@
         "scope",
         "position_before",
         "position_after_simulation",
-        "risk_checks"
+        "risk_checks",
+        "rule_debug"
       ],
       "references": [
         {
@@ -289,6 +290,11 @@
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.signal_result.$ref",
           "expected": "./execution_signal_result.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.rule_debug.required",
+          "expected": ["hit_rule", "rule_priority_order"]
         }
       ]
     }

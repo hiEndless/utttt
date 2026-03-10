@@ -113,6 +113,7 @@ def test_allow_add_when_all_rules_pass() -> None:
     checks = result.signal_result["risk_checks"]
     assert any(c["check"] == "account_drawdown_limit" for c in checks)
     assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
+    assert result.signal_result["rule_debug"]["hit_rule"] == "passed_all_rules"
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:
@@ -283,6 +284,7 @@ def test_daily_loss_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "daily_loss_exceeded"
+    assert result.signal_result["rule_debug"]["hit_rule"] == "daily_loss"
 
 
 def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
@@ -310,3 +312,4 @@ def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "consecutive_loss_exceeded"
+    assert result.signal_result["rule_debug"]["hit_rule"] == "consecutive_loss"

@@ -159,6 +159,9 @@ def evaluate_risk_rules(
         reject_reason: str | None,
         applied_risk_rules: list[str],
         notes: str,
+        hit_rule: str | None = None,
+        hit_rule_value: float | None = None,
+        hit_rule_threshold: float | None = None,
     ) -> Dict[str, Any]:
         return build_risk_decision_result(
             decision=decision,
@@ -174,6 +177,10 @@ def evaluate_risk_rules(
             reject_reason=reject_reason,
             applied_risk_rules=applied_risk_rules,
             notes=notes,
+            rule_priority_order=list(rule_priority_order),
+            hit_rule=hit_rule,
+            hit_rule_value=hit_rule_value,
+            hit_rule_threshold=hit_rule_threshold,
         )
 
     rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {
@@ -224,6 +231,7 @@ def evaluate_risk_rules(
             reject_reason=None,
             applied_risk_rules=["dual_side_hedge_mode"],
             notes="双向持仓模式，按目标方向独立执行",
+            hit_rule="dual_side_hedge_mode",
         )
 
     if direction == "none":
@@ -232,6 +240,7 @@ def evaluate_risk_rules(
             reject_reason=None,
             applied_risk_rules=[],
             notes="无方向意图，保持观望",
+            hit_rule="none_intent",
         )
 
     return _finalize(
@@ -239,6 +248,7 @@ def evaluate_risk_rules(
         reject_reason=None,
         applied_risk_rules=[],
         notes="通过风控检查，允许执行",
+        hit_rule="passed_all_rules",
     )
 
 
@@ -319,6 +329,9 @@ def _check_rule_position_limit(
             "reject_reason": "position_limit_reached",
             "applied_risk_rules": ["max_position_limit_long"],
             "notes": "多头仓位已达上限，禁止继续加仓",
+            "hit_rule": RULE_POSITION_LIMIT,
+            "hit_rule_value": long_position_size,
+            "hit_rule_threshold": max_long_position_size,
         }
     if direction == "short" and short_position_size >= max_short_position_size:
         return {
@@ -326,6 +339,9 @@ def _check_rule_position_limit(
             "reject_reason": "position_limit_reached",
             "applied_risk_rules": ["max_position_limit_short"],
             "notes": "空头仓位已达上限，禁止继续加仓",
+            "hit_rule": RULE_POSITION_LIMIT,
+            "hit_rule_value": short_position_size,
+            "hit_rule_threshold": max_short_position_size,
         }
     return None
 
@@ -337,6 +353,9 @@ def _check_rule_cooldown(*, cooldown_seconds_left: int) -> Dict[str, Any] | None
             "reject_reason": "cooldown_active",
             "applied_risk_rules": ["cooldown"],
             "notes": f"当前处于冷却期，剩余 {cooldown_seconds_left} 秒",
+            "hit_rule": RULE_COOLDOWN,
+            "hit_rule_value": float(cooldown_seconds_left),
+            "hit_rule_threshold": 0.0,
         }
     return None
 
@@ -352,6 +371,9 @@ def _check_rule_max_drawdown(
             "reject_reason": "max_drawdown_exceeded",
             "applied_risk_rules": ["max_drawdown"],
             "notes": "当前回撤超过阈值，禁止新增风险",
+            "hit_rule": RULE_MAX_DRAWDOWN,
+            "hit_rule_value": current_drawdown_ratio,
+            "hit_rule_threshold": max_drawdown_ratio,
         }
     return None
 
@@ -375,6 +397,7 @@ def _check_rule_direction_conflict(
             "reject_reason": "direction_conflict_with_position",
             "applied_risk_rules": ["direction_conflict"],
             "notes": "当前持仓方向与新意图冲突，先减仓再观察",
+            "hit_rule": RULE_DIRECTION_CONFLICT,
         }
     return None
 
@@ -390,6 +413,9 @@ def _check_rule_account_notional(
             "reject_reason": "account_notional_exceeded",
             "applied_risk_rules": ["account_notional_limit"],
             "notes": "账户总敞口超过阈值，禁止新增风险",
+            "hit_rule": RULE_ACCOUNT_NOTIONAL,
+            "hit_rule_value": account_notional,
+            "hit_rule_threshold": max_account_notional,
         }
     return None
 
@@ -405,6 +431,9 @@ def _check_rule_margin_ratio(
             "reject_reason": "account_margin_ratio_exceeded",
             "applied_risk_rules": ["account_margin_ratio_limit"],
             "notes": "账户保证金率超过阈值，禁止新增风险",
+            "hit_rule": RULE_MARGIN_RATIO,
+            "hit_rule_value": margin_ratio,
+            "hit_rule_threshold": max_margin_ratio,
         }
     return None
 
@@ -420,6 +449,9 @@ def _check_rule_daily_loss(
             "reject_reason": "daily_loss_exceeded",
             "applied_risk_rules": ["account_daily_loss_limit"],
             "notes": "账户当日亏损超过阈值，禁止新增风险",
+            "hit_rule": RULE_DAILY_LOSS,
+            "hit_rule_value": daily_loss,
+            "hit_rule_threshold": max_daily_loss,
         }
     return None
 
@@ -435,5 +467,8 @@ def _check_rule_consecutive_loss(
             "reject_reason": "consecutive_loss_exceeded",
             "applied_risk_rules": ["account_consecutive_loss_limit"],
             "notes": "账户连续亏损次数超过阈值，禁止新增风险",
+            "hit_rule": RULE_CONSECUTIVE_LOSS,
+            "hit_rule_value": consecutive_loss_count,
+            "hit_rule_threshold": max_consecutive_loss_count,
         }
     return None
