@@ -41,6 +41,10 @@ class PayloadEvidenceExtractor(EvidenceExtractor):
             if horizon not in {"short", "mid", "long"}:
                 horizon = "short"
             source_refs = raw.get("source_refs")
+            raw_conf = raw.get("evidence_confidence")
+            if raw_conf is None:
+                raw_conf = raw.get("confidence")
+            conf_value = None if raw_conf is None else float(raw_conf)
             out.append(
                 Evidence(
                     ts_ms=int(raw.get("ts_ms") or event.ts_ms),
@@ -50,9 +54,8 @@ class PayloadEvidenceExtractor(EvidenceExtractor):
                     horizon=horizon,  # type: ignore[arg-type]
                     ttl_ms=int(raw.get("ttl_ms") or event.ttl_ms),
                     importance=float(raw.get("importance") or event.importance),
-                    confidence=(
-                        None if raw.get("confidence") is None else float(raw.get("confidence"))
-                    ),
+                    evidence_confidence=conf_value,
+                    confidence=conf_value,
                     source_refs=list(source_refs) if isinstance(source_refs, list) else [],
                     attrs=dict(raw.get("attrs") or {}),
                 )
@@ -93,6 +96,7 @@ class HeuristicL0Processor(L0Processor):
             confirmed_direction=direction,
             score=round(total, 6),
             confidence=round(confidence, 6),
+            classification_confidence=round(confidence, 6),
             priority=priority,  # type: ignore[arg-type]
             window={"evidence_count": len(context.key_evidences)},
             reasons=[],
@@ -108,6 +112,7 @@ class HeuristicL1Aggregator(L1Aggregator):
         component_scores = {
             "l0_score": 0.0 if l0 is None else l0.score,
             "l0_confidence": 0.0 if l0 is None else l0.confidence,
+            "classification_confidence": 0.0 if l0 is None else l0.classification_confidence,
             "conflict_count": len(context.conflicts),
         }
         return PrioritizedEvent(

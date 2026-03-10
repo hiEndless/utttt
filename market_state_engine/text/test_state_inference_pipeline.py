@@ -60,6 +60,31 @@ def test_state_inference_default_pipeline_generates_contract_fields():
     assert "plugin_warnings" in dict(msl.evidence or {})
 
 
+def test_aggregate_features_keeps_legacy_and_explicit_horizon_confidence() -> None:
+    engine = MarketStateEngine()
+    features = engine.aggregate_features(
+        exchange="binance",
+        symbol="ETHUSDT",
+        market_structure={
+            "horizons": {
+                "fused": {
+                    "horizons": {
+                        "short_term": {"confidence": 0.7},
+                        "mid_term": {"confidence": 0.5},
+                        "long_term": {"confidence": 0.3},
+                    }
+                }
+            },
+            "pre_decision_structure": {"short_term": {}, "mid_term": {}, "long_term": {}},
+        },
+    )
+    for hz in ("short_term", "mid_term", "long_term"):
+        node = dict(features.horizons.get(hz) or {})
+        assert "confidence" in node
+        assert "horizon_confidence" in node
+        assert node["horizon_confidence"] == node["confidence"]
+
+
 def test_state_inference_plugin_exception_degrades_to_warning():
     class _BoomPlugin:
         name = "boom_plugin"

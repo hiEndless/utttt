@@ -28,7 +28,8 @@ class PriorityScorer:
         self._cfg = cfg or PriorityScorerConfig()
 
     def score_evidence(self, evidence: Evidence, now_ms: int) -> float:
-        confidence = evidence.confidence if evidence.confidence is not None else 1.0
+        raw_conf = evidence.evidence_confidence if evidence.evidence_confidence is not None else evidence.confidence
+        confidence = raw_conf if raw_conf is not None else 1.0
         confidence = max(self._cfg.min_confidence, min(1.0, confidence))
 
         importance = max(0.0, min(1.0, evidence.importance))
@@ -36,4 +37,3 @@ class PriorityScorer:
         recency = self._cfg.recency_decay.factor(now_ms=now_ms, event_ts_ms=evidence.ts_ms)
 
         return importance * strength * confidence * recency
-

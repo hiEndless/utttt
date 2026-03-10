@@ -14,7 +14,7 @@ def adapt_agent_execution_plan_to_decision_intent(
     """把 agent 输出的最小 ExecutionPlan 语义映射到 DecisionIntent v1。"""
 
     direction = str(plan.get("direction", "none")).strip().lower()
-    confidence = plan.get("confidence") or {"level": "low", "score": 0.0}
+    confidence = plan.get("decision_confidence") or plan.get("confidence") or {"level": "low", "score": 0.0}
     if not isinstance(confidence, dict):
         confidence = {"level": "low", "score": 0.0}
 
@@ -22,6 +22,7 @@ def adapt_agent_execution_plan_to_decision_intent(
     agent_action = str(plan.get("action", "hold")).strip().lower()
     risk_hints: Dict[str, Any] = {
         "agent_action_hint": agent_action,
+        "decision_confidence": dict(confidence),
     }
     notes = str(plan.get("notes", "")).strip()
     if notes:

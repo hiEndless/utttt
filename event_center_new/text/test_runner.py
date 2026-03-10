@@ -9,7 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from event_center_new.ec.context.builder import DefaultContextBuilder
-from event_center_new.ec.contracts import EventEnvelope, EventSource
+from event_center_new.ec.contracts import EventContextSnapshot, EventEnvelope, EventSource
 from event_center_new.ec.correlation.rules import CorrelationEngine
 from event_center_new.ec.pipeline.defaults import (
     DeterministicFinalGate,
@@ -100,6 +100,55 @@ def test_runner_mixed_noise_can_be_dropped() -> None:
     runner, _store = _build_runner([event], mixed_min_score=0.3)
     selected = runner.run_once()
     assert selected == []
+
+
+def test_extractor_and_l0_expose_explicit_confidence_semantics() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-conf-1",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="technical.indicator_signal",
+        source=EventSource(name="feature_service", category="technical"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {
+                    "type": "a",
+                    "direction": "bullish",
+                    "strength": 0.8,
+                    "horizon": "short",
+                    "importance": 0.7,
+                    "evidence_confidence": 0.9,
+                },
+                {
+                    "type": "b",
+                    "direction": "bearish",
+                    "strength": 0.3,
+                    "horizon": "short",
+                    "importance": 0.6,
+                    "confidence": 0.4,
+                },
+            ]
+        },
+    )
+    runner, store = _build_runner([event])
+    selected = runner.run_once()
+    assert len(selected) == 1
+    ev0 = store.evidence[0]
+    ev1 = store.evidence[1]
+    assert ev0["evidence_confidence"] == 0.9
+    assert ev0["confidence"] == 0.9
+    assert ev1["evidence_confidence"] == 0.4
+    assert ev1["confidence"] == 0.4
+    evidences = PayloadEvidenceExtractor().extract(event)
+    ctx = EventContextSnapshot(ts_ms=event.ts_ms, asset=event.asset, key_evidences=evidences)
+    l0 = HeuristicL0Processor().process(ctx)
+    l1 = HeuristicL1Aggregator().aggregate(ctx, l0)
+    assert l0.classification_confidence == l0.confidence
+    assert l1.component_scores["classification_confidence"] == l0.classification_confidence
 
 
 def test_runner_health_snapshot_updates_after_run() -> None:

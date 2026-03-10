@@ -107,6 +107,7 @@ class MarketStateEngine:
                 },
                 "participant_background": _safe_dict(short_hz.get("participant_background")),
                 "confidence": float(short_hz.get("confidence") or 0.0),
+                "horizon_confidence": float(short_hz.get("confidence") or 0.0),
             },
             "mid_term": {
                 "market_background": {
@@ -118,6 +119,7 @@ class MarketStateEngine:
                 },
                 "participant_background": mid_pb,
                 "confidence": float(mid_hz.get("confidence") or 0.0),
+                "horizon_confidence": float(mid_hz.get("confidence") or 0.0),
             },
             "long_term": {
                 "market_background": {
@@ -129,6 +131,7 @@ class MarketStateEngine:
                 },
                 "participant_background": _safe_dict(long_hz.get("participant_background")),
                 "confidence": float(long_hz.get("confidence") or 0.0),
+                "horizon_confidence": float(long_hz.get("confidence") or 0.0),
             },
         }
 

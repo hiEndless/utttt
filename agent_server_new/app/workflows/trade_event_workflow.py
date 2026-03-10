@@ -386,19 +386,21 @@ def _build_decision_intent_payload(
 ) -> Dict[str, Any]:
     """把 agent 内部 ExecutionPlan 映射为 execution_service 的 DecisionIntent。"""
 
+    decision_confidence = {
+        "level": str(plan.confidence.level or "low"),
+        "score": float(plan.confidence.score or 0.0),
+    }
     payload = {
         "decision_id": str(event.event_id),
         "exchange": str(event.exchange),
         "symbol": str(event.symbol),
         "direction_intent": str(plan.direction or "none"),
-        "confidence": {
-            "level": str(plan.confidence.level or "low"),
-            "score": float(plan.confidence.score or 0.0),
-        },
+        "confidence": dict(decision_confidence),
         "cross_horizon_policy": dict(cross_horizon or {}),
         "risk_hints": {
             "agent_action_hint": str(plan.action or "hold"),
             "agent_notes": str(plan.notes or ""),
+            "decision_confidence": dict(decision_confidence),
         },
     }
     if bool(ai_adaptive_enabled):
