@@ -112,6 +112,10 @@
     - `risk_state` 枚举由代码常量单点维护，并通过契约测试校验与 schema 一致
     - `risk_state`（含 `previous/current_risk_state`）在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_state.schema.json`
   - `mode`: 当前固定 `simulated`
+  - `scope/position_before/position_after_simulation` 在 schema 层通过 `$ref` 复用独立定义：
+    - `execution_service/docs/signal_scope.schema.json`
+    - `execution_service/docs/position_before.schema.json`
+    - `execution_service/docs/position_after_simulation.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）

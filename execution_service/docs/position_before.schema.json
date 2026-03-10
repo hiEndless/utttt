@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PositionBefore",
+  "type": "object",
+  "properties": {
+    "position_before": {
+      "type": "object",
+      "required": ["mode", "long_position_size", "short_position_size", "net_position_size"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["one_way", "hedge"]},
+        "long_position_size": {"type": "number"},
+        "short_position_size": {"type": "number"},
+        "net_position_size": {"type": "number"}
+      }
+    }
+  }
+}

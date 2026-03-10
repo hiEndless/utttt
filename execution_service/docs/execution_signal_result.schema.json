@@ -29,34 +29,9 @@
       "type": "string",
       "enum": ["simulated"]
     },
-    "scope": {
-      "type": "object",
-      "required": ["exchange", "account_id", "symbol"],
-      "properties": {
-        "exchange": {"type": "string", "minLength": 1},
-        "account_id": {"type": "string", "minLength": 1},
-        "symbol": {"type": "string", "minLength": 1}
-      }
-    },
-    "position_before": {
-      "type": "object",
-      "required": ["mode", "long_position_size", "short_position_size", "net_position_size"],
-      "properties": {
-        "mode": {"type": "string", "enum": ["one_way", "hedge"]},
-        "long_position_size": {"type": "number"},
-        "short_position_size": {"type": "number"},
-        "net_position_size": {"type": "number"}
-      }
-    },
-    "position_after_simulation": {
-      "type": "object",
-      "required": ["long_position_size", "short_position_size", "net_position_size"],
-      "properties": {
-        "long_position_size": {"type": "number"},
-        "short_position_size": {"type": "number"},
-        "net_position_size": {"type": "number"}
-      }
-    },
+    "scope": {"$ref": "./signal_scope.schema.json#/properties/scope"},
+    "position_before": {"$ref": "./position_before.schema.json#/properties/position_before"},
+    "position_after_simulation": {"$ref": "./position_after_simulation.schema.json#/properties/position_after_simulation"},
     "risk_checks": {
       "type": "array",
       "items": {

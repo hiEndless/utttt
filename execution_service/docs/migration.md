@@ -113,6 +113,7 @@
 90. `risk_state`（含 `previous/current_risk_state`）已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
 91. `rule_debug` 已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
 92. `evaluation_trace` 已抽取独立 schema 并通过 `$ref` 复用，减少 `rule_debug` 契约重复定义
+93. `scope/position_before/position_after_simulation` 已抽取独立 schema 并通过 `$ref` 复用，减少 `execution_signal_result` 契约重复定义
 
 ## 关键收敛决议（冻结）
 

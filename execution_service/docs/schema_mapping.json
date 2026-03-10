@@ -291,6 +291,21 @@
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.scope.$ref",
+          "expected": "./signal_scope.schema.json#/properties/scope"
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.position_before.$ref",
+          "expected": "./position_before.schema.json#/properties/position_before"
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.position_after_simulation.$ref",
+          "expected": "./position_after_simulation.schema.json#/properties/position_after_simulation"
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.risk_checks.items.properties.status.enum",
           "expected": ["pass", "fail"]
         },
@@ -318,11 +333,60 @@
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.$ref",
           "expected": "./rule_debug.schema.json"
-        },
+        }
+      ]
+    },
+    {
+      "name": "SignalScope",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/signal_scope.schema.json",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "\"scope\": {",
+      "fields": [
+        "scope"
+      ],
+      "references": [
         {
-          "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.risk_state.$ref",
-          "expected": "./risk_state.schema.json#/properties/risk_state"
+          "schema": "execution_service/docs/signal_scope.schema.json",
+          "json_path": "properties.scope.required",
+          "expected": ["exchange", "account_id", "symbol"]
+        }
+      ]
+    },
+    {
+      "name": "PositionBefore",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/position_before.schema.json",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "\"position_before\":",
+      "fields": [
+        "position_before"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/position_before.schema.json",
+          "json_path": "properties.position_before.required",
+          "expected": ["mode", "long_position_size", "short_position_size", "net_position_size"]
+        }
+      ]
+    },
+    {
+      "name": "PositionAfterSimulation",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/position_after_simulation.schema.json",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "\"position_after_simulation\":",
+      "fields": [
+        "position_after_simulation"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/position_after_simulation.schema.json",
+          "json_path": "properties.position_after_simulation.required",
+          "expected": ["long_position_size", "short_position_size", "net_position_size"]
         }
       ]
     },

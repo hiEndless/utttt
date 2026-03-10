@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SignalScope",
+  "type": "object",
+  "properties": {
+    "scope": {
+      "type": "object",
+      "required": ["exchange", "account_id", "symbol"],
+      "properties": {
+        "exchange": {"type": "string", "minLength": 1},
+        "account_id": {"type": "string", "minLength": 1},
+        "symbol": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
