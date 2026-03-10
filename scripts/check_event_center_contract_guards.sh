@@ -38,6 +38,7 @@ if [[ "$MODE" == "--help" ]]; then
   EC_GUARD_WIRING_FAILED
   EC_GUARD_CI_WORKFLOW_FAILED
   EC_GUARD_CI_DOC_FAILED
+  EC_GUARD_HELP_SNAPSHOT_SYNC_FAILED
 EOF
   exit 0
 fi
@@ -55,52 +56,61 @@ run_guard() {
 
 if [[ "$MODE" == "--quick" ]]; then
   run_guard \
-    "[1/5] event_center 契约/Schema 守卫（quick）" \
+    "[1/6] event_center 契约/Schema 守卫（quick）" \
     "EC_GUARD_SCHEMA_FAILED" \
     bash scripts/check_event_center_contract_schema_guards.sh --quick
 
   run_guard \
-    "[2/5] event_center Runtime 守卫（quick）" \
+    "[2/6] event_center Runtime 守卫（quick）" \
     "EC_GUARD_RUNTIME_FAILED" \
     bash scripts/check_event_center_runtime_family_guards.sh --quick
 
   run_guard \
-    "[3/5] event_center 守卫接线检查（quick） mode=${WIRING_MODE#--}" \
+    "[3/6] event_center 守卫接线检查（quick） mode=${WIRING_MODE#--}" \
     "EC_GUARD_WIRING_FAILED" \
     bash scripts/check_event_center_guard_wiring.sh "$WIRING_MODE"
 
   run_guard \
-    "[4/5] event_center CI workflow 守卫（quick）" \
+    "[4/6] event_center CI workflow 守卫（quick）" \
     "EC_GUARD_CI_WORKFLOW_FAILED" \
     bash scripts/check_event_center_ci_workflow_guard.sh
 
   run_guard \
-    "[5/5] event_center CI 文档快照守卫（quick）" \
+    "[5/6] event_center CI 文档快照守卫（quick）" \
     "EC_GUARD_CI_DOC_FAILED" \
     bash scripts/check_event_center_ci_doc_snapshot_guard.sh
+
+  run_guard \
+    "[6/6] event_center 帮助快照同步守卫（quick）" \
+    "EC_GUARD_HELP_SNAPSHOT_SYNC_FAILED" \
+    bash scripts/check_event_center_help_snapshot_sync_guard.sh
   echo "[通过] event_center 契约守卫检查完成（quick）。"
   exit 0
 fi
 
 run_guard \
-  "[1/5] event_center 契约/Schema 守卫（全量）" \
+  "[1/6] event_center 契约/Schema 守卫（全量）" \
   "EC_GUARD_SCHEMA_FAILED" \
   bash scripts/check_event_center_contract_schema_guards.sh
 run_guard \
-  "[2/5] event_center Runtime 守卫（全量）" \
+  "[2/6] event_center Runtime 守卫（全量）" \
   "EC_GUARD_RUNTIME_FAILED" \
   bash scripts/check_event_center_runtime_family_guards.sh
 run_guard \
-  "[3/5] event_center 守卫接线检查（全量） mode=${WIRING_MODE#--}" \
+  "[3/6] event_center 守卫接线检查（全量） mode=${WIRING_MODE#--}" \
   "EC_GUARD_WIRING_FAILED" \
   bash scripts/check_event_center_guard_wiring.sh "$WIRING_MODE"
 run_guard \
-  "[4/5] event_center CI workflow 守卫（全量）" \
+  "[4/6] event_center CI workflow 守卫（全量）" \
   "EC_GUARD_CI_WORKFLOW_FAILED" \
   bash scripts/check_event_center_ci_workflow_guard.sh
 run_guard \
-  "[5/5] event_center CI 文档快照守卫（全量）" \
+  "[5/6] event_center CI 文档快照守卫（全量）" \
   "EC_GUARD_CI_DOC_FAILED" \
   bash scripts/check_event_center_ci_doc_snapshot_guard.sh
+run_guard \
+  "[6/6] event_center 帮助快照同步守卫（全量）" \
+  "EC_GUARD_HELP_SNAPSHOT_SYNC_FAILED" \
+  bash scripts/check_event_center_help_snapshot_sync_guard.sh
 
 echo "[通过] event_center 契约守卫检查完成。"

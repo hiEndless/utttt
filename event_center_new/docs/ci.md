@@ -43,6 +43,7 @@
 - `EC_GUARD_WIRING_FAILED`：接线子守卫失败
 - `EC_GUARD_CI_WORKFLOW_FAILED`：CI workflow 静态守卫失败
 - `EC_GUARD_CI_DOC_FAILED`：CI 文档快照守卫失败
+- `EC_GUARD_HELP_SNAPSHOT_SYNC_FAILED`：`--help` 与快照关键行文件不一致
 
 可用 `bash scripts/check_event_center_contract_guards.sh --help` 查看同一份失败码清单。
 当前帮助输出快照：
@@ -59,6 +60,7 @@
   EC_GUARD_WIRING_FAILED
   EC_GUARD_CI_WORKFLOW_FAILED
   EC_GUARD_CI_DOC_FAILED
+  EC_GUARD_HELP_SNAPSHOT_SYNC_FAILED
 ```
 
 ## 4. 常见排障顺序
@@ -80,7 +82,13 @@
 - 关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt`
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
-## 7. Artifact 日志锚点（下载后）
+## 7. 帮助快照同步守卫
+
+- 脚本：`scripts/check_event_center_help_snapshot_sync_guard.sh`
+- 作用：校验 `scripts/check_event_center_contract_guards.sh --help` 失败码集合与 `event_center_new/docs/ci_help_snapshot_lines.txt` 一致。
+- 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
+
+## 8. Artifact 日志锚点（下载后）
 
 1. quick strict / quick lenient
    - 日志文件：`quick_strict.log` / `quick_lenient.log`
