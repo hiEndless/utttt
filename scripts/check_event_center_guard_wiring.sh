@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENTRY="scripts/check_event_center_contract_guards.sh"
+TOP_ENTRY="scripts/check_new_arch_guards.sh"
+
+echo "[1/4] 检查 event_center 聚合入口存在"
+if ! test -f "$ENTRY"; then
+  echo "[失败] 缺少 $ENTRY"
+  exit 1
+fi
+if ! test -f "$TOP_ENTRY"; then
+  echo "[失败] 缺少 $TOP_ENTRY"
+  exit 1
+fi
+
+echo "[2/4] 校验总入口引用 schema/runtime 聚合脚本"
+if ! rg -q "check_event_center_contract_schema_guards\\.sh" "$ENTRY"; then
+  echo "[失败] $ENTRY 未引用 check_event_center_contract_schema_guards.sh"
+  exit 1
+fi
+if ! rg -q "check_event_center_runtime_family_guards\\.sh" "$ENTRY"; then
+  echo "[失败] $ENTRY 未引用 check_event_center_runtime_family_guards.sh"
+  exit 1
+fi
+
+echo "[3/4] 校验总入口支持 quick 分支"
+if ! rg -q -- "--quick" "$ENTRY"; then
+  echo "[失败] $ENTRY 未声明 --quick"
+  exit 1
+fi
+if ! rg -q -- "check_event_center_contract_schema_guards\\.sh --quick" "$ENTRY"; then
+  echo "[失败] $ENTRY quick 未调用 schema 聚合脚本"
+  exit 1
+fi
+if ! rg -q -- "check_event_center_runtime_family_guards\\.sh --quick" "$ENTRY"; then
+  echo "[失败] $ENTRY quick 未调用 runtime 聚合脚本"
+  exit 1
+fi
+
+echo "[4/4] 校验顶层入口已透传 event_center quick/only"
+if ! rg -q -- "--event-center-quick" "$TOP_ENTRY"; then
+  echo "[失败] $TOP_ENTRY 未声明 --event-center-quick"
+  exit 1
+fi
+if ! rg -q -- "check_event_center_contract_guards\\.sh --quick" "$TOP_ENTRY"; then
+  echo "[失败] $TOP_ENTRY 未透传 event_center quick"
+  exit 1
+fi
+if ! rg -q -- "--event-center-only" "$TOP_ENTRY"; then
+  echo "[失败] $TOP_ENTRY 未声明 --event-center-only"
+  exit 1
+fi
+if ! rg -q -- "check_event_center_contract_guards\\.sh$" "$TOP_ENTRY"; then
+  echo "[失败] $TOP_ENTRY 未透传 event_center 全量"
+  exit 1
+fi
+
+echo "[通过] event_center 守卫接线检查完成。"

@@ -418,6 +418,7 @@ python3 -m event_center_new.replay_main \
 仓库守卫 `scripts/check_event_center_runtime_guard.sh` 覆盖 `stop_on_error` 与 `self_check_only` 的运行时分支。
 仓库守卫 `scripts/check_event_center_runtime_doc_guard.sh` 校验 runtime 文档与 main.py 的环境变量集合强一致（双向）及版本日志一致性；可加 `--show-sets` 输出集合明细用于排障。
 仓库守卫 `scripts/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
+仓库守卫 `scripts/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效。
 聚合入口：
 
 - `scripts/check_event_center_contract_schema_guards.sh`（契约/Schema 相关）

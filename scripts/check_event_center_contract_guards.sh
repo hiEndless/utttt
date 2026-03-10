@@ -27,10 +27,13 @@ if [[ "$MODE" != "all" ]]; then
   exit 1
 fi
 
-echo "[1/2] event_center 契约/Schema 守卫（全量）"
+echo "[1/3] event_center 契约/Schema 守卫（全量）"
 bash scripts/check_event_center_contract_schema_guards.sh
 
-echo "[2/2] event_center Runtime 守卫（全量）"
+echo "[2/3] event_center Runtime 守卫（全量）"
 bash scripts/check_event_center_runtime_family_guards.sh
+
+echo "[3/3] event_center 守卫接线检查（全量）"
+bash scripts/check_event_center_guard_wiring.sh
 
 echo "[通过] event_center 契约守卫检查完成。"
