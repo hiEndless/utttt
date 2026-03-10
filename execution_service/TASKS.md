@@ -99,3 +99,4 @@
 - [x] Task 97: `rule_debug` 增加 `risk_state_change_reason` 标准原因码，支持风险态迁移可解释回放。
 - [x] Task 98: `rule_debug` 增加 `risk_state_change_reason_zh` 中文解释字段，便于日志与告警直接展示。
 - [x] Task 99: `risk_state_change_reason` 收敛为单点常量模块，并增加常量-契约一致性测试防漂移。
+- [x] Task 100: `risk_state` 四态收敛为单点常量模块，并增加 `risk_state` 常量-契约一致性测试。

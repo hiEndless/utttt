@@ -119,6 +119,7 @@ execution_service/
 - `rule_debug` 已增加 `risk_state_change_reason` 标准原因码（如 `reject_frozen/hysteresis_soften`），提升风险态迁移可解释性。
 - `rule_debug` 已增加 `risk_state_change_reason_zh` 中文解释，便于日志与告警系统直接展示。
 - `risk_state_change_reason` 及其中文解释已收敛到单点常量模块，并由契约测试校验与 schema 枚举一致。
+- `risk_state` 四态（`normal|warn|reduce_only|frozen`）已收敛到单点常量模块，并由契约测试校验与 schema 枚举一致。
 - `rule_debug` 已增加 `evaluation_trace`，可回放每条规则的 pass/fail 与值阈值轨迹。
 - `evaluation_trace` 已增加 `note_zh`，每条规则均输出中文说明，便于值班排障。
 - `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度。

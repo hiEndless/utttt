@@ -109,6 +109,7 @@
     - 风险状态包含前态记忆与降级防抖：上一拍为 `frozen/reduce_only` 时，本拍即使规则压力消失，也先过渡到 `warn`，避免状态抖动
     - Redis `account_state.risk_state` 非法值会自动归一化为 `normal`
     - Stub `account_state.risk_state` 也采用相同归一化规则，保证多运行模式一致
+    - `risk_state` 枚举由代码常量单点维护，并通过契约测试校验与 schema 一致
   - `mode`: 当前固定 `simulated`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）

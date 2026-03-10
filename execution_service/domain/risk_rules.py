@@ -13,6 +13,13 @@ from execution_service.domain.risk_state_change_reasons import (
     RISK_STATE_CHANGE_REASON_REJECT_FROZEN,
     RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY,
 )
+from execution_service.domain.risk_states import (
+    RISK_STATE_FROZEN,
+    RISK_STATE_NORMAL,
+    RISK_STATE_REDUCE_ONLY,
+    RISK_STATE_WARN,
+    RISK_STATES,
+)
 
 
 @dataclass(frozen=True)
@@ -644,19 +651,19 @@ def _derive_risk_state_with_reason(
 ) -> tuple[str, str]:
     # 中文注释：风险状态用于执行层风控态势表达，供下游快速判定是否可继续加风险。
     if reject_reason in {"max_drawdown_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded"}:
-        return "frozen", RISK_STATE_CHANGE_REASON_REJECT_FROZEN
+        return RISK_STATE_FROZEN, RISK_STATE_CHANGE_REASON_REJECT_FROZEN
     if reject_reason in {
         "position_limit_reached",
         "account_notional_exceeded",
         "account_margin_ratio_exceeded",
         "direction_conflict_with_position",
     }:
-        return "reduce_only", RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY
+        return RISK_STATE_REDUCE_ONLY, RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY
     if _has_warn_level_pressure(evaluation_trace):
-        base_state = "warn"
+        base_state = RISK_STATE_WARN
         base_reason = RISK_STATE_CHANGE_REASON_PRESSURE_WARN
     else:
-        base_state = "normal"
+        base_state = RISK_STATE_NORMAL
         base_reason = RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL
     current = _apply_risk_state_hysteresis(previous_risk_state=previous_risk_state, current_risk_state=base_state)
     if current != base_state:
@@ -686,15 +693,15 @@ def _resolve_previous_risk_state(
     position_state: Dict[str, Any],
 ) -> str:
     candidate = str(account_state.get("risk_state") or position_state.get("risk_state") or "").strip().lower()
-    if candidate in {"normal", "warn", "reduce_only", "frozen"}:
+    if candidate in RISK_STATES:
         return candidate
-    return "normal"
+    return RISK_STATE_NORMAL
 
 
 def _apply_risk_state_hysteresis(*, previous_risk_state: str, current_risk_state: str) -> str:
     # 中文注释：风险状态降级需平滑，避免 frozen/reduce_only 在单次评估中瞬间回落到 normal。
-    if previous_risk_state == "frozen" and current_risk_state == "normal":
-        return "warn"
-    if previous_risk_state == "reduce_only" and current_risk_state == "normal":
-        return "warn"
+    if previous_risk_state == RISK_STATE_FROZEN and current_risk_state == RISK_STATE_NORMAL:
+        return RISK_STATE_WARN
+    if previous_risk_state == RISK_STATE_REDUCE_ONLY and current_risk_state == RISK_STATE_NORMAL:
+        return RISK_STATE_WARN
     return current_risk_state

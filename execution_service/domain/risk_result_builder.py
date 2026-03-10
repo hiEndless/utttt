@@ -8,6 +8,7 @@ from execution_service.domain.risk_state_change_reasons import (
     RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
     RISK_STATE_CHANGE_REASON_ZH,
 )
+from execution_service.domain.risk_states import RISK_STATE_NORMAL
 
 
 def build_risk_decision_result(
@@ -58,9 +59,9 @@ def build_risk_decision_result(
         "hit_rule_value": hit_rule_value,
         "hit_rule_threshold": hit_rule_threshold,
         # 中文注释：记录风险状态迁移，便于排查风控状态抖动与回放时序。
-        "previous_risk_state": str(previous_risk_state or "normal"),
-        "current_risk_state": str(risk_state or "normal"),
-        "risk_state_changed": str(previous_risk_state or "normal") != str(risk_state or "normal"),
+        "previous_risk_state": str(previous_risk_state or RISK_STATE_NORMAL),
+        "current_risk_state": str(risk_state or RISK_STATE_NORMAL),
+        "risk_state_changed": str(previous_risk_state or RISK_STATE_NORMAL) != str(risk_state or RISK_STATE_NORMAL),
         "risk_state_change_reason": str(risk_state_change_reason or RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL),
         "risk_state_change_reason_zh": RISK_STATE_CHANGE_REASON_ZH.get(
             str(risk_state_change_reason or RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL),
@@ -75,7 +76,7 @@ def build_risk_decision_result(
         "applied_risk_rules": applied_risk_rules,
         "signal_result": {
             "signal_action": signal_action,
-            "risk_state": str(risk_state or "normal"),
+            "risk_state": str(risk_state or RISK_STATE_NORMAL),
             "mode": "simulated",
             "scope": {
                 "exchange": decision.exchange,

@@ -3,15 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping
 
-RISK_STATES = {"normal", "warn", "reduce_only", "frozen"}
+from execution_service.domain.risk_states import RISK_STATE_NORMAL, RISK_STATES
 
 
 def _normalize_risk_state(value: Any) -> str:
-    candidate = str(value or "normal").strip().lower()
+    candidate = str(value or RISK_STATE_NORMAL).strip().lower()
     if candidate in RISK_STATES:
         return candidate
     # 中文注释：stub 与 redis 模式统一 risk_state 归一化策略，避免联调结果不一致。
-    return "normal"
+    return RISK_STATE_NORMAL
 
 
 @dataclass
@@ -62,7 +62,7 @@ class StubAccountStateProvider:
             "current_drawdown_ratio": 0.02,
             "daily_loss": 0.0,
             "consecutive_loss_count": 0,
-            "risk_state": "normal",
+            "risk_state": RISK_STATE_NORMAL,
         }
     )
     exchange_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)

@@ -107,6 +107,7 @@
 84. `rule_debug` 已增加 `risk_state_change_reason` 标准原因码，支持风险态迁移可解释回放
 85. `rule_debug` 已增加 `risk_state_change_reason_zh` 中文解释字段，便于日志与告警直接展示
 86. `risk_state_change_reason` 及中文解释已收敛到单点常量模块，并新增常量-契约一致性测试
+87. `risk_state` 四态已收敛到单点常量模块，并新增常量-契约一致性测试
 
 ## 关键收敛决议（冻结）
 
