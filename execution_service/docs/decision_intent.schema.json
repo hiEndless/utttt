@@ -2,16 +2,23 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DecisionIntent",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "decision_id",
     "exchange",
     "account_id",
     "symbol",
     "direction_intent",
-    "confidence",
     "cross_horizon_policy",
     "risk_hints"
+  ],
+  "anyOf": [
+    {
+      "required": ["confidence"]
+    },
+    {
+      "required": ["decision_confidence"]
+    }
   ],
   "properties": {
     "decision_id": {
@@ -37,6 +44,7 @@
     "confidence": {
       "description": "兼容字段。决策置信度，建议与 decision_confidence 保持一致。",
       "type": "object",
+      "additionalProperties": false,
       "required": ["level", "score"],
       "properties": {
         "level": {
@@ -53,6 +61,7 @@
     "decision_confidence": {
       "description": "语义主字段。若与 confidence 同时出现，应用层要求两者一致（JSON Schema 无法表达跨字段相等约束）。",
       "type": "object",
+      "additionalProperties": false,
       "required": ["level", "score"],
       "properties": {
         "level": {
@@ -67,10 +76,12 @@
       }
     },
     "cross_horizon_policy": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true
     },
     "risk_hints": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true
     },
     "trace_id": {
       "type": ["string", "null"]

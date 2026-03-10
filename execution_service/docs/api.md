@@ -62,15 +62,16 @@
 3. `account_id`: 非空字符串（当前默认建议 `main`）
 4. `symbol`: 非空字符串
 5. `direction_intent`: `long | short | none`
-6. `confidence.level`: `low | medium | high`
-7. `confidence.score`: `[0, 1]` 浮点数
-8. `decision_confidence`: 可选，语义别名（若与 `confidence` 同时出现，必须一致）
+6. `decision_confidence.level`: `low | medium | high`
+7. `decision_confidence.score`: `[0, 1]` 浮点数
+8. `confidence`: 可选兼容字段（若与 `decision_confidence` 同时出现，必须一致）
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
 11. `trace_id`: 可选字符串
 12. JSON Schema：`execution_service/docs/decision_intent.schema.json`
 
 一致性约束：
+- `confidence` 与 `decision_confidence` 至少提供一个。
 - 同时提供 `confidence` 与 `decision_confidence` 时，若数值不一致，请求将返回 `400`，避免语义错位。
 
 响应示例：
@@ -207,7 +208,8 @@
   "filled_qty": 1.0,
   "avg_price": 1000.0,
   "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
-  "ts": 1760000000000
+  "ts": 1760000000000,
+  "ts_ms": 1760000000000
 }
 ```
 
@@ -222,7 +224,8 @@
   "error_message": "invalid_order_id",
   "idempotency_hit": false,
   "retry_meta": {"attempts": 1, "max_retries": 3, "status": "failed", "retryable": false},
-  "ts": 1760000000002
+  "ts": 1760000000002,
+  "ts_ms": 1760000000002
 }
 ```
 
@@ -284,7 +287,8 @@
     }
   },
   "redacted": false,
-  "ts": 1760000000000
+  "ts": 1760000000000,
+  "ts_ms": 1760000000000
 }
 ```
 

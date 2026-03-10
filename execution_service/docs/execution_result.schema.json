@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecutionResult",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "decision_id",
     "execution_action",
@@ -28,6 +28,7 @@
     },
     "order_result": {
       "type": "object",
+      "additionalProperties": true,
       "properties": {
         "retry_meta": {
           "$ref": "./retry_meta.schema.json"

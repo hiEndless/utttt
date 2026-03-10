@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecutionSignalResult",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "signal_action",
     "mode",

@@ -195,6 +195,7 @@ class ExecutionService:
             "redacted": bool(redact),
             "ts": int(time.time() * 1000),
         }
+        out["ts_ms"] = int(out["ts"])
         if decision_id and self._execution_state_store is not None:
             out["decision_state"] = await self._execution_state_store.get_state(str(decision_id))
         return out
@@ -228,6 +229,7 @@ class ExecutionService:
                     out_cached = dict(cached_after_lock_fail)
                     out_cached["idempotency_hit"] = True
                     return out_cached
+                now_ms = int(time.time() * 1000)
                 return {
                     "mode": _infer_sink_mode(self._execution_sink),
                     "order_id": order_id,
@@ -236,7 +238,8 @@ class ExecutionService:
                     "idempotency_hit": False,
                     "reason_code": RECONCILE_REASON_IN_PROGRESS,
                     "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
-                    "ts": int(time.time() * 1000),
+                    "ts": now_ms,
+                    "ts_ms": now_ms,
                 }
         if self._execution_sink is None:
             raise RuntimeError("execution_sink_not_configured")
@@ -253,6 +256,7 @@ class ExecutionService:
             out.setdefault("order_id", order_id)
             out.setdefault("account_id", account_id)
             out.setdefault("ts", int(time.time() * 1000))
+            out.setdefault("ts_ms", int(out["ts"]))
             out["idempotency_hit"] = False
             decision_id = str(out.get("decision_id") or payload.get("decision_id") or "").strip()
             reconcile_status = _normalize_reconcile_status(str(out.get("status") or ""))
