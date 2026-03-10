@@ -51,6 +51,8 @@ class Evidence:
     horizon: Horizon
     ttl_ms: int
     importance: float
+    # 显式语义字段：证据置信度（兼容保留 confidence）。
+    evidence_confidence: float | None = None
     confidence: float | None = None
     source_refs: list[dict[str, Any]] = field(default_factory=list)
     attrs: dict[str, Any] = field(default_factory=dict)
@@ -74,6 +76,8 @@ class ClassifiedEvent:
     score: float
     confidence: float
     priority: Priority
+    # 显式语义字段：分类阶段置信度（兼容保留 confidence）。
+    classification_confidence: float = 0.0
     window: dict[str, Any] = field(default_factory=dict)
     reasons: list[str] = field(default_factory=list)
 

@@ -188,6 +188,8 @@ event_center_new/
 
 当前已落地：
 - `event_center_new/docs/selected_event.schema.json`
+- 下游消费视角守卫：`event_center_new/text/test_selected_event_downstream_consumer_contract.py`
+  - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
 
 ### 第三阶段：为状态层提供干净输入（进行中）
 

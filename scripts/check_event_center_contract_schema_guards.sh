@@ -11,8 +11,8 @@ EOF
   exit 0
 fi
 
-echo "[1/1] event_center replay CLI 参数快照"
-help_text="$(python3 -m event_center_new.replay_main --help)"
+echo "[1/2] event_center replay CLI 参数快照"
+help_text="$(./venv/bin/python -m event_center_new.replay_main --help)"
 if ! echo "$help_text" | rg -q -- "--strict"; then
   echo "[失败] replay CLI 缺少 --strict 参数"
   exit 1
@@ -31,6 +31,8 @@ if ! echo "$help_text" | rg -q -- "--summary-only"; then
 fi
 
 if [[ "$MODE" == "--quick" ]]; then
+  echo "[2/2] event_center selected_event schema 守卫（quick）"
+  bash scripts/check_event_center_selected_schema_guard.sh
   echo "[通过] event_center 契约/Schema 守卫检查完成（quick）。"
   exit 0
 fi
