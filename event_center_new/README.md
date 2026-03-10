@@ -3,7 +3,7 @@
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 运行时配置总表：`event_center_new/docs/runtime.md`
 运行时配置版本号与变更日志也在该文档中维护（`runtime_config_version`）。
-版本升级可使用：`bash scripts/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验）。
+版本升级可使用：`bash scripts/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验）。当前版本可用 `--print-current-version` 只读查询。
 
 `event_center_new` 是目标架构中的 **Event Center**，只负责事件层，不负责市场状态归纳，不负责交易决策，不负责执行。
 

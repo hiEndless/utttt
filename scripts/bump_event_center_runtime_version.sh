@@ -7,6 +7,7 @@ MAIN_FILE="event_center_new/main.py"
 usage() {
   cat <<'EOF'
 用法:
+  bash scripts/bump_event_center_runtime_version.sh --print-current-version
   bash scripts/bump_event_center_runtime_version.sh <version> <note>
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --date YYYY-MM-DD
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --dry-run
@@ -14,6 +15,7 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --apply-from-env-table
 
 示例:
+  bash scripts/bump_event_center_runtime_version.sh --print-current-version
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO"
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --date 2026-03-11
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --dry-run
@@ -24,6 +26,20 @@ EOF
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   usage
+  exit 0
+fi
+
+if [[ "${1:-}" == "--print-current-version" ]]; then
+  if ! test -f "$RUNTIME_DOC"; then
+    echo "[失败] 缺少文档: $RUNTIME_DOC"
+    exit 1
+  fi
+  current_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' "$RUNTIME_DOC" | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
+  if [[ -z "$current_version" ]]; then
+    echo "[失败] 未在 $RUNTIME_DOC 中找到 runtime_config_version"
+    exit 1
+  fi
+  echo "$current_version"
   exit 0
 fi
 
