@@ -23,6 +23,10 @@ if ! echo "$help_text" | rg -q -- "--no-duplicate-log"; then
   echo "[失败] --help 缺少 --no-duplicate-log"
   exit 1
 fi
+if ! echo "$help_text" | rg -q -- "--strict"; then
+  echo "[失败] --help 缺少 --strict"
+  exit 1
+fi
 
 echo "[2/5] 校验 --print-current-version"
 current_version="$(bash scripts/bump_event_center_runtime_version.sh --print-current-version)"
@@ -62,6 +66,12 @@ fi
 echo "[5/5] 校验 --no-duplicate-log"
 if bash scripts/bump_event_center_runtime_version.sh "$current_version" "guard duplicate log" --no-duplicate-log --dry-run >/dev/null 2>&1; then
   echo "[失败] --no-duplicate-log 未阻止重复版本"
+  exit 1
+fi
+
+echo "[附加检查] 校验 --strict 组合行为"
+if bash scripts/bump_event_center_runtime_version.sh "$current_version" "guard strict mode" --strict --dry-run >/dev/null 2>&1; then
+  echo "[失败] --strict 未继承 no-duplicate-log 语义"
   exit 1
 fi
 

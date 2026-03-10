@@ -14,6 +14,7 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --check-clean
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --apply-from-env-table
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --no-duplicate-log
+  bash scripts/bump_event_center_runtime_version.sh <version> <note> --strict
 
 示例:
   bash scripts/bump_event_center_runtime_version.sh --print-current-version
@@ -23,6 +24,7 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --check-clean
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --apply-from-env-table
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --no-duplicate-log
+  bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --strict
 EOF
 }
 
@@ -58,6 +60,7 @@ dry_run="false"
 check_clean="false"
 apply_from_env_table="false"
 no_duplicate_log="false"
+strict_mode="false"
 shift 2
 
 while [[ $# -gt 0 ]]; do
@@ -82,6 +85,10 @@ while [[ $# -gt 0 ]]; do
       no_duplicate_log="true"
       shift
       ;;
+    --strict)
+      strict_mode="true"
+      shift
+      ;;
     *)
       echo "[失败] 不支持的参数: $1"
       usage
@@ -89,6 +96,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$strict_mode" == "true" ]]; then
+  check_clean="true"
+  apply_from_env_table="true"
+  no_duplicate_log="true"
+fi
 
 if ! [[ "$version" =~ ^[A-Za-z0-9._-]+$ ]]; then
   echo "[失败] version 格式非法: $version"

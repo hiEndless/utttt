@@ -10,7 +10,7 @@
 
 - version: `event-center-runtime-v1` | date: `2026-03-11` | note: 初始冻结运行时配置，覆盖 loop/stop_on_error/self_check_only/health_key。
 
-维护建议：新增/删除环境变量时，使用 `scripts/bump_event_center_runtime_version.sh` 同步更新版本与变更日志；可先加 `--dry-run` 预览，或加 `--check-clean` 要求工作区干净。建议同时加 `--apply-from-env-table` 校验 runtime 表格已覆盖 `main.py` 中的 `EVENT_CENTER_*` 变量；加 `--no-duplicate-log` 可阻止重复版本日志。需要读取当前版本号时可用 `--print-current-version`。
+维护建议：新增/删除环境变量时，使用 `scripts/bump_event_center_runtime_version.sh` 同步更新版本与变更日志；可先加 `--dry-run` 预览，或加 `--check-clean` 要求工作区干净。建议同时加 `--apply-from-env-table` 校验 runtime 表格已覆盖 `main.py` 中的 `EVENT_CENTER_*` 变量；加 `--no-duplicate-log` 可阻止重复版本日志。`--strict` 等价于同时开启 `--check-clean --apply-from-env-table --no-duplicate-log`。需要读取当前版本号时可用 `--print-current-version`。
 
 ## 1. 环境变量总表
 
