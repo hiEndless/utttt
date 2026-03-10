@@ -34,13 +34,50 @@
       "enum": ["low", "medium", "high"]
     },
     "context_snapshot": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "horizon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key_evidences": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
     },
     "trigger_event": {
       "type": ["object", "null"]
     },
     "route": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "horizon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_required": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }
