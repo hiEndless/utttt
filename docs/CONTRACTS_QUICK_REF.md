@@ -175,6 +175,7 @@ agent_server_new -> execution_service
 - 仅跑 event_center quick：`scripts/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`scripts/check_new_arch_guards.sh --event-center-only`
 - 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
+- CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
 - Feature API：`feature_service/docs/api.md`
 - State API：`market_state_engine/docs/api.md`
 - Event Schema：`event_center_new/docs/schema.md`
