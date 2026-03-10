@@ -43,6 +43,8 @@ echo "[附加检查] 验证缺失 stream 时 strict 模式返回非 0"
 python3 - <<'PY'
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 from pathlib import Path
 
@@ -72,7 +74,8 @@ replay_main.run_replay_report = lambda *args, **kwargs: {  # type: ignore[assign
     "selected_contract": {"ok": True},
     "missing_streams": ["selected"],
 }
-code = replay_main.main(["--start-ms", "1", "--end-ms", "2", "--strict", "--summary-only"])
+with contextlib.redirect_stdout(io.StringIO()):
+    code = replay_main.main(["--start-ms", "1", "--end-ms", "2", "--strict", "--summary-only"])
 if code == 0:
     raise SystemExit(1)
 PY

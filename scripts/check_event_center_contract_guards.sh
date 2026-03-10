@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[1/4] event_center replay CLI 参数快照"
+echo "[1/5] event_center replay CLI 参数快照"
 help_text="$(python3 -m event_center_new.replay_main --help)"
 if ! echo "$help_text" | rg -q -- "--strict"; then
   echo "[失败] replay CLI 缺少 --strict 参数"
@@ -20,13 +20,16 @@ if ! echo "$help_text" | rg -q -- "--summary-only"; then
   exit 1
 fi
 
-echo "[2/4] event_center replay 守卫"
+echo "[2/5] event_center replay 守卫"
 bash scripts/check_event_center_replay_guard.sh
 
-echo "[3/4] event_center selected_event schema 守卫"
+echo "[3/5] event_center replay strict CI 守卫"
+bash scripts/check_event_center_replay_strict_ci.sh
+
+echo "[4/5] event_center selected_event schema 守卫"
 bash scripts/check_event_center_selected_schema_guard.sh
 
-echo "[4/4] event_center replay summary schema 守卫"
+echo "[5/5] event_center replay summary schema 守卫"
 bash scripts/check_event_center_replay_summary_schema_guard.sh
 
 echo "[通过] event_center 契约守卫检查完成。"

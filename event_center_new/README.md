@@ -371,6 +371,7 @@ python3 -m event_center_new.replay_main \
 `--summary-only` 仅输出摘要字段，适合守卫/CI 场景降低日志噪音。
 `--summary-only` 输出契约冻结为 `event_center_new/docs/replay_summary.schema.json`。
 仓库守卫 `scripts/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
+仓库守卫 `scripts/check_event_center_replay_strict_ci.sh` 固定 `--strict --summary-only` 调用路径，覆盖严格模式成功/失败分支。
 仓库守卫 `scripts/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
 可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
-该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--ignore-field/--output`）。
+该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
