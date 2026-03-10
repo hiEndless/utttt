@@ -20,23 +20,24 @@ def _load_schema(path: str) -> dict:
 def test_risk_state_change_reason_enum_matches_schemas() -> None:
     signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
     decision_schema = _load_schema("execution_service/docs/decision_state.schema.json")
+    rule_debug_schema = _load_schema("execution_service/docs/rule_debug.schema.json")
     reason_schema = _load_schema("execution_service/docs/risk_state_change_reason.schema.json")
+    signal_rule_debug_ref = signal_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
+    decision_rule_debug_ref = decision_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     signal_ref = (
-        signal_schema.get("properties", {})
-        .get("rule_debug", {})
-        .get("properties", {})
+        rule_debug_schema.get("properties", {})
         .get("risk_state_change_reason", {})
         .get("$ref", "")
     )
     decision_ref = (
-        decision_schema.get("properties", {})
-        .get("rule_debug", {})
-        .get("properties", {})
+        rule_debug_schema.get("properties", {})
         .get("risk_state_change_reason", {})
         .get("$ref", "")
     )
     signal_enum = reason_schema.get("properties", {}).get("reason_code", {}).get("enum", [])
     decision_enum = reason_schema.get("properties", {}).get("reason_code", {}).get("enum", [])
+    assert signal_rule_debug_ref == "./rule_debug.schema.json"
+    assert decision_rule_debug_ref == "./rule_debug.schema.json"
     assert signal_ref == "./risk_state_change_reason.schema.json#/properties/reason_code"
     assert decision_ref == "./risk_state_change_reason.schema.json#/properties/reason_code"
     assert set(signal_enum) == set(RISK_STATE_CHANGE_REASONS)
@@ -46,20 +47,21 @@ def test_risk_state_change_reason_enum_matches_schemas() -> None:
 def test_risk_state_change_reason_zh_mapping_complete() -> None:
     signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
     decision_schema = _load_schema("execution_service/docs/decision_state.schema.json")
+    rule_debug_schema = _load_schema("execution_service/docs/rule_debug.schema.json")
+    signal_rule_debug_ref = signal_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
+    decision_rule_debug_ref = decision_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     signal_zh_ref = (
-        signal_schema.get("properties", {})
-        .get("rule_debug", {})
-        .get("properties", {})
+        rule_debug_schema.get("properties", {})
         .get("risk_state_change_reason_zh", {})
         .get("$ref", "")
     )
     decision_zh_ref = (
-        decision_schema.get("properties", {})
-        .get("rule_debug", {})
-        .get("properties", {})
+        rule_debug_schema.get("properties", {})
         .get("risk_state_change_reason_zh", {})
         .get("$ref", "")
     )
+    assert signal_rule_debug_ref == "./rule_debug.schema.json"
+    assert decision_rule_debug_ref == "./rule_debug.schema.json"
     assert signal_zh_ref == "./risk_state_change_reason.schema.json#/properties/reason_zh"
     assert decision_zh_ref == "./risk_state_change_reason.schema.json#/properties/reason_zh"
     assert set(RISK_STATE_CHANGE_REASON_ZH.keys()) == set(RISK_STATE_CHANGE_REASONS)

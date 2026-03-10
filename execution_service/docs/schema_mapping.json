@@ -130,23 +130,13 @@
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.required",
-          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "risk_state_change_reason_zh", "matched_at_ms"]
+          "json_path": "properties.rule_debug.$ref",
+          "expected": "./rule_debug.schema.json"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason.$ref",
-          "expected": "./risk_state_change_reason.schema.json#/properties/reason_code"
-        },
-        {
-          "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.$ref",
-          "expected": "./risk_state_change_reason.schema.json#/properties/reason_zh"
-        },
-        {
-          "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.rule_debug.properties.evaluation_trace.items.required",
-          "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
         }
       ]
     },
@@ -326,22 +316,65 @@
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.required",
+          "json_path": "properties.rule_debug.$ref",
+          "expected": "./rule_debug.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        }
+      ]
+    },
+    {
+      "name": "RuleDebug",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/rule_debug.schema.json",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "rule_debug",
+      "fields": [
+        "hit_rule",
+        "rule_priority_order",
+        "hit_rule_value",
+        "hit_rule_threshold",
+        "previous_risk_state",
+        "current_risk_state",
+        "risk_state_changed",
+        "risk_state_change_reason",
+        "risk_state_change_reason_zh",
+        "matched_at_ms",
+        "evaluation_trace"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "required",
           "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "risk_state_change_reason_zh", "matched_at_ms"]
         },
         {
-          "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason.$ref",
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.previous_risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.current_risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.risk_state_change_reason.$ref",
           "expected": "./risk_state_change_reason.schema.json#/properties/reason_code"
         },
         {
-          "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.properties.risk_state_change_reason_zh.$ref",
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.risk_state_change_reason_zh.$ref",
           "expected": "./risk_state_change_reason.schema.json#/properties/reason_zh"
         },
         {
-          "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.properties.evaluation_trace.items.required",
+          "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.evaluation_trace.items.required",
           "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
         }
       ]
