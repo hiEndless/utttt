@@ -43,6 +43,8 @@
 - `EC_GUARD_WIRING_FAILED`：接线子守卫失败
 - `EC_GUARD_CI_WORKFLOW_FAILED`：CI workflow 静态守卫失败
 
+可用 `bash scripts/check_event_center_contract_guards.sh --help` 查看同一份失败码清单。
+
 ## 4. 常见排障顺序
 
 1. 先复现同模式失败（quick strict / quick lenient / full strict）。

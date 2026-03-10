@@ -31,6 +31,12 @@ if [[ "$MODE" == "--help" ]]; then
   bash scripts/check_event_center_contract_guards.sh
   bash scripts/check_event_center_contract_guards.sh --quick
   bash scripts/check_event_center_contract_guards.sh [--quick] [--strict-wiring|--lenient-wiring]
+
+失败码（子守卫失败时输出 FAIL_CODE=...）:
+  EC_GUARD_SCHEMA_FAILED
+  EC_GUARD_RUNTIME_FAILED
+  EC_GUARD_WIRING_FAILED
+  EC_GUARD_CI_WORKFLOW_FAILED
 EOF
   exit 0
 fi

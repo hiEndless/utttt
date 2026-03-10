@@ -420,7 +420,7 @@ python3 -m event_center_new.replay_main \
 仓库守卫 `scripts/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
 仓库守卫 `scripts/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
 仓库守卫 `scripts/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
-`scripts/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow），便于日志检索与告警归类。
+`scripts/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow），便于日志检索与告警归类；可用 `--help` 查看失败码清单。
 聚合入口：
 
 - `scripts/check_event_center_contract_schema_guards.sh`（契约/Schema 相关）
