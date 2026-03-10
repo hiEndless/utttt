@@ -222,6 +222,13 @@ signal_event + active_events + MSL
   - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
   - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 
+## Contract Guards
+
+- `agent_server_new/text/test_active_events_contract_guard.py`
+  - 守卫 `selected_event -> active_events` 最小字段依赖面
+- `agent_server_new/text/test_pipeline_traceability_contract.py`
+  - 守卫 `event_center_new -> market_state_engine -> agent_server_new` 链路的可追溯性（signal source + evidence 摘要）
+
 ## 必须从 `agent_server_new` 中剥离的能力
 
 如果严格对齐目标架构，以下能力不应继续长期放在 `agent_server_new` 内部：
