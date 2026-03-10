@@ -14,10 +14,7 @@
   "properties": {
     "signal_action": {"$ref": "./signal_action.schema.json#/properties/signal_action"},
     "risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
-    "mode": {
-      "type": "string",
-      "enum": ["simulated"]
-    },
+    "mode": {"$ref": "./signal_mode.schema.json#/properties/mode"},
     "scope": {"$ref": "./signal_scope.schema.json#/properties/scope"},
     "position_before": {"$ref": "./position_before.schema.json#/properties/position_before"},
     "position_after_simulation": {"$ref": "./position_after_simulation.schema.json#/properties/position_after_simulation"},

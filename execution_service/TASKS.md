@@ -108,3 +108,4 @@
 - [x] Task 106: `scope/position_before/position_after_simulation` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
 - [x] Task 107: `signal_action` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
 - [x] Task 108: `risk_checks` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
+- [x] Task 109: `mode` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。

@@ -195,6 +195,7 @@ execution_service/
 - execution_signal_result schema：`execution_service/docs/execution_signal_result.schema.json`
 - execution_reconcile_result schema：`execution_service/docs/execution_reconcile_result.schema.json`
 - signal_action schema：`execution_service/docs/signal_action.schema.json`
+- signal_mode schema：`execution_service/docs/signal_mode.schema.json`
 - risk_checks schema：`execution_service/docs/risk_checks.schema.json`
 - rule_debug schema：`execution_service/docs/rule_debug.schema.json`
 - evaluation_trace schema：`execution_service/docs/evaluation_trace.schema.json`
@@ -212,6 +213,7 @@ execution_service/
 - `rule_debug` 中的 `evaluation_trace` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `execution_signal_result` 中的 `scope/position_before/position_after_simulation` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `execution_signal_result` 中的 `signal_action` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
+- `execution_signal_result` 中的 `mode` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `execution_signal_result` 中的 `risk_checks` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - execution 契约测试工具已支持带 JSON Pointer 的本地 `$ref`（如 `#/properties/...`），可稳定校验子 schema 复用
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`
