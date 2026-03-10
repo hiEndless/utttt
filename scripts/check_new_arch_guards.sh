@@ -35,6 +35,8 @@ if [[ "$MODE" == "--help" ]]; then
   bash scripts/check_new_arch_guards.sh --event-center-only
   bash scripts/check_new_arch_guards.sh --event-center-quick
   bash scripts/check_new_arch_guards.sh --event-center-quick --lenient-wiring
+说明:
+  --strict-wiring/--lenient-wiring 仅影响 event_center 守卫接线检查策略。
 EOF
   exit 0
 fi
