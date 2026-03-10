@@ -72,6 +72,7 @@ def test_execution_result_schema_samples() -> None:
                 "hit_rule_threshold": None,
                 "previous_risk_state": "normal",
                 "current_risk_state": "reduce_only",
+                "risk_state_changed": True,
                 "matched_at_ms": 1760000000001,
                 "evaluation_trace": [
                     {

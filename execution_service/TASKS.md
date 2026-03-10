@@ -95,3 +95,4 @@
 - [x] Task 93: Redis 账户 provider 对 `risk_state` 做枚举归一化（非法值回退 `normal`），并补单测与文档。
 - [x] Task 94: Stub 账户 provider 对 `risk_state` 做同策略归一化（非法值回退 `normal`），保持 stub/redis 行为一致。
 - [x] Task 95: `rule_debug` 增加 `previous_risk_state/current_risk_state` 风险状态迁移审计字段，并同步 schema、测试与文档。
+- [x] Task 96: `rule_debug` 增加 `risk_state_changed` 布尔字段，支持快速筛选风险态迁移事件。

@@ -59,7 +59,7 @@
     },
     "rule_debug": {
       "type": "object",
-      "required": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "matched_at_ms"],
+      "required": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "matched_at_ms"],
       "properties": {
         "hit_rule": {"type": "string", "minLength": 1},
         "rule_priority_order": {
@@ -70,6 +70,7 @@
         "hit_rule_threshold": {"type": ["number", "null"]},
         "previous_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
         "current_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
+        "risk_state_changed": {"type": "boolean"},
         "matched_at_ms": {"type": "integer", "minimum": 1},
         "evaluation_trace": {
           "type": "array",

@@ -31,6 +31,7 @@ def test_decision_state_schema_samples() -> None:
             "hit_rule_threshold": None,
             "previous_risk_state": "normal",
             "current_risk_state": "normal",
+            "risk_state_changed": False,
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {

@@ -115,6 +115,7 @@ execution_service/
 - `signal_result` 已支持可选 `rule_debug` 调试字段，输出命中规则名、规则顺序与命中值/阈值，便于联调回放。
 - `rule_debug` 已增加 `matched_at_ms` 命中时间戳，便于跨服务时序对齐。
 - `rule_debug` 已增加 `previous_risk_state/current_risk_state`，用于风险状态迁移审计（前态 -> 当前态）。
+- `rule_debug` 已增加 `risk_state_changed`，可直接判断本次是否发生风险状态迁移。
 - `rule_debug` 已增加 `evaluation_trace`，可回放每条规则的 pass/fail 与值阈值轨迹。
 - `evaluation_trace` 已增加 `note_zh`，每条规则均输出中文说明，便于值班排障。
 - `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度。

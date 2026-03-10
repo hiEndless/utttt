@@ -55,6 +55,7 @@ def build_risk_decision_result(
         # 中文注释：记录风险状态迁移，便于排查风控状态抖动与回放时序。
         "previous_risk_state": str(previous_risk_state or "normal"),
         "current_risk_state": str(risk_state or "normal"),
+        "risk_state_changed": str(previous_risk_state or "normal") != str(risk_state or "normal"),
         "matched_at_ms": int(time.time() * 1000),
         "evaluation_trace": list(evaluation_trace or []),
     }

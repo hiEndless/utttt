@@ -103,6 +103,7 @@
 80. Redis 账户 provider 已对 `risk_state` 进行枚举归一化，非法值自动回退 `normal`
 81. Stub 账户 provider 已对 `risk_state` 进行同策略归一化，保证 stub/redis 模式一致
 82. `rule_debug` 已增加 `previous_risk_state/current_risk_state`，支持风险状态迁移审计与回放
+83. `rule_debug` 已增加 `risk_state_changed` 布尔字段，支持快速筛选风险态迁移事件
 
 ## 关键收敛决议（冻结）
 

@@ -143,6 +143,7 @@ def test_debug_state_with_decision_id() -> None:
     assert isinstance(data["decision_state"]["rule_debug"].get("hit_rule"), str)
     assert data["decision_state"]["rule_debug"].get("previous_risk_state") in {"normal", "warn", "reduce_only", "frozen"}
     assert data["decision_state"]["rule_debug"].get("current_risk_state") in {"normal", "warn", "reduce_only", "frozen"}
+    assert isinstance(data["decision_state"]["rule_debug"].get("risk_state_changed"), bool)
     assert isinstance(data["decision_state"]["rule_debug"].get("matched_at_ms"), int)
     assert isinstance(data["decision_state"]["rule_debug"].get("evaluation_trace"), list)
     assert data["decision_state"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
