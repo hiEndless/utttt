@@ -440,18 +440,6 @@ CI 便捷入口：
 - `scripts/ci_event_center_quick_lenient.sh`
 - `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫）
 - `.github/workflows/event-center-full.yml`（GitHub Actions：每日定时 + 手动触发，全量 strict 守卫）
+- `event_center_new/docs/ci.md`（CI 触发矩阵、失败分类与标准处置）
 
-CI 失败排障（本地复现优先）：
-
-1. quick strict 失败
-   - 先跑：`bash scripts/ci_event_center_quick_strict.sh`
-   - 若仍失败，拆分跑：`bash scripts/check_event_center_contract_guards.sh --quick --strict-wiring`
-2. quick lenient 失败
-   - 先跑：`bash scripts/ci_event_center_quick_lenient.sh`
-   - 若仍失败，拆分跑：`bash scripts/check_event_center_contract_guards.sh --quick --lenient-wiring`
-3. full strict 失败
-   - 先跑：`bash scripts/check_new_arch_guards.sh --event-center-only --strict-wiring`
-   - 若仍失败，按子组定位：
-     - 契约/Schema：`bash scripts/check_event_center_contract_schema_guards.sh`
-     - Runtime：`bash scripts/check_event_center_runtime_family_guards.sh`
-     - 接线：`bash scripts/check_event_center_guard_wiring.sh --strict --show-links`
+CI 失败排障请直接查看 `event_center_new/docs/ci.md`，README 仅保留入口。
