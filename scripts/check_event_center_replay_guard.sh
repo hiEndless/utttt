@@ -30,8 +30,12 @@ if ! python3 -m event_center_new.replay_main --help | rg -q -- "--fail-on-missin
   echo "[失败] replay CLI 缺少 --fail-on-missing-stream 参数"
   exit 1
 fi
+if ! python3 -m event_center_new.replay_main --help | rg -q -- "--strict"; then
+  echo "[失败] replay CLI 缺少 --strict 参数"
+  exit 1
+fi
 
-echo "[附加检查] 验证缺失 stream 时 fail-on-missing-stream 返回非 0"
+echo "[附加检查] 验证缺失 stream 时 strict 模式返回非 0"
 python3 - <<'PY'
 from __future__ import annotations
 
@@ -64,7 +68,7 @@ replay_main.run_replay_report = lambda *args, **kwargs: {  # type: ignore[assign
     "selected_contract": {"ok": True},
     "missing_streams": ["selected"],
 }
-code = replay_main.main(["--start-ms", "1", "--end-ms", "2", "--fail-on-missing-stream"])
+code = replay_main.main(["--start-ms", "1", "--end-ms", "2", "--strict"])
 if code == 0:
     raise SystemExit(1)
 PY

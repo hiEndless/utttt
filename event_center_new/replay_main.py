@@ -24,6 +24,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fail-on-contract", action="store_true", help="selected 契约不通过时返回非 0")
     parser.add_argument("--fail-on-diff", action="store_true", help="存在 diff 时返回非 0")
     parser.add_argument("--fail-on-missing-stream", action="store_true", help="检测到缺失 stream 时返回非 0")
+    parser.add_argument("--strict", action="store_true", help="严格模式：等价开启三项 fail-on 校验")
     parser.add_argument("--compact", action="store_true", help="输出紧凑 JSON")
     return parser
 
@@ -55,11 +56,14 @@ def main(argv: list[str] | None = None) -> int:
     contract_ok = bool((report.get("selected_contract") or {}).get("ok"))
     has_diff = bool(report.get("diffs"))
     missing_streams = list(report.get("missing_streams") or [])
-    if args.fail_on_contract and (not contract_ok):
+    fail_on_contract = bool(args.fail_on_contract or args.strict)
+    fail_on_diff = bool(args.fail_on_diff or args.strict)
+    fail_on_missing_stream = bool(args.fail_on_missing_stream or args.strict)
+    if fail_on_contract and (not contract_ok):
         return 1
-    if args.fail_on_diff and has_diff:
+    if fail_on_diff and has_diff:
         return 1
-    if args.fail_on_missing_stream and missing_streams:
+    if fail_on_missing_stream and missing_streams:
         return 1
     return 0 if report.get("ok") else 1
 

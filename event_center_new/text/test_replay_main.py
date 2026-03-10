@@ -119,3 +119,27 @@ def test_replay_main_fail_on_missing_stream(monkeypatch) -> None:  # noqa: ANN00
         ]
     )
     assert code == 1
+
+
+def test_replay_main_strict_implies_all_fail_flags(monkeypatch) -> None:  # noqa: ANN001
+    monkeypatch.setitem(sys.modules, "redis", _FakeRedisModule())
+    monkeypatch.setattr(
+        replay_main,
+        "run_replay_report",
+        lambda *args, **kwargs: {  # noqa: ARG005
+            "ok": True,
+            "diffs": [],
+            "selected_contract": {"ok": True},
+            "missing_streams": ["selected"],
+        },
+    )
+    code = replay_main.main(
+        [
+            "--start-ms",
+            "1",
+            "--end-ms",
+            "2",
+            "--strict",
+        ]
+    )
+    assert code == 1
