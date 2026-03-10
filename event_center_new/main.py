@@ -94,15 +94,17 @@ def main() -> None:
     run_loop = _read_bool_env("EVENT_CENTER_RUN_LOOP", default=False)
     interval_ms = _read_int_env("EVENT_CENTER_RUN_INTERVAL_MS", default=1000)
     max_ticks = _read_int_env("EVENT_CENTER_RUN_MAX_TICKS", default=0)
+    stop_on_error = _read_bool_env("EVENT_CENTER_STOP_ON_ERROR", default=False)
     if run_loop:
         logger.info(
-            "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s",
+            "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s stop_on_error=%s",
             interval_ms,
             max_ticks,
+            stop_on_error,
         )
-        _run_loop(runner, interval_ms=interval_ms, max_ticks=max_ticks)
+        _run_loop(runner, interval_ms=interval_ms, max_ticks=max_ticks, stop_on_error=stop_on_error)
         return
-    _run_once_and_log(runner)
+    _run_once_and_log(runner, stop_on_error=stop_on_error)
 
 
 def _build_layer_store():
@@ -124,8 +126,8 @@ def _build_layer_store():
     return InMemoryLayerStore()
 
 
-def _run_once_and_log(runner: EventPipelineRunner) -> None:
-    selected = runner.run_once()
+def _run_once_and_log(runner: EventPipelineRunner, *, stop_on_error: bool = False) -> None:
+    selected = runner.run_once(stop_on_error=stop_on_error)
     health = runner.health_snapshot()
     logger.info("事件中心最小 Runner 执行完成，selected_count=%s", len(selected))
     logger.info("runner_health=%s", json.dumps(health.__dict__, ensure_ascii=False))
@@ -137,13 +139,14 @@ def _run_loop(
     *,
     interval_ms: int,
     max_ticks: int = 0,
+    stop_on_error: bool = False,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> None:
     tick = 0
     safe_interval = max(1, int(interval_ms))
     while True:
         tick += 1
-        _run_once_and_log(runner)
+        _run_once_and_log(runner, stop_on_error=stop_on_error)
         if max_ticks > 0 and tick >= max_ticks:
             logger.info("事件中心循环运行达到上限，准备退出 tick=%s", tick)
             return

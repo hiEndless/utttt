@@ -75,7 +75,7 @@ class EventPipelineRunner:
         self._error_count = 0
         self._last_error = ""
 
-    def run_once(self) -> list[dict[str, Any]]:
+    def run_once(self, *, stop_on_error: bool = False) -> list[dict[str, Any]]:
         """执行一轮拉取并返回本轮 selected 输出。"""
 
         import time
@@ -104,6 +104,8 @@ class EventPipelineRunner:
                     self._error_count += 1
                     self._last_error = f"{type(exc).__name__}: {exc}"
                     logger.exception("事件处理失败 source=%s event_id=%s", src.name, getattr(ev, "id", ""))
+                    if stop_on_error:
+                        raise
         return selected_out
 
     def health_snapshot(self) -> RunnerHealthSnapshot:

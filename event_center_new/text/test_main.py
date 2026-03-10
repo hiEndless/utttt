@@ -23,9 +23,11 @@ class _Health:
 class _FakeRunner:
     def __init__(self) -> None:
         self.calls = 0
+        self.flags: list[bool] = []
 
-    def run_once(self):  # noqa: ANN001, ANN201
+    def run_once(self, *, stop_on_error: bool = False):  # noqa: ANN001, ANN201
         self.calls += 1
+        self.flags.append(stop_on_error)
         return []
 
     def health_snapshot(self) -> _Health:
@@ -48,6 +50,13 @@ def test_run_loop_respects_max_ticks() -> None:
     main_mod._run_loop(runner, interval_ms=200, max_ticks=3, sleep_fn=_sleep)
     assert runner.calls == 3
     assert sleeps == [0.2, 0.2]
+    assert runner.flags == [False, False, False]
+
+
+def test_run_loop_passes_stop_on_error_flag() -> None:
+    runner = _FakeRunner()
+    main_mod._run_loop(runner, interval_ms=10, max_ticks=2, stop_on_error=True, sleep_fn=lambda _s: None)
+    assert runner.flags == [True, True]
 
 
 def test_read_bool_env(monkeypatch) -> None:  # noqa: ANN001

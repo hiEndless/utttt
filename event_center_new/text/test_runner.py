@@ -162,3 +162,38 @@ def test_runner_health_counts_event_errors_without_stopping() -> None:
     assert health.run_count == 1
     assert health.error_count == 1
     assert "boom:evt-health-err" in health.last_error
+
+
+def test_runner_stop_on_error_raises() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-health-raise",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="technical.indicator_signal",
+        source=EventSource(name="feature_service", category="technical"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={"evidences": [{"type": "a", "direction": "bullish", "strength": 0.8, "horizon": "short", "importance": 0.8}]},
+    )
+    source = InMemoryEventSource(name="test_source", category="test", events=[event])
+    runner = EventPipelineRunner(
+        sources=[source],
+        normalizer=PassThroughNormalizer(),
+        extractor=_BoomExtractor(),
+        correlation_engine=CorrelationEngine(rules=[]),
+        context_builder=DefaultContextBuilder(),
+        l0_processor=HeuristicL0Processor(),
+        l1_aggregator=HeuristicL1Aggregator(),
+        final_gate=DeterministicFinalGate(cfg=SelectPolicyConfig()),
+        event_memory=InMemoryEventMemory(),
+        layer_store=InMemoryLayerStore(),
+    )
+    try:
+        runner.run_once(stop_on_error=True)
+        raise AssertionError("expected RuntimeError")
+    except RuntimeError as exc:
+        assert "boom:evt-health-raise" in str(exc)
+    health = runner.health_snapshot()
+    assert health.error_count == 1

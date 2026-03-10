@@ -348,6 +348,7 @@ python3 -m event_center_new.main
 EVENT_CENTER_RUN_LOOP=true \
 EVENT_CENTER_RUN_INTERVAL_MS=1000 \
 EVENT_CENTER_RUN_MAX_TICKS=0 \
+EVENT_CENTER_STOP_ON_ERROR=false \
 python3 -m event_center_new.main
 ```
 
@@ -356,6 +357,7 @@ python3 -m event_center_new.main
 - `EVENT_CENTER_RUN_LOOP=true` 开启循环模式
 - `EVENT_CENTER_RUN_INTERVAL_MS` 每轮间隔（毫秒）
 - `EVENT_CENTER_RUN_MAX_TICKS` 最大轮次，`0` 表示不限（常驻）
+- `EVENT_CENTER_STOP_ON_ERROR` 事件处理异常时是否立即退出（默认 `false`）
 
 最小健康信号（`EventPipelineRunner.health_snapshot()`）：
 
