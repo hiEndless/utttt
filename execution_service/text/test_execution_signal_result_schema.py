@@ -54,6 +54,8 @@ def test_execution_signal_result_schema_samples() -> None:
             ],
             "hit_rule_value": None,
             "hit_rule_threshold": None,
+            "previous_risk_state": "normal",
+            "current_risk_state": "normal",
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {
@@ -100,6 +102,8 @@ def test_execution_signal_result_schema_samples() -> None:
             "rule_priority_order": [],
             "hit_rule_value": None,
             "hit_rule_threshold": None,
+            "previous_risk_state": "unknown",
+            "current_risk_state": "unknown",
             "matched_at_ms": 0,
             "evaluation_trace": [
                 {"order": 0, "rule": "", "scope": "unknown", "status": "unknown", "value": None, "threshold": None, "note_zh": ""}

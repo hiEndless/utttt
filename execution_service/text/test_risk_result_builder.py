@@ -48,6 +48,8 @@ def test_risk_result_builder_builds_signal_scope_and_positions() -> None:
     assert signal["position_before"]["mode"] == "hedge"
     assert abs(signal["position_after_simulation"]["long_position_size"] - 0.3) < 1e-9
     assert signal["rule_debug"]["hit_rule"] == "none"
+    assert signal["rule_debug"]["previous_risk_state"] == "normal"
+    assert signal["rule_debug"]["current_risk_state"] == "normal"
     assert isinstance(signal["rule_debug"]["matched_at_ms"], int)
     assert signal["rule_debug"]["matched_at_ms"] > 0
     assert signal["rule_debug"]["evaluation_trace"] == []
@@ -98,5 +100,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
     assert signal["risk_state"] == "normal"
     assert abs(signal["position_after_simulation"]["short_position_size"] - 0.3) < 1e-9
     assert signal["rule_debug"]["hit_rule"] == "direction_conflict"
+    assert signal["rule_debug"]["previous_risk_state"] == "normal"
+    assert signal["rule_debug"]["current_risk_state"] == "normal"
     assert isinstance(signal["rule_debug"]["matched_at_ms"], int)
     assert len(signal["rule_debug"]["evaluation_trace"]) == 2

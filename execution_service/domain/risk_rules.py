@@ -193,6 +193,7 @@ def evaluate_risk_rules(
             hit_rule_threshold=hit_rule_threshold,
             evaluation_trace=list(evaluation_trace),
             risk_state=risk_state,
+            previous_risk_state=previous_risk_state,
         )
 
     rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {

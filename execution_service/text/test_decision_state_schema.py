@@ -29,6 +29,8 @@ def test_decision_state_schema_samples() -> None:
             "rule_priority_order": ["position_limit", "cooldown"],
             "hit_rule_value": None,
             "hit_rule_threshold": None,
+            "previous_risk_state": "normal",
+            "current_risk_state": "normal",
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {

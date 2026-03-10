@@ -27,6 +27,7 @@ def build_risk_decision_result(
     hit_rule_threshold: float | None = None,
     evaluation_trace: List[Dict[str, Any]] | None = None,
     risk_state: str | None = None,
+    previous_risk_state: str | None = None,
 ) -> Dict[str, Any]:
     signal_action = _build_signal_action(
         execution_action=execution_action,
@@ -51,6 +52,9 @@ def build_risk_decision_result(
         "rule_priority_order": list(rule_priority_order or []),
         "hit_rule_value": hit_rule_value,
         "hit_rule_threshold": hit_rule_threshold,
+        # 中文注释：记录风险状态迁移，便于排查风控状态抖动与回放时序。
+        "previous_risk_state": str(previous_risk_state or "normal"),
+        "current_risk_state": str(risk_state or "normal"),
         "matched_at_ms": int(time.time() * 1000),
         "evaluation_trace": list(evaluation_trace or []),
     }

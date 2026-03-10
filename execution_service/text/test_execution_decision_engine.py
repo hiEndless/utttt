@@ -118,6 +118,8 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert any(c["check"] == "account_drawdown_limit" for c in checks)
     assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
     assert result.signal_result["rule_debug"]["hit_rule"] == "passed_all_rules"
+    assert result.signal_result["rule_debug"]["previous_risk_state"] == "normal"
+    assert result.signal_result["rule_debug"]["current_risk_state"] in {"normal", "warn"}
     assert result.signal_result["risk_state"] in {"normal", "warn"}
     assert isinstance(result.signal_result["rule_debug"]["evaluation_trace"], list)
     assert all(

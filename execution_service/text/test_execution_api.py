@@ -141,6 +141,8 @@ def test_debug_state_with_decision_id() -> None:
     assert data["decision_state"]["trace_id"] == "trace-debug-001"
     assert isinstance(data["decision_state"].get("rule_debug"), dict)
     assert isinstance(data["decision_state"]["rule_debug"].get("hit_rule"), str)
+    assert data["decision_state"]["rule_debug"].get("previous_risk_state") in {"normal", "warn", "reduce_only", "frozen"}
+    assert data["decision_state"]["rule_debug"].get("current_risk_state") in {"normal", "warn", "reduce_only", "frozen"}
     assert isinstance(data["decision_state"]["rule_debug"].get("matched_at_ms"), int)
     assert isinstance(data["decision_state"]["rule_debug"].get("evaluation_trace"), list)
     assert data["decision_state"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
