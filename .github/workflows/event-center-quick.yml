@@ -35,7 +35,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: 运行 quick strict 守卫
-        run: bash scripts/ci_event_center_quick_strict.sh
+        id: quick_strict_guard
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/event_center_ci
+          bash scripts/ci_event_center_quick_strict.sh | tee /tmp/event_center_ci/quick_strict.log
+      - name: 上传 quick strict 失败诊断日志
+        if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-center-quick-strict-diagnostics
+          path: /tmp/event_center_ci/quick_strict.log
+          if-no-files-found: warn
+      - name: quick strict 失败时终止任务
+        if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
+        run: |
+          echo "event_center quick strict guard failed, see artifact: event-center-quick-strict-diagnostics"
+          exit 1
 
   quick-lenient:
     runs-on: ubuntu-latest
@@ -51,4 +67,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: 运行 quick lenient 守卫
-        run: bash scripts/ci_event_center_quick_lenient.sh
+        id: quick_lenient_guard
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/event_center_ci
+          bash scripts/ci_event_center_quick_lenient.sh | tee /tmp/event_center_ci/quick_lenient.log
+      - name: 上传 quick lenient 失败诊断日志
+        if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-center-quick-lenient-diagnostics
+          path: /tmp/event_center_ci/quick_lenient.log
+          if-no-files-found: warn
+      - name: quick lenient 失败时终止任务
+        if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
+        run: |
+          echo "event_center quick lenient guard failed, see artifact: event-center-quick-lenient-diagnostics"
+          exit 1

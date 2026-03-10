@@ -7,6 +7,9 @@
 - quick（严格 + 宽松并行）：
   - 工作流：`.github/workflows/event-center-quick.yml`
   - 触发：`pull_request` / `push(main)`（按路径过滤）
+  - 失败诊断：
+    - strict job 自动上传 `event-center-quick-strict-diagnostics`（`quick_strict.log`）
+    - lenient job 自动上传 `event-center-quick-lenient-diagnostics`（`quick_lenient.log`）
 - full（全量严格）：
   - 工作流：`.github/workflows/event-center-full.yml`
   - 触发：`workflow_dispatch` / 每日定时 `cron`
