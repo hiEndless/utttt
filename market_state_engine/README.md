@@ -241,12 +241,24 @@ market_state_engine/
     - `MSE_STATE_PLUGINS_DISABLED`：禁用名单（逗号分隔）
     - 优先级：`enabled_plugins` > `plugin_profile` > `default`，最后应用 `disabled_plugins`
     - profile 来源优先级：`profiles_file` > 内置默认配置
-    - 已补充服务层环境变量配置解析测试
+- 已补充服务层环境变量配置解析测试
+- 已新增 `selected_event` 可选接入（Redis）
+  - 新增端口：`ports/selected_event_provider.py`
+  - 新增适配器：`adapters/selected_events_redis.py`
+  - `service.py` 可选融合 selected_event 摘要到 `state_features.evidence`
+  - 读取失败降级策略：不抛错，追加 `anomaly_flags=selected_events_unavailable`
+  - 读取成功标记：`anomaly_flags=selected_event_context_attached`
+  - `app.py` 支持环境变量装配：
+    - `MSE_SELECTED_EVENT_PROVIDER_MODE=none|redis`
+    - `MSE_SELECTED_EVENT_REDIS_URL`
+    - `MSE_SELECTED_EVENT_STREAM`（默认 `ec:selected`）
+    - `MSE_SELECTED_EVENT_LIMIT_DEFAULT`（默认 `20`）
+    - `MSE_SELECTED_EVENT_SCAN_FACTOR`（默认 `5`）
 
 当前仍是过渡阶段：
 
 - 输入主要还是 `raw_market_structure`
-- 尚未接入来自 `event_center_new` 的 selected events
+- selected_event 已支持可选接入（Redis），默认仍为关闭模式（`none`）
 - 尚未形成更完整的 state cache / replay 机制
 
 ## 下一步建议
@@ -256,5 +268,5 @@ market_state_engine/
 1. 固定 `raw_market_structure` schema
 2. 让 `feature_service` 真实产出该结构
 3. 再引入 `feature_snapshot`
-4. 再接入 `selected_event / active_events`
+4. 将 `selected_event` 从可选接入推进为默认生产路径，并补全 state->agent 实流联调
 5. 最后稳定 MSL schema 与版本演进策略

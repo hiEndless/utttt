@@ -138,3 +138,4 @@
 - [x] Task 122: execution_service 接入 `decision_id` 处理锁（lock TTL），并补并发防重行为回归测试。
 - [x] Task 123: execution_service 接入执行状态机存储（memory/redis），并在 debug 接口支持按 `decision_id` 查询状态。
 - [x] Task 124: execution_service submit 下沉支持重试（指数退避 + 最大次数）并输出 retry_meta。
+- [x] Task 125: `market_state_engine` 新增 `SelectedEventProvider` 端口与 Redis 适配器，服务层支持可选融合 selected_event（失败降级不抛错），并补回归测试与 README 同步。

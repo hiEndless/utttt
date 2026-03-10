@@ -83,6 +83,26 @@ class _CapturingEngine:
         return {}, {}, {"alignment": "unknown", "conflicts": [], "suggested_policy": "no_action", "policy_reason": "insufficient_evidence"}
 
 
+class _SelectedEventProviderOk:
+    async def get_selected_events(self, exchange: str, symbol: str, *, limit: int = 20):
+        return [
+            {
+                "asset": f"{exchange}:{symbol}",
+                "ts_ms": 1234567890,
+                "selected_type": "breakout_signal",
+                "direction_hint": "bullish",
+                "priority": "high",
+                "context_snapshot": {"x": 1},
+                "route": {"to": "market_state_engine"},
+            }
+        ]
+
+
+class _SelectedEventProviderFail:
+    async def get_selected_events(self, exchange: str, symbol: str, *, limit: int = 20):
+        raise RuntimeError("boom")
+
+
 def test_market_state_service_short_circuit_on_data_unavailable():
     async def _run():
         service = MarketStateService(raw_structure_provider=_UnavailableRawProvider())
@@ -197,5 +217,36 @@ def test_market_state_service_exposes_msl_meta_with_inference_version(monkeypatc
         assert meta.get("schema_version") == 2
         assert meta.get("inference_version") == "msl_generator_v2"
         assert meta.get("inference_profile") in {"default", "fast_mode", "risk_only"}
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_attaches_selected_event_evidence():
+    async def _run():
+        service = MarketStateService(
+            raw_structure_provider=_OkRawProvider(),
+            selected_event_provider=_SelectedEventProviderOk(),
+        )
+        service._engine = _FakeEngine()
+        out = await service.get_market_state("binance", "ETHUSDT")
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        assert evidence.get("selected_events_count") == 1
+        assert "breakout_signal" in list(evidence.get("selected_event_types") or [])
+        assert "selected_event_context_attached" in list(out.get("anomaly_flags") or [])
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_selected_event_provider_failure_is_degraded_not_crash():
+    async def _run():
+        service = MarketStateService(
+            raw_structure_provider=_OkRawProvider(),
+            selected_event_provider=_SelectedEventProviderFail(),
+        )
+        service._engine = _FakeEngine()
+        out = await service.get_market_state("binance", "ETHUSDT")
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        assert evidence.get("selected_events_unavailable") is True
+        assert "selected_events_unavailable" in list(out.get("anomaly_flags") or [])
 
     asyncio.run(_run())

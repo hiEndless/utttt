@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from market_state_engine.engine import MarketStateEngine
 from market_state_engine.errors import FeatureDataUnavailableFromUpstreamError
 from market_state_engine.ports.raw_structure_provider import RawStructureProvider
+from market_state_engine.ports.selected_event_provider import SelectedEventProvider
 
 
 _EXTERNAL_EVENT_INPUT_KEYS = {
@@ -20,6 +22,10 @@ _EXTERNAL_EVENT_INPUT_KEYS = {
     "event_stream",
 }
 _EXTERNAL_INPUT_IGNORED_FLAG = "external_event_input_ignored"
+_SELECTED_EVENTS_ATTACHED_FLAG = "selected_event_context_attached"
+_SELECTED_EVENTS_UNAVAILABLE_FLAG = "selected_events_unavailable"
+
+logger = logging.getLogger("market_state_engine")
 
 
 def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tuple[Dict[str, Any], list[str]]:
@@ -37,8 +43,13 @@ def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tu
 class MarketStateService:
     """状态层用例服务：聚合 raw structure 并产出状态快照。"""
 
-    def __init__(self, raw_structure_provider: RawStructureProvider) -> None:
+    def __init__(
+        self,
+        raw_structure_provider: RawStructureProvider,
+        selected_event_provider: Optional[SelectedEventProvider] = None,
+    ) -> None:
         self._raw_structure_provider = raw_structure_provider
+        self._selected_event_provider = selected_event_provider
         self._engine = MarketStateEngine(state_inference_config=self._load_state_inference_config())
 
     @staticmethod
@@ -153,6 +164,38 @@ class MarketStateService:
             "raw_market_structure": {},
         }
 
+    async def _collect_selected_events(self, exchange: str, symbol: str) -> tuple[List[Dict[str, Any]], Optional[str]]:
+        if self._selected_event_provider is None:
+            return [], None
+        try:
+            selected_events = await self._selected_event_provider.get_selected_events(exchange=exchange, symbol=symbol, limit=20)
+            selected_events = [x for x in list(selected_events or []) if isinstance(x, dict)]
+            return selected_events, None
+        except Exception as exc:
+            logger.warning("selected_event_provider 读取失败，已降级忽略: %s", exc)
+            return [], _SELECTED_EVENTS_UNAVAILABLE_FLAG
+
+    @staticmethod
+    def _build_selected_event_evidence(selected_events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        event_types = sorted(
+            set([str(x.get("selected_type") or "").strip() for x in selected_events if str(x.get("selected_type") or "").strip()])
+        )
+        priorities = sorted(
+            set([str(x.get("priority") or "").strip() for x in selected_events if str(x.get("priority") or "").strip()])
+        )
+        directions = sorted(
+            set([str(x.get("direction_hint") or "").strip() for x in selected_events if str(x.get("direction_hint") or "").strip()])
+        )
+        assets = sorted(set([str(x.get("asset") or "").strip() for x in selected_events if str(x.get("asset") or "").strip()]))
+        return {
+            "selected_events_count": int(len(selected_events)),
+            "selected_event_types": event_types,
+            "selected_event_priorities": priorities,
+            "selected_event_directions": directions,
+            "selected_event_assets": assets,
+            "selected_events_preview": selected_events[:3],
+        }
+
     async def get_market_state(self, exchange: str, symbol: str) -> Dict[str, Any]:
         try:
             raw_market_structure = await self._raw_structure_provider.get_raw_structure(exchange=exchange, symbol=symbol)
@@ -166,6 +209,7 @@ class MarketStateService:
             raise TypeError("invalid_market_structure")
 
         sanitized_market_structure, dropped_external_keys = _sanitize_market_structure_input(raw_market_structure)
+        selected_events, selected_events_error_flag = await self._collect_selected_events(exchange=exchange, symbol=symbol)
         msl, features = self._engine.build(exchange=exchange, symbol=symbol, market_structure=sanitized_market_structure)
         msl_payload = msl.to_llm_dict()
         state_features_payload = features.to_dict()
@@ -195,6 +239,21 @@ class MarketStateService:
                     "suggested_policy": "no_action",
                     "policy_reason": "insufficient_evidence",
                 }
+
+        if selected_events:
+            anomaly_flags = sorted(set([*anomaly_flags, _SELECTED_EVENTS_ATTACHED_FLAG]))
+            sf_evidence = state_features_payload.get("evidence")
+            if not isinstance(sf_evidence, dict):
+                sf_evidence = {}
+            sf_evidence.update(self._build_selected_event_evidence(selected_events))
+            state_features_payload["evidence"] = sf_evidence
+        elif selected_events_error_flag:
+            anomaly_flags = sorted(set([*anomaly_flags, selected_events_error_flag]))
+            sf_evidence = state_features_payload.get("evidence")
+            if not isinstance(sf_evidence, dict):
+                sf_evidence = {}
+            sf_evidence["selected_events_unavailable"] = True
+            state_features_payload["evidence"] = sf_evidence
 
         if dropped_external_keys:
             anomaly_flags = sorted(set([*anomaly_flags, _EXTERNAL_INPUT_IGNORED_FLAG]))
