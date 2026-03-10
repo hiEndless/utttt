@@ -4,7 +4,7 @@ set -euo pipefail
 RUNTIME_DOC="event_center_new/docs/runtime.md"
 MAIN_FILE="event_center_new/main.py"
 
-echo "[1/4] 检查 runtime 文档与入口文件存在"
+echo "[1/3] 检查 runtime 文档与入口文件存在"
 if ! test -f "$RUNTIME_DOC"; then
   echo "[失败] 缺少 $RUNTIME_DOC"
   exit 1
@@ -14,40 +14,40 @@ if ! test -f "$MAIN_FILE"; then
   exit 1
 fi
 
-echo "[2/4] 校验关键环境变量在 main.py 中存在"
-keys=(
-  EVENT_CENTER_LAYER_STORE_MODE
-  EVENT_CENTER_REDIS_URL
-  EVENT_CENTER_STREAM_RAW
-  EVENT_CENTER_STREAM_NORMALIZED
-  EVENT_CENTER_STREAM_EVIDENCE
-  EVENT_CENTER_STREAM_CONTEXT
-  EVENT_CENTER_STREAM_SELECTED
-  EVENT_CENTER_STREAM_MAXLEN
-  EVENT_CENTER_STREAM_APPROX
-  EVENT_CENTER_RUN_LOOP
-  EVENT_CENTER_RUN_INTERVAL_MS
-  EVENT_CENTER_RUN_MAX_TICKS
-  EVENT_CENTER_STOP_ON_ERROR
-  EVENT_CENTER_HEALTH_KEY
-  EVENT_CENTER_SELF_CHECK_ONLY
-)
-for key in "${keys[@]}"; do
-  if ! rg -q "$key" "$MAIN_FILE"; then
-    echo "[失败] main.py 缺少环境变量: $key"
-    exit 1
-  fi
-done
+echo "[2/3] 校验 main.py 与 runtime.md 的 EVENT_CENTER_* 变量集合一致"
+tmp_main="$(mktemp)"
+tmp_doc="$(mktemp)"
+tmp_main_only="$(mktemp)"
+tmp_doc_only="$(mktemp)"
+trap 'rm -f "$tmp_main" "$tmp_doc" "$tmp_main_only" "$tmp_doc_only"' EXIT
 
-echo "[3/4] 校验关键环境变量在 runtime.md 中存在"
-for key in "${keys[@]}"; do
-  if ! rg -q "$key" "$RUNTIME_DOC"; then
-    echo "[失败] runtime.md 缺少环境变量: $key"
-    exit 1
-  fi
-done
+rg -o 'EVENT_CENTER_[A-Z0-9_]+' "$MAIN_FILE" | sort -u > "$tmp_main"
+rg -o 'EVENT_CENTER_[A-Z0-9_]+' "$RUNTIME_DOC" | sort -u > "$tmp_doc"
 
-echo "[4/4] 校验 runtime 文档版本与变更日志最新条目一致"
+if ! test -s "$tmp_main"; then
+  echo "[失败] 未从 main.py 提取到 EVENT_CENTER_* 变量"
+  exit 1
+fi
+if ! test -s "$tmp_doc"; then
+  echo "[失败] 未从 runtime.md 提取到 EVENT_CENTER_* 变量"
+  exit 1
+fi
+
+comm -23 "$tmp_main" "$tmp_doc" > "$tmp_main_only"
+comm -13 "$tmp_main" "$tmp_doc" > "$tmp_doc_only"
+
+if test -s "$tmp_main_only"; then
+  echo "[失败] 以下变量存在于 main.py 但不在 runtime.md："
+  cat "$tmp_main_only"
+  exit 1
+fi
+if test -s "$tmp_doc_only"; then
+  echo "[失败] 以下变量存在于 runtime.md 但不在 main.py："
+  cat "$tmp_doc_only"
+  exit 1
+fi
+
+echo "[3/3] 校验 runtime 文档版本与变更日志最新条目一致"
 doc_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' "$RUNTIME_DOC" | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
 latest_log_version="$(rg -o 'version:\s*`[A-Za-z0-9._-]+`' "$RUNTIME_DOC" | head -n1 | sed -E 's/.*`([^`]+)`.*/\1/')"
 if [[ -z "$doc_version" ]]; then
