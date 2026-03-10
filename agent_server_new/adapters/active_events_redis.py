@@ -69,7 +69,7 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         symbol_norm = str(symbol or "").strip().lower()
         matched: List[Dict[str, Any]] = []
 
-        for _, fields in list(rows or []):
+        for stream_id, fields in list(rows or []):
             payload_raw = (fields or {}).get("payload")
             if not isinstance(payload_raw, str) or not payload_raw:
                 continue
@@ -80,22 +80,73 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
             if not isinstance(payload, dict):
                 continue
 
-            # 中文注释：统一支持两类资产键，便于兼容历史事件格式。
-            asset = str(payload.get("asset") or payload.get("symbol_id") or "").strip().lower()
-            if asset:
-                has_symbol = symbol_norm in asset
-                has_exchange = (exchange_norm in asset) if exchange_norm else True
+            normalized = self._normalize_active_event(payload, stream_id=stream_id, exchange=exchange, symbol=symbol)
+            if not normalized:
+                continue
+            asset_norm = str(normalized.get("asset") or "").strip().lower()
+            if asset_norm:
+                has_symbol = symbol_norm in asset_norm
+                has_exchange = (exchange_norm in asset_norm) if exchange_norm else True
                 if not (has_symbol and has_exchange):
                     continue
-            else:
-                payload_exchange = str(payload.get("exchange") or "").strip().lower()
-                payload_symbol = str(payload.get("symbol") or "").strip().lower()
-                if payload_exchange and payload_exchange != exchange_norm:
-                    continue
-                if payload_symbol and payload_symbol != symbol_norm:
-                    continue
-
-            matched.append(payload)
+            matched.append(normalized)
             if len(matched) >= target_limit:
                 break
         return matched
+
+    @staticmethod
+    def _priority_to_score(priority: str) -> float:
+        p = str(priority or "").strip().lower()
+        if p == "high":
+            return 0.9
+        if p == "medium":
+            return 0.6
+        if p == "low":
+            return 0.3
+        return 0.5
+
+    @classmethod
+    def _normalize_active_event(
+        cls,
+        payload: Dict[str, Any],
+        *,
+        stream_id: str,
+        exchange: str,
+        symbol: str,
+    ) -> Dict[str, Any]:
+        # 中文注释：消费侧冻结最小字段白名单，避免 selected_event 原始字段漂移扩散到 agent。
+        event_type = str(payload.get("selected_type") or payload.get("event_type") or payload.get("type") or "").strip()
+        if not event_type:
+            return {}
+        asset = str(payload.get("asset") or payload.get("symbol_id") or "").strip()
+        if not asset:
+            asset = f"{str(exchange or '').strip().lower()}:{str(symbol or '').strip().upper()}"
+        direction = str(payload.get("direction") or payload.get("direction_hint") or "neutral").strip().lower()
+        if direction not in {"bullish", "bearish", "neutral", "mixed"}:
+            direction = "neutral"
+        score_raw = payload.get("score")
+        try:
+            score = float(score_raw)
+        except Exception:
+            score = cls._priority_to_score(str(payload.get("priority") or ""))
+        timeframe = str(
+            payload.get("timeframe")
+            or (payload.get("route") or {}).get("horizon")
+            or (payload.get("context_snapshot") or {}).get("horizon")
+            or "unknown"
+        ).strip()
+        evidence = payload.get("evidence")
+        if evidence is None:
+            evidence = payload.get("context_snapshot")
+        event_id = str(payload.get("event_id") or payload.get("id") or stream_id).strip() or str(stream_id)
+        source = str(payload.get("source") or "event_center_new").strip() or "event_center_new"
+        return {
+            "event_id": event_id,
+            "source": source,
+            "type": event_type,
+            "asset": asset,
+            "direction": direction,
+            "score": score,
+            "timeframe": timeframe,
+            "evidence": evidence if isinstance(evidence, dict) else {},
+        }

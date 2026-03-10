@@ -55,7 +55,7 @@ data_server
 
 1. `event_center_new`
    - `signal_event`
-   - `active_events`
+   - `active_events`（消费侧最小字段白名单：`event_id/source/type/asset/direction/score/timeframe/evidence`）
    - 外部事件（舆情/链上/新闻等）
 2. `market_state_engine`
    - `MSL`（由结构事件与结构特征归纳后的状态）
@@ -188,6 +188,7 @@ signal_event + active_events + MSL
   - `position_context = StubPositionContextProvider()`（兼容占位，后续由 execution 层接管）
   - `active_events = StubActiveEventsProvider()`（默认）
   - 当 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis` 时启用 `RedisActiveEventsProvider`
+  - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
 
 ## CLI Smoke Test
