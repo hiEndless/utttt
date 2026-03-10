@@ -45,6 +45,7 @@ jobs:
         if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
         run: |
           echo "event_center quick strict guard failed, see artifact: event-center-quick-strict-diagnostics"
+          echo "download artifact then run: rg -n \"FAIL_CODE=\" quick_strict.log"
           exit 1
 
   quick-lenient:
@@ -71,4 +72,5 @@ jobs:
         if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
         run: |
           echo "event_center quick lenient guard failed, see artifact: event-center-quick-lenient-diagnostics"
+          echo "download artifact then run: rg -n \"FAIL_CODE=\" quick_lenient.log"
           exit 1

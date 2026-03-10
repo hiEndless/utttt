@@ -30,4 +30,5 @@ jobs:
         if: ${{ steps.full_guard.outcome == 'failure' }}
         run: |
           echo "event_center full guard failed, see uploaded artifact: event-center-full-diagnostics"
+          echo "download artifact then run: rg -n \"FAIL_CODE=\" full_guard.log"
           exit 1
