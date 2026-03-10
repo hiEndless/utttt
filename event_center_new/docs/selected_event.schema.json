@@ -10,6 +10,7 @@
     "direction_hint",
     "priority",
     "context_snapshot",
+    "trace",
     "route"
   ],
   "properties": {
@@ -74,8 +75,9 @@
       }
     },
     "trace": {
-      "type": ["object", "null"],
+      "type": "object",
       "additionalProperties": true,
+      "required": ["schema_version"],
       "properties": {
         "dedup_key": {
           "type": ["string", "null"]
@@ -90,7 +92,8 @@
           "type": ["string", "null"]
         },
         "schema_version": {
-          "type": ["string", "null"]
+          "type": "string",
+          "minLength": 1
         }
       }
     },

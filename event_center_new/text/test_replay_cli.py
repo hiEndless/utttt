@@ -93,6 +93,7 @@ def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
             "direction_hint": "bearish",
             "priority": "low",
             "context_snapshot": {},
+            "trace": {"schema_version": "selected-v2"},
             "trigger_event": None,
             "route": {"review_required": True},
         },

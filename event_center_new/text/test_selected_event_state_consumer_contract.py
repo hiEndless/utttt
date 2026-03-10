@@ -20,7 +20,7 @@ def test_selected_event_schema_keeps_market_state_consumer_core_fields() -> None
     schema = _load_selected_schema()
     required = set(schema.get("required") or [])
     # 中文注释：冻结状态层 evidence 聚合依赖字段，防止 selected_event 漂移影响 state 侧摘要。
-    assert {"asset", "selected_type", "direction_hint", "priority"} <= required
+    assert {"asset", "selected_type", "direction_hint", "priority", "trace"} <= required
 
 
 def test_selected_event_can_build_market_state_evidence_summary() -> None:
@@ -32,6 +32,7 @@ def test_selected_event_can_build_market_state_evidence_summary() -> None:
             "direction_hint": "bullish",
             "priority": "high",
             "context_snapshot": {"k": "v"},
+            "trace": {"schema_version": "selected-v2"},
             "route": {"horizon": "5m"},
         },
         {
@@ -41,6 +42,7 @@ def test_selected_event_can_build_market_state_evidence_summary() -> None:
             "direction_hint": "mixed",
             "priority": "medium",
             "context_snapshot": {"k2": "v2"},
+            "trace": {"schema_version": "selected-v2"},
             "route": {"horizon": "15m"},
         },
     ]

@@ -20,7 +20,7 @@ def test_selected_event_schema_keeps_downstream_mapping_core_fields() -> None:
     schema = _load_selected_schema()
     required = set(schema.get("required") or [])
     # 中文注释：冻结对下游 active_events 映射的最小字段依赖面。
-    assert {"asset", "selected_type", "direction_hint", "priority", "context_snapshot", "route"} <= required
+    assert {"asset", "selected_type", "direction_hint", "priority", "context_snapshot", "trace", "route"} <= required
 
 
 def test_selected_event_can_map_to_agent_active_events_shape() -> None:
@@ -31,6 +31,7 @@ def test_selected_event_can_map_to_agent_active_events_shape() -> None:
         "direction_hint": "mixed",
         "priority": "medium",
         "context_snapshot": {"conflicts": [{"kind": "direction_conflict"}]},
+        "trace": {"schema_version": "selected-v2"},
         "route": {"horizon": "15m"},
     }
     normalized = RedisActiveEventsProvider._normalize_active_event(  # noqa: SLF001
@@ -44,4 +45,5 @@ def test_selected_event_can_map_to_agent_active_events_shape() -> None:
     assert normalized["direction"] == "mixed"
     assert normalized["score"] == 0.6
     assert normalized["timeframe"] == "15m"
-    assert normalized["evidence"] == {"conflicts": [{"kind": "direction_conflict"}]}
+    assert dict(normalized["evidence"]).get("conflicts") == [{"kind": "direction_conflict"}]
+    assert dict(normalized["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"

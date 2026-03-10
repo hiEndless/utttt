@@ -9,6 +9,7 @@ from ..contracts import (
     Evidence,
     EventContextSnapshot,
     EventEnvelope,
+    EventTrace,
     PrioritizedEvent,
     SelectedEvent,
 )
@@ -157,6 +158,16 @@ class DeterministicFinalGate(FinalGate):
             route["review_required"] = True
             route["to_agent_server_new"] = False
             route["mixed_policy"] = "degrade_and_route_state_only"
+        trace = EventTrace(schema_version="selected-v2", produced_by="event_center_new")
+        if inp.trigger_event is not None and inp.trigger_event.trace is not None:
+            trace_raw = inp.trigger_event.trace
+            trace = EventTrace(
+                dedup_key=trace_raw.dedup_key,
+                correlation_id=trace_raw.correlation_id,
+                parent_id=trace_raw.parent_id,
+                produced_by=trace_raw.produced_by or "event_center_new",
+                schema_version=trace_raw.schema_version or "selected-v2",
+            )
         return SelectedEvent(
             asset=inp.context.asset,
             ts_ms=inp.context.ts_ms,
@@ -166,6 +177,6 @@ class DeterministicFinalGate(FinalGate):
             context_snapshot=inp.context,
             trigger_event=inp.trigger_event,
             source=None if inp.trigger_event is None else inp.trigger_event.source,
-            trace=None if inp.trigger_event is None else inp.trigger_event.trace,
+            trace=trace,
             route=route,
         )

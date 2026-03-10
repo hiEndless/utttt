@@ -29,6 +29,7 @@ def test_selected_event_schema_required_and_allowed_fields() -> None:
         "direction_hint",
         "priority",
         "context_snapshot",
+        "trace",
         "route",
     }
     assert set(props.keys()) == set(required) | {"trigger_event", "source", "trace"}
@@ -47,7 +48,8 @@ def test_selected_event_schema_optional_source_trace_shape() -> None:
     source = props.get("source") or {}
     trace = props.get("trace") or {}
     assert set((source.get("properties") or {}).keys()) == {"name", "category"}
-    assert "schema_version" in set((trace.get("properties") or {}).keys())
+    assert trace.get("required") == ["schema_version"]
+    assert (trace.get("properties") or {}).get("schema_version", {}).get("minLength") == 1
 
 
 def test_validate_selected_contract_reports_missing_required_fields() -> None:
@@ -60,12 +62,30 @@ def test_validate_selected_contract_reports_missing_required_fields() -> None:
             "direction_hint": "bullish",
             "priority": "high",
             "context_snapshot": {},
-            # 故意缺少 route
+            # 故意缺少 route / trace
         }
     ]
     report = validate_selected_contract(items)
     assert report["ok"] is False
     assert any(
-        e.get("error") == "missing_required_fields" and "route" in (e.get("fields") or [])
+        e.get("error") == "missing_required_fields" and "route" in (e.get("fields") or []) and "trace" in (e.get("fields") or [])
         for e in report["errors"]
     )
+
+
+def test_validate_selected_contract_reports_missing_trace_schema_version() -> None:
+    items = [
+        {
+            "asset": "ETHUSDT",
+            "ts_ms": 1,
+            "selected_type": "event.selected",
+            "direction_hint": "bullish",
+            "priority": "high",
+            "context_snapshot": {},
+            "trace": {},
+            "route": {},
+        }
+    ]
+    report = validate_selected_contract(items)
+    assert report["ok"] is False
+    assert any(e.get("error") == "missing_trace_schema_version" for e in report["errors"])
