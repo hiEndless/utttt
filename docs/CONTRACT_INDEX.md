@@ -1,6 +1,6 @@
 # UTaker 契约索引
 
-更新时间：2026-03-10
+更新时间：2026-03-11
 
 ## 1. 架构与总入口
 
@@ -32,6 +32,7 @@
 - `agent_server_new/docs/REFACTOR_PLAN_V2.md`
 - `agent_server_new/docs/runner_output_contract.md`
 - `agent_server_new/docs/runner_output.schema.json`
+- `scripts/check_state_to_agent_contract_guard.sh`（含 active_events 最小契约与 traceability 守卫）
 
 ## 6. execution_service
 
