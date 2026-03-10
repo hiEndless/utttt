@@ -7,7 +7,7 @@
       "type": "object",
       "required": ["mode", "long_position_size", "short_position_size", "net_position_size"],
       "properties": {
-        "mode": {"type": "string", "enum": ["one_way", "hedge"]},
+        "mode": {"$ref": "./position_mode.schema.json#/properties/mode"},
         "long_position_size": {"type": "number"},
         "short_position_size": {"type": "number"},
         "net_position_size": {"type": "number"}

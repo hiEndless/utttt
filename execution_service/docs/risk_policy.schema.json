@@ -19,7 +19,7 @@
     "max_long_position_size": {"type": "number", "minimum": 0},
     "max_short_position_size": {"type": "number", "minimum": 0},
     "max_drawdown_ratio": {"type": "number", "minimum": 0, "maximum": 1},
-    "position_mode": {"type": "string", "enum": ["one_way", "hedge"]},
+    "position_mode": {"$ref": "./position_mode.schema.json#/properties/position_mode"},
     "allow_dual_side": {"type": "boolean"},
     "min_available_balance": {"type": "number", "minimum": 0},
     "max_symbol_exposure_ratio": {"type": "number", "minimum": 0, "maximum": 1},

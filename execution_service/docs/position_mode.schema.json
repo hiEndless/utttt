@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PositionMode",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["one_way", "hedge"]
+    },
+    "position_mode": {
+      "type": "string",
+      "enum": ["one_way", "hedge"]
+    }
+  }
+}

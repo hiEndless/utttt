@@ -47,6 +47,7 @@
 - `execution_service/docs/signal_mode.schema.json`
 - `execution_service/docs/risk_checks.schema.json`
 - `execution_service/docs/rule_priority_order.schema.json`
+- `execution_service/docs/position_mode.schema.json`
 - `execution_service/docs/signal_scope.schema.json`
 - `execution_service/docs/position_before.schema.json`
 - `execution_service/docs/position_after_simulation.schema.json`

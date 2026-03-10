@@ -166,8 +166,8 @@
       "references": [
         {
           "schema": "execution_service/docs/risk_policy.schema.json",
-          "json_path": "properties.position_mode.enum",
-          "expected": ["one_way", "hedge"]
+          "json_path": "properties.position_mode.$ref",
+          "expected": "./position_mode.schema.json#/properties/position_mode"
         },
         {
           "schema": "execution_service/docs/risk_policy.schema.json",
@@ -433,6 +433,35 @@
           "schema": "execution_service/docs/position_before.schema.json",
           "json_path": "properties.position_before.required",
           "expected": ["mode", "long_position_size", "short_position_size", "net_position_size"]
+        },
+        {
+          "schema": "execution_service/docs/position_before.schema.json",
+          "json_path": "properties.position_before.properties.mode.$ref",
+          "expected": "./position_mode.schema.json#/properties/mode"
+        }
+      ]
+    },
+    {
+      "name": "PositionMode",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/position_mode.schema.json",
+      "code": "execution_service/domain/risk_rules.py",
+      "symbol": "position_mode",
+      "fields": [
+        "mode",
+        "position_mode"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/position_mode.schema.json",
+          "json_path": "properties.mode.enum",
+          "expected": ["one_way", "hedge"]
+        },
+        {
+          "schema": "execution_service/docs/position_mode.schema.json",
+          "json_path": "properties.position_mode.enum",
+          "expected": ["one_way", "hedge"]
         }
       ]
     },
