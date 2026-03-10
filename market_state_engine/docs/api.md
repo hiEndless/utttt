@@ -10,6 +10,10 @@
 
 消费状态层输出。
 
+MSL 契约文件：
+
+- `market_state_engine/docs/msl.schema.json`
+
 ## 接口列表
 
 ### `GET /internal/market-state/healthz`

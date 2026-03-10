@@ -1,0 +1,222 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MarketStateMSL",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "timestamp",
+    "symbol",
+    "market_regime",
+    "liquidity_state",
+    "positioning_state",
+    "volatility_state",
+    "risk_state",
+    "market_structure_state",
+    "key_levels",
+    "anomalies",
+    "summary"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "market_regime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trend",
+        "phase",
+        "timeframe_alignment",
+        "strength"
+      ],
+      "properties": {
+        "trend": {
+          "type": "string",
+          "enum": ["bullish", "bearish", "sideways", "unknown"]
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["impulse", "continuation", "exhaustion", "accumulation", "distribution", "unknown"]
+        },
+        "timeframe_alignment": {
+          "type": "string",
+          "enum": ["aligned", "mixed", "conflicting", "unknown"]
+        },
+        "strength": {
+          "type": "number",
+          "minimum": 0.0
+        }
+      }
+    },
+    "liquidity_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dominant_pressure",
+        "liquidity_risk",
+        "orderbook_bias",
+        "liquidation_proximity"
+      ],
+      "properties": {
+        "dominant_pressure": {
+          "type": "string",
+          "enum": ["buyers", "sellers", "balanced", "unknown"]
+        },
+        "liquidity_risk": {
+          "type": "string",
+          "enum": ["short_squeeze", "long_squeeze", "neutral", "unknown"]
+        },
+        "orderbook_bias": {
+          "type": "string",
+          "enum": ["bid_heavy", "ask_heavy", "neutral", "unknown"]
+        },
+        "liquidation_proximity": {
+          "type": "string",
+          "enum": ["above", "below", "both", "none", "unknown"]
+        }
+      }
+    },
+    "positioning_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "crowding",
+        "whale_bias",
+        "retail_bias",
+        "oi_trend"
+      ],
+      "properties": {
+        "crowding": {
+          "type": "string",
+          "enum": ["crowded_long", "crowded_short", "balanced", "unknown"]
+        },
+        "whale_bias": {
+          "type": "string",
+          "enum": ["long", "short", "neutral", "unknown"]
+        },
+        "retail_bias": {
+          "type": "string",
+          "enum": ["long", "short", "neutral", "unknown"]
+        },
+        "oi_trend": {
+          "type": "string",
+          "enum": ["expanding", "contracting", "flat", "unknown"]
+        }
+      }
+    },
+    "volatility_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "volatility_regime",
+        "expansion_risk",
+        "volatility_direction"
+      ],
+      "properties": {
+        "volatility_regime": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "unknown"]
+        },
+        "expansion_risk": {
+          "type": "string",
+          "enum": ["expanding", "compressing", "unknown"]
+        },
+        "volatility_direction": {
+          "type": "string",
+          "enum": ["upside", "downside", "neutral", "unknown"]
+        }
+      }
+    },
+    "risk_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cascade_risk",
+        "squeeze_probability",
+        "reversal_risk"
+      ],
+      "properties": {
+        "cascade_risk": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unknown"]
+        },
+        "squeeze_probability": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unknown"]
+        },
+        "reversal_risk": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unknown"]
+        }
+      }
+    },
+    "market_structure_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_strength",
+        "resistance_strength",
+        "range_state",
+        "trend_structure"
+      ],
+      "properties": {
+        "support_strength": {
+          "type": "string",
+          "enum": ["strong", "medium", "weak", "unknown"]
+        },
+        "resistance_strength": {
+          "type": "string",
+          "enum": ["strong", "medium", "weak", "unknown"]
+        },
+        "range_state": {
+          "type": "string",
+          "enum": ["breakout", "range", "breakdown", "unknown"]
+        },
+        "trend_structure": {
+          "type": "string",
+          "enum": ["hh_hl", "lh_ll", "mixed", "unknown"]
+        }
+      }
+    },
+    "key_levels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "major_support",
+        "major_resistance",
+        "liquidation_clusters"
+      ],
+      "properties": {
+        "major_support": {
+          "type": "array",
+          "items": {"type": "number"}
+        },
+        "major_resistance": {
+          "type": "array",
+          "items": {"type": "number"}
+        },
+        "liquidation_clusters": {
+          "type": "array",
+          "items": {"type": "number"}
+        }
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "summary": {
+      "type": "string"
+    }
+  }
+}

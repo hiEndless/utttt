@@ -25,6 +25,7 @@
 
 1. 给 MSL 增加独立 JSON Schema
 - 现在 MSL 主要靠 dataclass + 白名单测试，建议补全 `market_state_engine/docs/msl.schema.json`。
+- 状态：已落地（2026-03-11），并增加 `test_msl_schema_contract.py` 覆盖 `ok/data_unavailable` 两条分支。
 
 2. 统一时间字段命名规范
 - 事件/流转层统一 `ts_ms`；
@@ -43,4 +44,3 @@
 5. risk flags 结构标准化
 - 同名字段禁止异构（例如 `risk_flags` 同时出现 `dict/list`）。
 - 约定：`risk_flags` 统一为 `array[string]`，若需数值明细放 `risk_metrics`。
-

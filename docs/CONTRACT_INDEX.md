@@ -17,6 +17,7 @@
 
 - `market_state_engine/docs/api.md`
 - `market_state_engine/docs/boundaries.md`
+- `market_state_engine/docs/msl.schema.json`
 
 ## 4. event_center_new
 
