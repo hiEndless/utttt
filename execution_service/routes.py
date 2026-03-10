@@ -90,4 +90,14 @@ def create_router(service: ExecutionService) -> APIRouter:
         except Exception as exc:  # pragma: no cover
             raise HTTPException(status_code=502, detail=f"execution_debug_state_failed:{exc}") from exc
 
+    @router.get("/debug/confidence-metrics")
+    async def confidence_metrics() -> Dict[str, Any]:
+        now_ms = int(time.time() * 1000)
+        return {
+            "service": "execution_service",
+            "confidence_migration_metrics": service.get_confidence_migration_metrics(),
+            "ts": now_ms,
+            "ts_ms": now_ms,
+        }
+
     return router

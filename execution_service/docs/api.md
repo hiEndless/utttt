@@ -299,6 +299,33 @@
   - `failed/skipped/decided/filled/canceled/rejected` 为终态，仅允许保持原状态
   - 非法跃迁会被拒绝并记录中文告警日志，不覆盖已存终态
 
+## Confidence 迁移指标
+
+- `GET /internal/execution/debug/confidence-metrics`
+
+返回示例：
+
+```json
+{
+  "service": "execution_service",
+  "confidence_migration_metrics": {
+    "decide_requests_total": 3,
+    "confidence_only_requests": 1,
+    "decision_confidence_requests": 2,
+    "confidence_alias_mismatch_rejections": 1
+  },
+  "ts": 1760000000000,
+  "ts_ms": 1760000000000
+}
+```
+
+指标说明：
+- `decide_requests_total`: `/decide` 请求总数（进程内计数）。
+- `confidence_only_requests`: 仅提供 `confidence`（未提供 `decision_confidence`）的请求数。
+- `decision_confidence_requests`: 提供 `decision_confidence` 的请求数（可同时带 `confidence`）。
+- `confidence_alias_mismatch_rejections`: 因双字段不一致被拒绝（400）的次数。
+- 当前为进程内内存指标，重启后清零；用于迁移阶段联调观察，不作为长期计费/审计指标。
+
 ## 状态提供器模式
 
 `execution_service` 支持两种运行模式：
@@ -371,7 +398,7 @@
 
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
 | --- | --- | --- | --- | --- | --- |
-| DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
+| DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `decision_confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
 | ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `policy_snapshot` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
 | DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `policy_snapshot` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
 | RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `max_account_notional` `max_margin_ratio` `max_daily_loss` `max_consecutive_loss_count` `simulation_step_size` `rule_priority_order` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |

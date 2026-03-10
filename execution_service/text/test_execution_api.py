@@ -106,6 +106,74 @@ def test_decide_rejects_confidence_alias_mismatch() -> None:
     assert "不一致" in str(response.json().get("detail") or "")
 
 
+def test_confidence_migration_metrics_exposed_and_counted() -> None:
+    client = TestClient(create_app())
+    r0 = client.get("/internal/execution/debug/confidence-metrics")
+    assert r0.status_code == 200
+    m0 = dict(r0.json().get("confidence_migration_metrics") or {})
+    assert m0.get("decide_requests_total") == 0
+    assert m0.get("confidence_only_requests") == 0
+    assert m0.get("decision_confidence_requests") == 0
+    assert m0.get("confidence_alias_mismatch_rejections") == 0
+
+    r1 = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-metrics-001",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert r1.status_code == 200
+
+    r2 = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-metrics-002",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert r2.status_code == 200
+
+    r3 = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-metrics-003",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "low", "score": 0.20},
+            "decision_confidence": {"level": "high", "score": 0.90},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert r3.status_code == 400
+
+    r4 = client.get("/internal/execution/debug/confidence-metrics")
+    assert r4.status_code == 200
+    body = r4.json()
+    metrics = dict(body.get("confidence_migration_metrics") or {})
+    assert metrics["decide_requests_total"] == 3
+    assert metrics["confidence_only_requests"] == 1
+    assert metrics["decision_confidence_requests"] == 2
+    assert metrics["confidence_alias_mismatch_rejections"] == 1
+    assert body["ts_ms"] == body["ts"]
+
+
 def test_debug_state_success() -> None:
     client = TestClient(create_app())
     response = client.get("/internal/execution/debug/state/binance/ETHUSDT")

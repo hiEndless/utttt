@@ -167,6 +167,9 @@
 3. `confidence_alias_mismatch_rejections`
 - 定义：因 `confidence != decision_confidence` 导致的 `400` 次数。
 
+观测入口：
+- `GET /internal/execution/debug/confidence-metrics`（进程内计数，重启清零）
+
 ### 回滚动作（执行级）
 
 1. 若上线 v2 后发现兼容性问题：

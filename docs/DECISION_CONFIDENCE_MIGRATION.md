@@ -55,6 +55,7 @@
 1. 文档
 - `execution_service/docs/api.md`
 - `docs/CONTRACTS_QUICK_REF.md`
+- `execution_service/docs/migration.md`
 
 2. 契约
 - `execution_service/docs/decision_intent.schema.json`
@@ -63,3 +64,6 @@
 3. 测试
 - `execution_service/text/test_decision_intent_contract.py`
 - `execution_service/text/test_decision_intent_schema.py`
+
+4. 观测接口
+- `GET /internal/execution/debug/confidence-metrics`

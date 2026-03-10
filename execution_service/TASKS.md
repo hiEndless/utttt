@@ -119,3 +119,4 @@
 - [x] Task 117: DecisionIntent 增加 `confidence/decision_confidence` 一致性校验（双字段不一致直接拒绝），避免静默语义漂移。
 - [x] Task 118: 增加 API 级回归测试覆盖 `confidence/decision_confidence` 不一致返回 `400`，并在 schema 描述中声明该应用层约束。
 - [x] Task 119: 在 migration 文档增加 `decision_confidence` v2 切换门槛（30 天观测指标）与回滚动作，形成可执行发布策略。
+- [x] Task 120: 增加 `confidence` 迁移观测接口（`/debug/confidence-metrics`）与 API 回归测试，覆盖三类迁移计数。
