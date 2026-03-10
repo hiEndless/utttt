@@ -142,7 +142,8 @@ event_center_new/
 说明：
 
 - `event_center_new` 当前以协议与可组合模块为主（contracts + protocols + in-memory 组件）
-- 运行时 `runner` 与持久化 `storage adapter` 仍待补齐
+- 已提供最小运行时 `EventPipelineRunner` 与 `event_center_new/main.py` 示例入口（内存 source/store）
+- 生产级存储适配器（Redis/Kafka）仍待补齐
 - 对外语义以 `SelectedEvent/EventWindow` 为主，不做市场状态推理
 
 ## 必须切断的依赖
@@ -299,10 +300,10 @@ event_center_new/
 
 ## 当前版本的主要问题
 
-当前版本相对目标架构，主要问题是运行时能力尚未闭环：
+当前版本相对目标架构，主要问题是生产级运行能力尚未闭环：
 
-1. 缺统一 `runner`（source -> normalize -> evidence -> correlate -> prioritize -> select）
-2. 缺生产级存储适配器（raw/normalized/evidence/context/final 分层落盘）
+1. 最小 `runner` 已有，但缺长期稳定运行编排（调度/容错/监控）
+2. 缺生产级存储适配器（raw/normalized/evidence/context/selected 分层落盘）
 3. 缺 replay 工具链（按时间窗重放并做差异比较）
 
 ## 收敛后的定义

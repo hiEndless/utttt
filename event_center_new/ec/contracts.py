@@ -95,6 +95,7 @@ class SelectedEvent:
     asset: str
     ts_ms: int
     selected_type: str
+    direction_hint: Direction
     priority: Priority
     context_snapshot: EventContextSnapshot
     trigger_event: EventEnvelope | None = None
