@@ -129,6 +129,80 @@ def test_trade_event_workflow_calls_execution_decider():
         assert decider.called is True
         assert decider.payload["decision_id"] == "evt-exec-001"
         assert decider.payload["direction_intent"] == "long"
+        assert "execution_hint" not in decider.payload
+        assert "adaptive_profile" not in decider.payload
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_fields():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
+        )
+        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
+        monkeypatch.setattr(
+            mod,
+            "risk_gate",
+            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_execution_plan",
+            lambda **kwargs: ExecutionPlan(
+                action="add",
+                direction="long",
+                allowance=kwargs["allowance"],
+                confidence=Confidence(level="medium", score=0.7),
+                sizing={"mode": "ratio", "order_size_ratio": 0.1},
+                notes="ok",
+            ),
+        )
+
+        decider = _ExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=decider,
+            recorder=None,
+            ai_adaptive_enabled=True,
+            ai_adaptive_mode="recommend",
+        )
+        out = await wf.run(
+            TradeEventInput(
+                event_id="evt-exec-002",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.action == "add"
+        assert decider.called is True
+        assert decider.payload["execution_hint"]["adaptive_mode"] == "recommend"
+        assert decider.payload["adaptive_profile_version"] == "reserved-v0"
+        assert decider.payload["adaptive_explain"]["status"] == "reserved_only"
 
     import pytest
 

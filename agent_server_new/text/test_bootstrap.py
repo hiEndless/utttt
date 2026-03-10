@@ -24,6 +24,8 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert wf._execution_decider is None  # noqa: SLF001
     assert wf._symbol_memory_provider is None  # noqa: SLF001
     assert wf._symbol_memory_recorder is None  # noqa: SLF001
+    assert wf._ai_adaptive_enabled is False  # noqa: SLF001
+    assert wf._ai_adaptive_mode == "observe"  # noqa: SLF001
     assert wf._market_state._base_url == "http://localhost:8300"  # noqa: SLF001
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
 
@@ -63,3 +65,11 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkey
     wf = create_trade_event_workflow_from_env()
     assert wf._symbol_memory_provider.__class__.__name__ == "RedisSymbolMemoryAdapter"  # noqa: SLF001
     assert wf._symbol_memory_recorder.__class__.__name__ == "RedisSymbolMemoryAdapter"  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_enables_ai_adaptive_flags(monkeypatch):
+    monkeypatch.setenv("AGENT_AI_ADAPTIVE_ENABLED", "true")
+    monkeypatch.setenv("AGENT_AI_ADAPTIVE_MODE", "bounded_apply")
+    wf = create_trade_event_workflow_from_env()
+    assert wf._ai_adaptive_enabled is True  # noqa: SLF001
+    assert wf._ai_adaptive_mode == "bounded_apply"  # noqa: SLF001

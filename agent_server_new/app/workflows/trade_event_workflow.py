@@ -86,6 +86,8 @@ class TradeEventWorkflow:
         memory_recent_topk: int = 5,
         memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
         memory_dedup_key: str = "event_id",
+        ai_adaptive_enabled: bool = False,
+        ai_adaptive_mode: str = "observe",
         horizon_policy_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
@@ -98,6 +100,9 @@ class TradeEventWorkflow:
         self._memory_recent_topk = max(1, int(memory_recent_topk))
         self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
         self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
+        self._ai_adaptive_enabled = bool(ai_adaptive_enabled)
+        mode = str(ai_adaptive_mode or "observe").strip().lower()
+        self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
@@ -206,6 +211,8 @@ class TradeEventWorkflow:
                 event=event,
                 plan=plan,
                 cross_horizon=ch,
+                ai_adaptive_enabled=self._ai_adaptive_enabled,
+                ai_adaptive_mode=self._ai_adaptive_mode,
             )
             try:
                 execution_result = await self._execution_decider.decide(decision_payload)
@@ -374,10 +381,12 @@ def _build_decision_intent_payload(
     event: TradeEventInput,
     plan: ExecutionPlan,
     cross_horizon: Dict[str, str],
+    ai_adaptive_enabled: bool = False,
+    ai_adaptive_mode: str = "observe",
 ) -> Dict[str, Any]:
     """把 agent 内部 ExecutionPlan 映射为 execution_service 的 DecisionIntent。"""
 
-    return {
+    payload = {
         "decision_id": str(event.event_id),
         "exchange": str(event.exchange),
         "symbol": str(event.symbol),
@@ -392,6 +401,16 @@ def _build_decision_intent_payload(
             "agent_notes": str(plan.notes or ""),
         },
     }
+    if bool(ai_adaptive_enabled):
+        payload["execution_hint"] = {
+            "mode": "reserved",
+            "adaptive_mode": str(ai_adaptive_mode or "observe"),
+            "apply_scope": "none",
+        }
+        payload["adaptive_profile"] = {}
+        payload["adaptive_profile_version"] = "reserved-v0"
+        payload["adaptive_explain"] = {"status": "reserved_only"}
+    return payload
 
 
 def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:

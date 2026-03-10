@@ -159,6 +159,10 @@ signal_event + active_events + MSL
   - recent memory 注入的时间窗口（毫秒，默认：`86400000`）
 - `AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY`
   - recent memory 去重键（默认：`event_id`）
+- `AGENT_AI_ADAPTIVE_ENABLED`
+  - 是否启用 AI 自适应策略预留字段输出（默认：`false`）
+- `AGENT_AI_ADAPTIVE_MODE`
+  - 预留模式（`observe|recommend|bounded_apply`，默认：`observe`）
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`

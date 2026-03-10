@@ -66,6 +66,13 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     memory_recent_topk = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TOPK", 5, min_value=1)
     memory_recent_ttl_ms = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", 86_400_000, min_value=0)
     memory_dedup_key = str(os.getenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id") or "event_id").strip() or "event_id"
+    ai_adaptive_enabled = str(os.getenv("AGENT_AI_ADAPTIVE_ENABLED", "false") or "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=StubPositionContextProvider(),
@@ -77,4 +84,6 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         memory_recent_topk=memory_recent_topk,
         memory_recent_ttl_ms=memory_recent_ttl_ms,
         memory_dedup_key=memory_dedup_key,
+        ai_adaptive_enabled=ai_adaptive_enabled,
+        ai_adaptive_mode=ai_adaptive_mode,
     )
