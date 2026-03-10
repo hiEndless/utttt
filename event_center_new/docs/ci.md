@@ -4,6 +4,7 @@
 
 ## 1. CI 触发矩阵
 
+- 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
 - quick（严格 + 宽松并行）：
   - 工作流：`.github/workflows/event-center-quick.yml`
   - 触发：`pull_request` / `push(main)`（按路径过滤）

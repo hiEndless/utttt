@@ -155,6 +155,7 @@ event_center_new(signal_event + active_events)
 - CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
+- GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
 - CI 失败排障入口：`event_center_new/docs/ci.md`
 - Feature API：`feature_service/docs/api.md`
 - Feature 边界：`feature_service/docs/boundaries.md`

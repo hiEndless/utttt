@@ -179,6 +179,7 @@ agent_server_new -> execution_service
 - CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
+- GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
 - CI 失败排障入口：`event_center_new/docs/ci.md`
 - Feature API：`feature_service/docs/api.md`
 - State API：`market_state_engine/docs/api.md`

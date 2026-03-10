@@ -11,14 +11,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-      - name: 安装 Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: 安装 Python 与依赖
+        uses: ./.github/actions/setup-utaker-python
       - name: 运行 event_center 全量守卫
         id: full_guard
         continue-on-error: true

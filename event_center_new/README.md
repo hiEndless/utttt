@@ -441,6 +441,7 @@ CI 便捷入口：
 - `scripts/ci_event_center_quick_lenient.sh`
 - `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫；失败自动上传 strict/lenient 诊断 artifact）
 - `.github/workflows/event-center-full.yml`（GitHub Actions：每日定时 + 手动触发，全量 strict 守卫；失败自动上传诊断 artifact）
+- `.github/actions/setup-utaker-python/action.yml`（quick/full 复用的 Python+依赖初始化 action）
 - `event_center_new/docs/ci.md`（CI 触发矩阵、失败分类与标准处置）
 
 CI 失败排障请直接查看 `event_center_new/docs/ci.md`，README 仅保留入口。

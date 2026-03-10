@@ -1,0 +1,25 @@
+name: setup-utaker-python
+description: 统一安装 UTaker CI 所需的 Python 与依赖
+
+inputs:
+  python-version:
+    description: Python 版本
+    required: false
+    default: "3.11"
+  requirements-file:
+    description: requirements 文件路径
+    required: false
+    default: "requirements.txt"
+
+runs:
+  using: composite
+  steps:
+    - name: 安装 Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: 安装依赖
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r "${{ inputs.requirements-file }}"
