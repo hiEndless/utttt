@@ -369,3 +369,4 @@ python3 -m event_center_new.replay_main \
 `selected_contract` 校验规则直接复用 `event_center_new/docs/selected_event.schema.json`。
 报告还包含 `stream_presence` 与 `missing_streams`，可用于 CI 在 `ec:raw/ec:selected` 缺失时快速失败。
 仓库守卫 `scripts/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
+仓库守卫 `scripts/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。

@@ -7,7 +7,7 @@ if ! test -f event_center_new/docs/selected_event.schema.json; then
   exit 1
 fi
 
-echo "[2/2] 运行 selected_event schema 契约测试"
+echo "[2/2] 运行 selected_event schema 契约测试（含缺必填字段行为断言）"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q event_center_new/text/test_selected_event_schema_contract.py
 

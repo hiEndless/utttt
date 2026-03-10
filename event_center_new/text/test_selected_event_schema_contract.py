@@ -8,6 +8,8 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from event_center_new.ec.pipeline.replay_cli import validate_selected_contract
+
 
 def _load_schema() -> dict:
     path = Path(PROJECT_ROOT) / "event_center_new" / "docs" / "selected_event.schema.json"
@@ -37,3 +39,24 @@ def test_selected_event_schema_core_enums() -> None:
     props = schema.get("properties") or {}
     assert props.get("direction_hint", {}).get("enum") == ["bullish", "bearish", "neutral", "mixed"]
     assert props.get("priority", {}).get("enum") == ["low", "medium", "high"]
+
+
+def test_validate_selected_contract_reports_missing_required_fields() -> None:
+    # 中文注释：行为断言，确保契约检查在缺必填字段时会返回结构化错误。
+    items = [
+        {
+            "asset": "ETHUSDT",
+            "ts_ms": 1,
+            "selected_type": "event.selected",
+            "direction_hint": "bullish",
+            "priority": "high",
+            "context_snapshot": {},
+            # 故意缺少 route
+        }
+    ]
+    report = validate_selected_contract(items)
+    assert report["ok"] is False
+    assert any(
+        e.get("error") == "missing_required_fields" and "route" in (e.get("fields") or [])
+        for e in report["errors"]
+    )
