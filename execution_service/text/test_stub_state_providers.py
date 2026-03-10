@@ -34,3 +34,11 @@ def test_stub_account_provider_with_exchange_override() -> None:
     assert state["current_drawdown_ratio"] == 0.11
     assert state["account_id"] == "main"
     assert state["risk_state"] == "normal"
+
+
+def test_stub_account_provider_normalizes_invalid_risk_state() -> None:
+    provider = StubAccountStateProvider(
+        exchange_overrides={"binance": {"risk_state": "XXX_STATE"}}
+    )
+    state = asyncio.run(provider.get_account_state("binance", account_id="main"))
+    assert state["risk_state"] == "normal"

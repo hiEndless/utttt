@@ -121,6 +121,7 @@ execution_service/
 - 执行裁决已增加标准风险状态 `risk_state`（`normal|warn|reduce_only|frozen`），并回写到 `decision_state`。
 - `risk_state` 已增加前态记忆与降级防抖：上一拍为 `frozen/reduce_only` 时，不会单拍直接回落 `normal`，最少过渡到 `warn`。
 - Redis 账户 provider 已对 `risk_state` 做枚举归一化，非法值自动回退 `normal`，避免异常配置污染风控态势。
+- Stub 账户 provider 已采用同样的 `risk_state` 归一化策略，确保本地联调与 Redis 线上行为一致。
 - `decision_state` 已回写 `rule_debug`，可通过 debug 接口按 `decision_id` 回看最近命中规则链路。
 
 ## 最小接口（当前）

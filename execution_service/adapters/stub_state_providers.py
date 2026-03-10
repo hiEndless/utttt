@@ -3,6 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping
 
+RISK_STATES = {"normal", "warn", "reduce_only", "frozen"}
+
+
+def _normalize_risk_state(value: Any) -> str:
+    candidate = str(value or "normal").strip().lower()
+    if candidate in RISK_STATES:
+        return candidate
+    # 中文注释：stub 与 redis 模式统一 risk_state 归一化策略，避免联调结果不一致。
+    return "normal"
+
 
 @dataclass
 class StubPositionStateProvider:
@@ -62,6 +72,7 @@ class StubAccountStateProvider:
         override = self.exchange_overrides.get(exchange)
         if override:
             state.update(override)
+        state["risk_state"] = _normalize_risk_state(state.get("risk_state"))
         state["exchange"] = exchange
         state["account_id"] = account_id
         return state
