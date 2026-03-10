@@ -147,7 +147,7 @@ event_center_new/
 - `event_center_new` 当前以协议与可组合模块为主（contracts + protocols + in-memory 组件）
 - 已提供最小运行时 `EventPipelineRunner` 与 `event_center_new/main.py` 示例入口（内存 source/store）
 - 已提供 Redis 分层写入适配器（`ec/storage/redis.py`），支持写入 `ec:raw/ec:normalized/ec:evidence/ec:context/ec:selected`
-- Kafka 等其他存储适配器仍待补齐
+- 当前仅维护 memory/redis 存储适配器，其他适配器暂不纳入近期计划
 - 已提供最小 `event_replay` 工具（`ec/pipeline/replay.py`），可按输入事件重放并比较 selected 差异
 - 对外语义以 `SelectedEvent/EventWindow` 为主，不做市场状态推理
 
@@ -428,5 +428,6 @@ python3 -m event_center_new.replay_main \
 可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
 该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
 可用 `bash scripts/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫 + 接线检查）。
+接线检查策略可选：`--strict-wiring`（默认）或 `--lenient-wiring`。
 全仓库守卫支持 event_center 快速模式：`bash scripts/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
 如需跑 event_center 全量子守卫，可用：`bash scripts/check_new_arch_guards.sh --event-center-only`。
