@@ -20,4 +20,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: 运行 event_center 全量守卫
-        run: bash scripts/check_new_arch_guards.sh --event-center-only --strict-wiring
+        id: full_guard
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/event_center_ci
+          bash scripts/check_new_arch_guards.sh --event-center-only --strict-wiring | tee /tmp/event_center_ci/full_guard.log
+      - name: 上传失败诊断日志
+        if: ${{ steps.full_guard.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-center-full-diagnostics
+          path: /tmp/event_center_ci/
+          if-no-files-found: warn
+      - name: 失败时终止任务
+        if: ${{ steps.full_guard.outcome == 'failure' }}
+        run: |
+          echo "event_center full guard failed, see uploaded artifact: event-center-full-diagnostics"
+          exit 1

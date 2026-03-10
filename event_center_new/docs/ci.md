@@ -10,6 +10,7 @@
 - full（全量严格）：
   - 工作流：`.github/workflows/event-center-full.yml`
   - 触发：`workflow_dispatch` / 每日定时 `cron`
+  - 失败诊断：自动上传 artifact `event-center-full-diagnostics`（包含 `full_guard.log`）
 
 ## 2. 本地等价命令
 
