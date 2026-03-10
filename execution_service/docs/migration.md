@@ -105,6 +105,7 @@
 82. `rule_debug` 已增加 `previous_risk_state/current_risk_state`，支持风险状态迁移审计与回放
 83. `rule_debug` 已增加 `risk_state_changed` 布尔字段，支持快速筛选风险态迁移事件
 84. `rule_debug` 已增加 `risk_state_change_reason` 标准原因码，支持风险态迁移可解释回放
+85. `rule_debug` 已增加 `risk_state_change_reason_zh` 中文解释字段，便于日志与告警直接展示
 
 ## 关键收敛决议（冻结）
 

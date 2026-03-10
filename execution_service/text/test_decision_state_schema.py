@@ -33,6 +33,7 @@ def test_decision_state_schema_samples() -> None:
             "current_risk_state": "normal",
             "risk_state_changed": False,
             "risk_state_change_reason": "default_normal",
+            "risk_state_change_reason_zh": "未命中高风险条件，风险状态保持 normal",
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {

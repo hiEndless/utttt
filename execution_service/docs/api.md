@@ -126,6 +126,7 @@
     - `previous_risk_state/current_risk_state`：风险状态迁移审计字段（前态 -> 当前态）
     - `risk_state_changed`：布尔值，表示本次是否发生风险状态迁移
     - `risk_state_change_reason`：标准原因码（`reject_frozen|reject_reduce_only|pressure_warn|hysteresis_soften|default_normal`）
+    - `risk_state_change_reason_zh`：与原因码对应的中文解释
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
     - `evaluation_trace`：按规则顺序记录每条规则的 `order`、`scope`、`pass/fail`、`value/threshold` 与 `note_zh`
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`

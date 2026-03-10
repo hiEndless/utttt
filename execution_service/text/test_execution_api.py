@@ -151,6 +151,8 @@ def test_debug_state_with_decision_id() -> None:
         "hysteresis_soften",
         "default_normal",
     }
+    assert isinstance(data["decision_state"]["rule_debug"].get("risk_state_change_reason_zh"), str)
+    assert data["decision_state"]["rule_debug"]["risk_state_change_reason_zh"]
     assert isinstance(data["decision_state"]["rule_debug"].get("matched_at_ms"), int)
     assert isinstance(data["decision_state"]["rule_debug"].get("evaluation_trace"), list)
     assert data["decision_state"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}

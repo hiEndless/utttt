@@ -52,6 +52,7 @@ def test_risk_result_builder_builds_signal_scope_and_positions() -> None:
     assert signal["rule_debug"]["current_risk_state"] == "normal"
     assert signal["rule_debug"]["risk_state_changed"] is False
     assert signal["rule_debug"]["risk_state_change_reason"] == "default_normal"
+    assert signal["rule_debug"]["risk_state_change_reason_zh"] == "未命中高风险条件，风险状态保持 normal"
     assert isinstance(signal["rule_debug"]["matched_at_ms"], int)
     assert signal["rule_debug"]["matched_at_ms"] > 0
     assert signal["rule_debug"]["evaluation_trace"] == []
@@ -106,5 +107,6 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
     assert signal["rule_debug"]["current_risk_state"] == "normal"
     assert signal["rule_debug"]["risk_state_changed"] is False
     assert signal["rule_debug"]["risk_state_change_reason"] == "default_normal"
+    assert signal["rule_debug"]["risk_state_change_reason_zh"] == "未命中高风险条件，风险状态保持 normal"
     assert isinstance(signal["rule_debug"]["matched_at_ms"], int)
     assert len(signal["rule_debug"]["evaluation_trace"]) == 2

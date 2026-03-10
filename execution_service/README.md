@@ -117,6 +117,7 @@ execution_service/
 - `rule_debug` 已增加 `previous_risk_state/current_risk_state`，用于风险状态迁移审计（前态 -> 当前态）。
 - `rule_debug` 已增加 `risk_state_changed`，可直接判断本次是否发生风险状态迁移。
 - `rule_debug` 已增加 `risk_state_change_reason` 标准原因码（如 `reject_frozen/hysteresis_soften`），提升风险态迁移可解释性。
+- `rule_debug` 已增加 `risk_state_change_reason_zh` 中文解释，便于日志与告警系统直接展示。
 - `rule_debug` 已增加 `evaluation_trace`，可回放每条规则的 pass/fail 与值阈值轨迹。
 - `evaluation_trace` 已增加 `note_zh`，每条规则均输出中文说明，便于值班排障。
 - `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度。

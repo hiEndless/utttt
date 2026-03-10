@@ -90,7 +90,7 @@
     },
     "rule_debug": {
       "type": "object",
-      "required": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "matched_at_ms"],
+      "required": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "risk_state_change_reason_zh", "matched_at_ms"],
       "properties": {
         "hit_rule": {"type": "string", "minLength": 1},
         "rule_priority_order": {
@@ -103,6 +103,7 @@
         "current_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
         "risk_state_changed": {"type": "boolean"},
         "risk_state_change_reason": {"type": "string", "enum": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]},
+        "risk_state_change_reason_zh": {"type": "string", "minLength": 1},
         "matched_at_ms": {"type": "integer", "minimum": 1},
         "evaluation_trace": {
           "type": "array",
