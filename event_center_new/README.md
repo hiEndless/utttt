@@ -357,6 +357,7 @@ python3 -m event_center_new.replay_main \
   --end-ms 1773154999999 \
   --ignore-field ts_ms \
   --ignore-field trigger_event.ts_ms \
+  --fail-on-missing-stream \
   --fail-on-contract \
   --fail-on-diff \
   --output /tmp/event_replay_report.json
@@ -366,3 +367,4 @@ python3 -m event_center_new.replay_main \
 可快速判断两轮 selected 是否一致，再结合 `diffs` 做字段级定位。
 报告同时包含 `selected_contract`（顶层字段白名单/必填校验），可提前发现线上 selected 契约漂移。
 `selected_contract` 校验规则直接复用 `event_center_new/docs/selected_event.schema.json`。
+报告还包含 `stream_presence` 与 `missing_streams`，可用于 CI 在 `ec:raw/ec:selected` 缺失时快速失败。

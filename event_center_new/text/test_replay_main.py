@@ -95,3 +95,27 @@ def test_replay_main_writes_output(monkeypatch, tmp_path: Path) -> None:  # noqa
     assert code == 0
     assert out.is_file()
     assert out.read_text(encoding="utf-8").strip()
+
+
+def test_replay_main_fail_on_missing_stream(monkeypatch) -> None:  # noqa: ANN001
+    monkeypatch.setitem(sys.modules, "redis", _FakeRedisModule())
+    monkeypatch.setattr(
+        replay_main,
+        "run_replay_report",
+        lambda *args, **kwargs: {  # noqa: ARG005
+            "ok": True,
+            "diffs": [],
+            "selected_contract": {"ok": True},
+            "missing_streams": ["selected"],
+        },
+    )
+    code = replay_main.main(
+        [
+            "--start-ms",
+            "1",
+            "--end-ms",
+            "2",
+            "--fail-on-missing-stream",
+        ]
+    )
+    assert code == 1

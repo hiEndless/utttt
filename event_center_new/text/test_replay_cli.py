@@ -34,6 +34,9 @@ class _FakeRedisRange:
             out = out[:count]
         return out
 
+    def exists(self, name: str) -> int:
+        return 1 if name in self._streams else 0
+
 
 def _sample_event(ts_ms: int) -> EventEnvelope:
     return EventEnvelope(
@@ -139,3 +142,15 @@ def test_run_replay_report_selected_contract_invalid_when_extra_field_present() 
     assert report["selected_contract"]["ok"] is False
     assert report["ok"] is False
     assert any(e.get("error") == "unexpected_fields" for e in report["selected_contract"]["errors"])
+
+
+def test_run_replay_report_marks_missing_streams() -> None:
+    now_ms = int(time.time() * 1000)
+    event = _sample_event(now_ms)
+    fake = _FakeRedisRange()
+    fake.add("ec:raw", f"{now_ms}-1", asdict(event))
+
+    report = run_replay_report(fake, start_ms=now_ms - 1, end_ms=now_ms + 1)
+    assert report["stream_presence"]["raw"] == "present"
+    assert report["stream_presence"]["selected"] == "missing"
+    assert report["missing_streams"] == ["selected"]

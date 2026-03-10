@@ -23,6 +23,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", default="", help="可选：把报告写入指定文件路径")
     parser.add_argument("--fail-on-contract", action="store_true", help="selected 契约不通过时返回非 0")
     parser.add_argument("--fail-on-diff", action="store_true", help="存在 diff 时返回非 0")
+    parser.add_argument("--fail-on-missing-stream", action="store_true", help="检测到缺失 stream 时返回非 0")
     parser.add_argument("--compact", action="store_true", help="输出紧凑 JSON")
     return parser
 
@@ -53,9 +54,12 @@ def main(argv: list[str] | None = None) -> int:
         Path(output_path).write_text(rendered + "\n", encoding="utf-8")
     contract_ok = bool((report.get("selected_contract") or {}).get("ok"))
     has_diff = bool(report.get("diffs"))
+    missing_streams = list(report.get("missing_streams") or [])
     if args.fail_on_contract and (not contract_ok):
         return 1
     if args.fail_on_diff and has_diff:
+        return 1
+    if args.fail_on_missing_stream and missing_streams:
         return 1
     return 0 if report.get("ok") else 1
 

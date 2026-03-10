@@ -13,6 +13,9 @@ class RedisRangeClient(Protocol):
     def xrange(self, name: str, min: str = "-", max: str = "+", count: int | None = None):  # noqa: A002, ANN201
         ...
 
+    def exists(self, name: str):  # noqa: ANN201
+        ...
+
 
 def _selected_schema_path() -> Path:
     return Path(__file__).resolve().parents[2] / "docs" / "selected_event.schema.json"
@@ -50,6 +53,11 @@ def run_replay_report(
     selected_stream: str = "ec:selected",
     ignore_fields: list[str] | None = None,
 ) -> dict[str, Any]:
+    stream_presence = {
+        "raw": _stream_presence(client, raw_stream),
+        "selected": _stream_presence(client, selected_stream),
+    }
+    missing_streams = [name for name, status in stream_presence.items() if status == "missing"]
     raw_events = load_payloads_by_window(
         client,
         stream=raw_stream,
@@ -79,6 +87,8 @@ def run_replay_report(
             "raw": raw_stream,
             "selected": selected_stream,
         },
+        "stream_presence": stream_presence,
+        "missing_streams": missing_streams,
         "counts": {
             "raw_events": len(raw_events),
             "online_selected": len(selected_online),
@@ -164,6 +174,18 @@ def _stable_signature(items: list[dict[str, Any]]) -> str:
     normalized = sorted(json.dumps(item, ensure_ascii=False, sort_keys=True) for item in items)
     joined = "\n".join(normalized)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def _stream_presence(client: RedisRangeClient, stream: str) -> str:
+    """检查 stream 是否存在；无法判断时返回 unknown。"""
+
+    exists = getattr(client, "exists", None)
+    if not callable(exists):
+        return "unknown"
+    try:
+        return "present" if int(exists(stream)) > 0 else "missing"
+    except Exception:
+        return "unknown"
 
 
 def validate_selected_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
