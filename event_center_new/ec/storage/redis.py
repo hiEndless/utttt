@@ -9,6 +9,9 @@ class RedisClientLike(Protocol):
     def xadd(self, name: str, fields: dict[str, str], maxlen: int | None = None, approximate: bool = True):  # noqa: ANN201
         ...
 
+    def set(self, name: str, value: str):  # noqa: ANN201
+        ...
+
 
 @dataclass(frozen=True)
 class RedisLayerStoreConfig:
@@ -51,6 +54,10 @@ class RedisLayerStore:
 
     def write_selected(self, payload: dict[str, Any]) -> None:
         self._write(self._cfg.selected_stream, payload)
+
+    def write_runner_health(self, payload: dict[str, Any], *, key: str = "ec:runner:health") -> None:
+        # 中文注释：健康信号走 KV，便于运维侧直接 GET，不需要消费 stream。
+        self._client.set(key, json.dumps(payload, ensure_ascii=False))
 
     def _write(self, stream: str, payload: dict[str, Any]) -> None:
         # 中文注释：统一 JSON 序列化入流，便于后续回放工具按层读取并反序列化。

@@ -95,16 +95,30 @@ def main() -> None:
     interval_ms = _read_int_env("EVENT_CENTER_RUN_INTERVAL_MS", default=1000)
     max_ticks = _read_int_env("EVENT_CENTER_RUN_MAX_TICKS", default=0)
     stop_on_error = _read_bool_env("EVENT_CENTER_STOP_ON_ERROR", default=False)
+    health_key = str(os.getenv("EVENT_CENTER_HEALTH_KEY", "ec:runner:health") or "ec:runner:health").strip()
     if run_loop:
         logger.info(
-            "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s stop_on_error=%s",
+            "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s stop_on_error=%s health_key=%s",
             interval_ms,
             max_ticks,
             stop_on_error,
+            health_key,
         )
-        _run_loop(runner, interval_ms=interval_ms, max_ticks=max_ticks, stop_on_error=stop_on_error)
+        _run_loop(
+            runner,
+            layer_store=layer_store,
+            interval_ms=interval_ms,
+            max_ticks=max_ticks,
+            stop_on_error=stop_on_error,
+            health_key=health_key,
+        )
         return
-    _run_once_and_log(runner, stop_on_error=stop_on_error)
+    _run_once_and_log(
+        runner,
+        layer_store=layer_store,
+        stop_on_error=stop_on_error,
+        health_key=health_key,
+    )
 
 
 def _build_layer_store():
@@ -126,9 +140,16 @@ def _build_layer_store():
     return InMemoryLayerStore()
 
 
-def _run_once_and_log(runner: EventPipelineRunner, *, stop_on_error: bool = False) -> None:
+def _run_once_and_log(
+    runner: EventPipelineRunner,
+    *,
+    layer_store: object | None = None,
+    stop_on_error: bool = False,
+    health_key: str = "ec:runner:health",
+) -> None:
     selected = runner.run_once(stop_on_error=stop_on_error)
     health = runner.health_snapshot()
+    _publish_runner_health(layer_store, payload=dict(health.__dict__), key=health_key)
     logger.info("事件中心最小 Runner 执行完成，selected_count=%s", len(selected))
     logger.info("runner_health=%s", json.dumps(health.__dict__, ensure_ascii=False))
     logger.info("selected=%s", json.dumps(selected, ensure_ascii=False))
@@ -137,20 +158,41 @@ def _run_once_and_log(runner: EventPipelineRunner, *, stop_on_error: bool = Fals
 def _run_loop(
     runner: EventPipelineRunner,
     *,
+    layer_store: object | None = None,
     interval_ms: int,
     max_ticks: int = 0,
     stop_on_error: bool = False,
+    health_key: str = "ec:runner:health",
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> None:
     tick = 0
     safe_interval = max(1, int(interval_ms))
     while True:
         tick += 1
-        _run_once_and_log(runner, stop_on_error=stop_on_error)
+        _run_once_and_log(
+            runner,
+            layer_store=layer_store,
+            stop_on_error=stop_on_error,
+            health_key=health_key,
+        )
         if max_ticks > 0 and tick >= max_ticks:
             logger.info("事件中心循环运行达到上限，准备退出 tick=%s", tick)
             return
         sleep_fn(safe_interval / 1000.0)
+
+
+def _publish_runner_health(layer_store: object | None, *, payload: dict, key: str) -> None:
+    if layer_store is None:
+        return
+    writer = getattr(layer_store, "write_runner_health", None)
+    if not callable(writer):
+        return
+    try:
+        out = dict(payload)
+        out["updated_ms"] = int(time.time() * 1000)
+        writer(out, key=key)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("写入 runner health 失败 key=%s err=%s", key, exc)
 
 
 def _read_bool_env(name: str, *, default: bool) -> bool:

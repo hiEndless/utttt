@@ -40,6 +40,14 @@ class _FakeRunner:
         )
 
 
+class _FakeHealthStore:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict]] = []
+
+    def write_runner_health(self, payload: dict, *, key: str = "ec:runner:health") -> None:
+        self.calls.append((key, dict(payload)))
+
+
 def test_run_loop_respects_max_ticks() -> None:
     runner = _FakeRunner()
     sleeps: list[float] = []
@@ -57,6 +65,16 @@ def test_run_loop_passes_stop_on_error_flag() -> None:
     runner = _FakeRunner()
     main_mod._run_loop(runner, interval_ms=10, max_ticks=2, stop_on_error=True, sleep_fn=lambda _s: None)
     assert runner.flags == [True, True]
+
+
+def test_publish_runner_health_uses_store_writer() -> None:
+    store = _FakeHealthStore()
+    main_mod._publish_runner_health(store, payload={"heartbeat": 1}, key="ec:test:health")
+    assert len(store.calls) == 1
+    key, payload = store.calls[0]
+    assert key == "ec:test:health"
+    assert payload["heartbeat"] == 1
+    assert isinstance(payload.get("updated_ms"), int)
 
 
 def test_read_bool_env(monkeypatch) -> None:  # noqa: ANN001

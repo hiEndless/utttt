@@ -13,6 +13,7 @@ from event_center_new.ec.storage.redis import RedisLayerStore, RedisLayerStoreCo
 class _FakeRedis:
     def __init__(self) -> None:
         self.calls: list[dict[str, object]] = []
+        self.kv_calls: list[dict[str, str]] = []
 
     def xadd(self, name: str, fields: dict[str, str], maxlen: int | None = None, approximate: bool = True):  # noqa: ANN201
         self.calls.append(
@@ -24,6 +25,10 @@ class _FakeRedis:
             }
         )
         return "1-0"
+
+    def set(self, name: str, value: str):  # noqa: ANN201
+        self.kv_calls.append({"name": name, "value": value})
+        return True
 
 
 def test_redis_layer_store_writes_all_layers() -> None:
@@ -56,3 +61,12 @@ def test_redis_layer_store_uses_custom_streams() -> None:
     assert call["name"] == "x:sel"
     assert call["maxlen"] == 99
     assert call["approximate"] is False
+
+
+def test_redis_layer_store_writes_runner_health_key() -> None:
+    fake = _FakeRedis()
+    store = RedisLayerStore(client=fake)
+    store.write_runner_health({"heartbeat": 1, "error_count": 0}, key="ec:test:health")
+    assert len(fake.kv_calls) == 1
+    assert fake.kv_calls[0]["name"] == "ec:test:health"
+    assert "\"heartbeat\": 1" in fake.kv_calls[0]["value"]

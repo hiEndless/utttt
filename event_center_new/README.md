@@ -349,6 +349,7 @@ EVENT_CENTER_RUN_LOOP=true \
 EVENT_CENTER_RUN_INTERVAL_MS=1000 \
 EVENT_CENTER_RUN_MAX_TICKS=0 \
 EVENT_CENTER_STOP_ON_ERROR=false \
+EVENT_CENTER_HEALTH_KEY=ec:runner:health \
 python3 -m event_center_new.main
 ```
 
@@ -358,6 +359,7 @@ python3 -m event_center_new.main
 - `EVENT_CENTER_RUN_INTERVAL_MS` 每轮间隔（毫秒）
 - `EVENT_CENTER_RUN_MAX_TICKS` 最大轮次，`0` 表示不限（常驻）
 - `EVENT_CENTER_STOP_ON_ERROR` 事件处理异常时是否立即退出（默认 `false`）
+- `EVENT_CENTER_HEALTH_KEY` 运行健康快照写入 Redis 的 key（默认 `ec:runner:health`）
 
 最小健康信号（`EventPipelineRunner.health_snapshot()`）：
 
@@ -366,6 +368,8 @@ python3 -m event_center_new.main
 - `run_count`: 累计运行轮次
 - `error_count`: 累计事件处理异常数
 - `last_error`: 最近一次异常摘要
+
+当启用 Redis layer store 时，每轮还会把健康快照写入 `EVENT_CENTER_HEALTH_KEY`（JSON，含 `updated_ms`）。
 
 最小回放用法（Python）：
 
