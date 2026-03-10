@@ -22,8 +22,13 @@ fi
 
 echo "[2/4] 校验 --print-current-version"
 current_version="$(bash scripts/bump_event_center_runtime_version.sh --print-current-version)"
-if ! [[ "$current_version" =~ ^event-center-runtime-v[0-9]+$ ]]; then
-  echo "[失败] 当前版本格式异常: $current_version"
+doc_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' event_center_new/docs/runtime.md | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
+if [[ -z "$doc_version" ]]; then
+  echo "[失败] 未能从 runtime.md 解析版本号"
+  exit 1
+fi
+if [[ "$current_version" != "$doc_version" ]]; then
+  echo "[失败] --print-current-version 与 runtime.md 不一致 cli=$current_version doc=$doc_version"
   exit 1
 fi
 
