@@ -13,6 +13,7 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --dry-run
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --check-clean
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --apply-from-env-table
+  bash scripts/bump_event_center_runtime_version.sh <version> <note> --no-duplicate-log
 
 示例:
   bash scripts/bump_event_center_runtime_version.sh --print-current-version
@@ -21,6 +22,7 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --dry-run
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --check-clean
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --apply-from-env-table
+  bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --no-duplicate-log
 EOF
 }
 
@@ -55,6 +57,7 @@ date_override=""
 dry_run="false"
 check_clean="false"
 apply_from_env_table="false"
+no_duplicate_log="false"
 shift 2
 
 while [[ $# -gt 0 ]]; do
@@ -73,6 +76,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --apply-from-env-table)
       apply_from_env_table="true"
+      shift
+      ;;
+    --no-duplicate-log)
+      no_duplicate_log="true"
       shift
       ;;
     *)
@@ -120,6 +127,14 @@ if [[ "$apply_from_env_table" == "true" ]]; then
       exit 1
     fi
   done <<< "$keys_raw"
+fi
+
+if [[ "$no_duplicate_log" == "true" ]]; then
+  latest_log_version="$(rg -o 'version:\s*`[A-Za-z0-9._-]+`' "$RUNTIME_DOC" | head -n1 | sed -E 's/.*`([^`]+)`.*/\1/')"
+  if [[ -n "$latest_log_version" && "$latest_log_version" == "$version" ]]; then
+    echo "[失败] 变更日志最新条目已是同版本: ${version} (可移除 --no-duplicate-log 允许重复记录)。"
+    exit 1
+  fi
 fi
 
 today="$(date +%F)"

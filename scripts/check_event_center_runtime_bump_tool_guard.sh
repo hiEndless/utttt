@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[1/4] 校验 runtime bump tool --help"
+echo "[1/5] 校验 runtime bump tool --help"
 help_text="$(bash scripts/bump_event_center_runtime_version.sh --help)"
 if ! echo "$help_text" | rg -q -- "--print-current-version"; then
   echo "[失败] --help 缺少 --print-current-version"
@@ -19,8 +19,12 @@ if ! echo "$help_text" | rg -q -- "--apply-from-env-table"; then
   echo "[失败] --help 缺少 --apply-from-env-table"
   exit 1
 fi
+if ! echo "$help_text" | rg -q -- "--no-duplicate-log"; then
+  echo "[失败] --help 缺少 --no-duplicate-log"
+  exit 1
+fi
 
-echo "[2/4] 校验 --print-current-version"
+echo "[2/5] 校验 --print-current-version"
 current_version="$(bash scripts/bump_event_center_runtime_version.sh --print-current-version)"
 doc_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' event_center_new/docs/runtime.md | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
 if [[ -z "$doc_version" ]]; then
@@ -32,7 +36,7 @@ if [[ "$current_version" != "$doc_version" ]]; then
   exit 1
 fi
 
-echo "[3/4] 校验 --dry-run + --apply-from-env-table"
+echo "[3/5] 校验 --dry-run + --apply-from-env-table"
 dry_run_out="$(bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v999 "guard dry run" --apply-from-env-table --dry-run)"
 if ! echo "$dry_run_out" | rg -q -- "dry-run"; then
   echo "[失败] dry-run 输出不包含预期提示"
@@ -43,7 +47,7 @@ if ! echo "$dry_run_out" | rg -q -- "event-center-runtime-v999"; then
   exit 1
 fi
 
-echo "[4/4] 校验 --check-clean"
+echo "[4/5] 校验 --check-clean"
 if git diff --quiet && git diff --cached --quiet; then
   # 工作区干净时，check-clean 不应阻断。
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v999 "guard clean check" --check-clean --dry-run >/dev/null
@@ -53,6 +57,12 @@ else
     echo "[失败] 脏工作区下 --check-clean 未触发失败"
     exit 1
   fi
+fi
+
+echo "[5/5] 校验 --no-duplicate-log"
+if bash scripts/bump_event_center_runtime_version.sh "$current_version" "guard duplicate log" --no-duplicate-log --dry-run >/dev/null 2>&1; then
+  echo "[失败] --no-duplicate-log 未阻止重复版本"
+  exit 1
 fi
 
 echo "[通过] event_center runtime bump tool 守卫检查完成。"
