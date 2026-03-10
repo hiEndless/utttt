@@ -77,6 +77,16 @@ def test_publish_runner_health_uses_store_writer() -> None:
     assert isinstance(payload.get("updated_ms"), int)
 
 
+def test_run_self_check_writes_health_status() -> None:
+    store = _FakeHealthStore()
+    main_mod._run_self_check(layer_store=store, health_key="ec:self:health")
+    assert len(store.calls) == 1
+    key, payload = store.calls[0]
+    assert key == "ec:self:health"
+    assert payload["status"] == "ok"
+    assert payload["self_check_only"] is True
+
+
 def test_read_bool_env(monkeypatch) -> None:  # noqa: ANN001
     monkeypatch.setenv("EC_BOOL_X", "true")
     assert main_mod._read_bool_env("EC_BOOL_X", default=False) is True

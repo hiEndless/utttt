@@ -361,6 +361,16 @@ python3 -m event_center_new.main
 - `EVENT_CENTER_STOP_ON_ERROR` 事件处理异常时是否立即退出（默认 `false`）
 - `EVENT_CENTER_HEALTH_KEY` 运行健康快照写入 Redis 的 key（默认 `ec:runner:health`）
 
+启动自检模式（只做初始化与健康上报）：
+
+```bash
+EVENT_CENTER_SELF_CHECK_ONLY=true \
+EVENT_CENTER_HEALTH_KEY=ec:runner:health \
+python3 -m event_center_new.main
+```
+
+- `EVENT_CENTER_SELF_CHECK_ONLY=true` 时不会执行事件处理循环，仅执行最小依赖路径并上报一次健康状态。
+
 最小健康信号（`EventPipelineRunner.health_snapshot()`）：
 
 - `heartbeat`: 轮询心跳计数（每次 `run_once` +1）

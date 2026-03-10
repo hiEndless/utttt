@@ -92,10 +92,15 @@ def main() -> None:
         layer_store=layer_store,
     )
     run_loop = _read_bool_env("EVENT_CENTER_RUN_LOOP", default=False)
+    self_check_only = _read_bool_env("EVENT_CENTER_SELF_CHECK_ONLY", default=False)
     interval_ms = _read_int_env("EVENT_CENTER_RUN_INTERVAL_MS", default=1000)
     max_ticks = _read_int_env("EVENT_CENTER_RUN_MAX_TICKS", default=0)
     stop_on_error = _read_bool_env("EVENT_CENTER_STOP_ON_ERROR", default=False)
     health_key = str(os.getenv("EVENT_CENTER_HEALTH_KEY", "ec:runner:health") or "ec:runner:health").strip()
+    if self_check_only:
+        logger.info("事件中心启动自检模式，仅执行初始化与健康上报 health_key=%s", health_key)
+        _run_self_check(layer_store=layer_store, health_key=health_key)
+        return
     if run_loop:
         logger.info(
             "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s stop_on_error=%s health_key=%s",
@@ -193,6 +198,16 @@ def _publish_runner_health(layer_store: object | None, *, payload: dict, key: st
         writer(out, key=key)
     except Exception as exc:  # noqa: BLE001
         logger.warning("写入 runner health 失败 key=%s err=%s", key, exc)
+
+
+def _run_self_check(*, layer_store: object | None, health_key: str) -> None:
+    payload = {
+        "status": "ok",
+        "self_check_only": True,
+        "checked_ms": int(time.time() * 1000),
+    }
+    _publish_runner_health(layer_store, payload=payload, key=health_key)
+    logger.info("事件中心自检完成 status=ok health_key=%s", health_key)
 
 
 def _read_bool_env(name: str, *, default: bool) -> bool:
