@@ -55,7 +55,7 @@
     },
     "rule_debug": {
       "type": "object",
-      "required": ["hit_rule", "rule_priority_order"],
+      "required": ["hit_rule", "rule_priority_order", "matched_at_ms"],
       "properties": {
         "hit_rule": {"type": "string", "minLength": 1},
         "rule_priority_order": {
@@ -63,7 +63,8 @@
           "items": {"type": "string", "minLength": 1}
         },
         "hit_rule_value": {"type": ["number", "null"]},
-        "hit_rule_threshold": {"type": ["number", "null"]}
+        "hit_rule_threshold": {"type": ["number", "null"]},
+        "matched_at_ms": {"type": "integer", "minimum": 1}
       }
     },
     "updated_at_ms": {

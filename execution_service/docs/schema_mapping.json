@@ -125,7 +125,7 @@
         {
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.rule_debug.required",
-          "expected": ["hit_rule", "rule_priority_order"]
+          "expected": ["hit_rule", "rule_priority_order", "matched_at_ms"]
         }
       ]
     },
@@ -300,7 +300,7 @@
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.required",
-          "expected": ["hit_rule", "rule_priority_order"]
+          "expected": ["hit_rule", "rule_priority_order", "matched_at_ms"]
         }
       ]
     }

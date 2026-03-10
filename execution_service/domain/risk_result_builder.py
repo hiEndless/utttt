@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any, Dict, List
 
 from execution_service.domain.contracts import DecisionIntent
@@ -48,6 +49,7 @@ def build_risk_decision_result(
         "rule_priority_order": list(rule_priority_order or []),
         "hit_rule_value": hit_rule_value,
         "hit_rule_threshold": hit_rule_threshold,
+        "matched_at_ms": int(time.time() * 1000),
     }
     return {
         "execution_action": execution_action,

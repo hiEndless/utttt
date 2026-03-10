@@ -53,6 +53,7 @@ def test_execution_signal_result_schema_samples() -> None:
             ],
             "hit_rule_value": None,
             "hit_rule_threshold": None,
+            "matched_at_ms": 1760000000000,
         },
     }
     assert validate_payload_with_local_refs(schema, good, base_dir)
@@ -86,6 +87,7 @@ def test_execution_signal_result_schema_samples() -> None:
             "rule_priority_order": [],
             "hit_rule_value": None,
             "hit_rule_threshold": None,
+            "matched_at_ms": 0,
         },
     }
     assert not validate_payload_with_local_refs(schema, bad, base_dir)

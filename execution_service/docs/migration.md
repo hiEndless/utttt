@@ -93,6 +93,7 @@
 70. 新增账户亏损风控阈值（`max_daily_loss`/`max_consecutive_loss_count`），并贯通到规则拒绝与 `risk_checks` 输出
 71. `signal_result` 已新增 `rule_debug` 调试字段，输出命中规则名、规则顺序和命中值/阈值，便于联调排障
 72. `rule_debug` 已回写到 `decision_state`，可通过 debug state + `decision_id` 回看最近一次命中规则链路
+73. `rule_debug` 已增加 `matched_at_ms` 命中时间戳，支持跨服务链路的时序对齐与回放分析
 
 ## 关键收敛决议（冻结）
 
