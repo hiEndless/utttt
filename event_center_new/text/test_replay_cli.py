@@ -69,6 +69,7 @@ def test_run_replay_report_ok_when_selected_matches() -> None:
     assert report["counts"]["raw_events"] == 1
     assert report["counts"]["online_selected"] == report["counts"]["replay_selected"] == 1
     assert report["diffs"] == []
+    assert report["signatures"]["online_selected"] == report["signatures"]["replay_selected"]
 
 
 def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
@@ -93,6 +94,7 @@ def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
     report = run_replay_report(fake, start_ms=now_ms - 1, end_ms=now_ms + 1)
     assert report["ok"] is False
     assert len(report["diffs"]) >= 1
+    assert report["signatures"]["online_selected"] != report["signatures"]["replay_selected"]
 
 
 def test_run_replay_report_ignore_field_can_suppress_ts_diff() -> None:

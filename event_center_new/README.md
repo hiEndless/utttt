@@ -356,3 +356,6 @@ python3 -m event_center_new.replay_main \
   --ignore-field trigger_event.ts_ms \
   --output /tmp/event_replay_report.json
 ```
+
+回放报告包含 `signatures.replay_selected` 与 `signatures.online_selected`，
+可快速判断两轮 selected 是否一致，再结合 `diffs` 做字段级定位。

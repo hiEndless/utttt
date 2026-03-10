@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+import hashlib
 import json
 from typing import Any, Protocol
 
@@ -62,6 +63,8 @@ def run_replay_report(
     replay_for_diff = _strip_fields_in_list(replay.selected, normalized_ignore_fields)
     online_for_diff = _strip_fields_in_list(selected_online, normalized_ignore_fields)
     diffs = diff_selected(replay_for_diff, online_for_diff)
+    replay_signature = _stable_signature(replay_for_diff)
+    online_signature = _stable_signature(online_for_diff)
     return {
         "start_ms": int(start_ms),
         "end_ms": int(end_ms),
@@ -83,6 +86,10 @@ def run_replay_report(
         },
         "ok": len(diffs) == 0,
         "ignore_fields": normalized_ignore_fields,
+        "signatures": {
+            "replay_selected": replay_signature,
+            "online_selected": online_signature,
+        },
         "diffs": diffs,
         "replay_selected": replay.selected,
         "online_selected": selected_online,
@@ -141,3 +148,11 @@ def _remove_by_path(node: Any, parts: list[str]) -> None:
         # 中文注释：列表场景下对每个元素应用同一路径，便于忽略如 trigger_event.trace.ts_ms 等字段。
         for item in node:
             _remove_by_path(item, parts)
+
+
+def _stable_signature(items: list[dict[str, Any]]) -> str:
+    """生成 selected 列表稳定签名，用于快速漂移对比。"""
+
+    normalized = sorted(json.dumps(item, ensure_ascii=False, sort_keys=True) for item in items)
+    joined = "\n".join(normalized)
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()
