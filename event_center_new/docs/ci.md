@@ -96,6 +96,20 @@
 
 ## 8. Artifact 日志锚点（下载后）
 
+推荐解压目录结构示例：
+
+```text
+./
+├── quick_strict.log
+├── quick_lenient.log
+└── full_guard.log
+```
+
+说明：
+- quick strict 失败时，至少会有 `quick_strict.log`
+- quick lenient 失败时，至少会有 `quick_lenient.log`
+- full strict 失败时，至少会有 `full_guard.log`
+
 1. quick strict / quick lenient
    - 日志文件：`quick_strict.log` / `quick_lenient.log`
    - 关键锚点：
