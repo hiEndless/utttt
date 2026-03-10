@@ -7,6 +7,7 @@
 - `docs/ARCHITECTURE_NEW.md`
 - `docs/CONTRACTS_QUICK_REF.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
+- `docs/DECISION_CONFIDENCE_MIGRATION.md`
 
 ## 2. feature_service
 

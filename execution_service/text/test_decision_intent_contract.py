@@ -77,6 +77,25 @@ def test_decision_intent_accepts_decision_confidence_alias() -> None:
     assert data["decision_confidence"] == {"level": "high", "score": 0.88}
 
 
+def test_decision_intent_rejects_confidence_mismatch() -> None:
+    payload = {
+        "decision_id": "dec-005",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "confidence": {"level": "low", "score": 0.21},
+        "decision_confidence": {"level": "high", "score": 0.92},
+        "cross_horizon_policy": {},
+        "risk_hints": {},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "不一致" in str(exc)
+
+
 def test_execution_result_v1_parse_success() -> None:
     payload = {
         "decision_id": "dec-001",

@@ -125,6 +125,7 @@ agent_server_new -> execution_service
 - `direction_intent`
 - `confidence`
 - `decision_confidence`（可选语义别名）
+- 若同时传两者，必须一致（防语义漂移）
 - `cross_horizon_policy`
 - `risk_hints`
 

@@ -115,3 +115,5 @@
 - [x] Task 113: `execution_action` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。
 - [x] Task 114: `reject_reason` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。
 - [x] Task 115: 增加 `policy_snapshot`（`policy_version/ruleset_hash`）并贯通 `execution_result/decision_state`、schema、测试与文档。
+- [x] Task 116: DecisionIntent 增加 `decision_confidence` 顶层语义别名（兼容保留 `confidence`），贯通 agent 适配、schema、测试与文档。
+- [x] Task 117: DecisionIntent 增加 `confidence/decision_confidence` 一致性校验（双字段不一致直接拒绝），避免静默语义漂移。
