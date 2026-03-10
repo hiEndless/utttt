@@ -44,6 +44,20 @@
 - `EC_GUARD_CI_WORKFLOW_FAILED`：CI workflow 静态守卫失败
 
 可用 `bash scripts/check_event_center_contract_guards.sh --help` 查看同一份失败码清单。
+当前帮助输出快照：
+
+```text
+用法:
+  bash scripts/check_event_center_contract_guards.sh
+  bash scripts/check_event_center_contract_guards.sh --quick
+  bash scripts/check_event_center_contract_guards.sh [--quick] [--strict-wiring|--lenient-wiring]
+
+失败码（子守卫失败时输出 FAIL_CODE=...）:
+  EC_GUARD_SCHEMA_FAILED
+  EC_GUARD_RUNTIME_FAILED
+  EC_GUARD_WIRING_FAILED
+  EC_GUARD_CI_WORKFLOW_FAILED
+```
 
 ## 4. 常见排障顺序
 
