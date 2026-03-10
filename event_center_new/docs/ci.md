@@ -45,3 +45,27 @@
 - 脚本：`scripts/check_event_center_ci_workflow_guard.sh`
 - 作用：静态校验 quick/full workflow 仍包含失败诊断 artifact 上传和显式失败收敛步骤。
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
+
+## 6. Artifact 日志锚点（下载后）
+
+1. quick strict / quick lenient
+   - 日志文件：`quick_strict.log` / `quick_lenient.log`
+   - 关键锚点：
+     - `event_center 契约/Schema 守卫`
+     - `event_center Runtime 守卫`
+     - `event_center 守卫接线检查`
+     - `event_center CI workflow 守卫`
+2. full strict
+   - 日志文件：`full_guard.log`
+   - 关键锚点：
+     - `event_center 契约/Schema 守卫（全量）`
+     - `event_center Runtime 守卫（全量）`
+     - `event_center 守卫接线检查（全量）`
+     - `event_center CI workflow 守卫（全量）`
+
+建议定位命令（本地）：
+
+```bash
+rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" quick_strict.log
+rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" full_guard.log
+```
