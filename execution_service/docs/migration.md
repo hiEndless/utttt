@@ -115,6 +115,7 @@
 92. `evaluation_trace` 已抽取独立 schema 并通过 `$ref` 复用，减少 `rule_debug` 契约重复定义
 93. `scope/position_before/position_after_simulation` 已抽取独立 schema 并通过 `$ref` 复用，减少 `execution_signal_result` 契约重复定义
 94. `signal_action` 已抽取独立 schema 并通过 `$ref` 复用，减少 `execution_signal_result` 契约重复定义
+95. `risk_checks` 已抽取独立 schema 并通过 `$ref` 复用，减少 `execution_signal_result` 契约重复定义
 
 ## 关键收敛决议（冻结）
 

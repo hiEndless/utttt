@@ -73,7 +73,7 @@ def test_build_risk_checks_marks_failure_by_threshold() -> None:
 
 
 def test_build_risk_checks_items_match_signal_result_schema() -> None:
-    schema_path = ROOT_DIR / "execution_service" / "docs" / "execution_signal_result.schema.json"
+    schema_path = ROOT_DIR / "execution_service" / "docs" / "risk_checks.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item_schema = (
         schema.get("properties", {})

@@ -10,7 +10,7 @@ from execution_service.domain.risk_check_meta import RISK_CHECK_SCOPES, RISK_CHE
 
 
 def test_risk_check_scopes_and_statuses_match_signal_result_schema_enum() -> None:
-    schema_path = PROJECT_ROOT / "execution_service" / "docs" / "execution_signal_result.schema.json"
+    schema_path = PROJECT_ROOT / "execution_service" / "docs" / "risk_checks.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item_props = (
         schema.get("properties", {})
@@ -22,4 +22,3 @@ def test_risk_check_scopes_and_statuses_match_signal_result_schema_enum() -> Non
     status_enum = item_props.get("status", {}).get("enum", [])
     assert set(scope_enum) == set(RISK_CHECK_SCOPES)
     assert set(status_enum) == set(RISK_CHECK_STATUSES)
-

@@ -306,11 +306,39 @@
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.risk_checks.items.properties.status.enum",
-          "expected": ["pass", "fail"]
+          "json_path": "properties.risk_checks.$ref",
+          "expected": "./risk_checks.schema.json#/properties/risk_checks"
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.signal_result.$ref",
+          "expected": "./execution_signal_result.schema.json"
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.rule_debug.$ref",
+          "expected": "./rule_debug.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "RiskChecks",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/risk_checks.schema.json",
+      "code": "execution_service/domain/risk_check_builder.py",
+      "symbol": "build_risk_checks",
+      "fields": [
+        "risk_checks"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.required",
+          "expected": ["check", "scope", "status", "value", "threshold", "message_zh"]
+        },
+        {
+          "schema": "execution_service/docs/risk_checks.schema.json",
           "json_path": "properties.risk_checks.items.properties.check.enum",
           "expected": [
             "account_drawdown_limit",
@@ -325,14 +353,14 @@
           ]
         },
         {
-          "schema": "execution_service/docs/execution_result.schema.json",
-          "json_path": "properties.signal_result.$ref",
-          "expected": "./execution_signal_result.schema.json"
+          "schema": "execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.properties.scope.enum",
+          "expected": ["account", "symbol", "position"]
         },
         {
-          "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.rule_debug.$ref",
-          "expected": "./rule_debug.schema.json"
+          "schema": "execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.properties.status.enum",
+          "expected": ["pass", "fail"]
         }
       ]
     },

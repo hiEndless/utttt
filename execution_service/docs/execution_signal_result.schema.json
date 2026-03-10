@@ -21,34 +21,7 @@
     "scope": {"$ref": "./signal_scope.schema.json#/properties/scope"},
     "position_before": {"$ref": "./position_before.schema.json#/properties/position_before"},
     "position_after_simulation": {"$ref": "./position_after_simulation.schema.json#/properties/position_after_simulation"},
-    "risk_checks": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["check", "scope", "status", "value", "threshold", "message_zh"],
-        "properties": {
-          "check": {
-            "type": "string",
-            "enum": [
-              "account_drawdown_limit",
-              "account_available_balance",
-              "account_notional_limit",
-              "account_margin_ratio_limit",
-              "account_daily_loss_limit",
-              "account_consecutive_loss_limit",
-              "symbol_exposure_ratio",
-              "long_leg_position_limit",
-              "short_leg_position_limit"
-            ]
-          },
-          "scope": {"type": "string", "enum": ["account", "symbol", "position"]},
-          "status": {"type": "string", "enum": ["pass", "fail"]},
-          "value": {"type": "number"},
-          "threshold": {"type": "number"},
-          "message_zh": {"type": "string", "minLength": 1}
-        }
-      }
-    },
+    "risk_checks": {"$ref": "./risk_checks.schema.json#/properties/risk_checks"},
     "rule_debug": {"$ref": "./rule_debug.schema.json"}
   }
 }
