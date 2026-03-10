@@ -209,6 +209,9 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - `decision_replay`：读取 DecisionTrace/输入快照，重放决策链，输出差异报告
 - 回归样例集（golden fixtures）：覆盖至少 3 类事件组合（单源/多源/冲突）
 
+当前进展：
+- 已提供最小内存版 `event_replay` 工具骨架（`event_center_new/ec/pipeline/replay.py`），支持重放与 selected 差异比较
+
 验收标准：
 - 重放输出可对比：同一版本应 0 diff；不同版本 diff 可定位到某一阶段产物的字段变化
 - LLM 参与时可复现：要么记录 LLM 输出作为输入快照的一部分，要么回放时使用 deterministic 替代（不允许“回放不可复现”）

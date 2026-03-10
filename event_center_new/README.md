@@ -145,6 +145,7 @@ event_center_new/
 - 已提供最小运行时 `EventPipelineRunner` 与 `event_center_new/main.py` 示例入口（内存 source/store）
 - 已提供 Redis 分层写入适配器（`ec/storage/redis.py`），支持写入 `ec:raw/ec:normalized/ec:evidence/ec:context/ec:selected`
 - Kafka 等其他存储适配器仍待补齐
+- 已提供最小 `event_replay` 工具（`ec/pipeline/replay.py`），可按输入事件重放并比较 selected 差异
 - 对外语义以 `SelectedEvent/EventWindow` 为主，不做市场状态推理
 
 ## 必须切断的依赖
@@ -336,4 +337,10 @@ Redis 分层写入模式：
 EVENT_CENTER_LAYER_STORE_MODE=redis \
 EVENT_CENTER_REDIS_URL=redis://127.0.0.1:6379/0 \
 python3 -m event_center_new.main
+```
+
+最小回放用法（Python）：
+
+```python
+from event_center_new.ec.pipeline.replay import EventReplayTool, diff_selected
 ```
