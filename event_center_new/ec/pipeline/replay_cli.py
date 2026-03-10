@@ -13,6 +13,18 @@ class RedisRangeClient(Protocol):
         ...
 
 
+SELECTED_REQUIRED_FIELDS = {
+    "asset",
+    "ts_ms",
+    "selected_type",
+    "direction_hint",
+    "priority",
+    "context_snapshot",
+    "route",
+}
+SELECTED_ALLOWED_FIELDS = SELECTED_REQUIRED_FIELDS | {"trigger_event"}
+
+
 def load_payloads_by_window(
     client: RedisRangeClient,
     *,
@@ -65,6 +77,8 @@ def run_replay_report(
     diffs = diff_selected(replay_for_diff, online_for_diff)
     replay_signature = _stable_signature(replay_for_diff)
     online_signature = _stable_signature(online_for_diff)
+    selected_contract = validate_selected_contract(selected_online)
+    is_ok = (len(diffs) == 0) and selected_contract["ok"]
     return {
         "start_ms": int(start_ms),
         "end_ms": int(end_ms),
@@ -84,12 +98,13 @@ def run_replay_report(
                 "selected": replay.selected_count,
             },
         },
-        "ok": len(diffs) == 0,
+        "ok": is_ok,
         "ignore_fields": normalized_ignore_fields,
         "signatures": {
             "replay_selected": replay_signature,
             "online_selected": online_signature,
         },
+        "selected_contract": selected_contract,
         "diffs": diffs,
         "replay_selected": replay.selected,
         "online_selected": selected_online,
@@ -156,3 +171,26 @@ def _stable_signature(items: list[dict[str, Any]]) -> str:
     normalized = sorted(json.dumps(item, ensure_ascii=False, sort_keys=True) for item in items)
     joined = "\n".join(normalized)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def validate_selected_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
+    """校验线上 selected 顶层字段是否符合最小契约。"""
+
+    errors: list[dict[str, Any]] = []
+    for idx, item in enumerate(items):
+        if not isinstance(item, dict):
+            errors.append({"index": idx, "error": "selected_item_not_object"})
+            continue
+        keys = set(item.keys())
+        missing = sorted(SELECTED_REQUIRED_FIELDS - keys)
+        extra = sorted(keys - SELECTED_ALLOWED_FIELDS)
+        if missing:
+            errors.append({"index": idx, "error": "missing_required_fields", "fields": missing})
+        if extra:
+            errors.append({"index": idx, "error": "unexpected_fields", "fields": extra})
+    return {
+        "ok": len(errors) == 0,
+        "errors": errors,
+        "required_fields": sorted(SELECTED_REQUIRED_FIELDS),
+        "allowed_fields": sorted(SELECTED_ALLOWED_FIELDS),
+    }

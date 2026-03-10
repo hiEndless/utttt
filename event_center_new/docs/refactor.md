@@ -213,6 +213,7 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - 已提供最小内存版 `event_replay` 工具骨架（`event_center_new/ec/pipeline/replay.py`），支持重放与 selected 差异比较
 - 已提供 Redis 时间窗回放 CLI 入口（`python3 -m event_center_new.replay_main`）
 - 回放报告已输出稳定签名（online/replay），用于快速漂移检测
+- 回放报告已内置 `selected` 顶层字段白名单校验，防止线上契约悄然漂移
 
 验收标准：
 - 重放输出可对比：同一版本应 0 diff；不同版本 diff 可定位到某一阶段产物的字段变化

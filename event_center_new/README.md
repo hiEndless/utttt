@@ -359,3 +359,4 @@ python3 -m event_center_new.replay_main \
 
 回放报告包含 `signatures.replay_selected` 与 `signatures.online_selected`，
 可快速判断两轮 selected 是否一致，再结合 `diffs` 做字段级定位。
+报告同时包含 `selected_contract`（顶层字段白名单/必填校验），可提前发现线上 selected 契约漂移。

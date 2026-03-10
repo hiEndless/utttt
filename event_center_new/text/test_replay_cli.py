@@ -70,6 +70,7 @@ def test_run_replay_report_ok_when_selected_matches() -> None:
     assert report["counts"]["online_selected"] == report["counts"]["replay_selected"] == 1
     assert report["diffs"] == []
     assert report["signatures"]["online_selected"] == report["signatures"]["replay_selected"]
+    assert report["selected_contract"]["ok"] is True
 
 
 def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
@@ -95,6 +96,7 @@ def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
     assert report["ok"] is False
     assert len(report["diffs"]) >= 1
     assert report["signatures"]["online_selected"] != report["signatures"]["replay_selected"]
+    assert report["selected_contract"]["ok"] is True
 
 
 def test_run_replay_report_ignore_field_can_suppress_ts_diff() -> None:
@@ -119,3 +121,19 @@ def test_run_replay_report_ignore_field_can_suppress_ts_diff() -> None:
     )
     assert report_with_ignore["ok"] is True
     assert report_with_ignore["diffs"] == []
+
+
+def test_run_replay_report_selected_contract_invalid_when_extra_field_present() -> None:
+    now_ms = int(time.time() * 1000)
+    event = _sample_event(now_ms)
+    tool = build_default_replay_tool()
+    replay = tool.replay([event])
+    fake = _FakeRedisRange()
+    fake.add("ec:raw", f"{now_ms}-1", asdict(event))
+    online = dict(replay.selected[0])
+    online["extra_debug"] = {"a": 1}
+    fake.add("ec:selected", f"{now_ms}-2", online)
+    report = run_replay_report(fake, start_ms=now_ms - 1, end_ms=now_ms + 2000)
+    assert report["selected_contract"]["ok"] is False
+    assert report["ok"] is False
+    assert any(e.get("error") == "unexpected_fields" for e in report["selected_contract"]["errors"])
