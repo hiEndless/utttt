@@ -414,6 +414,7 @@ python3 -m event_center_new.replay_main \
 仓库守卫 `scripts/check_event_center_replay_strict_ci.sh` 固定 `--strict --summary-only` 调用路径，覆盖严格模式成功/失败分支。
 仓库守卫 `scripts/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
 仓库守卫 `scripts/check_event_center_runtime_guard.sh` 覆盖 `stop_on_error` 与 `self_check_only` 的运行时分支。
+仓库守卫 `scripts/check_event_center_runtime_doc_guard.sh` 校验 runtime 文档与 main.py 的环境变量键一致性。
 可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
 该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
 全仓库守卫支持快速模式：`bash scripts/check_new_arch_guards.sh --event-center-only`。
