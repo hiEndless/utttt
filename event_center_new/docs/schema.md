@@ -148,6 +148,7 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 契约文件：
 
 - `event_center_new/docs/selected_event.schema.json`
+- `event_center_new/docs/replay_summary.schema.json`（`replay_main --summary-only` 输出）
 
 ---
 

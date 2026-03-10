@@ -23,6 +23,7 @@
 - `event_center_new/docs/schema.md`
 - `event_center_new/docs/refactor.md`
 - `event_center_new/docs/selected_event.schema.json`
+- `event_center_new/docs/replay_summary.schema.json`
 
 ## 5. agent_server_new
 

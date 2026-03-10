@@ -1,0 +1,204 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventCenterReplaySummary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "start_ms",
+    "end_ms",
+    "streams",
+    "stream_presence",
+    "missing_streams",
+    "counts",
+    "ok",
+    "ignore_fields",
+    "signatures",
+    "selected_contract",
+    "diffs"
+  ],
+  "properties": {
+    "start_ms": {
+      "type": "integer"
+    },
+    "end_ms": {
+      "type": "integer"
+    },
+    "streams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw",
+        "selected"
+      ],
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "selected": {
+          "type": "string"
+        }
+      }
+    },
+    "stream_presence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw",
+        "selected"
+      ],
+      "properties": {
+        "raw": {
+          "type": "string",
+          "enum": [
+            "present",
+            "missing",
+            "unknown"
+          ]
+        },
+        "selected": {
+          "type": "string",
+          "enum": [
+            "present",
+            "missing",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "missing_streams": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "raw",
+          "selected"
+        ]
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_events",
+        "online_selected",
+        "replay_selected",
+        "replay_layers"
+      ],
+      "properties": {
+        "raw_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "online_selected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replay_selected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replay_layers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "raw",
+            "normalized",
+            "evidence",
+            "context",
+            "selected"
+          ],
+          "properties": {
+            "raw": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "normalized": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "evidence": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "context": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "selected": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "ignore_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "replay_selected",
+        "online_selected"
+      ],
+      "properties": {
+        "replay_selected": {
+          "type": "string"
+        },
+        "online_selected": {
+          "type": "string"
+        }
+      }
+    },
+    "selected_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "errors",
+        "required_fields",
+        "allowed_fields",
+        "schema_path"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "required_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "schema_path": {
+          "type": "string"
+        }
+      }
+    },
+    "diffs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}
