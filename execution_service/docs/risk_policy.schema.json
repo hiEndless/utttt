@@ -28,24 +28,6 @@
     "max_daily_loss": {"type": "number", "minimum": 0},
     "max_consecutive_loss_count": {"type": "integer", "minimum": 0},
     "simulation_step_size": {"type": "number", "minimum": 0},
-    "rule_priority_order": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "enum": [
-          "position_limit",
-          "cooldown",
-          "max_drawdown",
-          "account_notional",
-          "margin_ratio",
-          "daily_loss",
-          "consecutive_loss",
-          "direction_conflict"
-        ]
-      },
-      "minItems": 8,
-      "maxItems": 8,
-      "uniqueItems": true
-    }
+    "rule_priority_order": {"$ref": "./rule_priority_order.schema.json#/properties/rule_priority_order"}
   }
 }

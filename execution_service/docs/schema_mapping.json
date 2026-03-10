@@ -181,8 +181,8 @@
         },
         {
           "schema": "execution_service/docs/risk_policy.schema.json",
-          "json_path": "properties.rule_priority_order.items.enum",
-          "expected": ["position_limit", "cooldown", "max_drawdown", "account_notional", "margin_ratio", "daily_loss", "consecutive_loss", "direction_conflict"]
+          "json_path": "properties.rule_priority_order.$ref",
+          "expected": "./rule_priority_order.schema.json#/properties/rule_priority_order"
         }
       ]
     },
@@ -482,6 +482,11 @@
         },
         {
           "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.rule_priority_order.$ref",
+          "expected": "./rule_priority_order.schema.json#/properties/rule_priority_order"
+        },
+        {
+          "schema": "execution_service/docs/rule_debug.schema.json",
           "json_path": "properties.previous_risk_state.$ref",
           "expected": "./risk_state.schema.json#/properties/risk_state"
         },
@@ -504,6 +509,39 @@
           "schema": "execution_service/docs/rule_debug.schema.json",
           "json_path": "properties.evaluation_trace.$ref",
           "expected": "./evaluation_trace.schema.json#/properties/evaluation_trace"
+        }
+      ]
+    },
+    {
+      "name": "RulePriorityOrder",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/rule_priority_order.schema.json",
+      "code": "execution_service/domain/risk_rules.py",
+      "symbol": "DEFAULT_RULE_PRIORITY_ORDER",
+      "fields": [
+        "rule_priority_order"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.items.enum",
+          "expected": ["position_limit", "cooldown", "max_drawdown", "account_notional", "margin_ratio", "daily_loss", "consecutive_loss", "direction_conflict"]
+        },
+        {
+          "schema": "execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.minItems",
+          "expected": 8
+        },
+        {
+          "schema": "execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.maxItems",
+          "expected": 8
+        },
+        {
+          "schema": "execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.uniqueItems",
+          "expected": true
         }
       ]
     },

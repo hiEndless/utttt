@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RulePriorityOrder",
+  "type": "object",
+  "properties": {
+    "rule_priority_order": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "position_limit",
+          "cooldown",
+          "max_drawdown",
+          "account_notional",
+          "margin_ratio",
+          "daily_loss",
+          "consecutive_loss",
+          "direction_conflict"
+        ]
+      },
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true
+    }
+  }
+}

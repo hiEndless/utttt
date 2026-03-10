@@ -119,6 +119,7 @@
   - `signal_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/signal_action.schema.json`
   - `mode` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/signal_mode.schema.json`
   - `risk_checks` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_checks.schema.json`
+  - `rule_priority_order` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/rule_priority_order.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）

@@ -109,3 +109,4 @@
 - [x] Task 107: `signal_action` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
 - [x] Task 108: `risk_checks` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
 - [x] Task 109: `mode` 抽为独立 schema 并在 `execution_signal_result` 通过 `$ref` 复用。
+- [x] Task 110: `rule_priority_order` 抽为独立 schema，并在 `risk_policy/rule_debug` 通过 `$ref` 复用。

@@ -14,10 +14,7 @@
   ],
   "properties": {
     "hit_rule": {"type": "string", "minLength": 1},
-    "rule_priority_order": {
-      "type": "array",
-      "items": {"type": "string", "minLength": 1}
-    },
+    "rule_priority_order": {"$ref": "./rule_priority_order.schema.json#/properties/rule_priority_order"},
     "hit_rule_value": {"type": ["number", "null"]},
     "hit_rule_threshold": {"type": ["number", "null"]},
     "previous_risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
