@@ -27,6 +27,11 @@
 - `execution_service` `/healthz` 与 `/version` 同时返回 `ts` 与 `ts_ms`。
 - `agent_server_new.strategy_gate_v2` 时间读取优先 `ts_ms`，兼容 `timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
 
+5. `risk_flags` 语义标准化（非破坏）
+- `market_state_engine` 聚合层统一输出 `risk_flags: array[string]`。
+- 原 map 细节（布尔位/数值位）保留到 `risk_metrics`，避免信息丢失。
+- `agent_server_new` 上下文构建对 `oi_risk_flags` 做 list/map 双输入归一化，避免字段类型漂移影响决策提示。
+
 ## P1（下一步建议）
 
 1. 给 MSL 增加独立 JSON Schema

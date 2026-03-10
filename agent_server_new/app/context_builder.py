@@ -22,6 +22,23 @@ def _to_int(value: Any, default: int) -> int:
         return default
 
 
+def _normalize_risk_flags(value: Any) -> List[str]:
+    if isinstance(value, list):
+        return sorted(set([str(x) for x in value if str(x or "").strip()]))
+    if isinstance(value, dict):
+        out: List[str] = []
+        for k, v in value.items():
+            name = str(k or "").strip()
+            if not name:
+                continue
+            if isinstance(v, str) and v.strip().lower() in {"0", "false", "no", "off", ""}:
+                continue
+            if bool(v):
+                out.append(name)
+        return sorted(set(out))
+    return []
+
+
 def _normalize_recent_memory(
     *,
     recent: List[Dict[str, Any]],
@@ -113,7 +130,7 @@ def _signal_context_builder(
             ("liquidity_vacuum", _safe_dict(orderbook).get("liquidity_vacuum")),
             ("orderbook_stability", _safe_dict(orderbook).get("stability")),
             ("delta_oi_pct", _safe_dict(open_interest).get("delta_oi_pct")),
-            ("oi_risk_flags", _safe_dict(open_interest).get("risk_flags")),
+            ("oi_risk_flags", _normalize_risk_flags(_safe_dict(open_interest).get("risk_flags"))),
             ("mid_trend_memory", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_memory")),
         ]
     elif profile == "macro_sentiment":
@@ -134,7 +151,7 @@ def _signal_context_builder(
             ("oi_trend", _safe_dict(open_interest).get("oi_trend")),
             ("oi_velocity", _safe_dict(open_interest).get("oi_velocity")),
             ("oi_acceleration", _safe_dict(open_interest).get("oi_acceleration")),
-            ("oi_risk_flags", _safe_dict(open_interest).get("risk_flags")),
+            ("oi_risk_flags", _normalize_risk_flags(_safe_dict(open_interest).get("risk_flags"))),
             ("mid_trend_memory", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_memory")),
             ("mid_trend_context", _safe_dict(_safe_dict(horizons).get("mid_term")).get("market_background", {}).get("trend_context")),
         ]

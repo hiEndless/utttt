@@ -85,6 +85,43 @@ def test_aggregate_features_keeps_legacy_and_explicit_horizon_confidence() -> No
         assert node["horizon_confidence"] == node["confidence"]
 
 
+def test_aggregate_features_normalizes_risk_flags_and_keeps_risk_metrics() -> None:
+    engine = MarketStateEngine()
+    features = engine.aggregate_features(
+        exchange="binance",
+        symbol="ETHUSDT",
+        market_structure={
+            "horizons": {"fused": {"horizons": {"short_term": {}, "mid_term": {}, "long_term": {}}}},
+            "pre_decision_structure": {
+                "short_term": {
+                    "micro_liquidity": {
+                        "meta": {"stability": "stable"},
+                        "risk_flags": {
+                            "liquidity_vacuum_event": True,
+                            "depth_thin": "true",
+                            "noise": "false",
+                        },
+                    },
+                    "structural_risks": {},
+                },
+                "mid_term": {
+                    "participant_positioning": {
+                        "risk_flags": ["possible_liquidation_or_unwind", "possible_liquidation_or_unwind", "fragile_leverage_build"],
+                    }
+                },
+                "long_term": {},
+            },
+        },
+    )
+    orderbook = dict(features.orderbook or {})
+    open_interest = dict(features.open_interest or {})
+    assert orderbook["risk_flags"] == ["depth_thin", "liquidity_vacuum_event"]
+    assert isinstance(orderbook["risk_metrics"], dict)
+    assert orderbook["risk_metrics"]["liquidity_vacuum_event"] is True
+    assert "noise" not in set(orderbook["risk_flags"])
+    assert open_interest["risk_flags"] == ["fragile_leverage_build", "possible_liquidation_or_unwind"]
+
+
 def test_state_inference_plugin_exception_degrades_to_warning():
     class _BoomPlugin:
         name = "boom_plugin"

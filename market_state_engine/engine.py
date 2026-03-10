@@ -24,6 +24,23 @@ def _safe_text(x: Any) -> str:
         return ""
 
 
+def _normalize_risk_flags(value: Any) -> List[str]:
+    if isinstance(value, list):
+        return sorted(set([str(x) for x in value if str(x or "").strip()]))
+    if isinstance(value, dict):
+        out: List[str] = []
+        for k, v in value.items():
+            name = str(k or "").strip()
+            if not name:
+                continue
+            if isinstance(v, str) and v.strip().lower() in {"0", "false", "no", "off", ""}:
+                continue
+            if bool(v):
+                out.append(name)
+        return sorted(set(out))
+    return []
+
+
 @dataclass(frozen=True)
 class MarketStateFeatures:
 
@@ -89,7 +106,8 @@ class MarketStateEngine:
         pp = _safe_dict(mt.get("participant_positioning"))
         oi_delta = _safe_dict(pp.get("oi_delta"))
         oi_dyn = _safe_dict(pp.get("oi_dynamics"))
-        oi_flags = [str(x) for x in _safe_list(pp.get("risk_flags")) if x]
+        oi_flags = _normalize_risk_flags(pp.get("risk_flags"))
+        ob_flags = _normalize_risk_flags(ob_risk_flags)
 
         short_mb = _safe_dict(short_hz.get("market_background"))
         mid_mb = _safe_dict(mid_hz.get("market_background"))
@@ -138,7 +156,9 @@ class MarketStateEngine:
         orderbook_out = {
             "stability": _safe_text(ob_meta.get("stability")),
             "liquidity_vacuum": bool(st_risks.get("liquidity_vacuum") is True or ob_risk_flags.get("liquidity_vacuum_event") is True),
-            "risk_flags": dict(ob_risk_flags),
+            "risk_flags": list(ob_flags),
+            # 明细风险数值/布尔位：保留 map 语义，避免信息丢失。
+            "risk_metrics": dict(ob_risk_flags),
         }
 
         open_interest_out = {

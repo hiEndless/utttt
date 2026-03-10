@@ -89,6 +89,7 @@ MSL 契约文件：
   - 仅包含结构状态字段，不包含 `sentiment_state`
 - `state_features`
   - 引擎聚合后的中间状态特征
+  - 语义约定：`risk_flags` 为 `array[string]`；若需保留 map 明细使用 `risk_metrics`
 - `msl_meta`
   - `schema_version`：MSL 契约版本（当前主分支为 `2`）
   - `inference_version`：推断生成器版本（如 `msl_generator_v1` / `msl_generator_v2`）
