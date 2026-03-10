@@ -52,6 +52,7 @@ class StubAccountStateProvider:
             "current_drawdown_ratio": 0.02,
             "daily_loss": 0.0,
             "consecutive_loss_count": 0,
+            "risk_state": "normal",
         }
     )
     exchange_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)

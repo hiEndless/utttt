@@ -333,3 +333,61 @@ def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
     assert result.reject_reason == "consecutive_loss_exceeded"
     assert result.signal_result["risk_state"] == "frozen"
     assert result.signal_result["rule_debug"]["hit_rule"] == "consecutive_loss"
+
+
+def test_previous_frozen_state_does_not_jump_directly_to_normal() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "position_size": 0.1,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={
+            "risk_state": "frozen",
+            "current_drawdown_ratio": 0.01,
+            "max_drawdown_ratio": 0.5,
+            "margin_ratio": 0.1,
+            "daily_loss": 0.0,
+            "consecutive_loss_count": 0,
+        },
+        risk_policy={
+            "max_account_notional": 100000.0,
+            "max_margin_ratio": 0.8,
+            "max_daily_loss": 200.0,
+            "max_consecutive_loss_count": 3,
+        },
+    )
+    assert result.execution_action == "add"
+    assert result.reject_reason is None
+    assert result.signal_result["risk_state"] == "warn"
+
+
+def test_previous_reduce_only_state_does_not_jump_directly_to_normal() -> None:
+    result = ExecutionDecisionEngine.decide(
+        _decision("long"),
+        position_state={
+            "position_side": "flat",
+            "position_size": 0.1,
+            "max_position_size": 1.0,
+            "cooldown_seconds_left": 0,
+        },
+        account_state={
+            "risk_state": "reduce_only",
+            "current_drawdown_ratio": 0.01,
+            "max_drawdown_ratio": 0.5,
+            "margin_ratio": 0.1,
+            "daily_loss": 0.0,
+            "consecutive_loss_count": 0,
+        },
+        risk_policy={
+            "max_account_notional": 100000.0,
+            "max_margin_ratio": 0.8,
+            "max_daily_loss": 200.0,
+            "max_consecutive_loss_count": 3,
+        },
+    )
+    assert result.execution_action == "add"
+    assert result.reject_reason is None
+    assert result.signal_result["risk_state"] == "warn"

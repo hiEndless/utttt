@@ -60,6 +60,7 @@ def test_redis_account_provider_fallback_when_key_missing() -> None:
     assert out["current_drawdown_ratio"] == 0.0
     assert out["daily_loss"] == 0.0
     assert out["consecutive_loss_count"] == 0
+    assert out["risk_state"] == "normal"
     assert out["account_id"] == "main"
 
 

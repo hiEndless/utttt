@@ -91,3 +91,4 @@
 - [x] Task 89: `evaluation_trace` 增加 `scope`（account/symbol/position）维度字段，并同步契约、测试与文档。
 - [x] Task 90: `evaluation_trace` 增加 `order` 顺序索引字段，并同步契约、测试与文档。
 - [x] Task 91: 引入标准化 `risk_state`（`normal|warn|reduce_only|frozen`），贯通 signal_result、decision_state、schema、测试与文档。
+- [x] Task 92: `risk_state` 增加前态记忆与降级防抖（`frozen/reduce_only -> normal` 过渡为 `warn`），并贯通 providers、规则与测试。

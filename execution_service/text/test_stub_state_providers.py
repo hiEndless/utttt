@@ -33,3 +33,4 @@ def test_stub_account_provider_with_exchange_override() -> None:
     assert state["exchange"] == "binance"
     assert state["current_drawdown_ratio"] == 0.11
     assert state["account_id"] == "main"
+    assert state["risk_state"] == "normal"

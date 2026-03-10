@@ -111,6 +111,10 @@ def evaluate_risk_rules(
     margin_ratio = _to_float(context.account_state.get("margin_ratio"), 0.0)
     daily_loss = _resolve_daily_loss(context.account_state)
     consecutive_loss_count = _to_float(context.account_state.get("consecutive_loss_count"), 0.0)
+    previous_risk_state = _resolve_previous_risk_state(
+        account_state=context.account_state,
+        position_state=context.position_state,
+    )
     min_available_balance = _to_float(context.risk_policy.get("min_available_balance"), 0.0)
     account_equity = _to_float(context.account_state.get("account_equity"), 0.0)
     gross_position_size = max(0.0, long_position_size) + max(0.0, short_position_size)
@@ -167,6 +171,7 @@ def evaluate_risk_rules(
         risk_state = _derive_risk_state(
             reject_reason=reject_reason,
             evaluation_trace=evaluation_trace,
+            previous_risk_state=previous_risk_state,
         )
         return build_risk_decision_result(
             decision=decision,
@@ -626,6 +631,7 @@ def _derive_risk_state(
     *,
     reject_reason: str | None,
     evaluation_trace: list[Dict[str, Any]],
+    previous_risk_state: str,
 ) -> str:
     # 中文注释：风险状态用于执行层风控态势表达，供下游快速判定是否可继续加风险。
     if reject_reason in {"max_drawdown_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded"}:
@@ -638,8 +644,10 @@ def _derive_risk_state(
     }:
         return "reduce_only"
     if _has_warn_level_pressure(evaluation_trace):
-        return "warn"
-    return "normal"
+        current = "warn"
+    else:
+        current = "normal"
+    return _apply_risk_state_hysteresis(previous_risk_state=previous_risk_state, current_risk_state=current)
 
 
 def _has_warn_level_pressure(evaluation_trace: list[Dict[str, Any]]) -> bool:
@@ -656,3 +664,23 @@ def _has_warn_level_pressure(evaluation_trace: list[Dict[str, Any]]) -> bool:
         if ratio >= 0.8:
             return True
     return False
+
+
+def _resolve_previous_risk_state(
+    *,
+    account_state: Dict[str, Any],
+    position_state: Dict[str, Any],
+) -> str:
+    candidate = str(account_state.get("risk_state") or position_state.get("risk_state") or "").strip().lower()
+    if candidate in {"normal", "warn", "reduce_only", "frozen"}:
+        return candidate
+    return "normal"
+
+
+def _apply_risk_state_hysteresis(*, previous_risk_state: str, current_risk_state: str) -> str:
+    # 中文注释：风险状态降级需平滑，避免 frozen/reduce_only 在单次评估中瞬间回落到 normal。
+    if previous_risk_state == "frozen" and current_risk_state == "normal":
+        return "warn"
+    if previous_risk_state == "reduce_only" and current_risk_state == "normal":
+        return "warn"
+    return current_risk_state

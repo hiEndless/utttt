@@ -136,6 +136,7 @@ class RedisAccountStateProvider:
             "current_drawdown_ratio": _to_float(payload.get("current_drawdown_ratio"), 0.0),
             "daily_loss": _to_float(payload.get("daily_loss"), 0.0),
             "consecutive_loss_count": _to_int(payload.get("consecutive_loss_count"), 0),
+            "risk_state": str(payload.get("risk_state", "normal") or "normal").strip().lower(),
         }
 
 
