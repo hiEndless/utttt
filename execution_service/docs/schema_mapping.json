@@ -276,8 +276,8 @@
       "references": [
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.signal_action.enum",
-          "expected": ["add_long", "add_short", "reduce_long", "reduce_short", "hold", "skip", "exit_all"]
+          "json_path": "properties.signal_action.$ref",
+          "expected": "./signal_action.schema.json#/properties/signal_action"
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
@@ -333,6 +333,24 @@
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.$ref",
           "expected": "./rule_debug.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "SignalAction",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/signal_action.schema.json",
+      "code": "execution_service/domain/risk_result_builder.py",
+      "symbol": "\"signal_action\":",
+      "fields": [
+        "signal_action"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/signal_action.schema.json",
+          "json_path": "properties.signal_action.enum",
+          "expected": ["add_long", "add_short", "reduce_long", "reduce_short", "hold", "skip", "exit_all"]
         }
       ]
     },

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SignalAction",
+  "type": "object",
+  "properties": {
+    "signal_action": {
+      "type": "string",
+      "enum": [
+        "add_long",
+        "add_short",
+        "reduce_long",
+        "reduce_short",
+        "hold",
+        "skip",
+        "exit_all"
+      ]
+    }
+  }
+}

@@ -43,6 +43,7 @@
 - `execution_service/docs/risk_state_change_reason.schema.json`
 - `execution_service/docs/rule_debug.schema.json`
 - `execution_service/docs/evaluation_trace.schema.json`
+- `execution_service/docs/signal_action.schema.json`
 - `execution_service/docs/signal_scope.schema.json`
 - `execution_service/docs/position_before.schema.json`
 - `execution_service/docs/position_after_simulation.schema.json`

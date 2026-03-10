@@ -12,18 +12,7 @@
     "risk_checks"
   ],
   "properties": {
-    "signal_action": {
-      "type": "string",
-      "enum": [
-        "add_long",
-        "add_short",
-        "reduce_long",
-        "reduce_short",
-        "hold",
-        "skip",
-        "exit_all"
-      ]
-    },
+    "signal_action": {"$ref": "./signal_action.schema.json#/properties/signal_action"},
     "risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
     "mode": {
       "type": "string",
