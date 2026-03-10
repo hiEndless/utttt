@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v9"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v10"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -50,6 +50,7 @@ def test_decide_success() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
             "risk_hints": {"market_fragility": "medium"},
         },
@@ -79,6 +80,7 @@ def test_decide_bad_request() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "buy",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
         },
@@ -125,6 +127,7 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
         },
@@ -168,8 +171,8 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     body = r4.json()
     metrics = dict(body.get("confidence_migration_metrics") or {})
     assert metrics["decide_requests_total"] == 3
-    assert metrics["confidence_only_requests"] == 1
-    assert metrics["decision_confidence_requests"] == 2
+    assert metrics["confidence_only_requests"] == 0
+    assert metrics["decision_confidence_requests"] == 3
     assert metrics["confidence_alias_mismatch_rejections"] == 1
     assert body["ts_ms"] == body["ts"]
 
@@ -193,6 +196,7 @@ def test_confidence_migration_metrics_reset_when_enabled(monkeypatch: pytest.Mon
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
         },
@@ -220,6 +224,7 @@ def test_debug_state_includes_confidence_migration_readiness() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
         },
@@ -231,7 +236,7 @@ def test_debug_state_includes_confidence_migration_readiness() -> None:
     metrics = dict(cm.get("metrics") or {})
     readiness = dict(cm.get("v2_cutover_readiness") or {})
     assert metrics["decide_requests_total"] >= 1
-    assert metrics["confidence_only_requests"] >= 1
+    assert metrics["confidence_only_requests"] == 0
     assert isinstance(readiness.get("confidence_only_zero"), bool)
     assert isinstance(readiness.get("alias_mismatch_zero"), bool)
 
@@ -283,6 +288,7 @@ def test_debug_state_with_decision_id() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "none",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
             "risk_hints": {},
             "trace_id": "trace-debug-001",
@@ -364,6 +370,7 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {"suggested_policy": "follow_long_term"},
             "risk_hints": {"agent_action_hint": "add"},
             "trace_id": "trace-reconcile-001",

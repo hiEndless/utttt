@@ -69,17 +69,13 @@ class DecisionIntent:
         if decision_confidence_raw is not None and not isinstance(decision_confidence_raw, Mapping):
             raise ValueError("decision_confidence 必须是对象")
 
-        if decision_confidence_raw is not None:
-            confidence = DecisionConfidence.from_dict(decision_confidence_raw)
-            if confidence_raw is not None:
-                legacy_conf = DecisionConfidence.from_dict(confidence_raw)
-                if legacy_conf.level != confidence.level or abs(float(legacy_conf.score) - float(confidence.score)) > 1e-9:
-                    raise ValueError("confidence 与 decision_confidence 不一致")
-        else:
-            confidence_payload = confidence_raw or {}
-            if not isinstance(confidence_payload, Mapping):
-                raise ValueError("confidence/decision_confidence 必须是对象")
-            confidence = DecisionConfidence.from_dict(confidence_payload)
+        if decision_confidence_raw is None:
+            raise ValueError("decision_confidence 必须是对象")
+        confidence = DecisionConfidence.from_dict(decision_confidence_raw)
+        if confidence_raw is not None:
+            legacy_conf = DecisionConfidence.from_dict(confidence_raw)
+            if legacy_conf.level != confidence.level or abs(float(legacy_conf.score) - float(confidence.score)) > 1e-9:
+                raise ValueError("confidence 与 decision_confidence 不一致")
 
         cross_horizon_policy = payload.get("cross_horizon_policy") or {}
         if not isinstance(cross_horizon_policy, dict):

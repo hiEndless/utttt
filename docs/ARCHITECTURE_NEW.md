@@ -136,6 +136,7 @@ event_center_new(signal_event + active_events)
 
 - 联调速查：`CONTRACTS_QUICK_REF.md`
 - 契约索引：`CONTRACT_INDEX.md`
+- 语义词典（防漂移）：`SEMANTIC_GLOSSARY.md`
 - 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - 联调 cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
 - 联调 HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`

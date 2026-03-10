@@ -28,7 +28,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v9",
+  "schema_mapping_version": "execution-schema-mapping-v10",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -64,14 +64,14 @@
 5. `direction_intent`: `long | short | none`
 6. `decision_confidence.level`: `low | medium | high`
 7. `decision_confidence.score`: `[0, 1]` 浮点数
-8. `confidence`: 可选兼容字段（若与 `decision_confidence` 同时出现，必须一致）
+8. `confidence`: 可选兼容字段（deprecated，若与 `decision_confidence` 同时出现，必须一致）
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
 11. `trace_id`: 可选字符串
 12. JSON Schema：`execution_service/docs/decision_intent.schema.json`
 
 一致性约束：
-- `confidence` 与 `decision_confidence` 至少提供一个。
+- `decision_confidence` 为必填主字段。
 - 同时提供 `confidence` 与 `decision_confidence` 时，若数值不一致，请求将返回 `400`，避免语义错位。
 
 响应示例：

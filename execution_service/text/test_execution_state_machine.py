@@ -34,6 +34,7 @@ def _payload(decision_id: str, direction: str = "long") -> dict:
         "symbol": "ETHUSDT",
         "direction_intent": direction,
         "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {"suggested_policy": "follow_long_term"},
         "risk_hints": {"agent_action_hint": "add"},
     }

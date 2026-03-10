@@ -52,6 +52,7 @@ def test_exchange_sink_submit_dry_run_add_long_builds_buy_market_order() -> None
             "symbol": "ethusdt",
             "direction_intent": "long",
             "confidence": {"level": "medium", "score": 0.6},
+            "decision_confidence": {"level": "medium", "score": 0.6},
             "cross_horizon_policy": {},
             "risk_hints": {},
         }
@@ -76,6 +77,7 @@ def test_exchange_sink_submit_dry_run_reduce_uses_position_side() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "long",
             "confidence": {"level": "high", "score": 0.8},
+            "decision_confidence": {"level": "high", "score": 0.8},
             "cross_horizon_policy": {},
             "risk_hints": {"position_side": "short", "order_qty": 0.01},
         }
@@ -95,6 +97,7 @@ def test_exchange_sink_submit_add_none_direction_raises() -> None:
             "symbol": "ETHUSDT",
             "direction_intent": "none",
             "confidence": {"level": "low", "score": 0.2},
+            "decision_confidence": {"level": "low", "score": 0.2},
             "cross_horizon_policy": {},
             "risk_hints": {},
         }

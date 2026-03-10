@@ -22,6 +22,7 @@ http POST :9962/internal/execution/decide \
   exchange=binance \
   symbol=ETHUSDT \
   direction_intent=long \
+  decision_confidence:='{"level":"medium","score":0.66}' \
   confidence:='{"level":"medium","score":0.66}' \
   cross_horizon_policy:='{"suggested_policy":"follow_long_term"}' \
   risk_hints:='{"agent_action_hint":"add"}'

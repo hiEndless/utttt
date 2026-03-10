@@ -16,6 +16,7 @@ def test_decision_intent_v1_parse_success() -> None:
         "symbol": "ETHUSDT",
         "direction_intent": "long",
         "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
         "risk_hints": {"market_fragility": "medium"},
         "trace_id": "trace-001",
@@ -36,6 +37,7 @@ def test_decision_intent_v1_reject_invalid_direction() -> None:
         "symbol": "ETHUSDT",
         "direction_intent": "buy",
         "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {},
     }
@@ -53,6 +55,7 @@ def test_decision_intent_default_account_id_main() -> None:
         "symbol": "ETHUSDT",
         "direction_intent": "long",
         "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {},
     }

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecutionDecisionState",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "decision_id",
     "account_id",
@@ -45,6 +45,12 @@
       "const": "execution_service"
     },
     "trace_id": {
+      "type": ["string", "null"]
+    },
+    "reconcile_order_id": {
+      "type": ["string", "null"]
+    },
+    "reconcile_status_raw": {
       "type": ["string", "null"]
     },
     "rule_debug": {"$ref": "./rule_debug.schema.json"},

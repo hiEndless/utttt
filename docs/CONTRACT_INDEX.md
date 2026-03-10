@@ -8,6 +8,7 @@
 - `docs/CONTRACTS_QUICK_REF.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
+- `docs/SEMANTIC_GLOSSARY.md`
 
 ## 2. feature_service
 
@@ -37,7 +38,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v9`
+- `execution_schema_mapping_version: execution-schema-mapping-v10`
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`

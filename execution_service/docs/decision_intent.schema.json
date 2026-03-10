@@ -9,16 +9,9 @@
     "account_id",
     "symbol",
     "direction_intent",
+    "decision_confidence",
     "cross_horizon_policy",
     "risk_hints"
-  ],
-  "anyOf": [
-    {
-      "required": ["confidence"]
-    },
-    {
-      "required": ["decision_confidence"]
-    }
   ],
   "properties": {
     "decision_id": {
@@ -42,7 +35,7 @@
       "enum": ["long", "short", "none"]
     },
     "confidence": {
-      "description": "兼容字段。决策置信度，建议与 decision_confidence 保持一致。",
+      "description": "兼容字段（deprecated）。若提供，必须与 decision_confidence 保持一致。",
       "type": "object",
       "additionalProperties": false,
       "required": ["level", "score"],

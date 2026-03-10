@@ -17,6 +17,7 @@ def _decision(direction: str) -> DecisionIntent:
             "symbol": "ETHUSDT",
             "direction_intent": direction,
             "confidence": {"level": "medium", "score": 0.6},
+            "decision_confidence": {"level": "medium", "score": 0.6},
             "cross_horizon_policy": {},
             "risk_hints": {},
         }

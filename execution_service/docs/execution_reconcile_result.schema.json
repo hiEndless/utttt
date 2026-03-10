@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecutionReconcileResult",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "mode",
     "order_id",
@@ -58,6 +58,20 @@
     },
     "retry_meta": {
       "$ref": "./retry_meta.schema.json"
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "exchange_status_raw": {
+      "type": "string"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 1
     },
     "ts": {
       "type": "integer",

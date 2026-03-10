@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecutionRiskPolicy",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "max_position_size",
     "max_long_position_size",
@@ -28,6 +28,8 @@
     "max_daily_loss": {"type": "number", "minimum": 0},
     "max_consecutive_loss_count": {"type": "integer", "minimum": 0},
     "simulation_step_size": {"type": "number", "minimum": 0},
-    "rule_priority_order": {"$ref": "./rule_priority_order.schema.json#/properties/rule_priority_order"}
+    "rule_priority_order": {"$ref": "./rule_priority_order.schema.json#/properties/rule_priority_order"},
+    "policy_version": {"type": "string", "minLength": 1},
+    "ruleset_hash": {"type": "string", "minLength": 1}
   }
 }

@@ -1,6 +1,6 @@
 {
-  "version": "execution-schema-mapping-v9",
-  "last_updated": "2026-03-10",
+  "version": "execution-schema-mapping-v10",
+  "last_updated": "2026-03-11",
   "items": [
     {
       "name": "DecisionIntent",
@@ -15,6 +15,7 @@
         "account_id",
         "symbol",
         "direction_intent",
+        "decision_confidence",
         "confidence",
         "cross_horizon_policy",
         "risk_hints",
@@ -25,6 +26,11 @@
           "schema": "execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.direction_intent.enum",
           "expected": ["long", "short", "none"]
+        },
+        {
+          "schema": "execution_service/docs/decision_intent.schema.json",
+          "json_path": "required",
+          "expected": ["decision_id", "exchange", "account_id", "symbol", "direction_intent", "decision_confidence", "cross_horizon_policy", "risk_hints"]
         },
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
