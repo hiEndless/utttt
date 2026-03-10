@@ -31,7 +31,16 @@ for snapshot in "$HELP_SNAPSHOT_LINES" "$TRIAGE_SNAPSHOT_LINES"; do
     echo "$duplicate_lines"
     exit 1
   fi
+  if rg -n -F "　" "$snapshot" >/dev/null; then
+    echo "[失败] 快照关键行文件存在全角空格: $snapshot"
+    exit 1
+  fi
 done
+
+if rg -n "[^\\x00-\\x7F]" "$TRIAGE_SNAPSHOT_LINES" >/dev/null; then
+  echo "[失败] $TRIAGE_SNAPSHOT_LINES 必须为 ASCII-only（避免排障命令出现不可见字符）"
+  exit 1
+fi
 
 echo "[3/4] 校验 CI 文档包含帮助快照关键行"
 while IFS= read -r line; do

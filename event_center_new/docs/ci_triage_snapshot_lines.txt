@@ -1,3 +1,2 @@
-最短排障命令串（可复制）：
 pwd && ls -la . && rg -n "FAIL_CODE=" quick_strict.log quick_lenient.log
 pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log

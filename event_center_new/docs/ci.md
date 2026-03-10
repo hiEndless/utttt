@@ -86,6 +86,9 @@
 - 脚本：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
 - 作用：校验 `event_center_new/docs/ci.md` 中 `--help` 快照与“最短排障命令串”关键行未漂移。
 - 附加校验：快照关键行文件必须非空且无重复行。
+- 附加校验：
+  - 快照关键行文件禁止全角空格（防止不可见字符漂移）
+  - `event_center_new/docs/ci_triage_snapshot_lines.txt` 必须 ASCII-only
 - 关键行来源：
   - `event_center_new/docs/ci_help_snapshot_lines.txt`
   - `event_center_new/docs/ci_triage_snapshot_lines.txt`
