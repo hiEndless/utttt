@@ -19,7 +19,21 @@ if ! test -f "$TRIAGE_SNAPSHOT_LINES"; then
   exit 1
 fi
 
-echo "[2/4] 校验 CI 文档包含帮助快照关键行"
+echo "[2/4] 校验快照关键行文件非空且无重复行"
+for snapshot in "$HELP_SNAPSHOT_LINES" "$TRIAGE_SNAPSHOT_LINES"; do
+  if [[ ! -s "$snapshot" ]]; then
+    echo "[失败] 快照关键行文件为空: $snapshot"
+    exit 1
+  fi
+  duplicate_lines="$(sort "$snapshot" | uniq -d || true)"
+  if [[ -n "$duplicate_lines" ]]; then
+    echo "[失败] 快照关键行文件存在重复行: $snapshot"
+    echo "$duplicate_lines"
+    exit 1
+  fi
+done
+
+echo "[3/4] 校验 CI 文档包含帮助快照关键行"
 while IFS= read -r line; do
   if [[ -z "$line" ]]; then
     continue
@@ -30,7 +44,7 @@ while IFS= read -r line; do
   fi
 done < "$HELP_SNAPSHOT_LINES"
 
-echo "[3/4] 校验 CI 文档包含排障命令快照关键行"
+echo "[4/4] 校验 CI 文档包含排障命令快照关键行"
 while IFS= read -r line; do
   if [[ -z "$line" ]]; then
     continue
@@ -41,7 +55,7 @@ while IFS= read -r line; do
   fi
 done < "$TRIAGE_SNAPSHOT_LINES"
 
-echo "[4/4] 校验帮助快照关键行文件包含 CI 文档守卫失败码"
+echo "[附加检查] 校验帮助快照关键行文件包含 CI 文档守卫失败码"
 if ! rg -q -F "EC_GUARD_CI_DOC_FAILED" "$HELP_SNAPSHOT_LINES"; then
   echo "[失败] 快照关键行文件缺少 EC_GUARD_CI_DOC_FAILED"
   exit 1
