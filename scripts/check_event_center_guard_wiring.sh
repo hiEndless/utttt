@@ -97,9 +97,16 @@ if ! rg -q -- "--event-center-only" "$TOP_ENTRY"; then
   echo "[失败] $TOP_ENTRY 未声明 --event-center-only"
   exit 1
 fi
-if ! rg -q -- "check_event_center_contract_guards\\.sh$" "$TOP_ENTRY"; then
-  echo "[失败] $TOP_ENTRY 未透传 event_center 全量"
-  exit 1
+if [[ "$MATCH_MODE" == "strict" ]]; then
+  if ! awk '/check_event_center_contract_guards\.sh/ && $0 !~ /--quick/ {found=1} END{exit !found}' "$TOP_ENTRY"; then
+    echo "[失败] $TOP_ENTRY 未透传 event_center 全量（strict）"
+    exit 1
+  fi
+else
+  if ! rg -q -- "check_event_center_contract_guards\\.sh" "$TOP_ENTRY"; then
+    echo "[失败] $TOP_ENTRY 未透传 event_center 全量"
+    exit 1
+  fi
 fi
 if [[ "$SHOW_LINKS" == "true" ]]; then
   echo "[调试] $TOP_ENTRY 关键引用："

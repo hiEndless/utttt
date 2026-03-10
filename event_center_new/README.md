@@ -431,3 +431,4 @@ python3 -m event_center_new.replay_main \
 接线检查策略可选：`--strict-wiring`（默认）或 `--lenient-wiring`。
 全仓库守卫支持 event_center 快速模式：`bash scripts/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
 如需跑 event_center 全量子守卫，可用：`bash scripts/check_new_arch_guards.sh --event-center-only`。
+顶层入口也支持接线策略透传：可追加 `--lenient-wiring`（默认 `--strict-wiring`）。

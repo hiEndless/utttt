@@ -150,6 +150,7 @@ event_center_new(signal_event + active_events)
 - 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
 - 仅跑 event_center quick：`scripts/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`scripts/check_new_arch_guards.sh --event-center-only`
+- 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
 - Feature API：`feature_service/docs/api.md`
 - Feature 边界：`feature_service/docs/boundaries.md`
 - State API：`market_state_engine/docs/api.md`
