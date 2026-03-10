@@ -20,6 +20,7 @@ def test_decision_intent_schema_samples() -> None:
         "symbol": "ETHUSDT",
         "direction_intent": "long",
         "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
         "risk_hints": {"market_fragility": "medium"},
         "trace_id": "trace-001"

@@ -60,6 +60,23 @@ def test_decision_intent_default_account_id_main() -> None:
     assert decision.account_id == "main"
 
 
+def test_decision_intent_accepts_decision_confidence_alias() -> None:
+    payload = {
+        "decision_id": "dec-004",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "short",
+        "decision_confidence": {"level": "high", "score": 0.88},
+        "cross_horizon_policy": {},
+        "risk_hints": {},
+    }
+    decision = DecisionIntent.from_dict(payload)
+    data = decision.to_dict()
+    assert data["confidence"] == {"level": "high", "score": 0.88}
+    assert data["decision_confidence"] == {"level": "high", "score": 0.88}
+
+
 def test_execution_result_v1_parse_success() -> None:
     payload = {
         "decision_id": "dec-001",

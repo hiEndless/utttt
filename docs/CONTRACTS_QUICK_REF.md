@@ -124,6 +124,7 @@ agent_server_new -> execution_service
 - `symbol`
 - `direction_intent`
 - `confidence`
+- `decision_confidence`（可选语义别名）
 - `cross_horizon_policy`
 - `risk_hints`
 

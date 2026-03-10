@@ -130,6 +130,7 @@ def test_trade_event_workflow_calls_execution_decider():
         assert decider.payload["decision_id"] == "evt-exec-001"
         assert decider.payload["direction_intent"] == "long"
         assert decider.payload["confidence"] == {"level": "medium", "score": 0.7}
+        assert decider.payload["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert "execution_hint" not in decider.payload
         assert "adaptive_profile" not in decider.payload

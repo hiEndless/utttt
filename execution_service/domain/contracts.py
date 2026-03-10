@@ -61,9 +61,9 @@ class DecisionIntent:
         if direction not in {"long", "short", "none"}:
             raise ValueError("direction_intent 必须是 long/short/none")
 
-        confidence_payload = payload.get("confidence") or {}
+        confidence_payload = payload.get("decision_confidence") or payload.get("confidence") or {}
         if not isinstance(confidence_payload, Mapping):
-            raise ValueError("confidence 必须是对象")
+            raise ValueError("confidence/decision_confidence 必须是对象")
         confidence = DecisionConfidence.from_dict(confidence_payload)
 
         cross_horizon_policy = payload.get("cross_horizon_policy") or {}
@@ -95,6 +95,7 @@ class DecisionIntent:
             "symbol": self.symbol,
             "direction_intent": self.direction_intent,
             "confidence": self.confidence.to_dict(),
+            "decision_confidence": self.confidence.to_dict(),
             "cross_horizon_policy": self.cross_horizon_policy,
             "risk_hints": self.risk_hints,
         }

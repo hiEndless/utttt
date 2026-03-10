@@ -48,6 +48,7 @@
   "symbol": "ETHUSDT",
   "direction_intent": "long",
   "confidence": {"level": "medium", "score": 0.67},
+  "decision_confidence": {"level": "medium", "score": 0.67},
   "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
   "risk_hints": {"market_fragility": "medium"},
   "trace_id": "trace-20260310-001"
@@ -63,10 +64,11 @@
 5. `direction_intent`: `long | short | none`
 6. `confidence.level`: `low | medium | high`
 7. `confidence.score`: `[0, 1]` 浮点数
-8. `cross_horizon_policy`: 对象（可为空对象）
-9. `risk_hints`: 对象（可为空对象）
-10. `trace_id`: 可选字符串
-11. JSON Schema：`execution_service/docs/decision_intent.schema.json`
+8. `decision_confidence`: 可选，语义别名（建议与 `confidence` 保持一致）
+9. `cross_horizon_policy`: 对象（可为空对象）
+10. `risk_hints`: 对象（可为空对象）
+11. `trace_id`: 可选字符串
+12. JSON Schema：`execution_service/docs/decision_intent.schema.json`
 
 响应示例：
 

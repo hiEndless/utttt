@@ -66,6 +66,7 @@ def test_agent_execution_adapter_prefers_decision_confidence_and_keeps_risk_hint
         cross_horizon_policy={"suggested_policy": "follow_long_term"},
     )
     assert payload["confidence"] == {"level": "high", "score": 0.91}
+    assert payload["decision_confidence"] == {"level": "high", "score": 0.91}
     assert payload["risk_hints"]["decision_confidence"] == {"level": "high", "score": 0.91}
     assert payload["risk_hints"]["agent_action_hint"] == "add"
     assert payload["risk_hints"]["agent_notes"] == "prefer trend continuation"

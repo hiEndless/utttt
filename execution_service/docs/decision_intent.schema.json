@@ -49,6 +49,21 @@
         }
       }
     },
+    "decision_confidence": {
+      "type": "object",
+      "required": ["level", "score"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      }
+    },
     "cross_horizon_policy": {
       "type": "object"
     },

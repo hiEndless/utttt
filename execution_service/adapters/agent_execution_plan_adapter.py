@@ -34,6 +34,7 @@ def adapt_agent_execution_plan_to_decision_intent(
         "symbol": symbol,
         "direction_intent": direction if direction in {"long", "short", "none"} else "none",
         "confidence": confidence,
+        "decision_confidence": dict(confidence),
         "cross_horizon_policy": dict(cross_horizon_policy or {}),
         "risk_hints": risk_hints,
     }
