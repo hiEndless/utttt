@@ -131,3 +131,48 @@
 1. `Position Context` 由 execution_service 侧读取与使用
 2. agent 不再以 `Position Context` 作为裁决输入
 3. execution_service 成为最终动作裁决权威（add/reduce/hold/exit/skip）
+
+## Decision Confidence 升级到 v2 的触发条件（新增）
+
+更新时间：2026-03-11
+
+目标：将 `DecisionIntent` 从“双字段兼容（confidence + decision_confidence）”迁移到“仅保留 decision_confidence”。
+
+### 阶段与门槛
+
+1. Phase A（2026-03-11 ~ 2026-04-30）
+- 允许 `confidence` only。
+- 推荐双写：`confidence` + `decision_confidence`。
+- 强约束：双字段同时出现时必须一致（不一致返回 `400`）。
+
+2. Phase B（2026-05-01 ~ 2026-06-30）
+- 新改造 producer 必须主写 `decision_confidence`。
+- 仍兼容 `confidence` only，但视为遗留流量。
+
+3. Phase C（计划起始：2026-07-01）
+- 进入 `execution-contract-v2` 变更窗口。
+- 仅当满足以下全部条件才可推进：
+  - 连续 30 天 `confidence_only_requests = 0`
+  - 连续 30 天 `confidence_alias_mismatch_rejections = 0`
+  - 相关客户端/脚本完成发布并通过联调回归
+
+### 观测指标（建议）
+
+1. `confidence_only_requests`
+- 定义：请求中无 `decision_confidence`，仅有 `confidence` 的次数。
+
+2. `decision_confidence_requests`
+- 定义：请求中包含 `decision_confidence` 的次数（可同时包含 `confidence`）。
+
+3. `confidence_alias_mismatch_rejections`
+- 定义：因 `confidence != decision_confidence` 导致的 `400` 次数。
+
+### 回滚动作（执行级）
+
+1. 若上线 v2 后发现兼容性问题：
+- 立即回滚到最近一个 v1.5 稳定提交（保留双字段兼容）。
+- 重新开放 `confidence` 兼容窗口，继续收集 `confidence_only_requests`。
+
+2. 回滚完成后的恢复条件：
+- 连续 7 天 `confidence_alias_mismatch_rejections = 0`
+- 关键调用方完成升级确认后，再次发起 v2 切换评审。

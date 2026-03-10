@@ -46,6 +46,10 @@
 3. 回滚策略
 - 若出现大规模兼容问题，可临时放宽为“记录告警 + 采用 `decision_confidence`”，但需在一周内恢复一致性校验。
 
+4. v2 触发门槛
+- 建议门槛：连续 30 天 `confidence_only_requests=0` 且 `confidence_alias_mismatch_rejections=0`。
+- 通过门槛后，才进入 `execution-contract-v2` 的去兼容评审与发布窗口。
+
 ## 4. 对齐清单
 
 1. 文档
