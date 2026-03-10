@@ -190,6 +190,8 @@ event_center_new/
 - `event_center_new/docs/selected_event.schema.json`
 - 下游消费视角守卫：`event_center_new/text/test_selected_event_downstream_consumer_contract.py`
   - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
+- 状态层消费视角守卫：`event_center_new/text/test_selected_event_state_consumer_contract.py`
+  - 确保 `selected_event` 与 `market_state_engine` evidence 聚合字段映射稳定
 
 ### 第三阶段：为状态层提供干净输入（进行中）
 
