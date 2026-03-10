@@ -9,11 +9,13 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh <version> <note>
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --date YYYY-MM-DD
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --dry-run
+  bash scripts/bump_event_center_runtime_version.sh <version> <note> --check-clean
 
 示例:
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO"
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --date 2026-03-11
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --dry-run
+  bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --check-clean
 EOF
 }
 
@@ -32,6 +34,7 @@ version="$1"
 note="$2"
 date_override=""
 dry_run="false"
+check_clean="false"
 shift 2
 
 while [[ $# -gt 0 ]]; do
@@ -42,6 +45,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       dry_run="true"
+      shift
+      ;;
+    --check-clean)
+      check_clean="true"
       shift
       ;;
     *)
@@ -60,6 +67,13 @@ fi
 if ! test -f "$RUNTIME_DOC"; then
   echo "[失败] 缺少文档: $RUNTIME_DOC"
   exit 1
+fi
+
+if [[ "$check_clean" == "true" ]]; then
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "[失败] 工作区不干净，拒绝升级版本（可移除 --check-clean 或先提交变更）。"
+    exit 1
+  fi
 fi
 
 today="$(date +%F)"

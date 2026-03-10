@@ -10,7 +10,7 @@
 
 - version: `event-center-runtime-v1` | date: `2026-03-11` | note: 初始冻结运行时配置，覆盖 loop/stop_on_error/self_check_only/health_key。
 
-维护建议：新增/删除环境变量时，使用 `scripts/bump_event_center_runtime_version.sh` 同步更新版本与变更日志；可先加 `--dry-run` 预览。
+维护建议：新增/删除环境变量时，使用 `scripts/bump_event_center_runtime_version.sh` 同步更新版本与变更日志；可先加 `--dry-run` 预览，或加 `--check-clean` 要求工作区干净。
 
 ## 1. 环境变量总表
 
