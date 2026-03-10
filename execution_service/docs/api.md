@@ -110,6 +110,7 @@
     - Redis `account_state.risk_state` 非法值会自动归一化为 `normal`
     - Stub `account_state.risk_state` 也采用相同归一化规则，保证多运行模式一致
     - `risk_state` 枚举由代码常量单点维护，并通过契约测试校验与 schema 一致
+    - `risk_state`（含 `previous/current_risk_state`）在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_state.schema.json`
   - `mode`: 当前固定 `simulated`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）

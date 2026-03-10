@@ -115,8 +115,8 @@
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.risk_state.enum",
-          "expected": ["normal", "warn", "reduce_only", "frozen"]
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -291,8 +291,8 @@
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
-          "json_path": "properties.risk_state.enum",
-          "expected": ["normal", "warn", "reduce_only", "frozen"]
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
@@ -367,6 +367,24 @@
           "schema": "execution_service/docs/risk_state_change_reason.schema.json",
           "json_path": "properties.reason_zh.minLength",
           "expected": 1
+        }
+      ]
+    },
+    {
+      "name": "RiskState",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/risk_state.schema.json",
+      "code": "execution_service/domain/risk_states.py",
+      "symbol": "RISK_STATES",
+      "fields": [
+        "risk_state"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/risk_state.schema.json",
+          "json_path": "properties.risk_state.enum",
+          "expected": ["normal", "warn", "reduce_only", "frozen"]
         }
       ]
     }

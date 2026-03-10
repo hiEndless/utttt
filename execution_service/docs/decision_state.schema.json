@@ -36,10 +36,7 @@
     "reject_reason": {
       "type": ["string", "null"]
     },
-    "risk_state": {
-      "type": "string",
-      "enum": ["normal", "warn", "reduce_only", "frozen"]
-    },
+    "risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
     "attempts": {
       "type": "integer",
       "minimum": 0
@@ -68,8 +65,8 @@
         },
         "hit_rule_value": {"type": ["number", "null"]},
         "hit_rule_threshold": {"type": ["number", "null"]},
-        "previous_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
-        "current_risk_state": {"type": "string", "enum": ["normal", "warn", "reduce_only", "frozen"]},
+        "previous_risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
+        "current_risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
         "risk_state_changed": {"type": "boolean"},
         "risk_state_change_reason": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_code"},
         "risk_state_change_reason_zh": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_zh"},

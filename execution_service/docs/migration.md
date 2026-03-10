@@ -110,6 +110,7 @@
 87. `risk_state` 四态已收敛到单点常量模块，并新增常量-契约一致性测试
 88. `risk_state_change_reason(_zh)` 已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
 89. 本地 schema 校验工具已支持带 JSON Pointer 的 `$ref`（`#/properties/...`），可稳定校验子 schema 复用
+90. `risk_state`（含 `previous/current_risk_state`）已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
 
 ## 关键收敛决议（冻结）
 
