@@ -2,6 +2,14 @@
 
 本文冻结 `event_center_new/main.py` 的运行时环境变量契约，避免不同环境口口相传导致配置漂移。
 
+## 0. 版本信息
+
+- `runtime_config_version: event-center-runtime-v1`
+
+### 0.1 变更日志（新到旧）
+
+- version: `event-center-runtime-v1` | date: `2026-03-11` | note: 初始冻结运行时配置，覆盖 loop/stop_on_error/self_check_only/health_key。
+
 ## 1. 环境变量总表
 
 | 变量 | 默认值 | 说明 |
