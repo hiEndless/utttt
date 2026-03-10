@@ -342,6 +342,14 @@ EVENT_CENTER_REDIS_URL=redis://127.0.0.1:6379/0 \
 python3 -m event_center_new.main
 ```
 
+最小健康信号（`EventPipelineRunner.health_snapshot()`）：
+
+- `heartbeat`: 轮询心跳计数（每次 `run_once` +1）
+- `last_run_ms`: 最近一次运行时间戳（毫秒）
+- `run_count`: 累计运行轮次
+- `error_count`: 累计事件处理异常数
+- `last_error`: 最近一次异常摘要
+
 最小回放用法（Python）：
 
 ```python

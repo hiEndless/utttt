@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from dataclasses import dataclass
 import logging
 from typing import Any, Protocol
 
@@ -31,6 +32,15 @@ class LayerStore(Protocol):
         ...
 
 
+@dataclass(frozen=True)
+class RunnerHealthSnapshot:
+    heartbeat: int
+    last_run_ms: int
+    run_count: int
+    error_count: int
+    last_error: str
+
+
 class EventPipelineRunner:
     """最小可运行事件流水线。"""
 
@@ -59,10 +69,20 @@ class EventPipelineRunner:
         self._event_memory = event_memory
         self._layer_store = layer_store
         self._cursors: dict[str, SourceCursor] = {src.name: SourceCursor() for src in self._sources}
+        self._heartbeat = 0
+        self._last_run_ms = 0
+        self._run_count = 0
+        self._error_count = 0
+        self._last_error = ""
 
     def run_once(self) -> list[dict[str, Any]]:
         """执行一轮拉取并返回本轮 selected 输出。"""
 
+        import time
+
+        self._heartbeat += 1
+        self._run_count += 1
+        self._last_run_ms = int(time.time() * 1000)
         selected_out: list[dict[str, Any]] = []
         for src in self._sources:
             cursor = self._cursors.get(src.name, SourceCursor())
@@ -73,12 +93,27 @@ class EventPipelineRunner:
                 continue
             logger.info("事件中心轮询到新事件 source=%s count=%s", src.name, len(events))
             for ev in events:
-                selected = self._process_event(ev)
-                if selected is not None:
-                    payload = asdict(selected)
-                    self._layer_store.write_selected(payload)
-                    selected_out.append(payload)
+                try:
+                    selected = self._process_event(ev)
+                    if selected is not None:
+                        payload = asdict(selected)
+                        self._layer_store.write_selected(payload)
+                        selected_out.append(payload)
+                except Exception as exc:  # noqa: BLE001
+                    # 中文注释：单事件处理失败不阻断整轮轮询，计入健康状态便于监控告警。
+                    self._error_count += 1
+                    self._last_error = f"{type(exc).__name__}: {exc}"
+                    logger.exception("事件处理失败 source=%s event_id=%s", src.name, getattr(ev, "id", ""))
         return selected_out
+
+    def health_snapshot(self) -> RunnerHealthSnapshot:
+        return RunnerHealthSnapshot(
+            heartbeat=self._heartbeat,
+            last_run_ms=self._last_run_ms,
+            run_count=self._run_count,
+            error_count=self._error_count,
+            last_error=self._last_error,
+        )
 
     def _process_event(self, event: EventEnvelope):  # type: ignore[no-untyped-def]
         self._layer_store.write_raw(asdict(event))

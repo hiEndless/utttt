@@ -24,6 +24,11 @@ from event_center_new.ec.sources.memory import InMemoryEventSource
 from event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
 
 
+class _BoomExtractor(PayloadEvidenceExtractor):
+    def extract(self, event: EventEnvelope):  # type: ignore[override]
+        raise RuntimeError(f"boom:{event.id}")
+
+
 def _build_runner(events: list[EventEnvelope], *, mixed_min_score: float = 0.25) -> tuple[EventPipelineRunner, InMemoryLayerStore]:
     source = InMemoryEventSource(name="test_source", category="test", events=events)
     store = InMemoryLayerStore()
@@ -95,3 +100,65 @@ def test_runner_mixed_noise_can_be_dropped() -> None:
     runner, _store = _build_runner([event], mixed_min_score=0.3)
     selected = runner.run_once()
     assert selected == []
+
+
+def test_runner_health_snapshot_updates_after_run() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-health-1",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="technical.indicator_signal",
+        source=EventSource(name="feature_service", category="technical"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={"evidences": [{"type": "a", "direction": "bullish", "strength": 0.8, "horizon": "short", "importance": 0.8}]},
+    )
+    runner, _store = _build_runner([event])
+    before = runner.health_snapshot()
+    assert before.heartbeat == 0
+    assert before.run_count == 0
+    assert before.error_count == 0
+    assert before.last_run_ms == 0
+    runner.run_once()
+    after = runner.health_snapshot()
+    assert after.heartbeat == 1
+    assert after.run_count == 1
+    assert after.error_count == 0
+    assert after.last_run_ms >= now_ms
+
+
+def test_runner_health_counts_event_errors_without_stopping() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-health-err",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="technical.indicator_signal",
+        source=EventSource(name="feature_service", category="technical"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={"evidences": [{"type": "a", "direction": "bullish", "strength": 0.8, "horizon": "short", "importance": 0.8}]},
+    )
+    source = InMemoryEventSource(name="test_source", category="test", events=[event])
+    store = InMemoryLayerStore()
+    runner = EventPipelineRunner(
+        sources=[source],
+        normalizer=PassThroughNormalizer(),
+        extractor=_BoomExtractor(),
+        correlation_engine=CorrelationEngine(rules=[]),
+        context_builder=DefaultContextBuilder(),
+        l0_processor=HeuristicL0Processor(),
+        l1_aggregator=HeuristicL1Aggregator(),
+        final_gate=DeterministicFinalGate(cfg=SelectPolicyConfig()),
+        event_memory=InMemoryEventMemory(),
+        layer_store=store,
+    )
+    selected = runner.run_once()
+    assert selected == []
+    health = runner.health_snapshot()
+    assert health.run_count == 1
+    assert health.error_count == 1
+    assert "boom:evt-health-err" in health.last_error

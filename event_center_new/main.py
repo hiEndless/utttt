@@ -91,7 +91,9 @@ def main() -> None:
         layer_store=layer_store,
     )
     selected = runner.run_once()
+    health = runner.health_snapshot()
     logger.info("事件中心最小 Runner 执行完成，selected_count=%s", len(selected))
+    logger.info("runner_health=%s", json.dumps(health.__dict__, ensure_ascii=False))
     logger.info("selected=%s", json.dumps(selected, ensure_ascii=False))
 
 
