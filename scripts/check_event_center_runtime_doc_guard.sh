@@ -3,6 +3,15 @@ set -euo pipefail
 
 RUNTIME_DOC="event_center_new/docs/runtime.md"
 MAIN_FILE="event_center_new/main.py"
+SHOW_SETS="false"
+
+if [[ "${1:-}" == "--show-sets" ]]; then
+  SHOW_SETS="true"
+elif [[ -n "${1:-}" ]]; then
+  echo "[失败] 不支持的参数: $1"
+  echo "用法: bash scripts/check_event_center_runtime_doc_guard.sh [--show-sets]"
+  exit 1
+fi
 
 echo "[1/3] 检查 runtime 文档与入口文件存在"
 if ! test -f "$RUNTIME_DOC"; then
@@ -23,6 +32,13 @@ trap 'rm -f "$tmp_main" "$tmp_doc" "$tmp_main_only" "$tmp_doc_only"' EXIT
 
 rg -o 'EVENT_CENTER_[A-Z0-9_]+' "$MAIN_FILE" | sort -u > "$tmp_main"
 rg -o 'EVENT_CENTER_[A-Z0-9_]+' "$RUNTIME_DOC" | sort -u > "$tmp_doc"
+
+if [[ "$SHOW_SETS" == "true" ]]; then
+  echo "[调试] main.py 变量集合："
+  cat "$tmp_main"
+  echo "[调试] runtime.md 变量集合："
+  cat "$tmp_doc"
+fi
 
 if ! test -s "$tmp_main"; then
   echo "[失败] 未从 main.py 提取到 EVENT_CENTER_* 变量"
