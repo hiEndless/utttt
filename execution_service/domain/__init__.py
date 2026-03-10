@@ -34,6 +34,15 @@ from .risk_check_messages import (
 )
 from .risk_check_builder import build_risk_checks
 from .risk_result_builder import build_risk_decision_result
+from .risk_state_change_reasons import (
+    RISK_STATE_CHANGE_REASONS,
+    RISK_STATE_CHANGE_REASON_ZH,
+    RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
+    RISK_STATE_CHANGE_REASON_HYSTERESIS_SOFTEN,
+    RISK_STATE_CHANGE_REASON_PRESSURE_WARN,
+    RISK_STATE_CHANGE_REASON_REJECT_FROZEN,
+    RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY,
+)
 
 __all__ = [
     "DecisionConfidence",
@@ -67,6 +76,13 @@ __all__ = [
     "RISK_MSG_SYMBOL_EXPOSURE_RATIO",
     "RISK_MSG_LONG_LEG_POSITION_LIMIT",
     "RISK_MSG_SHORT_LEG_POSITION_LIMIT",
+    "RISK_STATE_CHANGE_REASONS",
+    "RISK_STATE_CHANGE_REASON_ZH",
+    "RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL",
+    "RISK_STATE_CHANGE_REASON_HYSTERESIS_SOFTEN",
+    "RISK_STATE_CHANGE_REASON_PRESSURE_WARN",
+    "RISK_STATE_CHANGE_REASON_REJECT_FROZEN",
+    "RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY",
     "build_risk_checks",
     "build_risk_decision_result",
 ]

@@ -6,6 +6,13 @@ from typing import Any, Callable, Dict
 from execution_service.domain.contracts import DecisionIntent
 from execution_service.domain.risk_check_builder import build_risk_checks
 from execution_service.domain.risk_result_builder import build_risk_decision_result
+from execution_service.domain.risk_state_change_reasons import (
+    RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
+    RISK_STATE_CHANGE_REASON_HYSTERESIS_SOFTEN,
+    RISK_STATE_CHANGE_REASON_PRESSURE_WARN,
+    RISK_STATE_CHANGE_REASON_REJECT_FROZEN,
+    RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY,
+)
 
 
 @dataclass(frozen=True)
@@ -637,23 +644,23 @@ def _derive_risk_state_with_reason(
 ) -> tuple[str, str]:
     # 中文注释：风险状态用于执行层风控态势表达，供下游快速判定是否可继续加风险。
     if reject_reason in {"max_drawdown_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded"}:
-        return "frozen", "reject_frozen"
+        return "frozen", RISK_STATE_CHANGE_REASON_REJECT_FROZEN
     if reject_reason in {
         "position_limit_reached",
         "account_notional_exceeded",
         "account_margin_ratio_exceeded",
         "direction_conflict_with_position",
     }:
-        return "reduce_only", "reject_reduce_only"
+        return "reduce_only", RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY
     if _has_warn_level_pressure(evaluation_trace):
         base_state = "warn"
-        base_reason = "pressure_warn"
+        base_reason = RISK_STATE_CHANGE_REASON_PRESSURE_WARN
     else:
         base_state = "normal"
-        base_reason = "default_normal"
+        base_reason = RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL
     current = _apply_risk_state_hysteresis(previous_risk_state=previous_risk_state, current_risk_state=base_state)
     if current != base_state:
-        return current, "hysteresis_soften"
+        return current, RISK_STATE_CHANGE_REASON_HYSTERESIS_SOFTEN
     return current, base_reason
 
 

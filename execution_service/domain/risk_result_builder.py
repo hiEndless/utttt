@@ -4,14 +4,10 @@ import time
 from typing import Any, Dict, List
 
 from execution_service.domain.contracts import DecisionIntent
-
-RISK_STATE_REASON_ZH = {
-    "reject_frozen": "命中冻结类风控拒绝，风险状态提升为 frozen",
-    "reject_reduce_only": "命中降风险类风控拒绝，风险状态提升为 reduce_only",
-    "pressure_warn": "规则压力接近阈值，风险状态提升为 warn",
-    "hysteresis_soften": "触发状态降级防抖，风险状态先过渡到 warn",
-    "default_normal": "未命中高风险条件，风险状态保持 normal",
-}
+from execution_service.domain.risk_state_change_reasons import (
+    RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
+    RISK_STATE_CHANGE_REASON_ZH,
+)
 
 
 def build_risk_decision_result(
@@ -65,10 +61,10 @@ def build_risk_decision_result(
         "previous_risk_state": str(previous_risk_state or "normal"),
         "current_risk_state": str(risk_state or "normal"),
         "risk_state_changed": str(previous_risk_state or "normal") != str(risk_state or "normal"),
-        "risk_state_change_reason": str(risk_state_change_reason or "default_normal"),
-        "risk_state_change_reason_zh": RISK_STATE_REASON_ZH.get(
-            str(risk_state_change_reason or "default_normal"),
-            RISK_STATE_REASON_ZH["default_normal"],
+        "risk_state_change_reason": str(risk_state_change_reason or RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL),
+        "risk_state_change_reason_zh": RISK_STATE_CHANGE_REASON_ZH.get(
+            str(risk_state_change_reason or RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL),
+            RISK_STATE_CHANGE_REASON_ZH[RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL],
         ),
         "matched_at_ms": int(time.time() * 1000),
         "evaluation_trace": list(evaluation_trace or []),
