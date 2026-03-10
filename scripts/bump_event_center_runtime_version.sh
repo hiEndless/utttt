@@ -2,6 +2,7 @@
 set -euo pipefail
 
 RUNTIME_DOC="event_center_new/docs/runtime.md"
+MAIN_FILE="event_center_new/main.py"
 
 usage() {
   cat <<'EOF'
@@ -10,12 +11,14 @@ usage() {
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --date YYYY-MM-DD
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --dry-run
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --check-clean
+  bash scripts/bump_event_center_runtime_version.sh <version> <note> --apply-from-env-table
 
 示例:
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO"
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --date 2026-03-11
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --dry-run
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --check-clean
+  bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --apply-from-env-table
 EOF
 }
 
@@ -35,6 +38,7 @@ note="$2"
 date_override=""
 dry_run="false"
 check_clean="false"
+apply_from_env_table="false"
 shift 2
 
 while [[ $# -gt 0 ]]; do
@@ -49,6 +53,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --check-clean)
       check_clean="true"
+      shift
+      ;;
+    --apply-from-env-table)
+      apply_from_env_table="true"
       shift
       ;;
     *)
@@ -68,12 +76,34 @@ if ! test -f "$RUNTIME_DOC"; then
   echo "[失败] 缺少文档: $RUNTIME_DOC"
   exit 1
 fi
+if ! test -f "$MAIN_FILE"; then
+  echo "[失败] 缺少入口文件: $MAIN_FILE"
+  exit 1
+fi
 
 if [[ "$check_clean" == "true" ]]; then
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "[失败] 工作区不干净，拒绝升级版本（可移除 --check-clean 或先提交变更）。"
     exit 1
   fi
+fi
+
+if [[ "$apply_from_env_table" == "true" ]]; then
+  keys_raw="$(rg -o 'EVENT_CENTER_[A-Z0-9_]+' "$MAIN_FILE" | sort -u || true)"
+  if [[ -z "$keys_raw" ]]; then
+    echo "[失败] 未从 $MAIN_FILE 提取到 EVENT_CENTER_ 环境变量。"
+    exit 1
+  fi
+  while IFS= read -r key; do
+    if [[ -z "$key" ]]; then
+      continue
+    fi
+    if ! rg -q "$key" "$RUNTIME_DOC"; then
+      echo "[失败] runtime 文档缺少环境变量: $key"
+      echo "提示：先更新 $RUNTIME_DOC 再执行 bump。"
+      exit 1
+    fi
+  done <<< "$keys_raw"
 fi
 
 today="$(date +%F)"
