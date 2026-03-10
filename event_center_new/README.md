@@ -1,6 +1,7 @@
 # event_center_new
 
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
+运行时配置总表：`event_center_new/docs/runtime.md`
 
 `event_center_new` 是目标架构中的 **Event Center**，只负责事件层，不负责市场状态归纳，不负责交易决策，不负责执行。
 
