@@ -12,11 +12,14 @@ EOF
 fi
 
 if [[ "$MODE" == "--quick" ]]; then
-  echo "[1/2] event_center 契约/Schema 守卫（quick）"
+  echo "[1/3] event_center 契约/Schema 守卫（quick）"
   bash scripts/check_event_center_contract_schema_guards.sh --quick
 
-  echo "[2/2] event_center Runtime 守卫（quick）"
+  echo "[2/3] event_center Runtime 守卫（quick）"
   bash scripts/check_event_center_runtime_family_guards.sh --quick
+
+  echo "[3/3] event_center 守卫接线检查（quick）"
+  bash scripts/check_event_center_guard_wiring.sh
   echo "[通过] event_center 契约守卫检查完成（quick）。"
   exit 0
 fi
