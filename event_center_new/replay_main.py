@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 
 from event_center_new.ec.pipeline.replay_cli import format_report, run_replay_report
@@ -13,6 +14,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--end-ms", type=int, required=True, help="回放结束时间（毫秒）")
     parser.add_argument("--raw-stream", default="ec:raw", help="raw stream 名称")
     parser.add_argument("--selected-stream", default="ec:selected", help="selected stream 名称")
+    parser.add_argument(
+        "--ignore-field",
+        action="append",
+        default=[],
+        help="diff 时忽略字段路径（可重复），例如 ts_ms 或 trigger_event.ts_ms",
+    )
+    parser.add_argument("--output", default="", help="可选：把报告写入指定文件路径")
     parser.add_argument("--compact", action="store_true", help="输出紧凑 JSON")
     return parser
 
@@ -34,8 +42,13 @@ def main(argv: list[str] | None = None) -> int:
         end_ms=args.end_ms,
         raw_stream=args.raw_stream,
         selected_stream=args.selected_stream,
+        ignore_fields=list(args.ignore_field or []),
     )
-    print(format_report(report, pretty=not args.compact))
+    rendered = format_report(report, pretty=not args.compact)
+    print(rendered)
+    output_path = str(args.output or "").strip()
+    if output_path:
+        Path(output_path).write_text(rendered + "\n", encoding="utf-8")
     return 0 if report.get("ok") else 1
 
 

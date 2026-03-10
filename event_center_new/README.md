@@ -351,5 +351,8 @@ Redis 时间窗回放 CLI：
 python3 -m event_center_new.replay_main \
   --redis-url redis://127.0.0.1:6379/0 \
   --start-ms 1773154000000 \
-  --end-ms 1773154999999
+  --end-ms 1773154999999 \
+  --ignore-field ts_ms \
+  --ignore-field trigger_event.ts_ms \
+  --output /tmp/event_replay_report.json
 ```

@@ -93,3 +93,27 @@ def test_run_replay_report_has_diff_when_selected_mismatch() -> None:
     report = run_replay_report(fake, start_ms=now_ms - 1, end_ms=now_ms + 1)
     assert report["ok"] is False
     assert len(report["diffs"]) >= 1
+
+
+def test_run_replay_report_ignore_field_can_suppress_ts_diff() -> None:
+    now_ms = int(time.time() * 1000)
+    event = _sample_event(now_ms)
+    tool = build_default_replay_tool()
+    replay = tool.replay([event])
+    fake = _FakeRedisRange()
+    fake.add("ec:raw", f"{now_ms}-1", asdict(event))
+    online = dict(replay.selected[0])
+    online["ts_ms"] = now_ms + 999
+    fake.add("ec:selected", f"{now_ms}-2", online)
+
+    report_without_ignore = run_replay_report(fake, start_ms=now_ms - 1, end_ms=now_ms + 2000)
+    assert report_without_ignore["ok"] is False
+
+    report_with_ignore = run_replay_report(
+        fake,
+        start_ms=now_ms - 1,
+        end_ms=now_ms + 2000,
+        ignore_fields=["ts_ms"],
+    )
+    assert report_with_ignore["ok"] is True
+    assert report_with_ignore["diffs"] == []

@@ -42,6 +42,7 @@ def run_replay_report(
     end_ms: int,
     raw_stream: str = "ec:raw",
     selected_stream: str = "ec:selected",
+    ignore_fields: list[str] | None = None,
 ) -> dict[str, Any]:
     raw_events = load_payloads_by_window(
         client,
@@ -57,7 +58,10 @@ def run_replay_report(
     )
     tool = build_default_replay_tool()
     replay = tool.replay_from_dicts(raw_events)
-    diffs = diff_selected(replay.selected, selected_online)
+    normalized_ignore_fields = [str(x).strip() for x in (ignore_fields or []) if str(x).strip()]
+    replay_for_diff = _strip_fields_in_list(replay.selected, normalized_ignore_fields)
+    online_for_diff = _strip_fields_in_list(selected_online, normalized_ignore_fields)
+    diffs = diff_selected(replay_for_diff, online_for_diff)
     return {
         "start_ms": int(start_ms),
         "end_ms": int(end_ms),
@@ -78,6 +82,7 @@ def run_replay_report(
             },
         },
         "ok": len(diffs) == 0,
+        "ignore_fields": normalized_ignore_fields,
         "diffs": diffs,
         "replay_selected": replay.selected,
         "online_selected": selected_online,
@@ -101,3 +106,38 @@ def event_dict_to_stream_fields(payload: dict[str, Any]) -> dict[str, str]:
 
 def replay_result_to_dict(report: dict[str, Any]) -> dict[str, Any]:
     return asdict(report) if hasattr(report, "__dataclass_fields__") else dict(report)
+
+
+def _strip_fields_in_list(items: list[dict[str, Any]], ignore_fields: list[str]) -> list[dict[str, Any]]:
+    if not ignore_fields:
+        return [dict(item) for item in items]
+    return [_strip_fields(item, ignore_fields) for item in items]
+
+
+def _strip_fields(payload: dict[str, Any], ignore_fields: list[str]) -> dict[str, Any]:
+    out = json.loads(json.dumps(payload, ensure_ascii=False))
+    for path in ignore_fields:
+        parts = [p for p in str(path).split(".") if p]
+        if not parts:
+            continue
+        _remove_by_path(out, parts)
+    return out
+
+
+def _remove_by_path(node: Any, parts: list[str]) -> None:
+    if not parts:
+        return
+    head = parts[0]
+    tail = parts[1:]
+    if isinstance(node, dict):
+        if head not in node:
+            return
+        if not tail:
+            node.pop(head, None)
+            return
+        _remove_by_path(node.get(head), tail)
+        return
+    if isinstance(node, list):
+        # 中文注释：列表场景下对每个元素应用同一路径，便于忽略如 trigger_event.trace.ts_ms 等字段。
+        for item in node:
+            _remove_by_path(item, parts)
