@@ -202,6 +202,9 @@ class ExecutionService:
     async def get_confidence_migration_metrics(self) -> Dict[str, int]:
         return await self._confidence_metrics_store.snapshot()
 
+    async def reset_confidence_migration_metrics(self) -> None:
+        await self._confidence_metrics_store.reset()
+
     async def reconcile_order(self, payload: Mapping[str, Any]) -> Dict[str, Any]:
         order_id = str(payload.get("order_id") or "").strip()
         account_id = str(payload.get("account_id") or "").strip() or "main"

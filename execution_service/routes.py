@@ -15,7 +15,7 @@ from execution_service.version import (
 )
 
 
-def create_router(service: ExecutionService) -> APIRouter:
+def create_router(service: ExecutionService, *, allow_debug_metrics_reset: bool = False) -> APIRouter:
     router = APIRouter(prefix="/internal/execution", tags=["execution"])
 
     @router.get("/healthz")
@@ -99,5 +99,13 @@ def create_router(service: ExecutionService) -> APIRouter:
             "ts": now_ms,
             "ts_ms": now_ms,
         }
+
+    @router.post("/debug/confidence-metrics/reset")
+    async def reset_confidence_metrics() -> Dict[str, Any]:
+        if not bool(allow_debug_metrics_reset):
+            raise HTTPException(status_code=403, detail="debug_metrics_reset_disabled")
+        await service.reset_confidence_migration_metrics()
+        now_ms = int(time.time() * 1000)
+        return {"ok": True, "service": "execution_service", "ts": now_ms, "ts_ms": now_ms}
 
     return router

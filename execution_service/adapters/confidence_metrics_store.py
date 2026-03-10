@@ -40,6 +40,10 @@ class InMemoryConfidenceMetricsStore:
             out.update({str(k): int(v) for k, v in dict(self.counters or {}).items()})
             return out
 
+    async def reset(self) -> None:
+        with self._lock:
+            self.counters = dict(_DEFAULT_METRICS)
+
 
 @dataclass
 class RedisConfidenceMetricsStore:
@@ -69,3 +73,6 @@ class RedisConfidenceMetricsStore:
                 except Exception:
                     continue
         return out
+
+    async def reset(self) -> None:
+        await self.redis_client.delete(self.key)

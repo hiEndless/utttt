@@ -203,13 +203,19 @@ def create_app() -> FastAPI:
         execution_state_store=execution_state_store,
         confidence_metrics_store=confidence_metrics_store,
     )
+    allow_debug_metrics_reset = str(os.getenv("EXECUTION_DEBUG_ALLOW_METRICS_RESET", "false") or "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     app = FastAPI(
         title="execution_service",
         docs_url="/docs",
         redoc_url=None,
         openapi_url="/openapi.json",
     )
-    app.include_router(create_router(service))
+    app.include_router(create_router(service, allow_debug_metrics_reset=allow_debug_metrics_reset))
     return app
 
 

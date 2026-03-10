@@ -317,6 +317,7 @@
 ## Confidence 迁移指标
 
 - `GET /internal/execution/debug/confidence-metrics`
+- `POST /internal/execution/debug/confidence-metrics/reset`（默认禁用）
 
 返回示例：
 
@@ -340,6 +341,8 @@
 - `decision_confidence_requests`: 提供 `decision_confidence` 的请求数（可同时带 `confidence`）。
 - `confidence_alias_mismatch_rejections`: 因双字段不一致被拒绝（400）的次数。
 - 当前为进程内内存指标，重启后清零；用于迁移阶段联调观察，不作为长期计费/审计指标。
+- 若启用 Redis 指标存储，重启后不清零。
+- reset 接口默认返回 `403`，仅在 `EXECUTION_DEBUG_ALLOW_METRICS_RESET=true` 时可用。
 
 ## 状态提供器模式
 
@@ -373,6 +376,7 @@
 - `EXECUTION_CONFIDENCE_METRICS_MODE=memory|redis`（默认 `memory`）
 - `EXECUTION_CONFIDENCE_METRICS_REDIS_URL`（当指标模式为 redis）
 - `EXECUTION_CONFIDENCE_METRICS_KEY`（默认 `execution:metrics:confidence_migration`）
+- `EXECUTION_DEBUG_ALLOW_METRICS_RESET=true|false`（默认 `false`）
 - `EXECUTION_IDEMPOTENCY_ENABLED`
 - `EXECUTION_IDEMPOTENCY_MODE`
 - `EXECUTION_IDEMPOTENCY_REDIS_URL`

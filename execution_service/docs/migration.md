@@ -169,6 +169,7 @@
 
 观测入口：
 - `GET /internal/execution/debug/confidence-metrics`（进程内计数，重启清零）
+- `POST /internal/execution/debug/confidence-metrics/reset`（默认禁用，仅 debug 环境建议开启）
 - 可选 Redis 持久化：
   - `EXECUTION_CONFIDENCE_METRICS_MODE=redis`
   - `EXECUTION_CONFIDENCE_METRICS_REDIS_URL`

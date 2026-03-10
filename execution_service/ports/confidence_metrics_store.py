@@ -12,3 +12,6 @@ class ConfidenceMetricsStore(Protocol):
 
     async def snapshot(self) -> Dict[str, int]:
         ...
+
+    async def reset(self) -> None:
+        ...

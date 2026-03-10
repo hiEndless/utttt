@@ -174,6 +174,41 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     assert body["ts_ms"] == body["ts"]
 
 
+def test_confidence_migration_metrics_reset_disabled_by_default() -> None:
+    client = TestClient(create_app())
+    resp = client.post("/internal/execution/debug/confidence-metrics/reset")
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "debug_metrics_reset_disabled"
+
+
+def test_confidence_migration_metrics_reset_when_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXECUTION_DEBUG_ALLOW_METRICS_RESET", "true")
+    client = TestClient(create_app())
+    client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-reset-001",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    before = client.get("/internal/execution/debug/confidence-metrics").json()
+    assert int((before.get("confidence_migration_metrics") or {}).get("decide_requests_total") or 0) >= 1
+    reset_resp = client.post("/internal/execution/debug/confidence-metrics/reset")
+    assert reset_resp.status_code == 200
+    after = client.get("/internal/execution/debug/confidence-metrics").json()
+    metrics = dict(after.get("confidence_migration_metrics") or {})
+    assert metrics["decide_requests_total"] == 0
+    assert metrics["confidence_only_requests"] == 0
+    assert metrics["decision_confidence_requests"] == 0
+    assert metrics["confidence_alias_mismatch_rejections"] == 0
+
+
 def test_debug_state_includes_confidence_migration_readiness() -> None:
     client = TestClient(create_app())
     client.post(
