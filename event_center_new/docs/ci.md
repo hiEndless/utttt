@@ -34,6 +34,13 @@
 3. 接线失败
    - `bash scripts/check_event_center_guard_wiring.sh --strict --show-links`
 
+失败码对照（聚合守卫统一输出 `FAIL_CODE=...`）：
+
+- `EC_GUARD_SCHEMA_FAILED`：契约/Schema 子守卫失败
+- `EC_GUARD_RUNTIME_FAILED`：Runtime 子守卫失败
+- `EC_GUARD_WIRING_FAILED`：接线子守卫失败
+- `EC_GUARD_CI_WORKFLOW_FAILED`：CI workflow 静态守卫失败
+
 ## 4. 常见排障顺序
 
 1. 先复现同模式失败（quick strict / quick lenient / full strict）。
@@ -68,4 +75,6 @@
 ```bash
 rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" quick_strict.log
 rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" full_guard.log
+rg -n "FAIL_CODE=" quick_strict.log
+rg -n "FAIL_CODE=" full_guard.log
 ```
