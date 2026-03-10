@@ -421,4 +421,5 @@ python3 -m event_center_new.replay_main \
 可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
 该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
 可用 `bash scripts/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫）。
-全仓库守卫支持快速模式：`bash scripts/check_new_arch_guards.sh --event-center-only`。
+全仓库守卫支持 event_center 快速模式：`bash scripts/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
+如需跑 event_center 全量子守卫，可用：`bash scripts/check_new_arch_guards.sh --event-center-only`。

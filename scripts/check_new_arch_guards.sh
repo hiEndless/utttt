@@ -7,14 +7,22 @@ if [[ "$MODE" == "--help" || "$MODE" == "-h" ]]; then
 用法:
   bash scripts/check_new_arch_guards.sh
   bash scripts/check_new_arch_guards.sh --event-center-only
+  bash scripts/check_new_arch_guards.sh --event-center-quick
 EOF
   exit 0
 fi
 
 if [[ "$MODE" == "--event-center-only" ]]; then
-  echo "[1/1] event_center 契约聚合守卫（快速模式）"
+  echo "[1/1] event_center 契约聚合守卫（全量）"
   bash scripts/check_event_center_contract_guards.sh
   echo "[通过] 新架构守卫检查完成（event_center-only）。"
+  exit 0
+fi
+
+if [[ "$MODE" == "--event-center-quick" ]]; then
+  echo "[1/1] event_center 契约聚合守卫（quick）"
+  bash scripts/check_event_center_contract_guards.sh --quick
+  echo "[通过] 新架构守卫检查完成（event_center-quick）。"
   exit 0
 fi
 
