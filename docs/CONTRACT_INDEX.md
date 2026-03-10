@@ -39,6 +39,7 @@
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/execution_signal_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
+- `execution_service/docs/decision_state_status.schema.json`
 - `execution_service/docs/risk_state.schema.json`
 - `execution_service/docs/risk_state_change_reason.schema.json`
 - `execution_service/docs/rule_debug.schema.json`

@@ -110,8 +110,13 @@
       "references": [
         {
           "schema": "execution_service/docs/decision_state.schema.json",
-          "json_path": "properties.status.enum",
-          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+          "json_path": "properties.status.$ref",
+          "expected": "./decision_state_status.schema.json#/properties/status"
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.last_transition.$ref",
+          "expected": "./decision_state_status.schema.json#/properties/last_transition"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -137,6 +142,30 @@
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.risk_state.$ref",
           "expected": "./risk_state.schema.json#/properties/risk_state"
+        }
+      ]
+    },
+    {
+      "name": "DecisionStateStatus",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/decision_state_status.schema.json",
+      "code": "execution_service/app/service.py",
+      "symbol": "_derive_execution_status",
+      "fields": [
+        "status",
+        "last_transition"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/decision_state_status.schema.json",
+          "json_path": "properties.status.enum",
+          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        },
+        {
+          "schema": "execution_service/docs/decision_state_status.schema.json",
+          "json_path": "properties.last_transition.enum",
+          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
         }
       ]
     },

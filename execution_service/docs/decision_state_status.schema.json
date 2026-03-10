@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionStateStatus",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+    },
+    "last_transition": {
+      "type": "string",
+      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+    }
+  }
+}

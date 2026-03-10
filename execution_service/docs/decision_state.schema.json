@@ -21,14 +21,8 @@
       "type": "string",
       "minLength": 1
     },
-    "status": {
-      "type": "string",
-      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
-    },
-    "last_transition": {
-      "type": "string",
-      "enum": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
-    },
+    "status": {"$ref": "./decision_state_status.schema.json#/properties/status"},
+    "last_transition": {"$ref": "./decision_state_status.schema.json#/properties/last_transition"},
     "execution_action": {
       "type": "string",
       "enum": ["add", "reduce", "hold", "exit", "skip"]

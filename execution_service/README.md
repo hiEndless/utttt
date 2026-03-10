@@ -207,6 +207,7 @@ execution_service/
 - retry_meta schema：`execution_service/docs/retry_meta.schema.json`
 - risk_state schema：`execution_service/docs/risk_state.schema.json`
 - risk_state_change_reason schema：`execution_service/docs/risk_state_change_reason.schema.json`
+- decision_state_status schema：`execution_service/docs/decision_state_status.schema.json`
 - risk_policy schema：`execution_service/docs/risk_policy.schema.json`
 - `execution_result/execution_reconcile_result` 中的 `retry_meta` 已统一通过 `$ref` 引用独立 schema，避免枚举漂移
 - `execution_signal_result/decision_state` 中的 `risk_state`（含 `previous/current_risk_state`）已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
@@ -219,6 +220,7 @@ execution_service/
 - `execution_signal_result` 中的 `risk_checks` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `risk_policy/rule_debug` 中的 `rule_priority_order` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `risk_policy/position_before` 中的 `position_mode` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
+- `decision_state` 中的 `status/last_transition` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - execution 契约测试工具已支持带 JSON Pointer 的本地 `$ref`（如 `#/properties/...`），可稳定校验子 schema 复用
 - schema mapping 清单：`execution_service/docs/schema_mapping.json`
 - `schema_mapping.json` 已登记 `RetryMeta` 的 `$ref` 引用来源，守卫会校验引用路径和值不漂移

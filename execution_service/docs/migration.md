@@ -119,6 +119,7 @@
 96. `mode` 已抽取独立 schema 并通过 `$ref` 复用，减少 `execution_signal_result` 契约重复定义
 97. `rule_priority_order` 已抽取独立 schema 并通过 `$ref` 复用，减少 `risk_policy/rule_debug` 契约重复定义
 98. `position_mode` 已抽取独立 schema 并通过 `$ref` 复用，减少 `risk_policy/position_before` 契约重复定义
+99. `decision_state.status/last_transition` 已抽取独立 schema 并通过 `$ref` 复用，减少状态契约重复定义
 
 ## 关键收敛决议（冻结）
 
