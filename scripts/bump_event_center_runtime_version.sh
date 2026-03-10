@@ -8,10 +8,12 @@ usage() {
 用法:
   bash scripts/bump_event_center_runtime_version.sh <version> <note>
   bash scripts/bump_event_center_runtime_version.sh <version> <note> --date YYYY-MM-DD
+  bash scripts/bump_event_center_runtime_version.sh <version> <note> --dry-run
 
 示例:
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO"
   bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --date 2026-03-11
+  bash scripts/bump_event_center_runtime_version.sh event-center-runtime-v2 "新增 EVENT_CENTER_FOO" --dry-run
 EOF
 }
 
@@ -29,6 +31,7 @@ fi
 version="$1"
 note="$2"
 date_override=""
+dry_run="false"
 shift 2
 
 while [[ $# -gt 0 ]]; do
@@ -36,6 +39,10 @@ while [[ $# -gt 0 ]]; do
     --date)
       date_override="${2:-}"
       shift 2
+      ;;
+    --dry-run)
+      dry_run="true"
+      shift
       ;;
     *)
       echo "[失败] 不支持的参数: $1"
@@ -98,6 +105,15 @@ END {
   echo "[失败] 未找到变更日志标题。"
   exit 1
 }
+
+if [[ "$dry_run" == "true" ]]; then
+  echo "[预览] dry-run 模式，不写入文件。"
+  echo "target_file=$RUNTIME_DOC"
+  echo "version=$version"
+  echo "date=$target_date"
+  echo "entry=$entry"
+  exit 0
+fi
 
 mv "$tmp2" "$RUNTIME_DOC"
 echo "[通过] 已更新 $RUNTIME_DOC"
