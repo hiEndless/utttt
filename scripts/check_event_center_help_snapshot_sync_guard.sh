@@ -27,9 +27,14 @@ if [[ -z "$help_output" ]]; then
 fi
 
 echo "[3/7] 比对 --help 完整快照块"
-if ! diff -u "$SNAPSHOT_BLOCK" <(printf "%s\n" "$help_output") >/dev/null; then
+if ! diff_output="$(diff -u "$SNAPSHOT_BLOCK" <(printf "%s\n" "$help_output") || true)"; then
+  :
+fi
+if [[ -n "$diff_output" ]]; then
   echo "[失败] --help 完整输出与快照不一致: $SNAPSHOT_BLOCK"
   echo "可执行：bash scripts/check_event_center_contract_guards.sh --help"
+  echo "--- diff (up to 80 lines) ---"
+  printf "%s\n" "$diff_output" | sed -n '1,80p'
   exit 1
 fi
 
