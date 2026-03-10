@@ -37,6 +37,7 @@
 - `execution_service/docs/migration.md`
 - `execution_service/docs/decision_intent.schema.json`
 - `execution_service/docs/execution_result.schema.json`
+- `execution_service/docs/execution_action.schema.json`
 - `execution_service/docs/execution_signal_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/decision_state_status.schema.json`

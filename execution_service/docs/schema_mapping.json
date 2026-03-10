@@ -67,8 +67,8 @@
       "references": [
         {
           "schema": "execution_service/docs/execution_result.schema.json",
-          "json_path": "properties.execution_action.enum",
-          "expected": ["add", "reduce", "hold", "exit", "skip"]
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_action.schema.json#/properties/execution_action"
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",
@@ -97,6 +97,7 @@
       "fields": [
         "account_id",
         "status",
+        "execution_action",
         "risk_state",
         "last_transition",
         "attempts",
@@ -117,6 +118,11 @@
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.last_transition.$ref",
           "expected": "./decision_state_status.schema.json#/properties/last_transition"
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_action.schema.json#/properties/execution_action"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -166,6 +172,24 @@
           "schema": "execution_service/docs/decision_state_status.schema.json",
           "json_path": "properties.last_transition.enum",
           "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        }
+      ]
+    },
+    {
+      "name": "ExecutionAction",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/execution_action.schema.json",
+      "code": "execution_service/domain/contracts.py",
+      "symbol": "ExecutionAction",
+      "fields": [
+        "execution_action"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_action.schema.json",
+          "json_path": "properties.execution_action.enum",
+          "expected": ["add", "reduce", "hold", "exit", "skip"]
         }
       ]
     },

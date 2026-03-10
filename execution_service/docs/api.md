@@ -122,6 +122,7 @@
   - `rule_priority_order` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/rule_priority_order.schema.json`
   - `position_mode` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/position_mode.schema.json`
   - `decision_state.status/last_transition` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/decision_state_status.schema.json`
+  - `execution_result/decision_state.execution_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/execution_action.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
