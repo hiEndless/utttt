@@ -421,7 +421,7 @@ python3 -m event_center_new.replay_main \
 仓库守卫 `scripts/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
 仓库守卫 `scripts/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
 仓库守卫 `scripts/check_event_center_ci_doc_snapshot_guard.sh` 校验 `event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt` 与 `event_center_new/docs/ci_triage_snapshot_lines.txt`）。
-仓库守卫 `scripts/check_event_center_help_snapshot_sync_guard.sh` 校验聚合守卫 `--help` 与 `ci_help_snapshot_lines.txt` 的失败码顺序强一致。
+仓库守卫 `scripts/check_event_center_help_snapshot_sync_guard.sh` 校验聚合守卫 `--help` 的完整输出块与失败码顺序强一致（快照：`ci_help_block_snapshot.txt`/`ci_help_snapshot_lines.txt`）。
 `scripts/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow/ci-doc/help-snapshot-sync），便于日志检索与告警归类；可用 `--help` 查看失败码清单。
 聚合入口：
 

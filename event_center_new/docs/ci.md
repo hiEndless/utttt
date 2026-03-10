@@ -93,7 +93,10 @@
 ## 7. 帮助快照同步守卫
 
 - 脚本：`scripts/check_event_center_help_snapshot_sync_guard.sh`
-- 作用：校验 `scripts/check_event_center_contract_guards.sh --help` 失败码顺序与 `event_center_new/docs/ci_help_snapshot_lines.txt` 一致。
+- 作用：校验 `scripts/check_event_center_contract_guards.sh --help` 完整输出块与失败码顺序均与快照一致。
+- 快照来源：
+  - `event_center_new/docs/ci_help_block_snapshot.txt`（完整输出块）
+  - `event_center_new/docs/ci_help_snapshot_lines.txt`（失败码关键行）
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
 ## 8. Artifact 日志锚点（下载后）
