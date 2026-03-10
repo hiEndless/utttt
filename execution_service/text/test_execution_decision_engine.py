@@ -115,6 +115,10 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
     assert result.signal_result["rule_debug"]["hit_rule"] == "passed_all_rules"
     assert isinstance(result.signal_result["rule_debug"]["evaluation_trace"], list)
+    assert all(
+        isinstance(item.get("note_zh"), str) and item["note_zh"]
+        for item in result.signal_result["rule_debug"]["evaluation_trace"]
+    )
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:

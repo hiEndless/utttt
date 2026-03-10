@@ -71,7 +71,13 @@ def test_execution_result_schema_samples() -> None:
                 "hit_rule_threshold": None,
                 "matched_at_ms": 1760000000001,
                 "evaluation_trace": [
-                    {"rule": "position_limit", "status": "pass", "value": 0.1, "threshold": 1.0}
+                    {
+                        "rule": "position_limit",
+                        "status": "pass",
+                        "value": 0.1,
+                        "threshold": 1.0,
+                        "note_zh": "仓位上限检查(多头): 当前=0.1000, 阈值=1.0000",
+                    }
                 ],
             },
         },

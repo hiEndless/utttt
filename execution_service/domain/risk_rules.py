@@ -223,7 +223,7 @@ def evaluate_risk_rules(
     }
     for rule_name in rule_priority_order:
         result = rule_handlers[rule_name]()
-        value, threshold = _rule_trace_value_threshold(
+        value, threshold, note_zh = _rule_trace_value_threshold(
             rule_name=rule_name,
             direction=direction,
             long_position_size=long_position_size,
@@ -252,6 +252,7 @@ def evaluate_risk_rules(
                     "status": "fail",
                     "value": value,
                     "threshold": threshold,
+                    "note_zh": note_zh,
                 }
             )
             return _finalize(**result)
@@ -261,6 +262,7 @@ def evaluate_risk_rules(
                 "status": "pass",
                 "value": value,
                 "threshold": threshold,
+                "note_zh": note_zh,
             }
         )
 
@@ -536,23 +538,51 @@ def _rule_trace_value_threshold(
     allow_dual_side: bool,
     position_side: str,
     position_size: float,
-) -> tuple[float | None, float | None]:
+) -> tuple[float | None, float | None, str]:
     if rule_name == RULE_POSITION_LIMIT:
         if direction == "short":
-            return short_position_size, max_short_position_size
-        return long_position_size, max_long_position_size
+            return (
+                short_position_size,
+                max_short_position_size,
+                f"仓位上限检查(空头): 当前={short_position_size:.4f}, 阈值={max_short_position_size:.4f}",
+            )
+        return (
+            long_position_size,
+            max_long_position_size,
+            f"仓位上限检查(多头): 当前={long_position_size:.4f}, 阈值={max_long_position_size:.4f}",
+        )
     if rule_name == RULE_COOLDOWN:
-        return float(cooldown_seconds_left), 0.0
+        return float(cooldown_seconds_left), 0.0, f"冷却期检查: 剩余={cooldown_seconds_left:.0f}s, 阈值=0s"
     if rule_name == RULE_MAX_DRAWDOWN:
-        return current_drawdown_ratio, max_drawdown_ratio
+        return (
+            current_drawdown_ratio,
+            max_drawdown_ratio,
+            f"最大回撤检查: 当前={current_drawdown_ratio:.4f}, 阈值={max_drawdown_ratio:.4f}",
+        )
     if rule_name == RULE_ACCOUNT_NOTIONAL:
-        return account_notional, max_account_notional
+        return (
+            account_notional,
+            max_account_notional,
+            f"账户总敞口检查: 当前={account_notional:.4f}, 阈值={max_account_notional:.4f}",
+        )
     if rule_name == RULE_MARGIN_RATIO:
-        return margin_ratio, max_margin_ratio
+        return (
+            margin_ratio,
+            max_margin_ratio,
+            f"账户保证金率检查: 当前={margin_ratio:.4f}, 阈值={max_margin_ratio:.4f}",
+        )
     if rule_name == RULE_DAILY_LOSS:
-        return daily_loss, max_daily_loss
+        return (
+            daily_loss,
+            max_daily_loss,
+            f"当日亏损检查: 当前={daily_loss:.4f}, 阈值={max_daily_loss:.4f}",
+        )
     if rule_name == RULE_CONSECUTIVE_LOSS:
-        return consecutive_loss_count, max_consecutive_loss_count
+        return (
+            consecutive_loss_count,
+            max_consecutive_loss_count,
+            f"连续亏损次数检查: 当前={consecutive_loss_count:.0f}, 阈值={max_consecutive_loss_count:.0f}",
+        )
     if rule_name == RULE_DIRECTION_CONFLICT:
         conflict = (
             (not allow_dual_side)
@@ -561,5 +591,5 @@ def _rule_trace_value_threshold(
             and direction != position_side
             and position_size > 0
         )
-        return (1.0 if conflict else 0.0), 0.5
-    return None, None
+        return (1.0 if conflict else 0.0), 0.5, "方向冲突检查: 冲突=1, 不冲突=0, 阈值=0.5"
+    return None, None, "规则检查"

@@ -69,12 +69,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["rule", "status", "value", "threshold"],
+            "required": ["rule", "status", "value", "threshold", "note_zh"],
             "properties": {
               "rule": {"type": "string", "minLength": 1},
               "status": {"type": "string", "enum": ["pass", "fail"]},
               "value": {"type": ["number", "null"]},
-              "threshold": {"type": ["number", "null"]}
+              "threshold": {"type": ["number", "null"]},
+              "note_zh": {"type": "string", "minLength": 1}
             }
           }
         }

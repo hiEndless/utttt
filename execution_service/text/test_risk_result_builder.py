@@ -72,8 +72,20 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
         hit_rule_value=1.0,
         hit_rule_threshold=0.0,
         evaluation_trace=[
-            {"rule": "position_limit", "status": "pass", "value": 0.2, "threshold": 1.0},
-            {"rule": "direction_conflict", "status": "fail", "value": 1.0, "threshold": 0.5},
+            {
+                "rule": "position_limit",
+                "status": "pass",
+                "value": 0.2,
+                "threshold": 1.0,
+                "note_zh": "仓位上限检查(多头): 当前=0.2000, 阈值=1.0000",
+            },
+            {
+                "rule": "direction_conflict",
+                "status": "fail",
+                "value": 1.0,
+                "threshold": 0.5,
+                "note_zh": "方向冲突检查: 冲突=1, 不冲突=0, 阈值=0.5",
+            },
         ],
     )
     signal = result["signal_result"]

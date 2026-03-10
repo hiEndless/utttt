@@ -120,7 +120,7 @@
     - `rule_priority_order`：本次裁决实际使用的规则优先级顺序
     - `hit_rule_value/hit_rule_threshold`：命中规则的值与阈值（如适用）
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
-    - `evaluation_trace`：按规则顺序记录每条规则的 `pass/fail` 与 `value/threshold`
+    - `evaluation_trace`：按规则顺序记录每条规则的 `pass/fail`、`value/threshold` 与 `note_zh`
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`
     - 可选覆盖：`risk_policy.rule_priority_order`（必须提供八项完整排列，否则自动回退默认）
 
@@ -246,7 +246,7 @@
   - `attempts`: submit 尝试次数（未 submit 为 `0`）
   - `submitted_at_ms`: 最近一次成功 submit 时间戳（未 submit 为 `null`）
   - `last_error`: 最近一次 submit 错误文本（无错误为空字符串）
-  - `rule_debug`: 最近一次裁决命中规则调试信息（命中规则名/规则顺序/值阈值/命中时间戳/逐条评估轨迹）
+  - `rule_debug`: 最近一次裁决命中规则调试信息（命中规则名/规则顺序/值阈值/命中时间戳/逐条评估轨迹中文说明）
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）
   - `reconcile_order_id`: 最近一次回执对账的订单号（如有）
