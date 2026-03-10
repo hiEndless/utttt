@@ -32,6 +32,7 @@ def test_decision_state_schema_samples() -> None:
             "evaluation_trace": [
                 {
                     "rule": "position_limit",
+                    "scope": "position",
                     "status": "pass",
                     "value": 0.1,
                     "threshold": 1.0,

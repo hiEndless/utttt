@@ -96,6 +96,7 @@
 73. `rule_debug` 已增加 `matched_at_ms` 命中时间戳，支持跨服务链路的时序对齐与回放分析
 74. `rule_debug` 已增加 `evaluation_trace`，支持按规则优先级回放每条规则的 pass/fail 与值阈值轨迹
 75. `evaluation_trace` 已增加 `note_zh`，每条规则评估均输出中文说明，提升值班排障效率
+76. `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度
 
 ## 关键收敛决议（冻结）
 

@@ -245,10 +245,12 @@ def evaluate_risk_rules(
             position_side=position_side,
             position_size=position_size,
         )
+        scope = _rule_trace_scope(rule_name)
         if result is not None:
             evaluation_trace.append(
                 {
                     "rule": rule_name,
+                    "scope": scope,
                     "status": "fail",
                     "value": value,
                     "threshold": threshold,
@@ -259,6 +261,7 @@ def evaluate_risk_rules(
         evaluation_trace.append(
             {
                 "rule": rule_name,
+                "scope": scope,
                 "status": "pass",
                 "value": value,
                 "threshold": threshold,
@@ -593,3 +596,20 @@ def _rule_trace_value_threshold(
         )
         return (1.0 if conflict else 0.0), 0.5, "方向冲突检查: 冲突=1, 不冲突=0, 阈值=0.5"
     return None, None, "规则检查"
+
+
+def _rule_trace_scope(rule_name: str) -> str:
+    if rule_name in {
+        RULE_COOLDOWN,
+        RULE_MAX_DRAWDOWN,
+        RULE_ACCOUNT_NOTIONAL,
+        RULE_MARGIN_RATIO,
+        RULE_DAILY_LOSS,
+        RULE_CONSECUTIVE_LOSS,
+    }:
+        return "account"
+    if rule_name == RULE_POSITION_LIMIT:
+        return "position"
+    if rule_name == RULE_DIRECTION_CONFLICT:
+        return "position"
+    return "account"

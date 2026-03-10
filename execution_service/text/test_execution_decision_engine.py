@@ -119,6 +119,10 @@ def test_allow_add_when_all_rules_pass() -> None:
         isinstance(item.get("note_zh"), str) and item["note_zh"]
         for item in result.signal_result["rule_debug"]["evaluation_trace"]
     )
+    assert all(
+        item.get("scope") in {"account", "symbol", "position"}
+        for item in result.signal_result["rule_debug"]["evaluation_trace"]
+    )
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:

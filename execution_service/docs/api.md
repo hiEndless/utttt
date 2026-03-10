@@ -120,7 +120,7 @@
     - `rule_priority_order`：本次裁决实际使用的规则优先级顺序
     - `hit_rule_value/hit_rule_threshold`：命中规则的值与阈值（如适用）
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
-    - `evaluation_trace`：按规则顺序记录每条规则的 `pass/fail`、`value/threshold` 与 `note_zh`
+    - `evaluation_trace`：按规则顺序记录每条规则的 `scope`、`pass/fail`、`value/threshold` 与 `note_zh`
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`
     - 可选覆盖：`risk_policy.rule_priority_order`（必须提供八项完整排列，否则自动回退默认）
 

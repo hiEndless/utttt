@@ -74,6 +74,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
         evaluation_trace=[
             {
                 "rule": "position_limit",
+                "scope": "position",
                 "status": "pass",
                 "value": 0.2,
                 "threshold": 1.0,
@@ -81,6 +82,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
             },
             {
                 "rule": "direction_conflict",
+                "scope": "position",
                 "status": "fail",
                 "value": 1.0,
                 "threshold": 0.5,

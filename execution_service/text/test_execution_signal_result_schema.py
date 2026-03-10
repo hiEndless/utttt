@@ -57,6 +57,7 @@ def test_execution_signal_result_schema_samples() -> None:
             "evaluation_trace": [
                 {
                     "rule": "position_limit",
+                    "scope": "position",
                     "status": "pass",
                     "value": 0.3,
                     "threshold": 1.0,
@@ -97,7 +98,9 @@ def test_execution_signal_result_schema_samples() -> None:
             "hit_rule_value": None,
             "hit_rule_threshold": None,
             "matched_at_ms": 0,
-            "evaluation_trace": [{"rule": "", "status": "unknown", "value": None, "threshold": None, "note_zh": ""}],
+            "evaluation_trace": [
+                {"rule": "", "scope": "unknown", "status": "unknown", "value": None, "threshold": None, "note_zh": ""}
+            ],
         },
     }
     assert not validate_payload_with_local_refs(schema, bad, base_dir)

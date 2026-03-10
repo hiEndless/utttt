@@ -88,3 +88,4 @@
 - [x] Task 86: `rule_debug` 增加 `matched_at_ms` 命中时间戳，并同步 signal/decision_state 契约、测试与文档。
 - [x] Task 87: `rule_debug` 增加 `evaluation_trace` 逐条规则评估轨迹，并同步 signal/decision_state 契约、测试与文档。
 - [x] Task 88: `evaluation_trace` 增加 `note_zh` 中文说明字段，并同步规则输出、契约、测试与文档。
+- [x] Task 89: `evaluation_trace` 增加 `scope`（account/symbol/position）维度字段，并同步契约、测试与文档。
