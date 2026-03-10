@@ -145,6 +145,10 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 | trigger_event | EventEnvelope | 若为触发型输出，附带触发事件摘要 |
 | route | dict | 下游路由（agent/rules/alerts 等） |
 
+契约文件：
+
+- `event_center_new/docs/selected_event.schema.json`
+
 ---
 
 ## 3. 事件分层建议（kind 与 ttl_ms）

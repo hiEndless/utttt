@@ -71,6 +71,8 @@ def test_run_replay_report_ok_when_selected_matches() -> None:
     assert report["diffs"] == []
     assert report["signatures"]["online_selected"] == report["signatures"]["replay_selected"]
     assert report["selected_contract"]["ok"] is True
+    assert report["selected_contract"]["schema_path"] == "event_center_new/docs/selected_event.schema.json"
+    assert "direction_hint" in report["selected_contract"]["required_fields"]
 
 
 def test_run_replay_report_has_diff_when_selected_mismatch() -> None:

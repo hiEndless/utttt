@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SelectedEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "asset",
+    "ts_ms",
+    "selected_type",
+    "direction_hint",
+    "priority",
+    "context_snapshot",
+    "route"
+  ],
+  "properties": {
+    "asset": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "selected_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction_hint": {
+      "type": "string",
+      "enum": ["bullish", "bearish", "neutral", "mixed"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "context_snapshot": {
+      "type": "object"
+    },
+    "trigger_event": {
+      "type": ["object", "null"]
+    },
+    "route": {
+      "type": "object"
+    }
+  }
+}

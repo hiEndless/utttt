@@ -183,6 +183,9 @@ event_center_new/
    - selected schema
 3. 对外只暴露这些 schema，不暴露内部阶段对象
 
+当前已落地：
+- `event_center_new/docs/selected_event.schema.json`
+
 ### 第三阶段：为状态层提供干净输入（进行中）
 
 `event_center_new` 对 `market_state_engine` 输出建议固定为：
@@ -360,3 +363,4 @@ python3 -m event_center_new.replay_main \
 回放报告包含 `signatures.replay_selected` 与 `signatures.online_selected`，
 可快速判断两轮 selected 是否一致，再结合 `diffs` 做字段级定位。
 报告同时包含 `selected_contract`（顶层字段白名单/必填校验），可提前发现线上 selected 契约漂移。
+`selected_contract` 校验规则直接复用 `event_center_new/docs/selected_event.schema.json`。

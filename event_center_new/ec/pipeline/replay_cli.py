@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import hashlib
 import json
+from pathlib import Path
 from typing import Any, Protocol
 
 from .replay import build_default_replay_tool, diff_selected
@@ -13,16 +14,8 @@ class RedisRangeClient(Protocol):
         ...
 
 
-SELECTED_REQUIRED_FIELDS = {
-    "asset",
-    "ts_ms",
-    "selected_type",
-    "direction_hint",
-    "priority",
-    "context_snapshot",
-    "route",
-}
-SELECTED_ALLOWED_FIELDS = SELECTED_REQUIRED_FIELDS | {"trigger_event"}
+def _selected_schema_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "docs" / "selected_event.schema.json"
 
 
 def load_payloads_by_window(
@@ -176,14 +169,15 @@ def _stable_signature(items: list[dict[str, Any]]) -> str:
 def validate_selected_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
     """校验线上 selected 顶层字段是否符合最小契约。"""
 
+    required_fields, allowed_fields = _load_selected_contract_field_sets()
     errors: list[dict[str, Any]] = []
     for idx, item in enumerate(items):
         if not isinstance(item, dict):
             errors.append({"index": idx, "error": "selected_item_not_object"})
             continue
         keys = set(item.keys())
-        missing = sorted(SELECTED_REQUIRED_FIELDS - keys)
-        extra = sorted(keys - SELECTED_ALLOWED_FIELDS)
+        missing = sorted(required_fields - keys)
+        extra = sorted(keys - allowed_fields)
         if missing:
             errors.append({"index": idx, "error": "missing_required_fields", "fields": missing})
         if extra:
@@ -191,6 +185,23 @@ def validate_selected_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "ok": len(errors) == 0,
         "errors": errors,
-        "required_fields": sorted(SELECTED_REQUIRED_FIELDS),
-        "allowed_fields": sorted(SELECTED_ALLOWED_FIELDS),
+        "required_fields": sorted(required_fields),
+        "allowed_fields": sorted(allowed_fields),
+        "schema_path": str(_selected_schema_path().relative_to(Path.cwd())),
     }
+
+
+def _load_selected_contract_field_sets() -> tuple[set[str], set[str]]:
+    schema_path = _selected_schema_path()
+    try:
+        data = json.loads(schema_path.read_text(encoding="utf-8"))
+        required = set(str(x) for x in (data.get("required") or []) if str(x).strip())
+        allowed = set(str(k) for k in (data.get("properties") or {}).keys() if str(k).strip())
+        if required and allowed:
+            return required, allowed
+    except Exception:
+        pass
+    # 中文注释：schema 读取异常时回退默认值，保证回放工具仍可给出最小契约检查。
+    required = {"asset", "ts_ms", "selected_type", "direction_hint", "priority", "context_snapshot", "route"}
+    allowed = required | {"trigger_event"}
+    return required, allowed
