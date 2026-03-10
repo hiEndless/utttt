@@ -342,6 +342,21 @@ EVENT_CENTER_REDIS_URL=redis://127.0.0.1:6379/0 \
 python3 -m event_center_new.main
 ```
 
+循环运行模式（最小调度）：
+
+```bash
+EVENT_CENTER_RUN_LOOP=true \
+EVENT_CENTER_RUN_INTERVAL_MS=1000 \
+EVENT_CENTER_RUN_MAX_TICKS=0 \
+python3 -m event_center_new.main
+```
+
+说明：
+
+- `EVENT_CENTER_RUN_LOOP=true` 开启循环模式
+- `EVENT_CENTER_RUN_INTERVAL_MS` 每轮间隔（毫秒）
+- `EVENT_CENTER_RUN_MAX_TICKS` 最大轮次，`0` 表示不限（常驻）
+
 最小健康信号（`EventPipelineRunner.health_snapshot()`）：
 
 - `heartbeat`: 轮询心跳计数（每次 `run_once` +1）

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from typing import Callable
 
 from event_center_new.ec.context.builder import DefaultContextBuilder
 from event_center_new.ec.contracts import EventEnvelope, EventSource
@@ -90,11 +91,18 @@ def main() -> None:
         event_memory=InMemoryEventMemory(),
         layer_store=layer_store,
     )
-    selected = runner.run_once()
-    health = runner.health_snapshot()
-    logger.info("事件中心最小 Runner 执行完成，selected_count=%s", len(selected))
-    logger.info("runner_health=%s", json.dumps(health.__dict__, ensure_ascii=False))
-    logger.info("selected=%s", json.dumps(selected, ensure_ascii=False))
+    run_loop = _read_bool_env("EVENT_CENTER_RUN_LOOP", default=False)
+    interval_ms = _read_int_env("EVENT_CENTER_RUN_INTERVAL_MS", default=1000)
+    max_ticks = _read_int_env("EVENT_CENTER_RUN_MAX_TICKS", default=0)
+    if run_loop:
+        logger.info(
+            "事件中心进入循环运行模式 interval_ms=%s max_ticks=%s",
+            interval_ms,
+            max_ticks,
+        )
+        _run_loop(runner, interval_ms=interval_ms, max_ticks=max_ticks)
+        return
+    _run_once_and_log(runner)
 
 
 def _build_layer_store():
@@ -114,6 +122,52 @@ def _build_layer_store():
         return RedisLayerStore.from_url(redis_url, cfg=cfg)
     logger.info("事件中心启用内存分层写入")
     return InMemoryLayerStore()
+
+
+def _run_once_and_log(runner: EventPipelineRunner) -> None:
+    selected = runner.run_once()
+    health = runner.health_snapshot()
+    logger.info("事件中心最小 Runner 执行完成，selected_count=%s", len(selected))
+    logger.info("runner_health=%s", json.dumps(health.__dict__, ensure_ascii=False))
+    logger.info("selected=%s", json.dumps(selected, ensure_ascii=False))
+
+
+def _run_loop(
+    runner: EventPipelineRunner,
+    *,
+    interval_ms: int,
+    max_ticks: int = 0,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> None:
+    tick = 0
+    safe_interval = max(1, int(interval_ms))
+    while True:
+        tick += 1
+        _run_once_and_log(runner)
+        if max_ticks > 0 and tick >= max_ticks:
+            logger.info("事件中心循环运行达到上限，准备退出 tick=%s", tick)
+            return
+        sleep_fn(safe_interval / 1000.0)
+
+
+def _read_bool_env(name: str, *, default: bool) -> bool:
+    value = str(os.getenv(name, "") or "").strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _read_int_env(name: str, *, default: int) -> int:
+    raw = str(os.getenv(name, "") or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except Exception:  # noqa: BLE001
+        logger.warning("环境变量解析失败，使用默认值 key=%s value=%s default=%s", name, raw, default)
+        return default
 
 
 if __name__ == "__main__":
