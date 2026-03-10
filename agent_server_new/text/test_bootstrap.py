@@ -30,6 +30,31 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
 
 
+def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkeypatch):
+    import agent_server_new.app.bootstrap as mod
+
+    class _FakeRedisActiveEventsProvider:
+        pass
+
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert wf._active_events.__class__.__name__ == "_FakeRedisActiveEventsProvider"  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_events_redis_failed(monkeypatch):
+    import agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+
+    def _raise() -> object:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
+
+
 def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypatch):
     monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
     monkeypatch.setenv("AGENT_EXECUTION_BASE_URL", "http://localhost:9962")

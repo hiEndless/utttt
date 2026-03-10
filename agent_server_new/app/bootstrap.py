@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+from agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
 from agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from agent_server_new.adapters.market_state_http import HttpMarketStateProvider
@@ -32,9 +33,18 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     当前默认接线：
     - market_state: HttpMarketStateProvider.from_env()
     - position_context: StubPositionContextProvider()
-    - active_events: StubActiveEventsProvider()
+    - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 stub）
     - execution_decider: 按环境变量 AGENT_EXECUTION_ENABLED 决定是否启用
     """
+    active_events_provider_mode = str(os.getenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub") or "stub").strip().lower()
+    active_events_provider = StubActiveEventsProvider()
+    if active_events_provider_mode == "redis":
+        try:
+            active_events_provider = RedisActiveEventsProvider.from_env()
+        except Exception:
+            # 中文注释：provider 初始化失败时优雅降级，避免影响主决策链路可用性。
+            active_events_provider = StubActiveEventsProvider()
+
     execution_enabled = str(os.getenv("AGENT_EXECUTION_ENABLED", "false") or "false").strip().lower() in {
         "1",
         "true",
@@ -76,7 +86,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=StubPositionContextProvider(),
-        active_events=StubActiveEventsProvider(),
+        active_events=active_events_provider,
         execution_decider=HttpExecutionDecisionProvider.from_env() if execution_enabled else None,
         recorder=None,
         symbol_memory_provider=symbol_memory_adapter,

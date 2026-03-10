@@ -145,6 +145,16 @@ signal_event + active_events + MSL
   - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
 - `AGENT_EXECUTION_TIMEOUT_S`
   - execution_service HTTP 请求超时秒数（默认：`10`）
+- `AGENT_ACTIVE_EVENTS_PROVIDER_MODE`
+  - active events provider 模式（`stub|redis`，默认：`stub`）
+- `AGENT_ACTIVE_EVENTS_REDIS_URL`
+  - 当 provider 为 `redis` 时的连接地址（默认：`redis://127.0.0.1:6379/0`）
+- `AGENT_ACTIVE_EVENTS_STREAM`
+  - active events Redis stream 键（默认：`ec:selected`）
+- `AGENT_ACTIVE_EVENTS_LIMIT_DEFAULT`
+  - 每次读取 active events 的目标条数（默认：`20`）
+- `AGENT_ACTIVE_EVENTS_SCAN_FACTOR`
+  - stream 扫描倍率（默认：`5`，实际扫描条数约为 `limit * factor`）
 - `AGENT_SYMBOL_MEMORY_ENABLED`
   - 是否启用 symbol 级记忆注入（默认：`false`）
 - `AGENT_SYMBOL_MEMORY_BACKEND`
@@ -176,7 +186,8 @@ signal_event + active_events + MSL
 - 默认接线：
   - `market_state = HttpMarketStateProvider.from_env()`
   - `position_context = StubPositionContextProvider()`（兼容占位，后续由 execution 层接管）
-  - `active_events = StubActiveEventsProvider()`
+  - `active_events = StubActiveEventsProvider()`（默认）
+  - 当 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis` 时启用 `RedisActiveEventsProvider`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
 
 ## CLI Smoke Test
