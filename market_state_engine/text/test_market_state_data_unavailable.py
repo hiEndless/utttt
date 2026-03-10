@@ -105,6 +105,22 @@ class _SelectedEventProviderFail:
         raise RuntimeError("boom")
 
 
+class _SelectedEventProviderMissingTraceVersion:
+    async def get_selected_events(self, exchange: str, symbol: str, *, limit: int = 20):
+        return [
+            {
+                "asset": f"{exchange}:{symbol}",
+                "ts_ms": 1234567890,
+                "selected_type": "breakout_signal",
+                "direction_hint": "bullish",
+                "priority": "high",
+                "context_snapshot": {"x": 1},
+                "trace": {},
+                "route": {"to": "market_state_engine"},
+            }
+        ]
+
+
 def test_market_state_service_short_circuit_on_data_unavailable():
     async def _run():
         service = MarketStateService(raw_structure_provider=_UnavailableRawProvider())
@@ -269,5 +285,21 @@ def test_market_state_service_selected_event_provider_failure_is_degraded_not_cr
         evidence = ((out.get("state_features") or {}).get("evidence") or {})
         assert evidence.get("selected_events_unavailable") is True
         assert "selected_events_unavailable" in list(out.get("anomaly_flags") or [])
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_marks_unversioned_selected_events():
+    async def _run():
+        service = MarketStateService(
+            raw_structure_provider=_OkRawProvider(),
+            selected_event_provider=_SelectedEventProviderMissingTraceVersion(),
+        )
+        service._engine = _FakeEngine()
+        out = await service.get_market_state("binance", "ETHUSDT")
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        assert evidence.get("selected_events_count") == 1
+        assert evidence.get("selected_events_unversioned_count") == 1
+        assert "selected_events_unversioned" in list(out.get("anomaly_flags") or [])
 
     asyncio.run(_run())

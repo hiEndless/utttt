@@ -24,6 +24,7 @@ _EXTERNAL_EVENT_INPUT_KEYS = {
 _EXTERNAL_INPUT_IGNORED_FLAG = "external_event_input_ignored"
 _SELECTED_EVENTS_ATTACHED_FLAG = "selected_event_context_attached"
 _SELECTED_EVENTS_UNAVAILABLE_FLAG = "selected_events_unavailable"
+_SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
 
 logger = logging.getLogger("market_state_engine")
 
@@ -205,6 +206,12 @@ class MarketStateService:
                 ]
             )
         )
+        unversioned_count = 0
+        for item in selected_events:
+            trace_obj = item.get("trace")
+            schema_version = (trace_obj or {}).get("schema_version") if isinstance(trace_obj, dict) else None
+            if not isinstance(schema_version, str) or (not schema_version.strip()):
+                unversioned_count += 1
         return {
             "selected_events_count": int(len(selected_events)),
             "selected_event_types": event_types,
@@ -213,6 +220,7 @@ class MarketStateService:
             "selected_event_assets": assets,
             "selected_event_sources": sources,
             "selected_event_schema_versions": schema_versions,
+            "selected_events_unversioned_count": int(unversioned_count),
             "selected_events_preview": selected_events[:3],
         }
 
@@ -265,7 +273,10 @@ class MarketStateService:
             sf_evidence = state_features_payload.get("evidence")
             if not isinstance(sf_evidence, dict):
                 sf_evidence = {}
-            sf_evidence.update(self._build_selected_event_evidence(selected_events))
+            selected_evidence = self._build_selected_event_evidence(selected_events)
+            sf_evidence.update(selected_evidence)
+            if int(selected_evidence.get("selected_events_unversioned_count") or 0) > 0:
+                anomaly_flags = sorted(set([*anomaly_flags, _SELECTED_EVENTS_UNVERSIONED_FLAG]))
             state_features_payload["evidence"] = sf_evidence
         elif selected_events_error_flag:
             anomaly_flags = sorted(set([*anomaly_flags, selected_events_error_flag]))

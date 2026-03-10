@@ -93,6 +93,8 @@ MSL 契约文件：
   - 当接入 `selected_event_provider` 时，`state_features.evidence` 额外包含：
     - `selected_event_sources`（来源集合）
     - `selected_event_schema_versions`（trace.schema_version 集合）
+    - `selected_events_unversioned_count`（缺失 trace.schema_version 的事件数量）
+  - 当 `selected_events_unversioned_count > 0` 时，`anomaly_flags` 会包含 `selected_events_unversioned`
 - `msl_meta`
   - `schema_version`：MSL 契约版本（当前主分支为 `2`）
   - `inference_version`：推断生成器版本（如 `msl_generator_v1` / `msl_generator_v2`）
