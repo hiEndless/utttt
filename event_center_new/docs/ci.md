@@ -38,3 +38,9 @@
 1. 先复现同模式失败（quick strict / quick lenient / full strict）。
 2. 再拆分成 `schema -> runtime -> wiring` 三组守卫定位。
 3. 修复后至少回归对应模式一次。
+
+## 5. CI 工作流守卫
+
+- 脚本：`scripts/check_event_center_ci_workflow_guard.sh`
+- 作用：静态校验 quick/full workflow 仍包含失败诊断 artifact 上传和显式失败收敛步骤。
+- 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
