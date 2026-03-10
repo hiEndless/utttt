@@ -48,6 +48,21 @@ class _FakeHealthStore:
         self.calls.append((key, dict(payload)))
 
 
+class _FakePipelineRunner:
+    run_once_calls = 0
+
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        _ = (args, kwargs)
+
+    def run_once(self, *, stop_on_error: bool = False):  # noqa: ANN001, ANN201
+        _ = stop_on_error
+        _FakePipelineRunner.run_once_calls += 1
+        return []
+
+    def health_snapshot(self) -> _Health:
+        return _Health(heartbeat=0, last_run_ms=0, run_count=0, error_count=0, last_error="")
+
+
 def test_run_loop_respects_max_ticks() -> None:
     runner = _FakeRunner()
     sleeps: list[float] = []
@@ -85,6 +100,29 @@ def test_run_self_check_writes_health_status() -> None:
     assert key == "ec:self:health"
     assert payload["status"] == "ok"
     assert payload["self_check_only"] is True
+
+
+def test_main_self_check_only_skips_run_once(monkeypatch) -> None:  # noqa: ANN001
+    store = _FakeHealthStore()
+    called: dict[str, int] = {"self_check": 0}
+
+    def _fake_self_check(*, layer_store, health_key: str) -> None:  # noqa: ANN001
+        assert layer_store is store
+        assert health_key == "ec:self:health"
+        called["self_check"] += 1
+
+    monkeypatch.setenv("EVENT_CENTER_SELF_CHECK_ONLY", "true")
+    monkeypatch.setenv("EVENT_CENTER_HEALTH_KEY", "ec:self:health")
+    monkeypatch.setattr(main_mod, "_build_layer_store", lambda: store)
+    monkeypatch.setattr(main_mod, "_run_self_check", _fake_self_check)
+    monkeypatch.setattr(main_mod, "_run_loop", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("unexpected loop")))  # noqa: ARG005
+    monkeypatch.setattr(main_mod, "_run_once_and_log", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("unexpected run_once")))  # noqa: ARG005
+    monkeypatch.setattr(main_mod, "EventPipelineRunner", _FakePipelineRunner)
+
+    _FakePipelineRunner.run_once_calls = 0
+    main_mod.main()
+    assert called["self_check"] == 1
+    assert _FakePipelineRunner.run_once_calls == 0
 
 
 def test_read_bool_env(monkeypatch) -> None:  # noqa: ANN001
