@@ -95,7 +95,7 @@ def create_router(service: ExecutionService) -> APIRouter:
         now_ms = int(time.time() * 1000)
         return {
             "service": "execution_service",
-            "confidence_migration_metrics": service.get_confidence_migration_metrics(),
+            "confidence_migration_metrics": await service.get_confidence_migration_metrics(),
             "ts": now_ms,
             "ts_ms": now_ms,
         }

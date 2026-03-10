@@ -14,6 +14,10 @@ from execution_service.adapters.redis_state_providers import (
     RedisRiskPolicyProvider,
     create_redis_client_from_env,
 )
+from execution_service.adapters.confidence_metrics_store import (
+    InMemoryConfidenceMetricsStore,
+    RedisConfidenceMetricsStore,
+)
 from execution_service.adapters.mock_execution_sink import MockExecutionSink
 from execution_service.adapters.exchange_execution_sink import ExchangeExecutionSink
 from execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
@@ -159,6 +163,31 @@ def create_app() -> FastAPI:
             execution_state_store = InMemoryExecutionStateStore()
             logger.info("execution_service 启用执行状态机存储，mode=memory")
 
+    confidence_metrics_mode = str(os.getenv("EXECUTION_CONFIDENCE_METRICS_MODE", "memory") or "memory").strip().lower()
+    confidence_metrics_store = None
+    if confidence_metrics_mode == "redis":
+        metrics_redis_url = str(
+            os.getenv(
+                "EXECUTION_CONFIDENCE_METRICS_REDIS_URL",
+                (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0"),
+            )
+            or (cfg.redis_url if cfg is not None else "redis://127.0.0.1:6379/0")
+        ).strip()
+        metrics_key = str(
+            os.getenv("EXECUTION_CONFIDENCE_METRICS_KEY", "execution:metrics:confidence_migration")
+            or "execution:metrics:confidence_migration"
+        ).strip()
+        metrics_client = (
+            redis_client
+            if (redis_client is not None and cfg is not None and metrics_redis_url == cfg.redis_url)
+            else create_redis_client_from_env(metrics_redis_url)
+        )
+        confidence_metrics_store = RedisConfidenceMetricsStore(redis_client=metrics_client, key=metrics_key)
+        logger.info("execution_service 启用 confidence 迁移指标存储，mode=redis key=%s", metrics_key)
+    else:
+        confidence_metrics_store = InMemoryConfidenceMetricsStore()
+        logger.info("execution_service 启用 confidence 迁移指标存储，mode=memory")
+
     service = ExecutionService(
         position_provider=position_provider,
         account_provider=account_provider,
@@ -172,6 +201,7 @@ def create_app() -> FastAPI:
         idempotency_store=idempotency_store,
         idempotency_lock_ttl_s=int(str(os.getenv("EXECUTION_IDEMPOTENCY_LOCK_TTL_S", "30") or "30")),
         execution_state_store=execution_state_store,
+        confidence_metrics_store=confidence_metrics_store,
     )
     app = FastAPI(
         title="execution_service",

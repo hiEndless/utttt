@@ -120,3 +120,4 @@
 - [x] Task 118: 增加 API 级回归测试覆盖 `confidence/decision_confidence` 不一致返回 `400`，并在 schema 描述中声明该应用层约束。
 - [x] Task 119: 在 migration 文档增加 `decision_confidence` v2 切换门槛（30 天观测指标）与回滚动作，形成可执行发布策略。
 - [x] Task 120: 增加 `confidence` 迁移观测接口（`/debug/confidence-metrics`）与 API 回归测试，覆盖三类迁移计数。
+- [x] Task 121: `confidence` 迁移指标新增可选 Redis 持久化存储（默认 memory），并补 app 初始化模式测试与文档。

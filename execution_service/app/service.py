@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 import asyncio
 import logging
-import threading
 from typing import Any, Dict, Mapping
 
 from execution_service.domain.contracts import DecisionIntent, ExecutionResult
@@ -27,6 +26,8 @@ from execution_service.ports.idempotency_store import IdempotencyStore
 from execution_service.ports.account_state_provider import AccountStateProvider
 from execution_service.ports.position_state_provider import PositionStateProvider
 from execution_service.ports.risk_policy_provider import RiskPolicyProvider
+from execution_service.ports.confidence_metrics_store import ConfidenceMetricsStore
+from execution_service.adapters.confidence_metrics_store import InMemoryConfidenceMetricsStore
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class ExecutionService:
         submit_backoff_base_s: float = 0.2,
         reconcile_max_retries: int = 0,
         reconcile_backoff_base_s: float = 0.2,
+        confidence_metrics_store: ConfidenceMetricsStore | None = None,
     ) -> None:
         self._position_provider = position_provider
         self._account_provider = account_provider
@@ -62,21 +64,15 @@ class ExecutionService:
         self._submit_backoff_base_s = max(0.0, float(submit_backoff_base_s))
         self._reconcile_max_retries = max(0, int(reconcile_max_retries))
         self._reconcile_backoff_base_s = max(0.0, float(reconcile_backoff_base_s))
-        self._confidence_metrics_lock = threading.Lock()
-        self._confidence_metrics: Dict[str, int] = {
-            "decide_requests_total": 0,
-            "confidence_only_requests": 0,
-            "decision_confidence_requests": 0,
-            "confidence_alias_mismatch_rejections": 0,
-        }
+        self._confidence_metrics_store = confidence_metrics_store or InMemoryConfidenceMetricsStore()
 
     async def decide(self, payload: Mapping[str, Any]) -> ExecutionResult:
-        self._record_confidence_metrics_from_payload(payload)
+        await self._record_confidence_metrics_from_payload(payload)
         try:
             decision = DecisionIntent.from_dict(payload)
         except ValueError as exc:
             if "confidence 与 decision_confidence 不一致" in str(exc):
-                self._inc_confidence_metric("confidence_alias_mismatch_rejections")
+                await self._confidence_metrics_store.record_mismatch_rejection()
             raise
         account_id = decision.account_id
         lock_acquired = False
@@ -201,9 +197,8 @@ class ExecutionService:
             out["decision_state"] = await self._execution_state_store.get_state(str(decision_id))
         return out
 
-    def get_confidence_migration_metrics(self) -> Dict[str, int]:
-        with self._confidence_metrics_lock:
-            return dict(self._confidence_metrics)
+    async def get_confidence_migration_metrics(self) -> Dict[str, int]:
+        return await self._confidence_metrics_store.snapshot()
 
     async def reconcile_order(self, payload: Mapping[str, Any]) -> Dict[str, Any]:
         order_id = str(payload.get("order_id") or "").strip()
@@ -344,18 +339,13 @@ class ExecutionService:
         payload["updated_at_ms"] = int(time.time() * 1000)
         await self._execution_state_store.save_state(str(decision_id), payload)
 
-    def _inc_confidence_metric(self, key: str) -> None:
-        with self._confidence_metrics_lock:
-            self._confidence_metrics[key] = int(self._confidence_metrics.get(key, 0)) + 1
-
-    def _record_confidence_metrics_from_payload(self, payload: Mapping[str, Any]) -> None:
+    async def _record_confidence_metrics_from_payload(self, payload: Mapping[str, Any]) -> None:
         has_conf = payload.get("confidence") is not None
         has_decision_conf = payload.get("decision_confidence") is not None
-        self._inc_confidence_metric("decide_requests_total")
-        if has_conf and not has_decision_conf:
-            self._inc_confidence_metric("confidence_only_requests")
-        if has_decision_conf:
-            self._inc_confidence_metric("decision_confidence_requests")
+        await self._confidence_metrics_store.record_decide_request(
+            has_confidence=bool(has_conf),
+            has_decision_confidence=bool(has_decision_conf),
+        )
 
     async def _submit_with_retry(self, *, decision: DecisionIntent, result: ExecutionResult) -> ExecutionResult:
         attempts = 0

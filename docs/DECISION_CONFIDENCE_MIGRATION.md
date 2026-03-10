@@ -67,3 +67,4 @@
 
 4. 观测接口
 - `GET /internal/execution/debug/confidence-metrics`
+- 可选持久化：`EXECUTION_CONFIDENCE_METRICS_MODE=redis`（默认 memory）
