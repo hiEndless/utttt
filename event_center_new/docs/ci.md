@@ -114,6 +114,8 @@
 建议定位命令（本地）：
 
 ```bash
+pwd
+ls -la .
 rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" quick_strict.log
 rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" full_guard.log
 rg -n "FAIL_CODE=" quick_strict.log
