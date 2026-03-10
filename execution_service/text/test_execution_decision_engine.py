@@ -114,6 +114,7 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert any(c["check"] == "account_drawdown_limit" for c in checks)
     assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
     assert result.signal_result["rule_debug"]["hit_rule"] == "passed_all_rules"
+    assert isinstance(result.signal_result["rule_debug"]["evaluation_trace"], list)
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:

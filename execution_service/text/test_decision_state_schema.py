@@ -29,6 +29,9 @@ def test_decision_state_schema_samples() -> None:
             "hit_rule_value": None,
             "hit_rule_threshold": None,
             "matched_at_ms": 1760000000000,
+            "evaluation_trace": [
+                {"rule": "position_limit", "status": "pass", "value": 0.1, "threshold": 1.0}
+            ],
         },
         "source": "execution_service",
         "trace_id": "trace-001",

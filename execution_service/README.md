@@ -114,6 +114,7 @@ execution_service/
 - 账户级组合风控阈值已支持：`max_account_notional`、`max_margin_ratio`、`max_daily_loss`、`max_consecutive_loss_count`，并纳入 `risk_checks` 结构化输出。
 - `signal_result` 已支持可选 `rule_debug` 调试字段，输出命中规则名、规则顺序与命中值/阈值，便于联调回放。
 - `rule_debug` 已增加 `matched_at_ms` 命中时间戳，便于跨服务时序对齐。
+- `rule_debug` 已增加 `evaluation_trace`，可回放每条规则的 pass/fail 与值阈值轨迹。
 - `decision_state` 已回写 `rule_debug`，可通过 debug 接口按 `decision_id` 回看最近命中规则链路。
 
 ## 最小接口（当前）

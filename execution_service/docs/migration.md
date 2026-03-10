@@ -94,6 +94,7 @@
 71. `signal_result` 已新增 `rule_debug` 调试字段，输出命中规则名、规则顺序和命中值/阈值，便于联调排障
 72. `rule_debug` 已回写到 `decision_state`，可通过 debug state + `decision_id` 回看最近一次命中规则链路
 73. `rule_debug` 已增加 `matched_at_ms` 命中时间戳，支持跨服务链路的时序对齐与回放分析
+74. `rule_debug` 已增加 `evaluation_trace`，支持按规则优先级回放每条规则的 pass/fail 与值阈值轨迹
 
 ## 关键收敛决议（冻结）
 

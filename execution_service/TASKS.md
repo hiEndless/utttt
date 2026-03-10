@@ -86,3 +86,4 @@
 - [x] Task 84: 在 `signal_result` 增加 `rule_debug` 调试字段（命中规则/规则顺序/值阈值），并补 schema、测试与文档。
 - [x] Task 85: 将 `rule_debug` 回写到 `decision_state`，支持 debug state 按 `decision_id` 回看命中规则链路。
 - [x] Task 86: `rule_debug` 增加 `matched_at_ms` 命中时间戳，并同步 signal/decision_state 契约、测试与文档。
+- [x] Task 87: `rule_debug` 增加 `evaluation_trace` 逐条规则评估轨迹，并同步 signal/decision_state 契约、测试与文档。

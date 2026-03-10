@@ -152,6 +152,7 @@ def evaluate_risk_rules(
         max_symbol_exposure_ratio=max_symbol_exposure_ratio,
     )
     rule_priority_order = _resolve_rule_priority_order(context.risk_policy)
+    evaluation_trace: list[Dict[str, Any]] = []
 
     def _finalize(
         *,
@@ -181,6 +182,7 @@ def evaluate_risk_rules(
             hit_rule=hit_rule,
             hit_rule_value=hit_rule_value,
             hit_rule_threshold=hit_rule_threshold,
+            evaluation_trace=list(evaluation_trace),
         )
 
     rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {
@@ -221,8 +223,46 @@ def evaluate_risk_rules(
     }
     for rule_name in rule_priority_order:
         result = rule_handlers[rule_name]()
+        value, threshold = _rule_trace_value_threshold(
+            rule_name=rule_name,
+            direction=direction,
+            long_position_size=long_position_size,
+            short_position_size=short_position_size,
+            max_long_position_size=max_long_position_size,
+            max_short_position_size=max_short_position_size,
+            cooldown_seconds_left=cooldown_seconds_left,
+            current_drawdown_ratio=current_drawdown_ratio,
+            max_drawdown_ratio=max_drawdown_ratio,
+            account_notional=account_notional,
+            max_account_notional=max_account_notional,
+            margin_ratio=margin_ratio,
+            max_margin_ratio=max_margin_ratio,
+            daily_loss=daily_loss,
+            max_daily_loss=max_daily_loss,
+            consecutive_loss_count=consecutive_loss_count,
+            max_consecutive_loss_count=max_consecutive_loss_count,
+            allow_dual_side=allow_dual_side,
+            position_side=position_side,
+            position_size=position_size,
+        )
         if result is not None:
+            evaluation_trace.append(
+                {
+                    "rule": rule_name,
+                    "status": "fail",
+                    "value": value,
+                    "threshold": threshold,
+                }
+            )
             return _finalize(**result)
+        evaluation_trace.append(
+            {
+                "rule": rule_name,
+                "status": "pass",
+                "value": value,
+                "threshold": threshold,
+            }
+        )
 
     # 规则 5: 双向模式（hedge）允许同 symbol 多空并存，按腿独立加仓
     if allow_dual_side and direction in {"long", "short"}:
@@ -472,3 +512,54 @@ def _check_rule_consecutive_loss(
             "hit_rule_threshold": max_consecutive_loss_count,
         }
     return None
+
+
+def _rule_trace_value_threshold(
+    *,
+    rule_name: str,
+    direction: str,
+    long_position_size: float,
+    short_position_size: float,
+    max_long_position_size: float,
+    max_short_position_size: float,
+    cooldown_seconds_left: int,
+    current_drawdown_ratio: float,
+    max_drawdown_ratio: float,
+    account_notional: float,
+    max_account_notional: float,
+    margin_ratio: float,
+    max_margin_ratio: float,
+    daily_loss: float,
+    max_daily_loss: float,
+    consecutive_loss_count: float,
+    max_consecutive_loss_count: float,
+    allow_dual_side: bool,
+    position_side: str,
+    position_size: float,
+) -> tuple[float | None, float | None]:
+    if rule_name == RULE_POSITION_LIMIT:
+        if direction == "short":
+            return short_position_size, max_short_position_size
+        return long_position_size, max_long_position_size
+    if rule_name == RULE_COOLDOWN:
+        return float(cooldown_seconds_left), 0.0
+    if rule_name == RULE_MAX_DRAWDOWN:
+        return current_drawdown_ratio, max_drawdown_ratio
+    if rule_name == RULE_ACCOUNT_NOTIONAL:
+        return account_notional, max_account_notional
+    if rule_name == RULE_MARGIN_RATIO:
+        return margin_ratio, max_margin_ratio
+    if rule_name == RULE_DAILY_LOSS:
+        return daily_loss, max_daily_loss
+    if rule_name == RULE_CONSECUTIVE_LOSS:
+        return consecutive_loss_count, max_consecutive_loss_count
+    if rule_name == RULE_DIRECTION_CONFLICT:
+        conflict = (
+            (not allow_dual_side)
+            and direction in {"long", "short"}
+            and position_side in {"long", "short"}
+            and direction != position_side
+            and position_size > 0
+        )
+        return (1.0 if conflict else 0.0), 0.5
+    return None, None

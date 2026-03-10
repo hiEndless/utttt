@@ -25,6 +25,7 @@ def build_risk_decision_result(
     hit_rule: str | None = None,
     hit_rule_value: float | None = None,
     hit_rule_threshold: float | None = None,
+    evaluation_trace: List[Dict[str, Any]] | None = None,
 ) -> Dict[str, Any]:
     signal_action = _build_signal_action(
         execution_action=execution_action,
@@ -50,6 +51,7 @@ def build_risk_decision_result(
         "hit_rule_value": hit_rule_value,
         "hit_rule_threshold": hit_rule_threshold,
         "matched_at_ms": int(time.time() * 1000),
+        "evaluation_trace": list(evaluation_trace or []),
     }
     return {
         "execution_action": execution_action,
