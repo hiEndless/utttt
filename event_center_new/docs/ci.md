@@ -84,8 +84,10 @@
 ## 6. CI 文档快照守卫
 
 - 脚本：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
-- 作用：校验 `event_center_new/docs/ci.md` 中 `--help` 快照关键行未漂移。
-- 关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt`
+- 作用：校验 `event_center_new/docs/ci.md` 中 `--help` 快照与“最短排障命令串”关键行未漂移。
+- 关键行来源：
+  - `event_center_new/docs/ci_help_snapshot_lines.txt`
+  - `event_center_new/docs/ci_triage_snapshot_lines.txt`
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
 ## 7. 帮助快照同步守卫
