@@ -35,6 +35,7 @@
       "enum": ["long", "short", "none"]
     },
     "confidence": {
+      "description": "兼容字段。决策置信度，建议与 decision_confidence 保持一致。",
       "type": "object",
       "required": ["level", "score"],
       "properties": {
@@ -50,6 +51,7 @@
       }
     },
     "decision_confidence": {
+      "description": "语义主字段。若与 confidence 同时出现，应用层要求两者一致（JSON Schema 无法表达跨字段相等约束）。",
       "type": "object",
       "required": ["level", "score"],
       "properties": {

@@ -117,3 +117,4 @@
 - [x] Task 115: 增加 `policy_snapshot`（`policy_version/ruleset_hash`）并贯通 `execution_result/decision_state`、schema、测试与文档。
 - [x] Task 116: DecisionIntent 增加 `decision_confidence` 顶层语义别名（兼容保留 `confidence`），贯通 agent 适配、schema、测试与文档。
 - [x] Task 117: DecisionIntent 增加 `confidence/decision_confidence` 一致性校验（双字段不一致直接拒绝），避免静默语义漂移。
+- [x] Task 118: 增加 API 级回归测试覆盖 `confidence/decision_confidence` 不一致返回 `400`，并在 schema 描述中声明该应用层约束。

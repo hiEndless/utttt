@@ -86,6 +86,26 @@ def test_decide_bad_request() -> None:
     assert response.status_code == 400
 
 
+def test_decide_rejects_confidence_alias_mismatch() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-001-mismatch",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "low", "score": 0.2},
+            "decision_confidence": {"level": "high", "score": 0.9},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert response.status_code == 400
+    assert "不一致" in str(response.json().get("detail") or "")
+
+
 def test_debug_state_success() -> None:
     client = TestClient(create_app())
     response = client.get("/internal/execution/debug/state/binance/ETHUSDT")
