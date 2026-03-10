@@ -135,3 +135,13 @@ rg -n "契约/Schema|Runtime|守卫接线|CI workflow 守卫|\\[失败\\]" full_
 rg -n "FAIL_CODE=" quick_strict.log
 rg -n "FAIL_CODE=" full_guard.log
 ```
+
+最短排障命令串（可复制）：
+
+```bash
+# quick strict / quick lenient
+pwd && ls -la . && rg -n "FAIL_CODE=" quick_strict.log quick_lenient.log
+
+# full strict
+pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
+```
