@@ -47,6 +47,10 @@ def test_decision_state_schema_samples() -> None:
                 }
             ],
         },
+        "policy_snapshot": {
+            "policy_version": "risk-policy-default-v1",
+            "ruleset_hash": "risk-rules-v1",
+        },
         "source": "execution_service",
         "trace_id": "trace-001",
         "updated_at_ms": 1760000000001,

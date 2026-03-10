@@ -18,6 +18,7 @@ def test_execution_result_schema_samples() -> None:
         "execution_action": "hold",
         "reject_reason": "position_limit_reached",
         "applied_risk_rules": ["max_position_limit"],
+        "policy_snapshot": {"policy_version": "risk-policy-default-v1", "ruleset_hash": "risk-rules-v1"},
         "notes": "当前仓位已达上限"
     }
     assert validate_payload_with_local_refs(
@@ -30,6 +31,7 @@ def test_execution_result_schema_samples() -> None:
         "reject_reason": "execution_submit_failed",
         "applied_risk_rules": ["execution_submit_fallback"],
         "order_result": {"retry_meta": {"attempts": 1, "max_retries": 0, "status": "failed"}},
+        "policy_snapshot": {"policy_version": "risk-policy-default-v1", "ruleset_hash": "risk-rules-v1"},
         "signal_result": {
             "signal_action": "skip",
             "risk_state": "reduce_only",

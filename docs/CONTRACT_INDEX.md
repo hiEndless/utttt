@@ -31,7 +31,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v8`
+- `execution_schema_mapping_version: execution-schema-mapping-v9`
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`
@@ -39,6 +39,7 @@
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/execution_action.schema.json`
 - `execution_service/docs/reject_reason.schema.json`
+- `execution_service/docs/policy_snapshot.schema.json`
 - `execution_service/docs/execution_signal_result.schema.json`
 - `execution_service/docs/decision_state.schema.json`
 - `execution_service/docs/decision_state_status.schema.json`

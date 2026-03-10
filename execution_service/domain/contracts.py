@@ -113,6 +113,7 @@ class ExecutionResult:
     applied_risk_rules: List[str]
     order_result: Optional[Dict[str, Any]] = None
     signal_result: Optional[Dict[str, Any]] = None
+    policy_snapshot: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
 
     @classmethod
@@ -123,6 +124,7 @@ class ExecutionResult:
         applied_rules_raw = payload.get("applied_risk_rules") or []
         order_result_raw = payload.get("order_result")
         signal_result_raw = payload.get("signal_result")
+        policy_snapshot_raw = payload.get("policy_snapshot")
         notes_raw = payload.get("notes")
 
         if not decision_id:
@@ -141,6 +143,18 @@ class ExecutionResult:
         if signal_result_raw is not None and not isinstance(signal_result_raw, dict):
             raise ValueError("signal_result 必须是对象")
         signal_result = None if signal_result_raw is None else dict(signal_result_raw)
+        if policy_snapshot_raw is not None and not isinstance(policy_snapshot_raw, dict):
+            raise ValueError("policy_snapshot 必须是对象")
+        policy_snapshot: Optional[Dict[str, Any]] = None
+        if isinstance(policy_snapshot_raw, dict):
+            policy_version = str(policy_snapshot_raw.get("policy_version") or "").strip()
+            ruleset_hash = str(policy_snapshot_raw.get("ruleset_hash") or "").strip()
+            if not policy_version or not ruleset_hash:
+                raise ValueError("policy_snapshot.policy_version/ruleset_hash 不能为空")
+            policy_snapshot = {
+                "policy_version": policy_version,
+                "ruleset_hash": ruleset_hash,
+            }
         notes = None if notes_raw is None else str(notes_raw).strip() or None
         return cls(
             decision_id=decision_id,
@@ -149,6 +163,7 @@ class ExecutionResult:
             applied_risk_rules=applied_rules,
             order_result=order_result,
             signal_result=signal_result,
+            policy_snapshot=policy_snapshot,
             notes=notes,
         )
 
@@ -163,6 +178,8 @@ class ExecutionResult:
             data["order_result"] = self.order_result
         if self.signal_result is not None:
             data["signal_result"] = self.signal_result
+        if self.policy_snapshot is not None:
+            data["policy_snapshot"] = self.policy_snapshot
         if self.notes:
             data["notes"] = self.notes
         return data

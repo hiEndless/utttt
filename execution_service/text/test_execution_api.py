@@ -32,7 +32,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v8"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v9"
 
 
 def test_decide_success() -> None:
@@ -59,6 +59,9 @@ def test_decide_success() -> None:
     assert data["signal_result"]["scope"]["account_id"] == "main"
     assert data["signal_result"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
     assert isinstance(data["signal_result"]["risk_checks"], list)
+    assert isinstance(data.get("policy_snapshot"), dict)
+    assert data["policy_snapshot"]["policy_version"]
+    assert data["policy_snapshot"]["ruleset_hash"]
 
 
 def test_decide_bad_request() -> None:
@@ -156,6 +159,9 @@ def test_debug_state_with_decision_id() -> None:
     assert isinstance(data["decision_state"]["rule_debug"].get("matched_at_ms"), int)
     assert isinstance(data["decision_state"]["rule_debug"].get("evaluation_trace"), list)
     assert data["decision_state"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
+    assert isinstance(data["decision_state"].get("policy_snapshot"), dict)
+    assert data["decision_state"]["policy_snapshot"]["policy_version"]
+    assert data["decision_state"]["policy_snapshot"]["ruleset_hash"]
 
 
 def test_reconcile_sink_not_configured() -> None:

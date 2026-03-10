@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v8",
+  "schema_mapping_version": "execution-schema-mapping-v9",
   "ts": 1760000000000
 }
 ```
@@ -73,6 +73,7 @@
   "execution_action": "hold",
   "reject_reason": "position_limit_reached",
   "applied_risk_rules": ["max_position_limit"],
+  "policy_snapshot": {"policy_version": "risk-policy-default-v1", "ruleset_hash": "risk-rules-v1"},
   "notes": "当前仓位已达上限"
 }
 ```
@@ -86,7 +87,8 @@
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
 7. `signal_result`: 可选对象（执行层模拟信号结构，当前默认返回）
-8. JSON Schema：`execution_service/docs/execution_result.schema.json`
+8. `policy_snapshot`: 可选对象（当前生效策略快照：`policy_version/ruleset_hash`）
+9. JSON Schema：`execution_service/docs/execution_result.schema.json`
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。
@@ -124,6 +126,7 @@
   - `decision_state.status/last_transition` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/decision_state_status.schema.json`
   - `execution_result/decision_state.execution_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/execution_action.schema.json`
   - `execution_result/decision_state.reject_reason` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/reject_reason.schema.json`
+  - `execution_result/decision_state.policy_snapshot` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/policy_snapshot.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
@@ -147,6 +150,9 @@
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
     - `evaluation_trace`：按规则顺序记录每条规则的 `order`、`scope`、`pass/fail`、`value/threshold` 与 `note_zh`
       - `evaluation_trace` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/evaluation_trace.schema.json`
+  - `policy_snapshot`: 当前裁决生效策略快照
+    - `policy_version`: 风控策略版本（来自 `risk_policy.policy_version`，缺省回退 `risk-policy-default-v1`）
+    - `ruleset_hash`: 规则集版本/哈希（来自 `risk_policy.ruleset_hash`，缺省回退 `risk-rules-v1`）
   - 规则优先级为默认冻结顺序：`position_limit -> cooldown -> max_drawdown -> account_notional -> margin_ratio -> daily_loss -> consecutive_loss -> direction_conflict`
     - 可选覆盖：`risk_policy.rule_priority_order`（必须提供八项完整排列，否则自动回退默认）
 
@@ -276,6 +282,7 @@
   - `rule_debug`: 最近一次裁决命中规则调试信息（命中规则名/规则顺序/值阈值/命中时间戳/逐条评估轨迹中文说明）
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）
+  - `policy_snapshot`: 最近一次裁决生效策略快照（`policy_version/ruleset_hash`）
   - `reconcile_order_id`: 最近一次回执对账的订单号（如有）
   - `reconcile_status_raw`: 最近一次回执原始状态（如有）
 - 状态机跃迁规则（冻结）：
@@ -357,8 +364,8 @@
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
 | --- | --- | --- | --- | --- | --- |
 | DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
-| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
-| DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
+| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `policy_snapshot` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
+| DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `policy_snapshot` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
 | RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `max_account_notional` `max_margin_ratio` `max_daily_loss` `max_consecutive_loss_count` `simulation_step_size` `rule_priority_order` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
 
 说明：

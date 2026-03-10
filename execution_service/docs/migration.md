@@ -123,6 +123,8 @@
 100. `execution_result/decision_state.execution_action` 已抽取独立 schema 并通过 `$ref` 复用，减少动作枚举重复定义
 101. `execution_result/decision_state.reject_reason` 已抽取独立 schema 并通过 `$ref` 复用，减少拒绝原因重复定义
 102. 因 `ExecutionResult` schema 内容变更触发 breaking 守卫，`schema_mapping_version` 已升版到 `execution-schema-mapping-v8`
+103. `execution_result/decision_state` 已增加 `policy_snapshot`（`policy_version/ruleset_hash`）用于策略回放审计，并抽取独立 schema 通过 `$ref` 复用
+104. 因 `ExecutionResult` schema 内容变更触发 breaking 守卫，`schema_mapping_version` 已升版到 `execution-schema-mapping-v9`
 
 ## 关键收敛决议（冻结）
 

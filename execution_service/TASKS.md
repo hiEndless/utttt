@@ -114,3 +114,4 @@
 - [x] Task 112: `decision_state` 的 `status/last_transition` 抽为独立 schema 并通过 `$ref` 复用。
 - [x] Task 113: `execution_action` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。
 - [x] Task 114: `reject_reason` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。
+- [x] Task 115: 增加 `policy_snapshot`（`policy_version/ruleset_hash`）并贯通 `execution_result/decision_state`、schema、测试与文档。

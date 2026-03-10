@@ -19,6 +19,7 @@ from execution_service.domain.reconcile_statuses import (
     RECONCILE_STATUSES,
 )
 from execution_service.domain.retry_meta import RETRY_META_STATUS_FAILED, RETRY_META_STATUS_OK
+from execution_service.version import RULESET_VERSION
 from execution_service.ports.execution_sink import ExecutionSink
 from execution_service.ports.execution_state_store import ExecutionStateStore
 from execution_service.ports.idempotency_store import IdempotencyStore
@@ -113,6 +114,13 @@ class ExecutionService:
                 account_state=dict(account_state or {}),
                 risk_policy=dict(risk_policy or {}),
             )
+            policy_snapshot = _build_policy_snapshot(risk_policy)
+            result = ExecutionResult.from_dict(
+                {
+                    **result.to_dict(),
+                    "policy_snapshot": policy_snapshot,
+                }
+            )
             if (
                 self._submit_enabled
                 and self._execution_sink is not None
@@ -136,6 +144,7 @@ class ExecutionService:
                     "last_error": _extract_last_error(result),
                     "risk_state": _extract_risk_state(result),
                     "rule_debug": _extract_rule_debug(result),
+                    "policy_snapshot": _extract_policy_snapshot(result),
                     "source": "execution_service",
                     "trace_id": decision.trace_id,
                 },
@@ -339,6 +348,7 @@ class ExecutionService:
                         "reject_reason": result.reject_reason,
                         "applied_risk_rules": list(result.applied_risk_rules),
                         "order_result": payload,
+                        "policy_snapshot": result.policy_snapshot,
                         "notes": result.notes,
                     }
                 )
@@ -364,6 +374,7 @@ class ExecutionService:
                         "last_error": last_error,
                     }
                 },
+                "policy_snapshot": result.policy_snapshot,
                 "notes": f"{result.notes or ''}; execution_submit_failed:{last_error}".strip("; "),
             }
         )
@@ -444,6 +455,29 @@ def _extract_risk_state(result: ExecutionResult) -> str:
     if risk_state_str in {"normal", "warn", "reduce_only", "frozen"}:
         return risk_state_str
     return "normal"
+
+
+def _extract_policy_snapshot(result: ExecutionResult) -> Dict[str, str]:
+    snapshot = result.policy_snapshot if isinstance(result.policy_snapshot, dict) else {}
+    policy_version = str(snapshot.get("policy_version") or "").strip()
+    ruleset_hash = str(snapshot.get("ruleset_hash") or "").strip()
+    if policy_version and ruleset_hash:
+        return {
+            "policy_version": policy_version,
+            "ruleset_hash": ruleset_hash,
+        }
+    return {}
+
+
+def _build_policy_snapshot(risk_policy: Mapping[str, Any]) -> Dict[str, str]:
+    """从当前生效风控策略提取可回放的版本快照。"""
+
+    policy_version = str((risk_policy or {}).get("policy_version") or "").strip() or "risk-policy-default-v1"
+    ruleset_hash = str((risk_policy or {}).get("ruleset_hash") or "").strip() or RULESET_VERSION
+    return {
+        "policy_version": policy_version,
+        "ruleset_hash": ruleset_hash,
+    }
 
 
 def _normalize_reconcile_status(status: str) -> str | None:

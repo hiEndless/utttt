@@ -48,6 +48,9 @@
       "type": ["string", "null"]
     },
     "rule_debug": {"$ref": "./rule_debug.schema.json"},
+    "policy_snapshot": {
+      "$ref": "./policy_snapshot.schema.json"
+    },
     "updated_at_ms": {
       "type": "integer",
       "minimum": 1

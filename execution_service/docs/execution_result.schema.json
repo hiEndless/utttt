@@ -37,6 +37,9 @@
     "signal_result": {
       "$ref": "./execution_signal_result.schema.json"
     },
+    "policy_snapshot": {
+      "$ref": "./policy_snapshot.schema.json"
+    },
     "notes": {
       "type": "string"
     }
