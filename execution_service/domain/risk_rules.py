@@ -168,7 +168,7 @@ def evaluate_risk_rules(
         hit_rule_value: float | None = None,
         hit_rule_threshold: float | None = None,
     ) -> Dict[str, Any]:
-        risk_state = _derive_risk_state(
+        risk_state, risk_state_change_reason = _derive_risk_state_with_reason(
             reject_reason=reject_reason,
             evaluation_trace=evaluation_trace,
             previous_risk_state=previous_risk_state,
@@ -194,6 +194,7 @@ def evaluate_risk_rules(
             evaluation_trace=list(evaluation_trace),
             risk_state=risk_state,
             previous_risk_state=previous_risk_state,
+            risk_state_change_reason=risk_state_change_reason,
         )
 
     rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {
@@ -628,27 +629,32 @@ def _rule_trace_scope(rule_name: str) -> str:
     return "account"
 
 
-def _derive_risk_state(
+def _derive_risk_state_with_reason(
     *,
     reject_reason: str | None,
     evaluation_trace: list[Dict[str, Any]],
     previous_risk_state: str,
-) -> str:
+) -> tuple[str, str]:
     # 中文注释：风险状态用于执行层风控态势表达，供下游快速判定是否可继续加风险。
     if reject_reason in {"max_drawdown_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded"}:
-        return "frozen"
+        return "frozen", "reject_frozen"
     if reject_reason in {
         "position_limit_reached",
         "account_notional_exceeded",
         "account_margin_ratio_exceeded",
         "direction_conflict_with_position",
     }:
-        return "reduce_only"
+        return "reduce_only", "reject_reduce_only"
     if _has_warn_level_pressure(evaluation_trace):
-        current = "warn"
+        base_state = "warn"
+        base_reason = "pressure_warn"
     else:
-        current = "normal"
-    return _apply_risk_state_hysteresis(previous_risk_state=previous_risk_state, current_risk_state=current)
+        base_state = "normal"
+        base_reason = "default_normal"
+    current = _apply_risk_state_hysteresis(previous_risk_state=previous_risk_state, current_risk_state=base_state)
+    if current != base_state:
+        return current, "hysteresis_soften"
+    return current, base_reason
 
 
 def _has_warn_level_pressure(evaluation_trace: list[Dict[str, Any]]) -> bool:

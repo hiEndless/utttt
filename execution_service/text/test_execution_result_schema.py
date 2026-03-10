@@ -73,6 +73,7 @@ def test_execution_result_schema_samples() -> None:
                 "previous_risk_state": "normal",
                 "current_risk_state": "reduce_only",
                 "risk_state_changed": True,
+                "risk_state_change_reason": "reject_reduce_only",
                 "matched_at_ms": 1760000000001,
                 "evaluation_trace": [
                     {

@@ -121,6 +121,7 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert result.signal_result["rule_debug"]["previous_risk_state"] == "normal"
     assert result.signal_result["rule_debug"]["current_risk_state"] in {"normal", "warn"}
     assert isinstance(result.signal_result["rule_debug"]["risk_state_changed"], bool)
+    assert result.signal_result["rule_debug"]["risk_state_change_reason"] in {"default_normal", "pressure_warn"}
     assert result.signal_result["risk_state"] in {"normal", "warn"}
     assert isinstance(result.signal_result["rule_debug"]["evaluation_trace"], list)
     assert all(
@@ -307,6 +308,7 @@ def test_daily_loss_rule_rejects_when_exceeded() -> None:
     assert result.reject_reason == "daily_loss_exceeded"
     assert result.signal_result["risk_state"] == "frozen"
     assert result.signal_result["rule_debug"]["hit_rule"] == "daily_loss"
+    assert result.signal_result["rule_debug"]["risk_state_change_reason"] == "reject_frozen"
 
 
 def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
@@ -336,6 +338,7 @@ def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
     assert result.reject_reason == "consecutive_loss_exceeded"
     assert result.signal_result["risk_state"] == "frozen"
     assert result.signal_result["rule_debug"]["hit_rule"] == "consecutive_loss"
+    assert result.signal_result["rule_debug"]["risk_state_change_reason"] == "reject_frozen"
 
 
 def test_previous_frozen_state_does_not_jump_directly_to_normal() -> None:
@@ -365,6 +368,7 @@ def test_previous_frozen_state_does_not_jump_directly_to_normal() -> None:
     assert result.execution_action == "add"
     assert result.reject_reason is None
     assert result.signal_result["risk_state"] == "warn"
+    assert result.signal_result["rule_debug"]["risk_state_change_reason"] == "hysteresis_soften"
 
 
 def test_previous_reduce_only_state_does_not_jump_directly_to_normal() -> None:
@@ -394,3 +398,4 @@ def test_previous_reduce_only_state_does_not_jump_directly_to_normal() -> None:
     assert result.execution_action == "add"
     assert result.reject_reason is None
     assert result.signal_result["risk_state"] == "warn"
+    assert result.signal_result["rule_debug"]["risk_state_change_reason"] == "hysteresis_soften"

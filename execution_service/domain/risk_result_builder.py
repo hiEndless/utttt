@@ -28,6 +28,7 @@ def build_risk_decision_result(
     evaluation_trace: List[Dict[str, Any]] | None = None,
     risk_state: str | None = None,
     previous_risk_state: str | None = None,
+    risk_state_change_reason: str | None = None,
 ) -> Dict[str, Any]:
     signal_action = _build_signal_action(
         execution_action=execution_action,
@@ -56,6 +57,7 @@ def build_risk_decision_result(
         "previous_risk_state": str(previous_risk_state or "normal"),
         "current_risk_state": str(risk_state or "normal"),
         "risk_state_changed": str(previous_risk_state or "normal") != str(risk_state or "normal"),
+        "risk_state_change_reason": str(risk_state_change_reason or "default_normal"),
         "matched_at_ms": int(time.time() * 1000),
         "evaluation_trace": list(evaluation_trace or []),
     }

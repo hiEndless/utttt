@@ -32,6 +32,7 @@ def test_decision_state_schema_samples() -> None:
             "previous_risk_state": "normal",
             "current_risk_state": "normal",
             "risk_state_changed": False,
+            "risk_state_change_reason": "default_normal",
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {

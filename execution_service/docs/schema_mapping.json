@@ -131,7 +131,12 @@
         {
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.rule_debug.required",
-          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "matched_at_ms"]
+          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "matched_at_ms"]
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason.enum",
+          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -317,7 +322,12 @@
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.required",
-          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "matched_at_ms"]
+          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "matched_at_ms"]
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.rule_debug.properties.risk_state_change_reason.enum",
+          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
