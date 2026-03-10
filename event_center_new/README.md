@@ -344,3 +344,12 @@ python3 -m event_center_new.main
 ```python
 from event_center_new.ec.pipeline.replay import EventReplayTool, diff_selected
 ```
+
+Redis 时间窗回放 CLI：
+
+```bash
+python3 -m event_center_new.replay_main \
+  --redis-url redis://127.0.0.1:6379/0 \
+  --start-ms 1773154000000 \
+  --end-ms 1773154999999
+```

@@ -11,6 +11,16 @@ from ..sources.memory import InMemoryEventSource
 from ..storage.memory import EventMemory, InMemoryLayerStore
 from .runner import EventPipelineRunner
 from .stages import EvidenceExtractor, FinalGate, L0Processor, L1Aggregator, Normalizer
+from .defaults import (
+    DeterministicFinalGate,
+    HeuristicL0Processor,
+    HeuristicL1Aggregator,
+    PassThroughNormalizer,
+    PayloadEvidenceExtractor,
+)
+from ..context.builder import DefaultContextBuilder
+from ..correlation.rules import CorrelationEngine
+from ..storage.memory import InMemoryEventMemory
 
 
 @dataclass(frozen=True)
@@ -128,3 +138,18 @@ def diff_selected(a: list[dict[str, Any]], b: list[dict[str, Any]]) -> list[str]
 
 def event_to_dict(event: EventEnvelope) -> dict[str, Any]:
     return asdict(event)
+
+
+def build_default_replay_tool() -> EventReplayTool:
+    """构建与最小 Runner 对齐的默认 replay 组件。"""
+
+    return EventReplayTool(
+        normalizer=PassThroughNormalizer(),
+        extractor=PayloadEvidenceExtractor(),
+        correlation_engine=CorrelationEngine(rules=[]),
+        context_builder=DefaultContextBuilder(),
+        l0_processor=HeuristicL0Processor(),
+        l1_aggregator=HeuristicL1Aggregator(),
+        final_gate=DeterministicFinalGate(),
+        event_memory=InMemoryEventMemory(),
+    )
