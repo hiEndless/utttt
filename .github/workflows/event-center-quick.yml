@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: event-center-quick-strict-diagnostics
-          path: /tmp/event_center_ci/quick_strict.log
+          path: /tmp/event_center_ci/
           if-no-files-found: warn
       - name: quick strict 失败时终止任务
         if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: event-center-quick-lenient-diagnostics
-          path: /tmp/event_center_ci/quick_lenient.log
+          path: /tmp/event_center_ci/
           if-no-files-found: warn
       - name: quick lenient 失败时终止任务
         if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
