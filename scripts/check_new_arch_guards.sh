@@ -1,6 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+MODE="${1:-all}"
+if [[ "$MODE" == "--help" || "$MODE" == "-h" ]]; then
+  cat <<'EOF'
+用法:
+  bash scripts/check_new_arch_guards.sh
+  bash scripts/check_new_arch_guards.sh --event-center-only
+EOF
+  exit 0
+fi
+
+if [[ "$MODE" == "--event-center-only" ]]; then
+  echo "[1/1] event_center 契约聚合守卫（快速模式）"
+  bash scripts/check_event_center_contract_guards.sh
+  echo "[通过] 新架构守卫检查完成（event_center-only）。"
+  exit 0
+fi
+
+if [[ "$MODE" != "all" ]]; then
+  echo "[失败] 不支持的参数: $MODE"
+  echo "使用 --help 查看可用参数。"
+  exit 1
+fi
+
 echo "[1/18] feature 契约守卫"
 bash scripts/check_feature_contract_guard.sh
 
