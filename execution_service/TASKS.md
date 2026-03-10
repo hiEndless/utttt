@@ -113,3 +113,4 @@
 - [x] Task 111: `position_mode` 抽为独立 schema，并在 `risk_policy/position_before` 通过 `$ref` 复用。
 - [x] Task 112: `decision_state` 的 `status/last_transition` 抽为独立 schema 并通过 `$ref` 复用。
 - [x] Task 113: `execution_action` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。
+- [x] Task 114: `reject_reason` 抽为独立 schema，并在 `execution_result/decision_state` 通过 `$ref` 复用。

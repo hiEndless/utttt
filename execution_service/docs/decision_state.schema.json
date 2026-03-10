@@ -27,7 +27,7 @@
       "$ref": "./execution_action.schema.json#/properties/execution_action"
     },
     "reject_reason": {
-      "type": ["string", "null"]
+      "$ref": "./reject_reason.schema.json#/properties/reject_reason"
     },
     "risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
     "attempts": {

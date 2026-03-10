@@ -26,7 +26,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v7",
+  "schema_mapping_version": "execution-schema-mapping-v8",
   "ts": 1760000000000
 }
 ```
@@ -123,6 +123,7 @@
   - `position_mode` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/position_mode.schema.json`
   - `decision_state.status/last_transition` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/decision_state_status.schema.json`
   - `execution_result/decision_state.execution_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/execution_action.schema.json`
+  - `execution_result/decision_state.reject_reason` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/reject_reason.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）

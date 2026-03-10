@@ -32,7 +32,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v7"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v8"
 
 
 def test_decide_success() -> None:
