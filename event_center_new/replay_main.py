@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+from typing import Any
 
 from event_center_new.ec.pipeline.replay_cli import format_report, run_replay_report
 
@@ -25,6 +26,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fail-on-diff", action="store_true", help="存在 diff 时返回非 0")
     parser.add_argument("--fail-on-missing-stream", action="store_true", help="检测到缺失 stream 时返回非 0")
     parser.add_argument("--strict", action="store_true", help="严格模式：等价开启三项 fail-on 校验")
+    parser.add_argument("--summary-only", action="store_true", help="仅输出摘要字段，减少日志体积")
     parser.add_argument("--compact", action="store_true", help="输出紧凑 JSON")
     return parser
 
@@ -48,7 +50,8 @@ def main(argv: list[str] | None = None) -> int:
         selected_stream=args.selected_stream,
         ignore_fields=list(args.ignore_field or []),
     )
-    rendered = format_report(report, pretty=not args.compact)
+    output_report = _to_summary_report(report) if args.summary_only else report
+    rendered = format_report(output_report, pretty=not args.compact)
     print(rendered)
     output_path = str(args.output or "").strip()
     if output_path:
@@ -66,6 +69,25 @@ def main(argv: list[str] | None = None) -> int:
     if fail_on_missing_stream and missing_streams:
         return 1
     return 0 if report.get("ok") else 1
+
+
+def _to_summary_report(report: dict[str, Any]) -> dict[str, Any]:
+    """摘要输出：保留 CI/回放验收必需字段。"""
+
+    keys = [
+        "start_ms",
+        "end_ms",
+        "streams",
+        "stream_presence",
+        "missing_streams",
+        "counts",
+        "ok",
+        "ignore_fields",
+        "signatures",
+        "selected_contract",
+        "diffs",
+    ]
+    return {key: report[key] for key in keys if key in report}
 
 
 if __name__ == "__main__":

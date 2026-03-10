@@ -358,6 +358,7 @@ python3 -m event_center_new.replay_main \
   --ignore-field ts_ms \
   --ignore-field trigger_event.ts_ms \
   --strict \
+  --summary-only \
   --output /tmp/event_replay_report.json
 ```
 
@@ -367,6 +368,7 @@ python3 -m event_center_new.replay_main \
 `selected_contract` 校验规则直接复用 `event_center_new/docs/selected_event.schema.json`。
 报告还包含 `stream_presence` 与 `missing_streams`，可用于 CI 在 `ec:raw/ec:selected` 缺失时快速失败。
 `--strict` 等价于同时开启 `--fail-on-contract --fail-on-diff --fail-on-missing-stream`。
+`--summary-only` 仅输出摘要字段，适合守卫/CI 场景降低日志噪音。
 仓库守卫 `scripts/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
 仓库守卫 `scripts/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
 可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。

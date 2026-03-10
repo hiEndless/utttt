@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
 import types
 
@@ -143,3 +144,42 @@ def test_replay_main_strict_implies_all_fail_flags(monkeypatch) -> None:  # noqa
         ]
     )
     assert code == 1
+
+
+def test_replay_main_summary_only_hides_large_fields(monkeypatch, capsys) -> None:  # noqa: ANN001
+    monkeypatch.setitem(sys.modules, "redis", _FakeRedisModule())
+    monkeypatch.setattr(
+        replay_main,
+        "run_replay_report",
+        lambda *args, **kwargs: {  # noqa: ARG005
+            "start_ms": 1,
+            "end_ms": 2,
+            "streams": {"raw": "ec:raw", "selected": "ec:selected"},
+            "stream_presence": {"raw": "present", "selected": "present"},
+            "missing_streams": [],
+            "counts": {"raw_events": 1},
+            "ok": True,
+            "ignore_fields": [],
+            "signatures": {"online_selected": "a", "replay_selected": "a"},
+            "selected_contract": {"ok": True},
+            "diffs": [],
+            "replay_selected": [{"x": 1}],
+            "online_selected": [{"x": 1}],
+        },
+    )
+    code = replay_main.main(
+        [
+            "--start-ms",
+            "1",
+            "--end-ms",
+            "2",
+            "--summary-only",
+            "--compact",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out.strip()
+    payload = json.loads(out)
+    assert "replay_selected" not in payload
+    assert "online_selected" not in payload
+    assert payload["ok"] is True

@@ -15,6 +15,10 @@ if ! echo "$help_text" | rg -q -- "--output"; then
   echo "[失败] replay CLI 缺少 --output 参数"
   exit 1
 fi
+if ! echo "$help_text" | rg -q -- "--summary-only"; then
+  echo "[失败] replay CLI 缺少 --summary-only 参数"
+  exit 1
+fi
 
 echo "[2/3] event_center replay 守卫"
 bash scripts/check_event_center_replay_guard.sh
