@@ -42,6 +42,7 @@
 - `EC_GUARD_RUNTIME_FAILED`：Runtime 子守卫失败
 - `EC_GUARD_WIRING_FAILED`：接线子守卫失败
 - `EC_GUARD_CI_WORKFLOW_FAILED`：CI workflow 静态守卫失败
+- `EC_GUARD_CI_DOC_FAILED`：CI 文档快照守卫失败
 
 可用 `bash scripts/check_event_center_contract_guards.sh --help` 查看同一份失败码清单。
 当前帮助输出快照：
@@ -71,7 +72,13 @@
 - 作用：静态校验 quick/full workflow 仍包含失败诊断 artifact 上传和显式失败收敛步骤。
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
-## 6. Artifact 日志锚点（下载后）
+## 6. CI 文档快照守卫
+
+- 脚本：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
+- 作用：校验 `event_center_new/docs/ci.md` 中 `--help` 快照关键行未漂移。
+- 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
+
+## 7. Artifact 日志锚点（下载后）
 
 1. quick strict / quick lenient
    - 日志文件：`quick_strict.log` / `quick_lenient.log`

@@ -175,6 +175,7 @@ agent_server_new -> execution_service
 - 仅跑 event_center quick：`scripts/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`scripts/check_new_arch_guards.sh --event-center-only`
 - event_center CI workflow 守卫：`scripts/check_event_center_ci_workflow_guard.sh`
+- event_center CI 文档快照守卫：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
 - 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
 - CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`

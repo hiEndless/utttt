@@ -37,6 +37,7 @@ if [[ "$MODE" == "--help" ]]; then
   EC_GUARD_RUNTIME_FAILED
   EC_GUARD_WIRING_FAILED
   EC_GUARD_CI_WORKFLOW_FAILED
+  EC_GUARD_CI_DOC_FAILED
 EOF
   exit 0
 fi
@@ -54,43 +55,52 @@ run_guard() {
 
 if [[ "$MODE" == "--quick" ]]; then
   run_guard \
-    "[1/4] event_center 契约/Schema 守卫（quick）" \
+    "[1/5] event_center 契约/Schema 守卫（quick）" \
     "EC_GUARD_SCHEMA_FAILED" \
     bash scripts/check_event_center_contract_schema_guards.sh --quick
 
   run_guard \
-    "[2/4] event_center Runtime 守卫（quick）" \
+    "[2/5] event_center Runtime 守卫（quick）" \
     "EC_GUARD_RUNTIME_FAILED" \
     bash scripts/check_event_center_runtime_family_guards.sh --quick
 
   run_guard \
-    "[3/4] event_center 守卫接线检查（quick） mode=${WIRING_MODE#--}" \
+    "[3/5] event_center 守卫接线检查（quick） mode=${WIRING_MODE#--}" \
     "EC_GUARD_WIRING_FAILED" \
     bash scripts/check_event_center_guard_wiring.sh "$WIRING_MODE"
 
   run_guard \
-    "[4/4] event_center CI workflow 守卫（quick）" \
+    "[4/5] event_center CI workflow 守卫（quick）" \
     "EC_GUARD_CI_WORKFLOW_FAILED" \
     bash scripts/check_event_center_ci_workflow_guard.sh
+
+  run_guard \
+    "[5/5] event_center CI 文档快照守卫（quick）" \
+    "EC_GUARD_CI_DOC_FAILED" \
+    bash scripts/check_event_center_ci_doc_snapshot_guard.sh
   echo "[通过] event_center 契约守卫检查完成（quick）。"
   exit 0
 fi
 
 run_guard \
-  "[1/4] event_center 契约/Schema 守卫（全量）" \
+  "[1/5] event_center 契约/Schema 守卫（全量）" \
   "EC_GUARD_SCHEMA_FAILED" \
   bash scripts/check_event_center_contract_schema_guards.sh
 run_guard \
-  "[2/4] event_center Runtime 守卫（全量）" \
+  "[2/5] event_center Runtime 守卫（全量）" \
   "EC_GUARD_RUNTIME_FAILED" \
   bash scripts/check_event_center_runtime_family_guards.sh
 run_guard \
-  "[3/4] event_center 守卫接线检查（全量） mode=${WIRING_MODE#--}" \
+  "[3/5] event_center 守卫接线检查（全量） mode=${WIRING_MODE#--}" \
   "EC_GUARD_WIRING_FAILED" \
   bash scripts/check_event_center_guard_wiring.sh "$WIRING_MODE"
 run_guard \
-  "[4/4] event_center CI workflow 守卫（全量）" \
+  "[4/5] event_center CI workflow 守卫（全量）" \
   "EC_GUARD_CI_WORKFLOW_FAILED" \
   bash scripts/check_event_center_ci_workflow_guard.sh
+run_guard \
+  "[5/5] event_center CI 文档快照守卫（全量）" \
+  "EC_GUARD_CI_DOC_FAILED" \
+  bash scripts/check_event_center_ci_doc_snapshot_guard.sh
 
 echo "[通过] event_center 契约守卫检查完成。"
