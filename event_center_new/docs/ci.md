@@ -78,7 +78,7 @@
 ## 5. CI 工作流守卫
 
 - 脚本：`scripts/check_event_center_ci_workflow_guard.sh`
-- 作用：静态校验 quick/full workflow 仍包含失败诊断 artifact 上传和显式失败收敛步骤。
+- 作用：静态校验 quick/full workflow 仍包含失败诊断 artifact 上传、显式失败收敛步骤和“最短排障命令串”提示。
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
 ## 6. CI 文档快照守卫

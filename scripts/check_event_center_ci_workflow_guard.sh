@@ -57,6 +57,14 @@ if ! rg -q "quick lenient 失败时终止任务" "$QUICK_WF"; then
   echo "[失败] quick workflow 缺少 lenient 显式失败收敛步骤"
   exit 1
 fi
+if ! rg -q -F "pwd && ls -la ." "$QUICK_WF"; then
+  echo "[失败] quick workflow 缺少最短排障命令串提示（pwd/ls）"
+  exit 1
+fi
+if ! rg -q -F "quick_strict.log quick_lenient.log" "$QUICK_WF"; then
+  echo "[失败] quick workflow 缺少最短排障命令串提示"
+  exit 1
+fi
 
 echo "[3/4] 校验 full workflow 失败诊断上传能力与复用 action"
 if ! rg -q "uses: \\.\\/\\.github\\/actions\\/setup-utaker-python" "$FULL_WF"; then
@@ -77,6 +85,14 @@ if ! rg -q "continue-on-error: true" "$FULL_WF"; then
 fi
 if ! rg -q "失败时终止任务" "$FULL_WF"; then
   echo "[失败] full workflow 缺少显式失败收敛步骤"
+  exit 1
+fi
+if ! rg -q -F "pwd && ls -la ." "$FULL_WF"; then
+  echo "[失败] full workflow 缺少最短排障命令串提示（pwd/ls）"
+  exit 1
+fi
+if ! rg -q -F "full_guard.log" "$FULL_WF"; then
+  echo "[失败] full workflow 缺少最短排障命令串提示"
   exit 1
 fi
 
