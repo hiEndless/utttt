@@ -154,6 +154,7 @@ event_center_new(signal_event + active_events)
 - CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`
+- CI 失败排障入口：`event_center_new/README.md`（`CI 失败排障（本地复现优先）`）
 - Feature API：`feature_service/docs/api.md`
 - Feature 边界：`feature_service/docs/boundaries.md`
 - State API：`market_state_engine/docs/api.md`
