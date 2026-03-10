@@ -67,6 +67,33 @@
     },
     "request": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "side", "type", "quantity", "newClientOrderId"],
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "side": {
+          "type": "string",
+          "enum": ["BUY", "SELL"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["MARKET"]
+        },
+        "quantity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "newClientOrderId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "exchange_raw": {
+      "type": "object",
       "additionalProperties": true
     },
     "ts_ms": {
