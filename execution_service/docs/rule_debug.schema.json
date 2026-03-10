@@ -26,21 +26,6 @@
     "risk_state_change_reason": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_code"},
     "risk_state_change_reason_zh": {"$ref": "./risk_state_change_reason.schema.json#/properties/reason_zh"},
     "matched_at_ms": {"type": "integer", "minimum": 1},
-    "evaluation_trace": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"],
-        "properties": {
-          "order": {"type": "integer", "minimum": 1},
-          "rule": {"type": "string", "minLength": 1},
-          "scope": {"type": "string", "enum": ["account", "symbol", "position"]},
-          "status": {"type": "string", "enum": ["pass", "fail"]},
-          "value": {"type": ["number", "null"]},
-          "threshold": {"type": ["number", "null"]},
-          "note_zh": {"type": "string", "minLength": 1}
-        }
-      }
-    }
+    "evaluation_trace": {"$ref": "./evaluation_trace.schema.json#/properties/evaluation_trace"}
   }
 }

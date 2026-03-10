@@ -42,6 +42,7 @@
 - `execution_service/docs/risk_state.schema.json`
 - `execution_service/docs/risk_state_change_reason.schema.json`
 - `execution_service/docs/rule_debug.schema.json`
+- `execution_service/docs/evaluation_trace.schema.json`
 - `execution_service/docs/execution_reconcile_result.schema.json`
 - `execution_service/docs/retry_meta.schema.json`
 - `execution_service/docs/risk_policy.schema.json`

@@ -374,6 +374,24 @@
         },
         {
           "schema": "execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.evaluation_trace.$ref",
+          "expected": "./evaluation_trace.schema.json#/properties/evaluation_trace"
+        }
+      ]
+    },
+    {
+      "name": "EvaluationTrace",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/evaluation_trace.schema.json",
+      "code": "execution_service/domain/risk_rules.py",
+      "symbol": "evaluation_trace",
+      "fields": [
+        "evaluation_trace"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/evaluation_trace.schema.json",
           "json_path": "properties.evaluation_trace.items.required",
           "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
         }

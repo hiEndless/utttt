@@ -104,3 +104,4 @@
 - [x] Task 102: schema 校验工具支持带 JSON Pointer 的本地 `$ref`（如 `#/properties/...`），确保复用子 schema 可测试。
 - [x] Task 103: `risk_state` 抽为独立 schema 并在 signal/decision schema（含 rule_debug 前后态）通过 `$ref` 复用。
 - [x] Task 104: `rule_debug` 抽为独立 schema 并在 signal/decision schema 通过 `$ref` 复用，减少重复定义。
+- [x] Task 105: `evaluation_trace` 抽为独立 schema 并在 `rule_debug` schema 通过 `$ref` 复用。

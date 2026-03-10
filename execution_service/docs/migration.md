@@ -112,6 +112,7 @@
 89. 本地 schema 校验工具已支持带 JSON Pointer 的 `$ref`（`#/properties/...`），可稳定校验子 schema 复用
 90. `risk_state`（含 `previous/current_risk_state`）已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
 91. `rule_debug` 已抽取独立 schema 并通过 `$ref` 复用，减少 signal/decision 契约重复定义
+92. `evaluation_trace` 已抽取独立 schema 并通过 `$ref` 复用，减少 `rule_debug` 契约重复定义
 
 ## 关键收敛决议（冻结）
 
