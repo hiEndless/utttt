@@ -32,6 +32,7 @@ def test_execution_result_schema_samples() -> None:
         "order_result": {"retry_meta": {"attempts": 1, "max_retries": 0, "status": "failed"}},
         "signal_result": {
             "signal_action": "skip",
+            "risk_state": "reduce_only",
             "mode": "simulated",
             "scope": {"exchange": "binance", "account_id": "main", "symbol": "ETHUSDT"},
             "position_before": {

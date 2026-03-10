@@ -134,6 +134,7 @@ class ExecutionService:
                     "attempts": _extract_attempts(result),
                     "submitted_at_ms": _extract_submitted_at_ms(result),
                     "last_error": _extract_last_error(result),
+                    "risk_state": _extract_risk_state(result),
                     "rule_debug": _extract_rule_debug(result),
                     "source": "execution_service",
                     "trace_id": decision.trace_id,
@@ -434,6 +435,15 @@ def _extract_rule_debug(result: ExecutionResult) -> Dict[str, Any]:
     signal_result = result.signal_result if isinstance(result.signal_result, dict) else {}
     rule_debug = signal_result.get("rule_debug") if isinstance(signal_result, dict) else None
     return dict(rule_debug) if isinstance(rule_debug, dict) else {}
+
+
+def _extract_risk_state(result: ExecutionResult) -> str:
+    signal_result = result.signal_result if isinstance(result.signal_result, dict) else {}
+    risk_state = signal_result.get("risk_state") if isinstance(signal_result, dict) else None
+    risk_state_str = str(risk_state or "").strip().lower()
+    if risk_state_str in {"normal", "warn", "reduce_only", "frozen"}:
+        return risk_state_str
+    return "normal"
 
 
 def _normalize_reconcile_status(status: str) -> str | None:

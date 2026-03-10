@@ -26,6 +26,7 @@ def build_risk_decision_result(
     hit_rule_value: float | None = None,
     hit_rule_threshold: float | None = None,
     evaluation_trace: List[Dict[str, Any]] | None = None,
+    risk_state: str | None = None,
 ) -> Dict[str, Any]:
     signal_action = _build_signal_action(
         execution_action=execution_action,
@@ -59,6 +60,7 @@ def build_risk_decision_result(
         "applied_risk_rules": applied_risk_rules,
         "signal_result": {
             "signal_action": signal_action,
+            "risk_state": str(risk_state or "normal"),
             "mode": "simulated",
             "scope": {
                 "exchange": decision.exchange,

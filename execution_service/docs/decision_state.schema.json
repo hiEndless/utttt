@@ -36,6 +36,10 @@
     "reject_reason": {
       "type": ["string", "null"]
     },
+    "risk_state": {
+      "type": "string",
+      "enum": ["normal", "warn", "reduce_only", "frozen"]
+    },
     "attempts": {
       "type": "integer",
       "minimum": 0

@@ -97,6 +97,7 @@
       "fields": [
         "account_id",
         "status",
+        "risk_state",
         "last_transition",
         "attempts",
         "submitted_at_ms",
@@ -111,6 +112,11 @@
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.status.enum",
           "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.risk_state.enum",
+          "expected": ["normal", "warn", "reduce_only", "frozen"]
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -259,6 +265,7 @@
       "symbol": "build_risk_decision_result",
       "fields": [
         "signal_action",
+        "risk_state",
         "mode",
         "scope",
         "position_before",
@@ -271,6 +278,11 @@
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.signal_action.enum",
           "expected": ["add_long", "add_short", "reduce_long", "reduce_short", "hold", "skip", "exit_all"]
+        },
+        {
+          "schema": "execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_state.enum",
+          "expected": ["normal", "warn", "reduce_only", "frozen"]
         },
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",

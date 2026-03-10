@@ -98,6 +98,7 @@
 75. `evaluation_trace` 已增加 `note_zh`，每条规则评估均输出中文说明，提升值班排障效率
 76. `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度
 77. `evaluation_trace` 已增加 `order` 顺序索引，支持按规则顺序稳定回放与定位
+78. 引入标准化 `risk_state`（`normal|warn|reduce_only|frozen`），并贯通到 `signal_result` 与 `decision_state`
 
 ## 关键收敛决议（冻结）
 

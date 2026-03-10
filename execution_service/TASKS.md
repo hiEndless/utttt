@@ -90,3 +90,4 @@
 - [x] Task 88: `evaluation_trace` 增加 `note_zh` 中文说明字段，并同步规则输出、契约、测试与文档。
 - [x] Task 89: `evaluation_trace` 增加 `scope`（account/symbol/position）维度字段，并同步契约、测试与文档。
 - [x] Task 90: `evaluation_trace` 增加 `order` 顺序索引字段，并同步契约、测试与文档。
+- [x] Task 91: 引入标准化 `risk_state`（`normal|warn|reduce_only|frozen`），贯通 signal_result、decision_state、schema、测试与文档。

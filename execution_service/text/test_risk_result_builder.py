@@ -44,6 +44,7 @@ def test_risk_result_builder_builds_signal_scope_and_positions() -> None:
     assert signal["scope"]["exchange"] == "binance"
     assert signal["scope"]["account_id"] == "main"
     assert signal["signal_action"] == "add_long"
+    assert signal["risk_state"] == "normal"
     assert signal["position_before"]["mode"] == "hedge"
     assert abs(signal["position_after_simulation"]["long_position_size"] - 0.3) < 1e-9
     assert signal["rule_debug"]["hit_rule"] == "none"
@@ -94,6 +95,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
     )
     signal = result["signal_result"]
     assert signal["signal_action"] == "reduce_short"
+    assert signal["risk_state"] == "normal"
     assert abs(signal["position_after_simulation"]["short_position_size"] - 0.3) < 1e-9
     assert signal["rule_debug"]["hit_rule"] == "direction_conflict"
     assert isinstance(signal["rule_debug"]["matched_at_ms"], int)

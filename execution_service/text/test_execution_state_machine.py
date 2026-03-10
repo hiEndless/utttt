@@ -54,6 +54,7 @@ def test_state_machine_submitted_status() -> None:
     assert isinstance(state, dict)
     assert state["status"] == "submitted"
     assert state["account_id"] == "main"
+    assert state["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
     assert state["last_transition"] == "submitted"
     assert state["attempts"] == 1
     assert isinstance(state["submitted_at_ms"], int)

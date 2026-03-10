@@ -57,6 +57,7 @@ def test_decide_success() -> None:
     assert isinstance(data.get("signal_result"), dict)
     assert data["signal_result"]["mode"] == "simulated"
     assert data["signal_result"]["scope"]["account_id"] == "main"
+    assert data["signal_result"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
     assert isinstance(data["signal_result"]["risk_checks"], list)
 
 
@@ -142,6 +143,7 @@ def test_debug_state_with_decision_id() -> None:
     assert isinstance(data["decision_state"]["rule_debug"].get("hit_rule"), str)
     assert isinstance(data["decision_state"]["rule_debug"].get("matched_at_ms"), int)
     assert isinstance(data["decision_state"]["rule_debug"].get("evaluation_trace"), list)
+    assert data["decision_state"]["risk_state"] in {"normal", "warn", "reduce_only", "frozen"}
 
 
 def test_reconcile_sink_not_configured() -> None:

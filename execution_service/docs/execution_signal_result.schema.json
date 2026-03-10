@@ -24,6 +24,10 @@
         "exit_all"
       ]
     },
+    "risk_state": {
+      "type": "string",
+      "enum": ["normal", "warn", "reduce_only", "frozen"]
+    },
     "mode": {
       "type": "string",
       "enum": ["simulated"]

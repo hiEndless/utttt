@@ -39,6 +39,7 @@ def test_rule_priority_position_limit_first() -> None:
     assert result.reject_reason == "position_limit_reached"
     assert isinstance(result.signal_result, dict)
     assert result.signal_result["signal_action"] == "skip"
+    assert result.signal_result["risk_state"] == "reduce_only"
     assert isinstance(result.signal_result["risk_checks"], list)
 
 
@@ -56,6 +57,7 @@ def test_rule_priority_cooldown_second() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "cooldown_active"
+    assert result.signal_result["risk_state"] in {"normal", "warn"}
 
 
 def test_rule_priority_drawdown_third() -> None:
@@ -72,6 +74,7 @@ def test_rule_priority_drawdown_third() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "max_drawdown_exceeded"
+    assert result.signal_result["risk_state"] == "frozen"
 
 
 def test_rule_priority_direction_conflict_fourth() -> None:
@@ -92,6 +95,7 @@ def test_rule_priority_direction_conflict_fourth() -> None:
     assert result.signal_result["signal_action"] == "reduce_long"
     checks = result.signal_result["risk_checks"]
     assert any(c["check"] == "short_leg_position_limit" for c in checks)
+    assert result.signal_result["risk_state"] == "reduce_only"
 
 
 def test_allow_add_when_all_rules_pass() -> None:
@@ -114,6 +118,7 @@ def test_allow_add_when_all_rules_pass() -> None:
     assert any(c["check"] == "account_drawdown_limit" for c in checks)
     assert all(isinstance(c.get("message_zh"), str) and c["message_zh"] for c in checks)
     assert result.signal_result["rule_debug"]["hit_rule"] == "passed_all_rules"
+    assert result.signal_result["risk_state"] in {"normal", "warn"}
     assert isinstance(result.signal_result["rule_debug"]["evaluation_trace"], list)
     assert all(
         isinstance(item.get("note_zh"), str) and item["note_zh"]
@@ -252,6 +257,7 @@ def test_account_notional_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "account_notional_exceeded"
+    assert result.signal_result["risk_state"] == "reduce_only"
 
 
 def test_margin_ratio_rule_rejects_when_exceeded() -> None:
@@ -268,6 +274,7 @@ def test_margin_ratio_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "account_margin_ratio_exceeded"
+    assert result.signal_result["risk_state"] == "reduce_only"
 
 
 def test_daily_loss_rule_rejects_when_exceeded() -> None:
@@ -295,6 +302,7 @@ def test_daily_loss_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "daily_loss_exceeded"
+    assert result.signal_result["risk_state"] == "frozen"
     assert result.signal_result["rule_debug"]["hit_rule"] == "daily_loss"
 
 
@@ -323,4 +331,5 @@ def test_consecutive_loss_rule_rejects_when_exceeded() -> None:
     )
     assert result.execution_action == "skip"
     assert result.reject_reason == "consecutive_loss_exceeded"
+    assert result.signal_result["risk_state"] == "frozen"
     assert result.signal_result["rule_debug"]["hit_rule"] == "consecutive_loss"

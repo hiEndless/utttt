@@ -164,6 +164,10 @@ def evaluate_risk_rules(
         hit_rule_value: float | None = None,
         hit_rule_threshold: float | None = None,
     ) -> Dict[str, Any]:
+        risk_state = _derive_risk_state(
+            reject_reason=reject_reason,
+            evaluation_trace=evaluation_trace,
+        )
         return build_risk_decision_result(
             decision=decision,
             account_id=str(context.account_state.get("account_id") or "main"),
@@ -183,6 +187,7 @@ def evaluate_risk_rules(
             hit_rule_value=hit_rule_value,
             hit_rule_threshold=hit_rule_threshold,
             evaluation_trace=list(evaluation_trace),
+            risk_state=risk_state,
         )
 
     rule_handlers: Dict[str, Callable[[], Dict[str, Any] | None]] = {
@@ -615,3 +620,39 @@ def _rule_trace_scope(rule_name: str) -> str:
     if rule_name == RULE_DIRECTION_CONFLICT:
         return "position"
     return "account"
+
+
+def _derive_risk_state(
+    *,
+    reject_reason: str | None,
+    evaluation_trace: list[Dict[str, Any]],
+) -> str:
+    # 中文注释：风险状态用于执行层风控态势表达，供下游快速判定是否可继续加风险。
+    if reject_reason in {"max_drawdown_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded"}:
+        return "frozen"
+    if reject_reason in {
+        "position_limit_reached",
+        "account_notional_exceeded",
+        "account_margin_ratio_exceeded",
+        "direction_conflict_with_position",
+    }:
+        return "reduce_only"
+    if _has_warn_level_pressure(evaluation_trace):
+        return "warn"
+    return "normal"
+
+
+def _has_warn_level_pressure(evaluation_trace: list[Dict[str, Any]]) -> bool:
+    for item in evaluation_trace:
+        if str(item.get("status")) != "pass":
+            continue
+        value = item.get("value")
+        threshold = item.get("threshold")
+        if not isinstance(value, (int, float)) or not isinstance(threshold, (int, float)):
+            continue
+        if threshold <= 0:
+            continue
+        ratio = float(value) / float(threshold)
+        if ratio >= 0.8:
+            return True
+    return False

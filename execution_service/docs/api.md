@@ -105,6 +105,7 @@
   - `applied_risk_rules` 包含 `idempotency_lock_busy`
 - `signal_result`（模拟结构）字段说明：
   - `signal_action`: `add_long|add_short|reduce_long|reduce_short|hold|skip|exit_all`
+  - `risk_state`: `normal|warn|reduce_only|frozen`
   - `mode`: 当前固定 `simulated`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
@@ -246,6 +247,7 @@
   - `attempts`: submit 尝试次数（未 submit 为 `0`）
   - `submitted_at_ms`: 最近一次成功 submit 时间戳（未 submit 为 `null`）
   - `last_error`: 最近一次 submit 错误文本（无错误为空字符串）
+  - `risk_state`: 最近一次裁决风险状态（`normal|warn|reduce_only|frozen`）
   - `rule_debug`: 最近一次裁决命中规则调试信息（命中规则名/规则顺序/值阈值/命中时间戳/逐条评估轨迹中文说明）
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）

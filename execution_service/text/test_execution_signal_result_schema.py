@@ -16,6 +16,7 @@ def test_execution_signal_result_schema_samples() -> None:
 
     good = {
         "signal_action": "add_long",
+        "risk_state": "normal",
         "mode": "simulated",
         "scope": {"exchange": "binance", "account_id": "main", "symbol": "ETHUSDT"},
         "position_before": {
@@ -71,6 +72,7 @@ def test_execution_signal_result_schema_samples() -> None:
 
     bad = {
         "signal_action": "buy",
+        "risk_state": "risky",
         "mode": "simulated",
         "scope": {"exchange": "binance", "account_id": "main", "symbol": "ETHUSDT"},
         "position_before": {

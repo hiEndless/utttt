@@ -20,6 +20,7 @@ def test_decision_state_schema_samples() -> None:
         "last_transition": "submitted",
         "execution_action": "add",
         "reject_reason": None,
+        "risk_state": "normal",
         "attempts": 2,
         "submitted_at_ms": 1760000000000,
         "last_error": "",
