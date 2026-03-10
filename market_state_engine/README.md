@@ -1,6 +1,7 @@
 # market_state_engine
 
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
+统一告警码清单：`/docs/ALERT_CODES.md`
 
 `market_state_engine` 是目标架构中的 **State Layer**，位于 `feature_service` 之后、`agent_server_new` 之前。
 

@@ -9,6 +9,7 @@
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
+- `docs/ALERT_CODES.md`
 
 ## 2. feature_service
 
