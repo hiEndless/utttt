@@ -179,6 +179,8 @@ agent_server_new -> execution_service
 - event_center 帮助快照同步守卫：`scripts/check_event_center_help_snapshot_sync_guard.sh`
 - 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
 - CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
+- event_center full CI 便捷入口：`scripts/ci_event_center_full_strict.sh`
+- event_center CI 元信息头部脚本：`scripts/ci_event_center_emit_meta_header.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
 - GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`

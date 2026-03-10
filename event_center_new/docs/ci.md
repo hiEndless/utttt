@@ -25,7 +25,13 @@
 2. quick lenient
    - `bash scripts/ci_event_center_quick_lenient.sh`
 3. full strict
-   - `bash scripts/check_new_arch_guards.sh --event-center-only --strict-wiring`
+   - `bash scripts/ci_event_center_full_strict.sh`
+
+日志头部约定（quick/full 通用）：
+- `[CI_META] run_mode=...`
+- `[CI_META] git_sha=...`
+- `[CI_META] runtime_config_version=...`
+- `[CI_META] ts_utc=...`
 
 ## 3. 失败分类与定位
 
