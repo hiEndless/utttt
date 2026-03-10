@@ -84,11 +84,8 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
             if not normalized:
                 continue
             asset_norm = str(normalized.get("asset") or "").strip().lower()
-            if asset_norm:
-                has_symbol = symbol_norm in asset_norm
-                has_exchange = (exchange_norm in asset_norm) if exchange_norm else True
-                if not (has_symbol and has_exchange):
-                    continue
+            if asset_norm and not self._matches_asset(asset=asset_norm, exchange=exchange_norm, symbol=symbol_norm):
+                continue
             matched.append(normalized)
             if len(matched) >= target_limit:
                 break
@@ -104,6 +101,18 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         if p == "low":
             return 0.3
         return 0.5
+
+    @staticmethod
+    def _matches_asset(*, asset: str, exchange: str, symbol: str) -> bool:
+        normalized = str(asset or "").strip().lower()
+        if not normalized:
+            return False
+        if ":" in normalized:
+            ex, sym = normalized.split(":", 1)
+            if not sym:
+                return False
+            return (not exchange or ex == exchange) and sym == symbol
+        return normalized == symbol
 
     @classmethod
     def _normalize_active_event(
