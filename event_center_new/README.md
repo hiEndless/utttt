@@ -94,12 +94,10 @@ data_server
 
 ### 不应该留在 `event_center_new` 的能力
 
-- `MarketContext`
-- `MSL`
 - market regime inference
-- anomaly synthesis（跨 feature 的市场异常归纳）
-- key level summary
+- MSL generation
 - trade intent / execution planning
+- execution risk gating
 
 如果某个处理步骤开始回答“现在市场是什么状态”，它就已经不属于 `event_center_new`。
 
@@ -111,29 +109,11 @@ data_server
 
 - `EventEnvelope`
 - `Evidence`
+- `EventContextSnapshot`
+- `ClassifiedEvent`
+- `PrioritizedEvent`
+- `SelectedEvent`
 - `EventTrace`
-
-### 新增或重命名
-
-- `L0Output` -> `ClassifiedEvent`
-- `L1Output` -> `PrioritizedEvent`
-- `FinalOutput` -> `SelectedEvent`
-
-原因：
-
-- `L0/L1/Final` 是旧流水线命名，表达的是处理阶段，不表达业务语义
-- `Classified / Prioritized / Selected` 更贴近 Event Center 的真实职责
-- `Final` 这个词容易诱导事件中心越界去做“最终结论”
-
-### 应删除或迁出
-
-- `MarketContext`
-
-原因：
-
-- `MarketContext` 属于状态层或决策层组合对象
-- 事件中心不应持有 `msl`
-- 事件中心不应 import `agent_server_new.domain.contracts`
 
 ## 目录建议
 
@@ -144,16 +124,11 @@ event_center_new/
   README.md
   docs/
     schema.md
-    migration.md
+    refactor.md
   ec/
     contracts.py              # EventEnvelope / Evidence / ClassifiedEvent / PrioritizedEvent / SelectedEvent
     pipeline/
-      normalize.py
-      dedup.py
-      correlate.py
-      classify.py
-      prioritize.py
-      route.py
+      stages.py
     sources/
       base.py
       exchange/
@@ -161,34 +136,14 @@ event_center_new/
       news/
       social/
     storage/
-      event_memory.py
-    routing/
-      selectors.py
+      memory.py
 ```
 
 说明：
 
-- 不再在 `event_center_new` 中维护 `MarketContext`
-- 不再以 `L0/L1/Final` 作为长期稳定语言
-- `route.py` 只做路由选择，不做市场状态推理
-
-## 需要搬走的文件与能力
-
-以下能力不应继续留在 `event_center_new`：
-
-- `ec/contracts.py` 中的 `MarketContext`
-  - 处理方式：删除，或迁到未来的 `market_state_engine/contracts.py`
-- 任何依赖 `MarketStateMSL` 的类型声明
-  - 处理方式：改为事件中心本地契约，不引用下游类型
-
-如果未来在 `event_center_new` 中新增了这些内容，也应直接放到新服务而不是继续堆在这里：
-
-- anomaly synthesis
-- regime detection
-- structure summary
-- MSL generation
-
-这些都应进入 `market_state_engine`。
+- `event_center_new` 当前以协议与可组合模块为主（contracts + protocols + in-memory 组件）
+- 运行时 `runner` 与持久化 `storage adapter` 仍待补齐
+- 对外语义以 `SelectedEvent/EventWindow` 为主，不做市场状态推理
 
 ## 必须切断的依赖
 
@@ -209,14 +164,13 @@ event_center_new/
 
 ## 迁移清单
 
-### 第一阶段：切边界
+### 第一阶段：切边界（已完成）
 
-1. 从 `ec/contracts.py` 删除 `MarketContext`
-2. 删除 `AgentMarketStateMSL` 的 import fallback
-3. 把 `L0Output / L1Output / FinalOutput` 改名为事件语义名
-4. 把所有与 `msl` 相关字段从事件中心契约中移除
+1. 契约收敛到事件语义：`EventEnvelope/Evidence/EventContextSnapshot/SelectedEvent`
+2. 与 `agent_server_new` 的领域契约解耦（不 import 下游领域对象）
+3. 流水线语义收敛：`classify/prioritize/select`，不产出 `MSL`
 
-### 第二阶段：稳定输出
+### 第二阶段：稳定输出（进行中）
 
 1. 固定 `EventEnvelope` / `Evidence` / `SelectedEvent` schema
 2. 在 `docs/schema.md` 中明确：
@@ -226,7 +180,7 @@ event_center_new/
    - selected schema
 3. 对外只暴露这些 schema，不暴露内部阶段对象
 
-### 第三阶段：为状态层提供干净输入
+### 第三阶段：为状态层提供干净输入（进行中）
 
 `event_center_new` 对 `market_state_engine` 输出建议固定为：
 
@@ -236,12 +190,61 @@ event_center_new/
 - `priority`
 - `trace`
 
-而不是：
+而不是：`market_state/regime/summary/msl`
 
-- `market_state`
-- `regime`
-- `summary`
-- `msl`
+## 信号生成模式（新架构）
+
+新架构不再采用“策略插件直接产最终信号”的模式，而是采用“事件证据融合后选择信号”：
+
+1. `SourceAdapter.poll` 拉取事件并封装 `EventEnvelope`
+2. `normalize/dedup` 统一字段与追踪信息
+3. `EvidenceExtractor` 从事件提炼证据 `Evidence`
+4. `CorrelationEngine` 依据规则做关联合成（可抑制输入类型）
+5. `PriorityScorer` 依据统一公式打分
+6. `classify/prioritize/select` 产出 `SelectedEvent`
+7. 同步输出 `event_window`（活跃证据与冲突摘要）
+
+核心变化：
+
+- 旧架构：信号更像“某个策略插件结果”
+- 新架构：信号是“多源证据融合选择结果”
+
+## 关联合成与优先级依据
+
+### 关联合成依据
+
+- 由 `CorrelationRule` 明确配置，不是黑盒
+- 典型规则：`a_type + b_type -> out_type`
+- 合成字段：`out_direction/out_horizon/strength/importance/confidence`
+- 可选 `suppress_inputs` 控制是否压制原输入类型
+
+### 优先级评分依据
+
+统一公式（当前实现）：
+
+`score = importance * strength * confidence * recency_decay`
+
+- `importance`: 事件先验权重（0~1）
+- `strength`: 证据强度（0~1）
+- `confidence`: 证据置信度（默认下限 0.2）
+- `recency_decay`: 时间衰减（默认半衰期 15 分钟）
+
+## 下游下发与依据携带
+
+`SelectedEvent` 下发时应同时携带可回放依据，避免“只给结论不给证据”：
+
+- 来源信息：`source.name/source.category`
+- 跟踪信息：`trace.dedup_key/correlation_id/parent_id/schema_version`
+- 生成条件：命中规则 ID、输入证据摘要、冲突信息
+- 周期信息：`horizon`、`ttl_ms`、窗口时间戳
+- 引用链：`source_refs`（关联原始事件 ID）
+
+这使得下游可直接完成：
+
+- 入库
+- 回放
+- 差异对比
+- 审计解释
 
 ## 与其他服务的接口约定
 
@@ -279,15 +282,23 @@ event_center_new/
 
 ## 当前版本的主要问题
 
-当前版本相对目标架构，主要有两个问题：
+当前版本相对目标架构，主要问题是运行时能力尚未闭环：
 
-1. `ec/contracts.py` 里仍然存在 `MarketContext`
-2. `event_center_new` 仍然感知 `MarketStateMSL`
-
-这两点会导致职责污染，必须优先修正。
+1. 缺统一 `runner`（source -> normalize -> evidence -> correlate -> prioritize -> select）
+2. 缺生产级存储适配器（raw/normalized/evidence/context/final 分层落盘）
+3. 缺 replay 工具链（按时间窗重放并做差异比较）
 
 ## 收敛后的定义
 
 `event_center_new` 最终应该成为：
 
 > 一个独立的事件中台，负责把多源原始输入整理成可消费、可追踪、可排序的事件流，为 `market_state_engine` 和 `agent_server_new` 提供干净事件输入。
+
+## AI 接管配置的规划
+
+后续支持 AI 接管参数配置需求，但采用分阶段治理：
+
+1. AI 只生成配置建议，不直接生效
+2. 人工审核后发布（附带 diff 与影响评估）
+3. 受限自动调参（有边界、有回放验收）
+4. 全链路记录配置版本、建议来源与生效结果

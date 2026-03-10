@@ -22,8 +22,8 @@ Data Layer → Feature Layer → Event Center → Market State Engine → Decisi
 
 ### 0.3 成功标准（最终验收）
 
-- 多源事件统一进入 Event Center，输出稳定 `MarketContext`，并可按时间窗重放得到一致的 `final` 输出
-- MarketStateEngine 只消费 `MarketContext` + deterministic features，并输出稳定 MSL
+- 多源事件统一进入 Event Center，输出稳定 `SelectedEvent/EventWindow`，并可按时间窗重放得到一致的 `select` 输出
+- MarketStateEngine 只消费 `selected_event + event_window + deterministic features`，并输出稳定 MSL
 - Single Decision Agent 只消费 `signal_event + msl + key_features`，输出结构化 `ExecutionPlan`，且全链路可追踪
 - 任意一次线上决策可被复现：输入快照可读、决策链可重放、差异可解释
 
@@ -47,10 +47,10 @@ Data Layer → Feature Layer → Event Center → Market State Engine → Decisi
 
 2) Event Center（系统核心，event_center_new）
 - 输入：多源事件（liquidations/indicators/news/onchain/social/宏观等）
-- 输出：`MarketContext`（事件快照：recent evidences / conflicts / anomaly_flags / priority buckets）
+- 输出：`SelectedEvent` + `EventWindow`（事件快照：key evidences / conflicts / tags / priority）
 
 3) Market State Engine（世界模型，agent_server_new）
-- 输入：deterministic features + MarketContext
+- 输入：deterministic features + selected_event + event_window
 - 输出：MSL（Market State Language，稳定语义摘要）
 
 4) Decision Agent（单决策链，agent_server_new）
@@ -63,7 +63,7 @@ Data Layer → Feature Layer → Event Center → Market State Engine → Decisi
 
 ### 2.2 核心原则（必须长期坚持）
 
-- **Event / Evidence / Context 三层分离**：Event=事实与追踪；Evidence=可聚合结构化证据；Context=给下游消费的快照
+- **Event / Evidence / EventWindow 三层分离**：Event=事实与追踪；Evidence=可聚合结构化证据；EventWindow=给下游消费的快照
 - **核心处理器只理解稳定字段**：禁止依赖来源 payload 的形状
 - **LLM 只能输出结构化结果**：在 Event Center 中，news/social 若接入 LLM，输出必须是 Evidence，而不是原文
 - **Single Decision Agent + deterministic modules**：LLM 只做语义裁决，不负责仓位/下单/硬风控
@@ -80,7 +80,8 @@ Data Layer → Feature Layer → Event Center → Market State Engine → Decisi
 - Event Center：
   - `EventEnvelope`
   - `Evidence`
-  - `MarketContext`
+  - `EventContextSnapshot`
+  - `SelectedEvent`
 - Agent：
   - `MarketStateMSL`
   - `SignalVerdict`
@@ -90,19 +91,19 @@ Data Layer → Feature Layer → Event Center → Market State Engine → Decisi
 ### 3.2 依赖方向（强约束）
 
 - `event_center_new` **不得** import `agent_server_new`
-- `agent_server_new` 通过 port 消费 `MarketContext`（而不是直接 import event center 内部实现）
+- `agent_server_new` 通过 port 消费 `selected_event/event_window`（而不是直接 import event center 内部实现）
 - 共享契约建议抽到独立模块（例如 `utaker_contracts/`），由两边共同依赖；在拆分前，至少保证“单向依赖 + schema 校验”
 
 ### 3.3 端口边界（Ports）
 
 Event Center 必须通过 ports 抽象以下外部依赖：
 - Event Source（poll/stream consumer）
-- Stream/Storage（raw/normalized/evidence/context/final 写入与查询）
+- Stream/Storage（raw/normalized/evidence/context/select 写入与查询）
 - EventMemory（TTL 事件记忆，支撑 active evidences 与窗口计算）
 
 Agent 必须通过 ports 抽象以下外部依赖：
 - FeatureStore/MarketStructure Provider（deterministic features）
-- MarketContext Provider（来自 Event Center 的上下文快照）
+- EventWindow Provider（来自 Event Center 的事件快照）
 - PositionContext Provider（账户/仓位）
 - EventRecorder（决策链日志落地与查询）
 
@@ -117,8 +118,8 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - `ec:raw`：原始 `EventEnvelope`
 - `ec:normalized`：标准化 `EventEnvelope`（字段语义对齐）
 - `ec:evidence`：`Evidence`（单条或批量）
-- `ec:context`：`MarketContext`（Top-K + conflicts + anomaly_flags）
-- `ec:final`：最终输出（路由/去抖后的快照）
+- `ec:context`：`EventContextSnapshot`（Top-K + conflicts + tags）
+- `ec:selected`：最终输出（路由/去抖后的信号事件）
 
 ### 4.2 幂等与追踪字段（强制要求）
 
@@ -138,12 +139,12 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - “新增来源不改核心处理器”所需的稳定契约先落地，并可自动校验
 
 交付物：
-- `EventEnvelope/Evidence/MarketContext` 的 schema 版本与校验入口
+- `EventEnvelope/Evidence/EventContextSnapshot/SelectedEvent` 的 schema 版本与校验入口
 - `MarketStateMSL/DecisionTrace/ExecutionPlan` 的 schema 版本与校验入口
 - 最小的跨模块契约依赖约束说明（依赖方向、禁止 import 规则）
 
 验收标准：
-- 任意 EventEnvelope/Evidence/MarketContext 的样例 JSON 可通过校验
+- 任意 EventEnvelope/Evidence/EventContextSnapshot/SelectedEvent 的样例 JSON 可通过校验
 - 发生 schema 变更时，校验能明确报错，且能定位字段级差异
 
 ---
@@ -164,36 +165,36 @@ Agent 必须通过 ports 抽象以下外部依赖：
 
 ---
 
-### 阶段 2：Evidence → Context（核心语义压缩层）
+### 阶段 2：Evidence → EventWindow（核心语义压缩层）
 
 目标：
-- 把多源事件统一压缩为 Evidence，并构建可消费的 MarketContext（带冲突与异常）
+- 把多源事件统一压缩为 Evidence，并构建可消费的 EventWindow（带冲突与标签）
 
 交付物：
 - Evidence Extractors（优先：liquidation/onchain/technical）
 - Priority scoring 统一落地，且作为唯一排序来源
 - Correlation/cluster 合成规则落地（用于把相关 evidences 聚合）
-- ContextBuilder v1：TTL 过滤 + 冲突输出 + Top-K 压缩 + anomaly_flags + cache
+- ContextBuilder v1：TTL 过滤 + 冲突输出 + Top-K 压缩 + tags + cache
 
 验收标准：
-- Context 输出规模受控：Top-K 生效，TTL 过期证据被清理
-- 冲突可见：存在相互矛盾证据时，context 必须输出 conflicts，不允许静默吞掉
-- 结果稳定：同一 evidences 集合多次构建 context 的输出一致（缓存不改变语义）
+- EventWindow 输出规模受控：Top-K 生效，TTL 过期证据被清理
+- 冲突可见：存在相互矛盾证据时，event window 必须输出 conflicts，不允许静默吞掉
+- 结果稳定：同一 evidences 集合多次构建 event window 的输出一致（缓存不改变语义）
 
 ---
 
-### 阶段 3：接入 Agent（Context 驱动的世界模型与单决策链）
+### 阶段 3：接入 Agent（EventWindow 驱动的世界模型与单决策链）
 
 目标：
-- MarketStateEngine 以 MarketContext 为核心输入，产出稳定 MSL；Decision Agent 只消费 msl + key_features + signal_event
+- MarketStateEngine 以 `selected_event + event_window` 为核心输入，结合 deterministic features 产出稳定 MSL；Decision Agent 只消费 msl + key_features + signal_event
 
 交付物：
-- agent_server_new 增加/替换 `MarketContextProvider`：从 Event Center 获取 MarketContext
-- ContextBuilder 调整：active_events/recent_events 以 Event Center 输出为准，避免 agent 自行聚合
+- agent_server_new 增加/替换 `EventWindowProvider`：从 Event Center 获取事件快照
+- 上下文组装调整：active_events/recent_events 以 Event Center 输出为准，避免 agent 自行聚合
 - DecisionTrace 记录点补齐：必须包含输入快照引用（context_id/时间窗/版本）与每步输出
 
 验收标准：
-- 任意一次决策可被“输入快照 + 决策链”复现：同一 context 与 features 输入，输出 ExecutionPlan 稳定
+- 任意一次决策可被“输入快照 + 决策链”复现：同一 event window 与 features 输入，输出 ExecutionPlan 稳定
 - 预算可控：key_market_features 有硬上限，且不会因事件量增加而指数膨胀
 
 ---
@@ -204,7 +205,7 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - 建立事件与决策的重放工具链，支持对比与回归测试
 
 交付物：
-- `event_replay`：按时间窗读取 raw/normalized/evidence/context/final，重放 stages，输出差异报告
+- `event_replay`：按时间窗读取 raw/normalized/evidence/context/selected，重放 stages，输出差异报告
 - `decision_replay`：读取 DecisionTrace/输入快照，重放决策链，输出差异报告
 - 回归样例集（golden fixtures）：覆盖至少 3 类事件组合（单源/多源/冲突）
 
@@ -227,7 +228,26 @@ Agent 必须通过 ports 抽象以下外部依赖：
 
 ## 7. 风险点与防线（必须守住的底线）
 
-- Evidence 引入 LLM 时必须强制输出结构化 Evidence，禁止原始文本进入 Context
+- Evidence 引入 LLM 时必须强制输出结构化 Evidence，禁止原始文本直接进入下游
 - Context Builder 必须做 Top-K 与 TTL，否则信息会指数膨胀并拖垮下游决策
 - 冲突消解必须输出 conflicts，否则下游会在“看起来很强但互相打架”的状态下做错误决策
 - 优先级排序必须统一由 Priority Engine 给出，否则不同模块各自排序会造成结果漂移
+
+---
+
+## 8. 参数配置与 AI 接管策略（新增）
+
+目标：让复杂的 type 组合与权重配置可演进、可审计、可回放。
+
+### 8.1 当前参数来源
+
+- correlation 规则：`a_type + b_type -> out_type`
+- priority 公式：`importance * strength * confidence * recency_decay`
+- 关键配置：type 白名单、source/category 权重、half_life、路由阈值
+
+### 8.2 AI 接管分阶段
+
+1. 建议模式：AI 产出配置建议与影响评估，不直接生效
+2. 审核发布：人工确认后版本化发布
+3. 受限自动化：仅在允许区间自动调参，必须通过 replay 回归
+4. 审计追踪：记录建议来源、配置 diff、生效版本、回放结果

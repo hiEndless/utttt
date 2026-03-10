@@ -1,6 +1,6 @@
 # 事件契约与字段规范（v2）
 
-本文定义新的事件中心端到端字段语义：`raw → normalized → evidence → context → L0 → L1 → final`。
+本文定义新的事件中心端到端字段语义：`raw → normalized → evidence → context_snapshot → classify → prioritize → select`。
 
 目标：字段少而稳定、语义单一、可演进、可做幂等与可观测性。
 
@@ -50,9 +50,9 @@ Evidence 是从 EventEnvelope 中提炼出的“可用于决策/聚合”的结�
 | source_refs | list[dict] | N | 证据引用了哪些原始 event（id/来源/片段） |
 | attrs | dict | N | 额外属性（如 zscore、计数、主题、关键词等） |
 
-### 1.3 Context（市场上下文）
+### 1.3 EventContextSnapshot（事件上下文快照）
 
-Context 是“给下游使用的压缩快照”，它由 Evidence 聚合得到，不包含高噪声原始列表。
+EventContextSnapshot 是“给下游使用的事件压缩快照”，它由 Evidence 聚合得到，不包含高噪声原始列表。
 
 建议字段：
 
@@ -60,11 +60,10 @@ Context 是“给下游使用的压缩快照”，它由 Evidence 聚合得到�
 |---|---:|:---:|---|
 | ts_ms | int | Y | 上下文快照生成时间 |
 | asset | str | Y | 标的 |
-| msl | dict | Y | 长效市场语境（MarketStateLanguage） |
-| key_features | list[Evidence] | Y | 重要证据 Top-K（可按 horizon 分桶） |
+| key_evidences | list[Evidence] | Y | 重要证据 Top-K（可按 horizon 分桶） |
 | active_triggers | list[dict] | N | 近期触发事件摘要（只保留少量） |
 | conflicts | list[dict] | N | 冲突信息（同类 evidence 的多空对冲、强度差等） |
-| anomaly_flags | list[str] | N | 异常标记（供下游快速判断） |
+| tags | list[str] | N | 事件标签（供下游路由与检索） |
 
 ---
 
@@ -92,7 +91,7 @@ EvidenceExtractor 为每类 source_category/type 提供提炼逻辑：
 
 输出：`list[Evidence]`
 
-### 2.4 context（上下文构建）
+### 2.4 context_snapshot（上下文构建）
 
 ContextBuilder 聚合 Evidence，完成：
 - TTL 过滤
@@ -101,11 +100,11 @@ ContextBuilder 聚合 Evidence，完成：
 - 冲突消解与净强度计算
 - 压缩输出（Top-K + buckets）
 
-输出：`MarketContext`
+输出：`EventContextSnapshot`
 
-### 2.5 L0（确认/去噪）
+### 2.5 classify（确认/去噪）
 
-L0 不再理解“指标插件”，只处理标准化后的 `direction/strength/horizon` 等稳定字段（来自 Evidence/normalized）。
+classify 不处理“插件实现细节”，只处理标准化后的 `direction/strength/horizon` 等稳定字段（来自 Evidence/normalized）。
 
 建议输出字段：
 
@@ -118,32 +117,30 @@ L0 不再理解“指标插件”，只处理标准化后的 `direction/strength
 | window | dict | 近 N 个输入的统计摘要 |
 | reasons | list[str] | 结构化原因码（避免自由文本） |
 
-### 2.6 L1（结构聚合/市场状态）
+### 2.6 prioritize（结构聚合与排序）
 
-L1 面向“多源证据”做结构聚合，输出与 Market Context 强关联：
+prioritize 面向“多源证据”做结构聚合与排序，输出与事件快照强关联：
 
 | 字段 | 类型 | 说明 |
 |---|---:|---|
-| market_state | str | range/momentum/trend/volatile 等 |
 | component_scores | dict | 按 bucket/source_category 的解释分数 |
-| msl_update | dict | 长效语境更新（可选） |
-| key_features | list[Evidence] | 聚合后的 Top-K |
+| key_evidences | list[Evidence] | 聚合后的 Top-K |
 | conflicts | list[dict] | 冲突摘要 |
 | priority | str | 供 final gate 使用 |
 
-### 2.7 final（路由/去抖/触发）
+### 2.7 select（路由/去抖/触发）
 
-final 阶段只做“是否输出”与“输出给谁”，不做解释推断。
+select 阶段只做“是否输出”与“输出给谁”，不做市场状态推断。
 
 建议输出字段：
 
 | 字段 | 类型 | 说明 |
 |---|---:|---|
-| final_type | str | 如 `market.context` / `signal.trigger` |
+| selected_type | str | 如 `market.structure_event` / `macro.trigger_event` |
 | asset | str | 标的 |
 | ts_ms | int | 时间 |
 | priority | str | 低/中/高 |
-| context_snapshot | MarketContext | 下游消费的快照（可裁剪字段） |
+| context_snapshot | EventContextSnapshot | 下游消费的快照（可裁剪字段） |
 | trigger_event | EventEnvelope | 若为触发型输出，附带触发事件摘要 |
 | route | dict | 下游路由（agent/rules/alerts 等） |
 
@@ -153,6 +150,41 @@ final 阶段只做“是否输出”与“输出给谁”，不做解释推断�
 
 | kind | 典型来源 | 进入上下文方式 | ttl 建议 |
 |---|---|---|---|
-| strategic | 宏观/监管/战争/利率 | 进入 msl（长效语境） | 小时～天 |
-| tactical | 链上流入/OI/funding 极端 | 进入 key_features（中期特征） | 30min～4h |
+| strategic | 宏观/监管/战争/利率 | 作为长期证据进入 key_evidences | 小时～天 |
+| tactical | 链上流入/OI/funding 极端 | 进入 key_evidences（中期特征） | 30min～4h |
 | trigger | 爆仓簇/突发新闻/社媒热点 | 只作为 trigger_event 或短期 active_triggers | 5min～30min |
+
+---
+
+## 4. 下游透传依据（入库/回放必需）
+
+`SelectedEvent` 在下发时必须携带以下依据字段，确保下游不仅拿到信号，还能拿到证据链：
+
+| 维度 | 字段 | 说明 |
+|---|---|---|
+| 来源 | `source.name` / `source.category` | 信号来源系统与来源类别 |
+| 追踪 | `trace.dedup_key` / `trace.correlation_id` / `trace.parent_id` / `trace.schema_version` | 幂等、关联、父子链路与版本追踪 |
+| 条件 | `context_snapshot.key_evidences` / `context_snapshot.conflicts` | 生成信号的证据与冲突摘要 |
+| 周期 | `evidence.horizon` / `evidence.ttl_ms` | 生效周期与衰减窗口 |
+| 引用 | `evidence.source_refs` | 回指原始事件 ID 与来源 |
+
+---
+
+## 5. 关联合成与优先级评分依据
+
+### 5.1 关联合成（Correlation）
+
+- 规则型：`a_type + b_type -> out_type`
+- 输出方向与周期由规则显式配置：`out_direction/out_horizon`
+- 可选抑制输入：`suppress_inputs`
+
+### 5.2 优先级评分（Priority）
+
+当前统一评分公式：
+
+`score = importance * strength * confidence * recency_decay`
+
+- `importance`: 事件先验权重（0~1）
+- `strength`: 证据强度（0~1）
+- `confidence`: 证据置信度（默认下限 0.2）
+- `recency_decay`: 时间衰减（半衰期配置）
