@@ -438,3 +438,4 @@ CI 便捷入口：
 
 - `scripts/ci_event_center_quick_strict.sh`
 - `scripts/ci_event_center_quick_lenient.sh`
+- `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫）

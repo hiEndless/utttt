@@ -1,0 +1,54 @@
+name: event-center-quick
+
+on:
+  pull_request:
+    paths:
+      - "event_center_new/**"
+      - "scripts/check_event_center_*"
+      - "scripts/check_new_arch_guards.sh"
+      - "scripts/ci_event_center_quick_*.sh"
+      - "docs/ARCHITECTURE_NEW.md"
+      - "docs/CONTRACTS_QUICK_REF.md"
+  push:
+    branches:
+      - main
+    paths:
+      - "event_center_new/**"
+      - "scripts/check_event_center_*"
+      - "scripts/check_new_arch_guards.sh"
+      - "scripts/ci_event_center_quick_*.sh"
+      - "docs/ARCHITECTURE_NEW.md"
+      - "docs/CONTRACTS_QUICK_REF.md"
+
+jobs:
+  quick-strict:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 运行 quick strict 守卫
+        run: bash scripts/ci_event_center_quick_strict.sh
+
+  quick-lenient:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 运行 quick lenient 守卫
+        run: bash scripts/ci_event_center_quick_lenient.sh
