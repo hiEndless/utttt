@@ -45,10 +45,8 @@ jobs:
         if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
         run: |
           echo "event_center quick strict guard failed, see artifact: event-center-quick-strict-diagnostics"
-          echo "download artifact then run:"
-          echo "  pwd"
-          echo "  ls -la ."
-          echo "  rg -n \"FAIL_CODE=\" quick_strict.log"
+          echo "download artifact then run (最短排障命令串):"
+          echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
           exit 1
 
   quick-lenient:
@@ -75,8 +73,6 @@ jobs:
         if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
         run: |
           echo "event_center quick lenient guard failed, see artifact: event-center-quick-lenient-diagnostics"
-          echo "download artifact then run:"
-          echo "  pwd"
-          echo "  ls -la ."
-          echo "  rg -n \"FAIL_CODE=\" quick_lenient.log"
+          echo "download artifact then run (最短排障命令串):"
+          echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
           exit 1
