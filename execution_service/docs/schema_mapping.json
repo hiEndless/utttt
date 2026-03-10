@@ -101,6 +101,7 @@
         "attempts",
         "submitted_at_ms",
         "last_error",
+        "rule_debug",
         "source",
         "trace_id",
         "updated_at_ms"
@@ -120,6 +121,11 @@
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.account_id.minLength",
           "expected": 1
+        },
+        {
+          "schema": "execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.rule_debug.required",
+          "expected": ["hit_rule", "rule_priority_order"]
         }
       ]
     },

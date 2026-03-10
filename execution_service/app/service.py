@@ -134,6 +134,7 @@ class ExecutionService:
                     "attempts": _extract_attempts(result),
                     "submitted_at_ms": _extract_submitted_at_ms(result),
                     "last_error": _extract_last_error(result),
+                    "rule_debug": _extract_rule_debug(result),
                     "source": "execution_service",
                     "trace_id": decision.trace_id,
                 },
@@ -427,6 +428,12 @@ def _extract_last_error(result: ExecutionResult) -> str:
     retry_meta = order_result.get("retry_meta") if isinstance(order_result.get("retry_meta"), dict) else {}
     last_error = retry_meta.get("last_error")
     return str(last_error) if last_error else ""
+
+
+def _extract_rule_debug(result: ExecutionResult) -> Dict[str, Any]:
+    signal_result = result.signal_result if isinstance(result.signal_result, dict) else {}
+    rule_debug = signal_result.get("rule_debug") if isinstance(signal_result, dict) else None
+    return dict(rule_debug) if isinstance(rule_debug, dict) else {}
 
 
 def _normalize_reconcile_status(status: str) -> str | None:

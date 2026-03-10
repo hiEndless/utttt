@@ -138,6 +138,8 @@ def test_debug_state_with_decision_id() -> None:
     assert data["decision_state"]["account_id"] == "main"
     assert data["decision_state"]["source"] == "execution_service"
     assert data["decision_state"]["trace_id"] == "trace-debug-001"
+    assert isinstance(data["decision_state"].get("rule_debug"), dict)
+    assert isinstance(data["decision_state"]["rule_debug"].get("hit_rule"), str)
 
 
 def test_reconcile_sink_not_configured() -> None:

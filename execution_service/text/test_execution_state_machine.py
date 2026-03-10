@@ -98,6 +98,7 @@ def test_state_machine_skipped_status() -> None:
     assert state["account_id"] == "main"
     assert state["attempts"] == 0
     assert state["submitted_at_ms"] is None
+    assert isinstance(state.get("rule_debug"), dict)
 
 
 def test_state_machine_terminal_status_cannot_jump_back_to_pending() -> None:

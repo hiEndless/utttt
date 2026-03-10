@@ -84,3 +84,4 @@
 - [x] Task 82: 增加账户级组合风控阈值（`max_account_notional`/`max_margin_ratio`），贯通规则、risk_checks、provider、schema 与文档。
 - [x] Task 83: 增加账户亏损风控阈值（`max_daily_loss`/`max_consecutive_loss_count`），贯通规则拒绝码、risk_checks、provider、schema 与文档。
 - [x] Task 84: 在 `signal_result` 增加 `rule_debug` 调试字段（命中规则/规则顺序/值阈值），并补 schema、测试与文档。
+- [x] Task 85: 将 `rule_debug` 回写到 `decision_state`，支持 debug state 按 `decision_id` 回看命中规则链路。

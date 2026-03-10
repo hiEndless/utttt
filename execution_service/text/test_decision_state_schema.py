@@ -23,6 +23,12 @@ def test_decision_state_schema_samples() -> None:
         "attempts": 2,
         "submitted_at_ms": 1760000000000,
         "last_error": "",
+        "rule_debug": {
+            "hit_rule": "passed_all_rules",
+            "rule_priority_order": ["position_limit", "cooldown"],
+            "hit_rule_value": None,
+            "hit_rule_threshold": None,
+        },
         "source": "execution_service",
         "trace_id": "trace-001",
         "updated_at_ms": 1760000000001,
