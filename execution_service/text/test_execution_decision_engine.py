@@ -123,6 +123,8 @@ def test_allow_add_when_all_rules_pass() -> None:
         item.get("scope") in {"account", "symbol", "position"}
         for item in result.signal_result["rule_debug"]["evaluation_trace"]
     )
+    orders = [item.get("order") for item in result.signal_result["rule_debug"]["evaluation_trace"]]
+    assert orders == list(range(1, len(orders) + 1))
 
 
 def test_dual_side_mode_allows_opposite_direction_add() -> None:

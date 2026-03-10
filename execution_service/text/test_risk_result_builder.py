@@ -73,6 +73,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
         hit_rule_threshold=0.0,
         evaluation_trace=[
             {
+                "order": 1,
                 "rule": "position_limit",
                 "scope": "position",
                 "status": "pass",
@@ -81,6 +82,7 @@ def test_risk_result_builder_reduce_short_in_dual_side() -> None:
                 "note_zh": "仓位上限检查(多头): 当前=0.2000, 阈值=1.0000",
             },
             {
+                "order": 2,
                 "rule": "direction_conflict",
                 "scope": "position",
                 "status": "fail",

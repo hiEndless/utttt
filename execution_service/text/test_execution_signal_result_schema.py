@@ -56,6 +56,7 @@ def test_execution_signal_result_schema_samples() -> None:
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {
+                    "order": 1,
                     "rule": "position_limit",
                     "scope": "position",
                     "status": "pass",
@@ -99,7 +100,7 @@ def test_execution_signal_result_schema_samples() -> None:
             "hit_rule_threshold": None,
             "matched_at_ms": 0,
             "evaluation_trace": [
-                {"rule": "", "scope": "unknown", "status": "unknown", "value": None, "threshold": None, "note_zh": ""}
+                {"order": 0, "rule": "", "scope": "unknown", "status": "unknown", "value": None, "threshold": None, "note_zh": ""}
             ],
         },
     }

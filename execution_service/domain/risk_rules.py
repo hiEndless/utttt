@@ -221,7 +221,7 @@ def evaluate_risk_rules(
             position_size=position_size,
         ),
     }
-    for rule_name in rule_priority_order:
+    for idx, rule_name in enumerate(rule_priority_order, start=1):
         result = rule_handlers[rule_name]()
         value, threshold, note_zh = _rule_trace_value_threshold(
             rule_name=rule_name,
@@ -249,6 +249,7 @@ def evaluate_risk_rules(
         if result is not None:
             evaluation_trace.append(
                 {
+                    "order": idx,
                     "rule": rule_name,
                     "scope": scope,
                     "status": "fail",
@@ -260,6 +261,7 @@ def evaluate_risk_rules(
             return _finalize(**result)
         evaluation_trace.append(
             {
+                "order": idx,
                 "rule": rule_name,
                 "scope": scope,
                 "status": "pass",

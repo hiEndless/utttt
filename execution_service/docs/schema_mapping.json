@@ -130,7 +130,7 @@
         {
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.rule_debug.properties.evaluation_trace.items.required",
-          "expected": ["rule", "scope", "status", "value", "threshold", "note_zh"]
+          "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
         }
       ]
     },
@@ -310,7 +310,7 @@
         {
           "schema": "execution_service/docs/execution_signal_result.schema.json",
           "json_path": "properties.rule_debug.properties.evaluation_trace.items.required",
-          "expected": ["rule", "scope", "status", "value", "threshold", "note_zh"]
+          "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
         }
       ]
     }

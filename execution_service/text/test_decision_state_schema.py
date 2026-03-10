@@ -31,6 +31,7 @@ def test_decision_state_schema_samples() -> None:
             "matched_at_ms": 1760000000000,
             "evaluation_trace": [
                 {
+                    "order": 1,
                     "rule": "position_limit",
                     "scope": "position",
                     "status": "pass",

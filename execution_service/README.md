@@ -117,6 +117,7 @@ execution_service/
 - `rule_debug` 已增加 `evaluation_trace`，可回放每条规则的 pass/fail 与值阈值轨迹。
 - `evaluation_trace` 已增加 `note_zh`，每条规则均输出中文说明，便于值班排障。
 - `evaluation_trace` 已增加 `scope`（account/symbol/position），可快速定位命中维度。
+- `evaluation_trace` 已增加 `order` 顺序索引，回放链路时可直接按规则顺序定位。
 - `decision_state` 已回写 `rule_debug`，可通过 debug 接口按 `decision_id` 回看最近命中规则链路。
 
 ## 最小接口（当前）
