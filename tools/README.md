@@ -21,6 +21,7 @@ Local:
 - `tools/local/check_state_to_agent_contract_guard.sh`
 - `tools/local/check_agent_to_execution_guard.sh`
 - `tools/local/check_event_center_replay_guard.sh`
+- `tools/local/check_contract_docs_index_guard.sh`
 - `tools/local/verify_quick.sh`
 - `tools/local/verify_full.sh`
 - `tools/local/verify_quick_report.sh`
