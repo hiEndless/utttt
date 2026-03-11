@@ -25,3 +25,4 @@ Current strategy:
 - Existing production checks remain under `scripts/check_*`.
 - `verification/guards/*.sh` are compatibility wrappers for phased extraction.
 - CI can migrate to verification entrypoints without breaking existing checks.
+- Shared validator extraction started: `verification/validators/local_refs_schema.py` (keeps legacy import compatibility via `execution_service/text/schema_utils.py`).

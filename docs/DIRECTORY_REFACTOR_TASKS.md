@@ -43,7 +43,7 @@
 
 ### Phase 3: 资产迁移（未开始）
 
-- [ ] 将可复用 validator 从模块测试目录迁入 `verification/validators`
+- [x] 将可复用 validator 从模块测试目录迁入 `verification/validators`
 - [ ] 将 replay 公共能力迁入 `verification/replay`
 - [ ] 将跨服务 contract fixture 显式化到 `fixtures/contract_cases`
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
