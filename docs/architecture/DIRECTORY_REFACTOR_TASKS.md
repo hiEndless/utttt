@@ -60,6 +60,7 @@
 - [x] 建立 `scripts/*` 兼容白名单与机器检查（workflow/snapshot/wiring hard-pinned）
 - [x] 将脚本兼容白名单检查接入 nightly CI
 - [x] 将脚本兼容白名单检查接入 regression CI（并使用 warning budget 替代 strict 语义检查）
+- [x] 将脚本兼容白名单检查接入 quick CI（统一三条场景入口）
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
   - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 
