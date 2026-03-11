@@ -134,6 +134,7 @@ event_center_new(signal_event + active_events)
 
 ## 5. 契约文档入口
 
+- 验证层任务清单：`DIRECTORY_REFACTOR_TASKS.md`
 - 联调速查：`CONTRACTS_QUICK_REF.md`
 - 契约索引：`CONTRACT_INDEX.md`
 - 语义词典（防漂移）：`SEMANTIC_GLOSSARY.md`
@@ -188,6 +189,18 @@ event_center_new(signal_event + active_events)
 - Execution 边界：`execution_service/docs/boundaries.md`
 - Execution 迁移：`execution_service/docs/migration.md`
 - Execution Redis 键契约：`execution_service/docs/redis_keys.md`
+
+## 5.1 验证入口收敛（新增）
+
+当前已建立新入口（优先使用）：
+- CI 统一入口：`tools/ci/verify_all.sh`
+- 验证套件入口：`verification/run_suite.sh`
+- 本地快捷入口：`tools/local/verify_quick.sh` / `tools/local/verify_full.sh` / `tools/local/verify_quick_report.sh`
+
+兼容策略：
+- 现有 `scripts/check_*` 保留可用，作为兼容入口。
+- 新入口通过 `verification/guards/*.sh` 转发到原脚本，避免一次性破坏性迁移。
+- 迁移映射清单：`verification/migration_map.yaml`
 
 ## 6. 测试与文档组织约定
 

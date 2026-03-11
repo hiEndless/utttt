@@ -33,10 +33,10 @@
 
 ### Phase 2: 路径收编（进行中）
 
-- [ ] 产出旧->新路径迁移映射（guard/suite/fixtures/contracts）
-- [ ] 增加本地开发快捷入口（quick/full/report）
-- [ ] 在文档中声明“新入口优先，旧入口兼容”
-- [ ] 梳理 scripts 分类并标注“待迁移/保留”
+- [x] 产出旧->新路径迁移映射（guard/suite/fixtures/contracts）
+- [x] 增加本地开发快捷入口（quick/full/report）
+- [x] 在文档中声明“新入口优先，旧入口兼容”
+- [x] 梳理 scripts 分类并标注“待迁移/保留”
 
 验收：
 - 本地可仅通过 `tools/local/*` 完成常用验证流程。
@@ -75,8 +75,5 @@
 
 ## 5. 当前下一步（本轮执行）
 
-1. 完成 Phase 2 前两项：
-- 旧->新路径映射
-- 本地快捷入口脚本
-
-2. 执行 quick 验证并记录结果。
+1. 进入 Phase 3：验证能力代码收编（validator/replay/fixtures）。
+2. 在不破坏现有 CI 的前提下，增加按领域的细粒度 verification wrappers。

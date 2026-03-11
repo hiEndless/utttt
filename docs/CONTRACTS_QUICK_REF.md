@@ -164,6 +164,7 @@ agent_server_new -> execution_service
 ## 8. 文档入口
 
 - 总览：`ARCHITECTURE_NEW.md`
+- 目录架构重构任务：`DIRECTORY_REFACTOR_TASKS.md`
 - 契约索引：`CONTRACT_INDEX.md`
 - 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
@@ -211,3 +212,18 @@ agent_server_new -> execution_service
 - Execution cURL 示例：`execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
 - Execution Redis 键契约：`execution_service/docs/redis_keys.md`
+
+## 9. 验证入口（新增）
+
+优先入口：
+- `tools/ci/verify_all.sh`
+- `verification/run_suite.sh`
+
+本地快捷：
+- `tools/local/verify_quick.sh`
+- `tools/local/verify_full.sh`
+- `tools/local/verify_quick_report.sh`
+
+兼容说明：
+- 旧 `scripts/check_*` 仍可直接使用。
+- 新旧映射见：`verification/migration_map.yaml`
