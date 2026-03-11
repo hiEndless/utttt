@@ -6,10 +6,14 @@ services:
   - name: feature_service
     current_path: "feature_service/"
     target_path: "services/feature_service/"
-    status: "soft_entrypoint_ready"
+    status: "pilot_entrypoint_migrated"
     scaffold_readme: "services/feature_service/README.md"
     soft_entrypoints:
       - "services/feature_service/main.py"
+    pilot_migrated_impl:
+      - "services/feature_service/runtime/main.py"
+    legacy_wrapper:
+      - "feature_service/main.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

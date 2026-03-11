@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from feature_service.main import app, main
+from services.feature_service.runtime.main import app, main
 
 __all__ = ["app", "main"]
 

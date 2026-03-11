@@ -33,3 +33,7 @@ Recommended local wrappers:
 - `bash tools/local/run_agent_pipeline_smoke.sh`
 - `bash tools/local/run_agent_memory_summary.sh`
 - `bash tools/local/run_execution_service.sh`
+
+Pilot migration note:
+- `feature_service/main.py` is now a legacy wrapper.
+- runtime implementation moved to `services/feature_service/runtime/main.py`.
