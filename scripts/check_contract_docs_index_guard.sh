@@ -22,6 +22,10 @@ index_path = Path("docs/CONTRACT_INDEX.md")
 root = Path(".").resolve()
 text = index_path.read_text(encoding="utf-8")
 missing = []
+required_entries = {
+    "event_center_new/docs/ci_baseline_template.md",
+}
+missing_required = []
 
 for raw in re.findall(r"`([^`]+)`", text):
     candidate = raw.strip()
@@ -37,6 +41,16 @@ for raw in re.findall(r"`([^`]+)`", text):
 if missing:
     print("[失败] CONTRACT_INDEX 引用路径不存在：")
     for item in missing:
+        print(f"  - {item}")
+    sys.exit(1)
+
+for item in sorted(required_entries):
+    if f"`{item}`" not in text:
+        missing_required.append(item)
+
+if missing_required:
+    print("[失败] CONTRACT_INDEX 缺少必需入口：")
+    for item in missing_required:
         print(f"  - {item}")
     sys.exit(1)
 
