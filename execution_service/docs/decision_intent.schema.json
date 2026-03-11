@@ -31,8 +31,7 @@
       "minLength": 1
     },
     "direction_intent": {
-      "type": "string",
-      "enum": ["long", "short", "none"]
+      "$ref": "./execution_enums.schema.json#/properties/direction_intent"
     },
     "confidence": {
       "description": "兼容字段（deprecated）。若提供，必须与 decision_confidence 保持一致。",

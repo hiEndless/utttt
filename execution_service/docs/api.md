@@ -28,7 +28,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v12",
+  "schema_mapping_version": "execution-schema-mapping-v13",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }

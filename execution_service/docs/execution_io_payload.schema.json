@@ -8,8 +8,7 @@
       "type": "boolean"
     },
     "mode": {
-      "type": "string",
-      "enum": ["mock", "exchange_skeleton"]
+      "$ref": "./execution_enums.schema.json#/properties/io_mode"
     },
     "dry_run": {
       "type": "boolean"
@@ -46,8 +45,7 @@
       ]
     },
     "status": {
-      "type": "string",
-      "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+      "$ref": "./execution_enums.schema.json#/properties/io_status"
     },
     "request": {
       "type": "object",
@@ -59,12 +57,10 @@
           "minLength": 1
         },
         "side": {
-          "type": "string",
-          "enum": ["BUY", "SELL"]
+          "$ref": "./execution_enums.schema.json#/properties/request_side"
         },
         "type": {
-          "type": "string",
-          "enum": ["MARKET"]
+          "$ref": "./execution_enums.schema.json#/properties/request_type"
         },
         "quantity": {
           "type": "string",

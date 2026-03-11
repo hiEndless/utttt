@@ -4,8 +4,7 @@
   "type": "object",
   "properties": {
     "execution_action": {
-      "type": "string",
-      "enum": ["add", "reduce", "hold", "exit", "skip"]
+      "$ref": "./execution_enums.schema.json#/properties/execution_action"
     }
   }
 }

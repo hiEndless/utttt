@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v12",
+  "version": "execution-schema-mapping-v13",
   "last_updated": "2026-03-11",
   "items": [
     {
@@ -24,8 +24,8 @@
       "references": [
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
-          "json_path": "properties.direction_intent.enum",
-          "expected": ["long", "short", "none"]
+          "json_path": "properties.direction_intent.$ref",
+          "expected": "./execution_enums.schema.json#/properties/direction_intent"
         },
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
@@ -75,7 +75,7 @@
         {
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.execution_action.$ref",
-          "expected": "./execution_action.schema.json#/properties/execution_action"
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",
@@ -146,7 +146,7 @@
         {
           "schema": "execution_service/docs/decision_state.schema.json",
           "json_path": "properties.execution_action.$ref",
-          "expected": "./execution_action.schema.json#/properties/execution_action"
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
         },
         {
           "schema": "execution_service/docs/decision_state.schema.json",
@@ -222,8 +222,8 @@
       "references": [
         {
           "schema": "execution_service/docs/execution_action.schema.json",
-          "json_path": "properties.execution_action.enum",
-          "expected": ["add", "reduce", "hold", "exit", "skip"]
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
         }
       ]
     },
@@ -380,18 +380,66 @@
       "references": [
         {
           "schema": "execution_service/docs/execution_io_payload.schema.json",
-          "json_path": "properties.mode.enum",
-          "expected": ["mock", "exchange_skeleton"]
+          "json_path": "properties.mode.$ref",
+          "expected": "./execution_enums.schema.json#/properties/io_mode"
         },
         {
           "schema": "execution_service/docs/execution_io_payload.schema.json",
-          "json_path": "properties.status.enum",
-          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+          "json_path": "properties.status.$ref",
+          "expected": "./execution_enums.schema.json#/properties/io_status"
         },
         {
           "schema": "execution_service/docs/execution_io_payload.schema.json",
           "json_path": "properties.request.required",
           "expected": ["symbol", "side", "type", "quantity", "newClientOrderId"]
+        },
+        {
+          "schema": "execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.properties.side.$ref",
+          "expected": "./execution_enums.schema.json#/properties/request_side"
+        },
+        {
+          "schema": "execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.properties.type.$ref",
+          "expected": "./execution_enums.schema.json#/properties/request_type"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionEnums",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/execution_enums.schema.json",
+      "code": "execution_service/domain/contracts.py",
+      "symbol": "DirectionIntent",
+      "fields": [
+        "direction_intent",
+        "execution_action",
+        "io_mode",
+        "io_status",
+        "request_side",
+        "request_type"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.direction_intent.enum",
+          "expected": ["long", "short", "none"]
+        },
+        {
+          "schema": "execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.execution_action.enum",
+          "expected": ["add", "reduce", "hold", "exit", "skip"]
+        },
+        {
+          "schema": "execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.io_mode.enum",
+          "expected": ["mock", "exchange_skeleton"]
+        },
+        {
+          "schema": "execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.io_status.enum",
+          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
         }
       ]
     },
