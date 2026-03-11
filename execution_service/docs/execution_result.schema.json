@@ -28,8 +28,95 @@
     },
     "order_result": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
+        "submitted": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["mock", "exchange_skeleton"]
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exchange": {
+          "type": "string",
+          "minLength": 1
+        },
+        "account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction_intent": {
+          "type": "string",
+          "enum": ["long", "short", "none"]
+        },
+        "execution_action": {
+          "$ref": "./execution_action.schema.json#/properties/execution_action"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["symbol", "side", "type", "quantity", "newClientOrderId"],
+          "properties": {
+            "symbol": {
+              "type": "string",
+              "minLength": 1
+            },
+            "side": {
+              "type": "string",
+              "enum": ["BUY", "SELL"]
+            },
+            "type": {
+              "type": "string",
+              "enum": ["MARKET"]
+            },
+            "quantity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "newClientOrderId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "exchange_raw": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "ts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ts_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "submitted_at_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
         "retry_meta": {
           "$ref": "./retry_meta.schema.json"
         }

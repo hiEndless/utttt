@@ -144,6 +144,7 @@
 2. `confidence` 降级为 deprecated 兼容字段。
 3. 双字段同时出现时保持一致性校验（不一致返回 `400`）。
 4. `schema_mapping_version` 已升版为 `execution-schema-mapping-v10`。
+5. `ExecutionResult.order_result` 已收敛为白名单结构（含 `request/retry_meta/submitted_at_ms`），并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v11`。
 
 ### 观测指标（建议）
 

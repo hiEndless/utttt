@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v10",
+  "version": "execution-schema-mapping-v11",
   "last_updated": "2026-03-11",
   "items": [
     {
@@ -86,6 +86,11 @@
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.order_result.properties.retry_meta.$ref",
           "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.additionalProperties",
+          "expected": false
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",

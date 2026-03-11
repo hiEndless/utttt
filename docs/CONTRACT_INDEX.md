@@ -22,6 +22,7 @@
 
 - `market_state_engine/docs/api.md`
 - `market_state_engine/docs/boundaries.md`
+- `market_state_engine/docs/guard_help_snapshot.txt`
 - `market_state_engine/docs/msl.schema.json`
 
 ## 4. event_center_new
@@ -42,7 +43,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v10`
+- `execution_schema_mapping_version: execution-schema-mapping-v11`
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`
