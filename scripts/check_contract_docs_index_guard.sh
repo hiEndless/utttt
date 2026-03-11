@@ -44,11 +44,14 @@ missing = []
 # - event_center_new
 #   - event_center_new/docs/ci_baseline_template.md
 #   - event_center_new/docs/selected_event.schema.json
+# - market_state_engine
+#   - market_state_engine/docs/guard_help_snapshot.txt
 required_entries = [
     "docs/ALERT_CODES.md",
     "docs/contract_docs_index_help_snapshot.txt",
     "event_center_new/docs/ci_baseline_template.md",
     "event_center_new/docs/selected_event.schema.json",
+    "market_state_engine/docs/guard_help_snapshot.txt",
 ]
 missing_required = []
 duplicate_required = []
