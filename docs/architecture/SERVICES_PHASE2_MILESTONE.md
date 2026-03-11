@@ -49,6 +49,10 @@
 - migrated impl: `services/feature_service/src/routes.py`
 - legacy wrapper kept: `feature_service/routes.py`
 
+11. `feature_service/service.py`
+- migrated impl: `services/feature_service/src/service.py`
+- legacy wrapper kept: `feature_service/service.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`

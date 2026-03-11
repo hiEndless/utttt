@@ -12,7 +12,7 @@ from feature_service.contracts import (
     RawStructureSnapshot,
     ResponseMeta,
 )
-from feature_service.service import FeatureDataUnavailableError, FeatureService
+from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
 
 
 def create_router(service: FeatureService) -> APIRouter:
@@ -98,4 +98,3 @@ def create_router(service: FeatureService) -> APIRouter:
         )
 
     return router
-

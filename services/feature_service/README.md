@@ -8,3 +8,4 @@ Notes:
 - `main.py` runtime implementation has moved to `services/feature_service/runtime/main.py`.
 - `app.py` implementation has moved to `services/feature_service/src/app.py`.
 - `routes.py` implementation has moved to `services/feature_service/src/routes.py`.
+- `service.py` implementation has moved to `services/feature_service/src/service.py`.
