@@ -27,9 +27,19 @@ if ! rg -q "\| code \| service \| owner \| introduced_in \| lifecycle \| trigger
   exit 1
 fi
 
-echo "[5/5] 检查至少存在一条 active 告警码"
+echo "[5/6] 检查至少存在一条 active 告警码"
 if ! rg -q '\| `[^`]+` \| `[^`]+` \| `[^`]+` \| `[^`]+` \| `active` \|' docs/ALERT_CODES.md; then
   echo "[失败] docs/ALERT_CODES.md 未检测到 lifecycle=active 的告警码记录"
+  exit 1
+fi
+
+echo "[6/6] 检查生命周期规则段落存在"
+if ! rg -q "## 生命周期规则" docs/ALERT_CODES.md; then
+  echo "[失败] docs/ALERT_CODES.md 缺少生命周期规则段落"
+  exit 1
+fi
+if ! rg -q "active -> deprecated -> removed" docs/ALERT_CODES.md; then
+  echo "[失败] docs/ALERT_CODES.md 缺少生命周期状态转换规则"
   exit 1
 fi
 
