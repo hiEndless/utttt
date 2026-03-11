@@ -26,6 +26,10 @@
    - `bash scripts/ci_event_center_quick_lenient.sh`
 3. full strict
    - `bash scripts/ci_event_center_full_strict.sh`
+4. 新架构入口（event_center quick/only，含告警入口守卫）
+   - `bash scripts/check_new_arch_guards.sh --event-center-quick`
+   - `bash scripts/check_new_arch_guards.sh --event-center-only`
+   - 说明：两者都会先执行 `scripts/check_alert_codes_entry_guard.sh`，再执行 event_center 守卫聚合
 
 日志头部约定（quick/full 通用）：
 - `[CI_META] run_mode=...`
@@ -72,6 +76,7 @@
 ## 4. 常见排障顺序
 
 1. 先复现同模式失败（quick strict / quick lenient / full strict）。
+   - 若使用新架构入口（`check_new_arch_guards.sh --event-center-*`），先确认告警入口守卫是否失败。
 2. 再拆分成 `schema -> runtime -> wiring` 三组守卫定位。
 3. 修复后至少回归对应模式一次。
 
