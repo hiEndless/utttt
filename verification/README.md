@@ -14,6 +14,10 @@ Entry points:
 - `bash verification/run_suite.sh --suite=quick`
 - `bash tools/ci/verify_all.sh`
 
+Report output:
+- `bash verification/run_suite.sh --suite=quick --report-json=verification/reports/quick.latest.json`
+- report schema: `verification/reports/verification_report.schema.json`
+
 Current strategy:
 - Existing production checks remain under `scripts/check_*`.
 - `verification/guards/*.sh` are compatibility wrappers for phased extraction.

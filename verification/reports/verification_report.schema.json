@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VerificationSuiteReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "suite",
+    "status",
+    "exit_code",
+    "started_at_ms",
+    "finished_at_ms",
+    "duration_ms",
+    "guards"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "verification-report-v1"
+    },
+    "suite": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed"]
+    },
+    "exit_code": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "started_at_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "finished_at_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "guards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "duration_ms"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed"]
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
