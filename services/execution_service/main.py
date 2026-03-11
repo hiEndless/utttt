@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from execution_service.main import app, main
+from services.execution_service.runtime.main import app, main
 
 __all__ = ["app", "main"]
 

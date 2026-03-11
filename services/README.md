@@ -39,3 +39,5 @@ Pilot migration note:
 - runtime implementation moved to `services/feature_service/runtime/main.py`.
 - `market_state_engine/main.py` is now a legacy wrapper.
 - runtime implementation moved to `services/market_state_engine/runtime/main.py`.
+- `execution_service/main.py` is now a legacy wrapper.
+- runtime implementation moved to `services/execution_service/runtime/main.py`.
