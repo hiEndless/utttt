@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent_server_new.pipeline_smoke import main
+from services.agent_server_new.runtime.pipeline_smoke import main
 
 __all__ = ["main"]
 

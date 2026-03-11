@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent_server_new.memory_summary_runner import main
+from services.agent_server_new.runtime.memory_summary_runner import main
 
 __all__ = ["main"]
 
