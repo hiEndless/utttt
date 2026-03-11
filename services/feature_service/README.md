@@ -10,4 +10,4 @@ Notes:
 - `routes.py` implementation has moved to `services/feature_service/src/routes.py`.
 - `service.py` implementation has moved to `services/feature_service/src/service.py`.
 - `contracts.py` implementation has moved to `services/feature_service/src/contracts.py`.
-- provider基础实现已迁入 `services/feature_service/src/providers/`：`bundle.py`、`noop.py`、`degradation_state.py`、`fallback_structure_providers.py`。
+- provider基础实现已迁入 `services/feature_service/src/providers/`：`bundle.py`、`noop.py`、`degradation_state.py`、`fallback_structure_providers.py`、`static_structure_providers.py`、`migrated_structure_providers.py`。

@@ -24,13 +24,13 @@ from services.feature_service.src.providers.fallback_structure_providers import 
     FallbackOrderbookProvider,
     UnavailableIndicatorsProvider,
 )
-from feature_service.providers.migrated_structure_providers import (
+from services.feature_service.src.providers.migrated_structure_providers import (
     MigratedBehaviorProvider,
     MigratedHorizonsProvider,
     MigratedOpenInterestProvider,
     MigratedOrderbookProvider,
 )
-from feature_service.providers.static_structure_providers import (
+from services.feature_service.src.providers.static_structure_providers import (
     StaticBehaviorProvider,
     StaticHorizonsProvider,
     StaticOpenInterestProvider,

@@ -22,6 +22,8 @@ services:
       - "services/feature_service/src/providers/noop.py"
       - "services/feature_service/src/providers/degradation_state.py"
       - "services/feature_service/src/providers/fallback_structure_providers.py"
+      - "services/feature_service/src/providers/static_structure_providers.py"
+      - "services/feature_service/src/providers/migrated_structure_providers.py"
     legacy_wrapper:
       - "feature_service/main.py"
       - "feature_service/app.py"
@@ -32,6 +34,8 @@ services:
       - "feature_service/providers/noop.py"
       - "feature_service/providers/degradation_state.py"
       - "feature_service/providers/fallback_structure_providers.py"
+      - "feature_service/providers/static_structure_providers.py"
+      - "feature_service/providers/migrated_structure_providers.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"
