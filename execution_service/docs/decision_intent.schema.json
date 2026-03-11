@@ -35,37 +35,11 @@
     },
     "confidence": {
       "description": "兼容字段（deprecated）。若提供，必须与 decision_confidence 保持一致。",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["level", "score"],
-      "properties": {
-        "level": {
-          "type": "string",
-          "enum": ["low", "medium", "high"]
-        },
-        "score": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0
-        }
-      }
+      "$ref": "./decision_confidence.schema.json"
     },
     "decision_confidence": {
       "description": "语义主字段。若与 confidence 同时出现，应用层要求两者一致（JSON Schema 无法表达跨字段相等约束）。",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["level", "score"],
-      "properties": {
-        "level": {
-          "type": "string",
-          "enum": ["low", "medium", "high"]
-        },
-        "score": {
-          "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0
-        }
-      }
+      "$ref": "./decision_confidence.schema.json"
     },
     "cross_horizon_policy": {
       "type": "object",

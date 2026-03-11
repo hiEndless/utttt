@@ -147,6 +147,7 @@
 5. `ExecutionResult.order_result` 已收敛为白名单结构（含 `request/retry_meta/submitted_at_ms`），并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v11`。
 6. 抽取共享 `execution_io_payload.schema.json`，复用 `order_result/reconcile_result` 公共字段并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v12`。
 7. 抽取共享 `execution_enums.schema.json`，统一 `direction_intent/execution_action/io_status/io_mode` 枚举并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v13`。
+8. 抽取共享 `decision_confidence.schema.json`，统一 `confidence/decision_confidence` 结构并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v14`。
 
 ### 观测指标（建议）
 

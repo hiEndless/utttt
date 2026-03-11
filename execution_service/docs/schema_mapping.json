@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v13",
+  "version": "execution-schema-mapping-v14",
   "last_updated": "2026-03-11",
   "items": [
     {
@@ -34,23 +34,28 @@
         },
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
-          "json_path": "properties.confidence.properties.level.enum",
-          "expected": ["low", "medium", "high"]
+          "json_path": "properties.confidence.$ref",
+          "expected": "./decision_confidence.schema.json"
         },
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
-          "json_path": "properties.confidence.properties.score.minimum",
-          "expected": 0.0
-        },
-        {
-          "schema": "execution_service/docs/decision_intent.schema.json",
-          "json_path": "properties.confidence.properties.score.maximum",
-          "expected": 1.0
+          "json_path": "properties.decision_confidence.$ref",
+          "expected": "./decision_confidence.schema.json"
         },
         {
           "schema": "execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.account_id.minLength",
           "expected": 1
+        },
+        {
+          "schema": "execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.minimum",
+          "expected": 0.0
+        },
+        {
+          "schema": "execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.maximum",
+          "expected": 1.0
         }
       ]
     },
@@ -440,6 +445,35 @@
           "schema": "execution_service/docs/execution_enums.schema.json",
           "json_path": "properties.io_status.enum",
           "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+        }
+      ]
+    },
+    {
+      "name": "DecisionConfidence",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/decision_confidence.schema.json",
+      "code": "execution_service/domain/contracts.py",
+      "symbol": "DecisionConfidence",
+      "fields": [
+        "level",
+        "score"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.level.enum",
+          "expected": ["low", "medium", "high"]
+        },
+        {
+          "schema": "execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.minimum",
+          "expected": 0.0
+        },
+        {
+          "schema": "execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.maximum",
+          "expected": 1.0
         }
       ]
     },

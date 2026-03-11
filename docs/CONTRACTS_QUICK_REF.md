@@ -123,8 +123,8 @@ agent_server_new -> execution_service
 - `account_id`
 - `symbol`
 - `direction_intent`
-- `confidence`
-- `decision_confidence`（可选语义别名）
+- `decision_confidence`（主字段）
+- `confidence`（deprecated 兼容字段）
 - 若同时传两者，必须一致（防语义漂移）
 - `cross_horizon_policy`
 - `risk_hints`

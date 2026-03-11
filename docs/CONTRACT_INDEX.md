@@ -43,11 +43,12 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v13`
+- `execution_schema_mapping_version: execution-schema-mapping-v14`
 - `execution_service/docs/api.md`
 - `execution_service/docs/boundaries.md`
 - `execution_service/docs/migration.md`
 - `execution_service/docs/decision_intent.schema.json`
+- `execution_service/docs/decision_confidence.schema.json`
 - `execution_service/docs/execution_result.schema.json`
 - `execution_service/docs/execution_action.schema.json`
 - `execution_service/docs/execution_enums.schema.json`
