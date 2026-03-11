@@ -6,29 +6,42 @@ services:
   - name: feature_service
     current_path: "feature_service/"
     target_path: "services/feature_service/"
-    status: "scaffolded"
+    status: "soft_entrypoint_ready"
     scaffold_readme: "services/feature_service/README.md"
+    soft_entrypoints:
+      - "services/feature_service/main.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "scaffolded"
+    status: "soft_entrypoint_ready"
     scaffold_readme: "services/market_state_engine/README.md"
+    soft_entrypoints:
+      - "services/market_state_engine/main.py"
 
   - name: event_center_new
     current_path: "event_center_new/"
     target_path: "services/event_center_new/"
-    status: "scaffolded"
+    status: "soft_entrypoint_ready"
     scaffold_readme: "services/event_center_new/README.md"
+    soft_entrypoints:
+      - "services/event_center_new/main.py"
+      - "services/event_center_new/replay_main.py"
 
   - name: agent_server_new
     current_path: "agent_server_new/"
     target_path: "services/agent_server_new/"
-    status: "scaffolded"
+    status: "soft_entrypoint_ready"
     scaffold_readme: "services/agent_server_new/README.md"
+    soft_entrypoints:
+      - "services/agent_server_new/main.py"
+      - "services/agent_server_new/pipeline_smoke.py"
+      - "services/agent_server_new/memory_summary_runner.py"
 
   - name: execution_service
     current_path: "execution_service/"
     target_path: "services/execution_service/"
-    status: "scaffolded"
+    status: "soft_entrypoint_ready"
     scaffold_readme: "services/execution_service/README.md"
+    soft_entrypoints:
+      - "services/execution_service/main.py"

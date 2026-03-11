@@ -13,3 +13,13 @@ Current scaffold:
 - `services/event_center_new/`
 - `services/agent_server_new/`
 - `services/execution_service/`
+
+Soft migration entrypoints (phase-1 runtime unification):
+- `python -m services.feature_service.main`
+- `python -m services.market_state_engine.main`
+- `python -m services.event_center_new.main`
+- `python -m services.event_center_new.replay_main`
+- `python -m services.agent_server_new.main`
+- `python -m services.agent_server_new.pipeline_smoke`
+- `python -m services.agent_server_new.memory_summary_runner`
+- `python -m services.execution_service.main`
