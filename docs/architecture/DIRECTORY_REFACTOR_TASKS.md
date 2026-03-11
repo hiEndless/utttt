@@ -39,6 +39,7 @@
 - [x] 梳理 scripts 分类并标注“待迁移/保留”
 - [x] 文档目录分流到 `docs/architecture|contracts|operations`
 - [x] 旧文档入口保留兼容跳转（避免立即破坏人工路径习惯）
+- [x] 增加目录骨架合规脚本：`tools/local/check_structure.sh`
 
 验收：
 - 本地可仅通过 `tools/local/*` 完成常用验证流程。
@@ -85,3 +86,8 @@
 1. 为 `contracts/schemas` 与 `contracts/mappings` 增加聚合只读镜像（不替换原始 owner 文件）。
 2. 增加 `verification/auditors` 的结构一致性审计入口（schema/version/enum/time/confidence/risk flags）。
 3. 设计并落地首批 `tools/ci` 目录化 CI 场景（quick/nightly/regression）。
+
+## 6. 验收命令（当前）
+
+1. `bash tools/local/check_structure.sh`
+2. `bash tools/local/verify_quick.sh`

@@ -6,6 +6,7 @@ CI:
 - `tools/ci/verify_all.sh`
 
 Local:
+- `tools/local/check_structure.sh`
 - `tools/local/verify_quick.sh`
 - `tools/local/verify_full.sh`
 - `tools/local/verify_quick_report.sh`
