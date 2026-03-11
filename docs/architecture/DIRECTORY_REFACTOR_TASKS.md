@@ -50,6 +50,8 @@
 - [x] 将 replay 公共能力迁入 `verification/replay`
 - [x] 将跨服务 contract fixture 显式化到 `fixtures/contract_cases`
 - [x] 建立 `services/*` 五个业务服务迁移占位目录
+- [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
+- [x] 增加语义审计入口（`verification/auditors/semantic_contract_audit.py`）
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
   - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 
@@ -83,11 +85,13 @@
 
 ## 5. 当前下一步（本轮执行）
 
-1. 为 `contracts/schemas` 与 `contracts/mappings` 增加聚合只读镜像（不替换原始 owner 文件）。
-2. 增加 `verification/auditors` 的结构一致性审计入口（schema/version/enum/time/confidence/risk flags）。
-3. 设计并落地首批 `tools/ci` 目录化 CI 场景（quick/nightly/regression）。
+1. 设计并落地首批 `tools/ci` 目录化 CI 场景（quick/nightly/regression）。
+2. 将 semantic audit 报告并入聚合报告（report v2 扩展）。
+3. 逐步将 `scripts/check_*` 迁移为薄包装（指向 `tools/local` 与 `verification/*`）。
 
 ## 6. 验收命令（当前）
 
 1. `bash tools/local/check_structure.sh`
 2. `bash tools/local/verify_quick.sh`
+3. `bash tools/local/sync_contract_indexes.sh`
+4. `bash tools/local/audit_semantics.sh`

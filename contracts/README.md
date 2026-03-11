@@ -11,3 +11,8 @@ Subdirs:
 Compatibility note:
 - Runtime schema files still live in service-local `*/docs/*.schema.json` during this phase.
 - This layer provides canonical registries and migration metadata.
+
+Utilities:
+- sync schema index from registry: `bash tools/local/sync_contract_schemas.sh`
+- sync mapping index from registry: `bash tools/local/sync_contract_mappings.sh`
+- sync both indexes: `bash tools/local/sync_contract_indexes.sh`
