@@ -43,3 +43,5 @@ Pilot migration note:
 - runtime implementation moved to `services/execution_service/runtime/main.py`.
 - `event_center_new/main.py` is now a legacy wrapper.
 - runtime implementation moved to `services/event_center_new/runtime/main.py`.
+- `agent_server_new/runner.py` is now a legacy wrapper.
+- runtime implementation moved to `services/agent_server_new/runtime/runner.py`.

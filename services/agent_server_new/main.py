@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent_server_new.runner import main
+from services.agent_server_new.runtime.runner import main
 
 __all__ = ["main"]
 

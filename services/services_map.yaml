@@ -43,12 +43,16 @@ services:
   - name: agent_server_new
     current_path: "agent_server_new/"
     target_path: "services/agent_server_new/"
-    status: "soft_entrypoint_ready"
+    status: "pilot_entrypoint_migrated"
     scaffold_readme: "services/agent_server_new/README.md"
     soft_entrypoints:
       - "services/agent_server_new/main.py"
       - "services/agent_server_new/pipeline_smoke.py"
       - "services/agent_server_new/memory_summary_runner.py"
+    pilot_migrated_impl:
+      - "services/agent_server_new/runtime/runner.py"
+    legacy_wrapper:
+      - "agent_server_new/runner.py"
 
   - name: execution_service
     current_path: "execution_service/"
