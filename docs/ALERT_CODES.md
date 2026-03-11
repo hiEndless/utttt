@@ -43,3 +43,9 @@
 记录要求：
 - 进入 `deprecated` 时，必须补充迁移说明（替代告警码、影响范围、计划移除时间）。
 - 进入 `removed` 时，必须保留历史记录（可在本文件追加“removed 历史”条目，禁止直接删痕）。
+
+## Removed 历史（模板）
+
+| code | removed_at | replacement | reason |
+|---|---|---|---|
+| `EXAMPLE_ALERT_CODE` | `YYYY-MM-DD` | `NEW_ALERT_CODE` | 简述下线原因与迁移背景 |

@@ -43,4 +43,10 @@ if ! rg -q "active -> deprecated -> removed" docs/ALERT_CODES.md; then
   exit 1
 fi
 
+echo "[7/7] 检查 removed 历史模板段落存在"
+if ! rg -q "## Removed 历史（模板）" docs/ALERT_CODES.md; then
+  echo "[失败] docs/ALERT_CODES.md 缺少 removed 历史模板段落"
+  exit 1
+fi
+
 echo "[通过] 告警码入口守卫检查完成。"
