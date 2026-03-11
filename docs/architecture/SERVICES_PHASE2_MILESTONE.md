@@ -69,6 +69,10 @@
 - migrated impl: `services/feature_service/src/providers/{static,migrated}_structure_providers.py`
 - legacy wrapper kept: `feature_service/providers/{static,migrated}_structure_providers.py`
 
+16. `feature_service/providers/{indicators_provider,future_source_providers,__init__}.py`
+- migrated impl: `services/feature_service/src/providers/{indicators_provider,future_source_providers,__init__}.py`
+- legacy wrapper kept: `feature_service/providers/{indicators_provider,future_source_providers,__init__}.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`

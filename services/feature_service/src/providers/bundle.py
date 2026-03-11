@@ -64,7 +64,7 @@ def build_independent_provider_bundle(periods: Iterable[str] | None = None) -> P
     # 独立模式：优先使用可用的 Redis 指标 provider；不可用时自动降级为空实现。
     indicators_provider: IndicatorsProvider
     try:
-        from feature_service.providers.indicators_provider import RedisIndicatorsProvider
+        from services.feature_service.src.providers.indicators_provider import RedisIndicatorsProvider
 
         indicators_provider = FallbackIndicatorsProvider(
             RedisIndicatorsProvider(periods=periods),
