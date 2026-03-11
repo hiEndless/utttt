@@ -60,6 +60,7 @@
 - [x] 完成第五个物理迁移试点：`agent_server_new/runner.py` 实现迁入 `services/agent_server_new/runtime/runner.py`
 - [x] 完成第六个物理迁移试点：`agent_server_new/pipeline_smoke.py` 与 `memory_summary_runner.py` 实现迁入 `services/agent_server_new/runtime/`
 - [x] 完成第七个物理迁移试点：`event_center_new/replay_main.py` 实现迁入 `services/event_center_new/runtime/replay_main.py`
+- [x] 完成第八个物理迁移试点：`feature_service/app.py` 实现迁入 `services/feature_service/src/app.py`
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

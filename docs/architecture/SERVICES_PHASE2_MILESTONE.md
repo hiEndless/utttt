@@ -41,6 +41,10 @@
 - migrated impl: `services/agent_server_new/runtime/memory_summary_runner.py`
 - legacy wrapper kept: `agent_server_new/memory_summary_runner.py`
 
+9. `feature_service/app.py`
+- migrated impl: `services/feature_service/src/app.py`
+- legacy wrapper kept: `feature_service/app.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`

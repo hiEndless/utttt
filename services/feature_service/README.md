@@ -5,4 +5,5 @@ Target canonical path: `services/feature_service/`
 
 Notes:
 - Keep imports/runtime on legacy path during compatibility window.
-- Move code physically after import path switch plan is ready.
+- `main.py` runtime implementation has moved to `services/feature_service/runtime/main.py`.
+- `app.py` implementation has moved to `services/feature_service/src/app.py`.

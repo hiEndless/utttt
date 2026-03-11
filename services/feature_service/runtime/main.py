@@ -5,7 +5,7 @@ import os
 
 import uvicorn
 
-from feature_service.app import create_app
+from services.feature_service.src.app import create_app
 
 
 app = create_app()
