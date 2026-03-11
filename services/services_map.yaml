@@ -15,9 +15,11 @@ services:
     pilot_migrated_impl:
       - "services/feature_service/runtime/main.py"
       - "services/feature_service/src/app.py"
+      - "services/feature_service/src/routes.py"
     legacy_wrapper:
       - "feature_service/main.py"
       - "feature_service/app.py"
+      - "feature_service/routes.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

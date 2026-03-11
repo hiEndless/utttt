@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from feature_service.providers.bundle import build_independent_provider_bundle
-from feature_service.routes import create_router
 from feature_service.service import FeatureService
+from services.feature_service.src.routes import create_router
 
 
 def create_app() -> FastAPI:
@@ -18,4 +18,3 @@ def create_app() -> FastAPI:
     )
     app.include_router(create_router(service))
     return app
-

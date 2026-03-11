@@ -7,3 +7,4 @@ Notes:
 - Keep imports/runtime on legacy path during compatibility window.
 - `main.py` runtime implementation has moved to `services/feature_service/runtime/main.py`.
 - `app.py` implementation has moved to `services/feature_service/src/app.py`.
+- `routes.py` implementation has moved to `services/feature_service/src/routes.py`.
