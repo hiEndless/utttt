@@ -22,6 +22,9 @@ index_path = Path("docs/CONTRACT_INDEX.md")
 root = Path(".").resolve()
 text = index_path.read_text(encoding="utf-8")
 missing = []
+# 必需入口清单（按模块分组维护）：
+# - event_center_new
+#   - event_center_new/docs/ci_baseline_template.md
 required_entries = {
     "event_center_new/docs/ci_baseline_template.md",
 }
