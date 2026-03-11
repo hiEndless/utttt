@@ -175,7 +175,7 @@ event_center_new(signal_event + active_events)
 - Agent AI 自适应预留：`agent_server_new/docs/AI_ADAPTIVE_RESERVE_PLAN.md`
 - Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
 - Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
-- Execution API（草案）：`execution_service/docs/api.md`
+- Execution API：`execution_service/docs/api.md`
 - Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
 - Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
 - Execution SignalResult Schema：`execution_service/docs/execution_signal_result.schema.json`
