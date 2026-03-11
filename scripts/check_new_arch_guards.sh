@@ -60,64 +60,67 @@ if [[ "$MODE" == "--event-center-quick" ]]; then
   exit 0
 fi
 
-echo "[1/19] feature 契约守卫"
+echo "[1/21] feature 契约守卫"
 bash scripts/check_feature_contract_guard.sh
 
-echo "[2/19] feature schema 守卫"
+echo "[2/21] feature schema 守卫"
 bash scripts/check_feature_service_schema_guard.sh
 
-echo "[3/19] state 引擎守卫"
+echo "[3/21] state 引擎守卫"
 bash scripts/check_market_state_engine_guard.sh
 
-echo "[4/19] state->agent 联动守卫"
+echo "[4/21] state 引擎 help 快照守卫"
+bash scripts/check_market_state_engine_help_snapshot_guard.sh
+
+echo "[5/21] state->agent 联动守卫"
 bash scripts/check_state_to_agent_contract_guard.sh
 
-echo "[5/19] runner 输出 schema 守卫"
+echo "[6/21] runner 输出 schema 守卫"
 bash scripts/check_runner_output_schema_guard.sh
 
-echo "[6/19] execution decision_intent schema 守卫"
+echo "[7/21] execution decision_intent schema 守卫"
 bash scripts/check_execution_decision_intent_schema_guard.sh
 
-echo "[7/19] execution decision_state schema 守卫"
+echo "[8/21] execution decision_state schema 守卫"
 bash scripts/check_execution_decision_state_schema_guard.sh
 
-echo "[8/19] execution result schema 守卫"
+echo "[9/21] execution result schema 守卫"
 bash scripts/check_execution_result_schema_guard.sh
 
-echo "[9/19] execution reconcile result schema 守卫"
+echo "[10/21] execution reconcile result schema 守卫"
 bash scripts/check_execution_reconcile_result_schema_guard.sh
 
-echo "[10/19] execution retry_meta schema 守卫"
+echo "[11/21] execution retry_meta schema 守卫"
 bash scripts/check_execution_retry_meta_schema_guard.sh
 
-echo "[11/19] execution signal_result schema 守卫"
+echo "[12/21] execution signal_result schema 守卫"
 bash scripts/check_execution_signal_result_schema_guard.sh
 
-echo "[12/19] execution risk_policy schema 守卫"
+echo "[13/21] execution risk_policy schema 守卫"
 bash scripts/check_execution_risk_policy_schema_guard.sh
 
-echo "[13/19] execution schema mapping 守卫"
+echo "[14/21] execution schema mapping 守卫"
 bash scripts/check_execution_schema_mapping_guard.sh
 
-echo "[14/19] execution breaking 升版守卫"
+echo "[15/21] execution breaking 升版守卫"
 bash scripts/check_execution_breaking_version_bump_guard.sh
 
-echo "[15/19] execution 合同入口守卫"
+echo "[16/21] execution 合同入口守卫"
 bash scripts/check_execution_contract_entry_guard.sh
 
-echo "[16/20] contract docs index 守卫"
+echo "[17/21] contract docs index 守卫"
 bash scripts/check_contract_docs_index_guard.sh
 
-echo "[17/20] contract docs index help 快照守卫"
+echo "[18/21] contract docs index help 快照守卫"
 bash scripts/check_contract_docs_index_help_snapshot_guard.sh
 
-echo "[18/20] agent->execution 联动守卫"
+echo "[19/21] agent->execution 联动守卫"
 bash scripts/check_agent_to_execution_guard.sh
 
-echo "[19/20] 告警码入口守卫"
+echo "[20/21] 告警码入口守卫"
 bash scripts/check_alert_codes_entry_guard.sh
 
-echo "[20/20] event_center 契约聚合守卫"
+echo "[21/21] event_center 契约聚合守卫"
 bash scripts/check_event_center_contract_guards.sh "$WIRING_MODE"
 
 echo "[通过] 新架构守卫全量检查完成。"
