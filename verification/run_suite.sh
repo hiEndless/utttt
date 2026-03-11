@@ -10,6 +10,8 @@ PY
 
 SUITE="new_arch_full"
 REPORT_JSON=""
+VERIFY_ENV_NAME="${VERIFY_ENV_NAME:-${ENVIRONMENT:-local}}"
+VERIFY_SUITE_TAGS="${VERIFY_SUITE_TAGS:-}"
 
 for arg in "$@"; do
   case "$arg" in
@@ -122,12 +124,35 @@ if [[ "$EXIT_CODE" -ne 0 ]]; then
   SUITE_STATUS="failed"
 fi
 
+GIT_SHA="unknown"
+if command -v git >/dev/null 2>&1; then
+  if git rev-parse --short HEAD >/dev/null 2>&1; then
+    GIT_SHA="$(git rev-parse --short HEAD)"
+  fi
+fi
+
+SUITE_TAGS_JSON="[]"
+if [[ -n "$VERIFY_SUITE_TAGS" ]]; then
+  SUITE_TAGS_JSON="$(python3 - <<'PY'
+import json
+import os
+
+raw = str(os.getenv("VERIFY_SUITE_TAGS", "") or "")
+tags = [x.strip() for x in raw.split(",") if x.strip()]
+print(json.dumps(tags, ensure_ascii=False))
+PY
+)"
+fi
+
 if [[ -n "$REPORT_JSON" ]]; then
   mkdir -p "$(dirname "$REPORT_JSON")"
   {
     printf '{\n'
-    printf '  "schema_version": "verification-report-v1",\n'
+    printf '  "schema_version": "verification-report-v2",\n'
     printf '  "suite": "%s",\n' "$SUITE"
+    printf '  "git_sha": "%s",\n' "$GIT_SHA"
+    printf '  "env": "%s",\n' "$VERIFY_ENV_NAME"
+    printf '  "suite_tags": %s,\n' "$SUITE_TAGS_JSON"
     printf '  "status": "%s",\n' "$SUITE_STATUS"
     printf '  "exit_code": %s,\n' "$EXIT_CODE"
     printf '  "started_at_ms": %s,\n' "$SUITE_START_MS"

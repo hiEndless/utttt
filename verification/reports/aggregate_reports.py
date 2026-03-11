@@ -18,7 +18,8 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
         except Exception:
             continue
         if isinstance(data, dict):
-            if str(data.get("schema_version") or "").strip() != "verification-report-v1":
+            schema_version = str(data.get("schema_version") or "").strip()
+            if schema_version not in {"verification-report-v1", "verification-report-v2"}:
                 continue
             data["_path"] = str(p)
             out.append(data)
