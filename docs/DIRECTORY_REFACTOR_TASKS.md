@@ -45,7 +45,7 @@
 
 - [x] 将可复用 validator 从模块测试目录迁入 `verification/validators`
 - [x] 将 replay 公共能力迁入 `verification/replay`
-- [ ] 将跨服务 contract fixture 显式化到 `fixtures/contract_cases`
+- [x] 将跨服务 contract fixture 显式化到 `fixtures/contract_cases`
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
 
 验收：

@@ -1,0 +1,22 @@
+{
+  "asset": "binance:ETHUSDT",
+  "ts_ms": 1773262800000,
+  "selected_type": "event.selected",
+  "direction_hint": "bullish",
+  "priority": "high",
+  "context_snapshot": {
+    "key_evidences": [
+      {"type": "onchain.exchange_inflow", "direction": "bullish"}
+    ],
+    "conflicts": []
+  },
+  "trace": {
+    "schema_version": "selected-v2",
+    "produced_by": "event_center_new"
+  },
+  "route": {
+    "to_market_state_engine": true,
+    "to_agent_server_new": true,
+    "review_required": false
+  }
+}

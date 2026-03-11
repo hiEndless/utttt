@@ -1,0 +1,6 @@
+{
+  "source": "agent",
+  "action": "hold",
+  "direction": "none",
+  "notes": "agent local decision"
+}

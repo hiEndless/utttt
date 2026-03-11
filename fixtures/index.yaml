@@ -4,6 +4,10 @@ updated_at: "2026-03-12"
 note: "Phase-1 fixture index. Existing fixtures remain in service text/ and docs/ until phased migration."
 
 contract_cases:
+  - "fixtures/contract_cases/agent_runner_output.execution.json"
+  - "fixtures/contract_cases/agent_runner_output.agent.json"
+  - "fixtures/contract_cases/event_selected.sample.json"
+  - "fixtures/contract_cases/execution_decision_intent.sample.json"
   - "feature_service/text/test_feature_service_schema_guard.py"
   - "market_state_engine/text/test_msl_schema_contract.py"
   - "agent_server_new/text/test_runner_output_schema.py"

@@ -1,0 +1,6 @@
+{
+  "source": "execution",
+  "action": "reduce",
+  "reason": "position_limit_reached",
+  "notes": "execution decided reduce"
+}
