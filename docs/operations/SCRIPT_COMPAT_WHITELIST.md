@@ -10,7 +10,9 @@ Canonical machine-readable source:
 
 Validation command:
 - `bash tools/local/check_script_compat_whitelist.sh`
-- included in nightly CI path: `bash tools/ci/verify_nightly.sh`
+- included in regression/nightly CI path:
+  - `bash tools/ci/verify_regression.sh`
+  - `bash tools/ci/verify_nightly.sh`
 
 ## Current Boundary
 

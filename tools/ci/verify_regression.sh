@@ -2,6 +2,8 @@
 set -euo pipefail
 
 bash tools/local/check_structure.sh
+bash tools/local/check_script_compat_whitelist.sh
 bash tools/ci/verify_all.sh --event-center-quick
 bash tools/local/sync_contract_indexes.sh
-bash tools/local/audit_semantics.sh --strict
+bash tools/local/audit_semantics.sh
+bash tools/local/check_semantic_warning_budget.sh
