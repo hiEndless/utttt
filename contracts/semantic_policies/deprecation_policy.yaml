@@ -1,0 +1,22 @@
+version: 1
+updated_at: "2026-03-12"
+
+lifecycle:
+  stages:
+    - active
+    - deprecated
+    - removed
+
+rules:
+  - id: deprecated_field_cannot_be_primary
+    description: "Deprecated fields cannot be the only semantic source for new producers."
+
+  - id: alias_fields_must_match
+    description: "If primary and deprecated alias coexist, values must be equivalent."
+
+  - id: remove_requires_observation_window
+    description: "Field removal requires an observation window with zero deprecated-only usage."
+    suggested_window_days: 30
+
+  - id: breaking_change_requires_version_bump
+    description: "Breaking semantic changes must bump mapping/schema major version."

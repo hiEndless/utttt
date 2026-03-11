@@ -1,0 +1,44 @@
+version: 1
+updated_at: "2026-03-12"
+
+fields:
+  - name: decision_confidence
+    canonical_semantic: "agent decision confidence"
+    owner: "execution_service"
+    allowed_locations:
+      - "execution_service/docs/decision_intent.schema.json#/properties/decision_confidence"
+
+  - name: confidence
+    canonical_semantic: "deprecated alias of decision_confidence"
+    lifecycle: "deprecated"
+    owner: "execution_service"
+    allowed_locations:
+      - "execution_service/docs/decision_intent.schema.json#/properties/confidence"
+
+  - name: evidence_confidence
+    canonical_semantic: "evidence-level confidence"
+    owner: "event_center_new"
+
+  - name: classification_confidence
+    canonical_semantic: "classification-stage confidence"
+    owner: "event_center_new"
+
+  - name: raw_market_structure
+    canonical_semantic: "unfused market structure input"
+    owner: "feature_service"
+
+  - name: msl
+    canonical_semantic: "fused market state language output"
+    owner: "market_state_engine"
+
+  - name: risk_flags
+    canonical_semantic: "risk feature tags (multi-label)"
+    expected_shape: "array[string]"
+
+  - name: risk_state
+    canonical_semantic: "risk state machine value"
+    expected_shape: "enum"
+
+  - name: ts_ms
+    canonical_semantic: "primary millisecond timestamp"
+    expected_shape: "integer"

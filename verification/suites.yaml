@@ -1,0 +1,29 @@
+version: 1
+updated_at: "2026-03-12"
+
+default_suite: "new_arch_full"
+
+suites:
+  - id: new_arch_full
+    description: "Run full new architecture guard chain."
+    command: "bash scripts/check_new_arch_guards.sh"
+
+  - id: new_arch_event_center_quick
+    description: "Run quick event center guard chain."
+    command: "bash scripts/check_new_arch_guards.sh --event-center-quick"
+
+  - id: contract_docs_index
+    description: "Validate contract docs index and help snapshots."
+    command: "bash scripts/check_contract_docs_index_guard.sh && bash scripts/check_contract_docs_index_help_snapshot_guard.sh"
+
+  - id: state_to_agent
+    description: "Validate market_state_engine -> agent_server_new contract chain."
+    command: "bash scripts/check_state_to_agent_contract_guard.sh"
+
+  - id: agent_to_execution
+    description: "Validate agent -> execution contract chain."
+    command: "bash scripts/check_agent_to_execution_guard.sh"
+
+  - id: event_center_replay
+    description: "Validate replay pipeline and summary schema."
+    command: "bash scripts/check_event_center_replay_guard.sh && bash scripts/check_event_center_replay_summary_schema_guard.sh"

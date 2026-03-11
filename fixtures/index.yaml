@@ -1,0 +1,28 @@
+version: 1
+updated_at: "2026-03-12"
+
+note: "Phase-1 fixture index. Existing fixtures remain in service text/ and docs/ until phased migration."
+
+contract_cases:
+  - "feature_service/text/test_feature_service_schema_guard.py"
+  - "market_state_engine/text/test_msl_schema_contract.py"
+  - "agent_server_new/text/test_runner_output_schema.py"
+  - "execution_service/text/test_schema_mapping.py"
+
+replay_cases:
+  - "event_center_new/text/test_replay.py"
+  - "event_center_new/text/test_replay_cli.py"
+  - "event_center_new/text/test_replay_main.py"
+  - "event_center_new/text/test_replay_summary_schema_contract.py"
+
+workflow_cases:
+  - "agent_server_new/text/test_pipeline_traceability_contract.py"
+  - "agent_server_new/text/test_trade_event_workflow_result.py"
+  - "agent_server_new/text/test_trade_event_workflow_execution_decider.py"
+
+snapshots:
+  - "docs/contract_docs_index_help_snapshot.txt"
+  - "market_state_engine/docs/guard_help_snapshot.txt"
+  - "event_center_new/docs/ci_help_block_snapshot.txt"
+  - "event_center_new/docs/ci_help_snapshot_lines.txt"
+  - "event_center_new/docs/ci_triage_snapshot_lines.txt"

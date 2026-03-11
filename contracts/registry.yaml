@@ -1,0 +1,58 @@
+version: 1
+updated_at: "2026-03-12"
+description: "UTaker cross-service contract registry (phase-1 scaffold; source files remain in original locations)."
+
+entries:
+  - id: feature.raw_structure_response
+    source: "feature_service/docs/schemas/raw_structure_response.schema.json"
+    owner: "feature_service"
+    kind: "schema"
+
+  - id: feature.feature_response
+    source: "feature_service/docs/schemas/feature_response.schema.json"
+    owner: "feature_service"
+    kind: "schema"
+
+  - id: market_state.msl
+    source: "market_state_engine/docs/msl.schema.json"
+    owner: "market_state_engine"
+    kind: "schema"
+
+  - id: event_center.selected_event
+    source: "event_center_new/docs/selected_event.schema.json"
+    owner: "event_center_new"
+    kind: "schema"
+
+  - id: event_center.replay_summary
+    source: "event_center_new/docs/replay_summary.schema.json"
+    owner: "event_center_new"
+    kind: "schema"
+
+  - id: agent.runner_output
+    source: "agent_server_new/docs/runner_output.schema.json"
+    owner: "agent_server_new"
+    kind: "schema"
+
+  - id: execution.schema_mapping
+    source: "execution_service/docs/schema_mapping.json"
+    owner: "execution_service"
+    kind: "mapping"
+
+  - id: execution.decision_intent
+    source: "execution_service/docs/decision_intent.schema.json"
+    owner: "execution_service"
+    kind: "schema"
+
+  - id: execution.execution_result
+    source: "execution_service/docs/execution_result.schema.json"
+    owner: "execution_service"
+    kind: "schema"
+
+  - id: execution.decision_state
+    source: "execution_service/docs/decision_state.schema.json"
+    owner: "execution_service"
+    kind: "schema"
+
+semantic_policies:
+  - "contracts/semantic_policies/field_semantics.yaml"
+  - "contracts/semantic_policies/deprecation_policy.yaml"
