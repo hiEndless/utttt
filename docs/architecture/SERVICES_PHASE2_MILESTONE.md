@@ -57,6 +57,10 @@
 - migrated impl: `services/feature_service/src/contracts.py`
 - legacy wrapper kept: `feature_service/contracts.py`
 
+13. `feature_service/providers/{bundle,noop,degradation_state}.py`
+- migrated impl: `services/feature_service/src/providers/{bundle,noop,degradation_state}.py`
+- legacy wrapper kept: `feature_service/providers/{bundle,noop,degradation_state}.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`

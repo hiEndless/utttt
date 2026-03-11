@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from feature_service.providers.bundle import build_independent_provider_bundle
 from services.feature_service.src.routes import create_router
+from services.feature_service.src.providers.bundle import build_independent_provider_bundle
 from services.feature_service.src.service import FeatureService
 
 

@@ -64,6 +64,7 @@
 - [x] 完成第九个物理迁移试点：`feature_service/routes.py` 实现迁入 `services/feature_service/src/routes.py`
 - [x] 完成第十个物理迁移试点：`feature_service/service.py` 实现迁入 `services/feature_service/src/service.py`
 - [x] 完成第十一个物理迁移试点：`feature_service/contracts.py` 实现迁入 `services/feature_service/src/contracts.py`
+- [x] 完成第十二个物理迁移试点：`feature_service/providers/{bundle,noop,degradation_state}.py` 实现迁入 `services/feature_service/src/providers/`
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

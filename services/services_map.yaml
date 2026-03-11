@@ -18,12 +18,18 @@ services:
       - "services/feature_service/src/routes.py"
       - "services/feature_service/src/service.py"
       - "services/feature_service/src/contracts.py"
+      - "services/feature_service/src/providers/bundle.py"
+      - "services/feature_service/src/providers/noop.py"
+      - "services/feature_service/src/providers/degradation_state.py"
     legacy_wrapper:
       - "feature_service/main.py"
       - "feature_service/app.py"
       - "feature_service/routes.py"
       - "feature_service/service.py"
       - "feature_service/contracts.py"
+      - "feature_service/providers/bundle.py"
+      - "feature_service/providers/noop.py"
+      - "feature_service/providers/degradation_state.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

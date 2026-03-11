@@ -15,8 +15,11 @@ from feature_service.normalizers.response_normalizer import (
     normalize_raw_market_structure,
     normalize_symbol,
 )
-from feature_service.providers.bundle import ProviderBundle
-from feature_service.providers.degradation_state import reset_degradation_state, snapshot_degradation_reasons
+from services.feature_service.src.providers.bundle import ProviderBundle
+from services.feature_service.src.providers.degradation_state import (
+    reset_degradation_state,
+    snapshot_degradation_reasons,
+)
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
