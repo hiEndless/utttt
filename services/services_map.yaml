@@ -37,8 +37,10 @@ services:
       - "services/event_center_new/replay_main.py"
     pilot_migrated_impl:
       - "services/event_center_new/runtime/main.py"
+      - "services/event_center_new/runtime/replay_main.py"
     legacy_wrapper:
       - "event_center_new/main.py"
+      - "event_center_new/replay_main.py"
 
   - name: agent_server_new
     current_path: "agent_server_new/"
