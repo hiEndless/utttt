@@ -1,0 +1,34 @@
+version: 1
+updated_at: "2026-03-12"
+mode: "compat"
+
+services:
+  - name: feature_service
+    current_path: "feature_service/"
+    target_path: "services/feature_service/"
+    status: "scaffolded"
+    scaffold_readme: "services/feature_service/README.md"
+
+  - name: market_state_engine
+    current_path: "market_state_engine/"
+    target_path: "services/market_state_engine/"
+    status: "scaffolded"
+    scaffold_readme: "services/market_state_engine/README.md"
+
+  - name: event_center_new
+    current_path: "event_center_new/"
+    target_path: "services/event_center_new/"
+    status: "scaffolded"
+    scaffold_readme: "services/event_center_new/README.md"
+
+  - name: agent_server_new
+    current_path: "agent_server_new/"
+    target_path: "services/agent_server_new/"
+    status: "scaffolded"
+    scaffold_readme: "services/agent_server_new/README.md"
+
+  - name: execution_service
+    current_path: "execution_service/"
+    target_path: "services/execution_service/"
+    status: "scaffolded"
+    scaffold_readme: "services/execution_service/README.md"

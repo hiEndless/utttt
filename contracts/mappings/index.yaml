@@ -1,0 +1,8 @@
+version: 1
+updated_at: "2026-03-12"
+
+mappings:
+  - id: execution_schema_mapping
+    source: "execution_service/docs/schema_mapping.json"
+    owner: "execution_service"
+    status: "active"

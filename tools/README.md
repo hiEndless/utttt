@@ -13,3 +13,5 @@ Local:
 - `tools/local/verify_report_aggregate.sh`
 - `tools/local/verify_thresholds.sh`
 - `tools/local/run_verification_api.sh`
+- `tools/local/diff_json.sh`
+- `tools/local/aggregate_and_check.sh`
