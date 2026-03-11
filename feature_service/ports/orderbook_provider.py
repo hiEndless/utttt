@@ -1,8 +1,4 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Protocol
-
-
-class OrderbookProvider(Protocol):
-    async def get_orderbook(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        ...
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.ports.orderbook_provider import *  # noqa: F401,F403

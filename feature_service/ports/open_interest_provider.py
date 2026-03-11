@@ -1,8 +1,4 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Protocol
-
-
-class OpenInterestProvider(Protocol):
-    async def get_open_interest(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        ...
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.ports.open_interest_provider import *  # noqa: F401,F403

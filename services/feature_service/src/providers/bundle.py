@@ -4,11 +4,11 @@ import logging
 from dataclasses import dataclass
 from typing import Iterable
 
-from feature_service.ports.behavior_provider import BehaviorProvider
-from feature_service.ports.horizons_provider import HorizonsProvider
-from feature_service.ports.indicators_provider import IndicatorsProvider
-from feature_service.ports.open_interest_provider import OpenInterestProvider
-from feature_service.ports.orderbook_provider import OrderbookProvider
+from services.feature_service.src.ports.behavior_provider import BehaviorProvider
+from services.feature_service.src.ports.horizons_provider import HorizonsProvider
+from services.feature_service.src.ports.indicators_provider import IndicatorsProvider
+from services.feature_service.src.ports.open_interest_provider import OpenInterestProvider
+from services.feature_service.src.ports.orderbook_provider import OrderbookProvider
 from services.feature_service.src.providers.noop import (
     NoopBehaviorProvider,
     NoopHorizonsProvider,

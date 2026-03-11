@@ -4,9 +4,9 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict
 
-from feature_service.ports.news_provider import NewsProvider
-from feature_service.ports.onchain_provider import OnchainProvider
-from feature_service.ports.social_provider import SocialProvider
+from services.feature_service.src.ports.news_provider import NewsProvider
+from services.feature_service.src.ports.onchain_provider import OnchainProvider
+from services.feature_service.src.ports.social_provider import SocialProvider
 from services.feature_service.src.providers.degradation_state import mark_degraded
 
 logger = logging.getLogger(__name__)

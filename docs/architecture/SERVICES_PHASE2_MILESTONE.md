@@ -77,6 +77,10 @@
 - migrated impl: `services/feature_service/src/normalizers/{response_normalizer,__init__}.py`
 - legacy wrapper kept: `feature_service/normalizers/{response_normalizer,__init__}.py`
 
+18. `feature_service/ports/*.py`
+- migrated impl: `services/feature_service/src/ports/*.py`
+- legacy wrapper kept: `feature_service/ports/*.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`
