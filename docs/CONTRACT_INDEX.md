@@ -1,6 +1,7 @@
 # UTaker 契约索引
 
 更新时间：2026-03-11
+说明：部分核心入口受守卫脚本强约束（`scripts/check_contract_docs_index_guard.sh`），请勿随意移除或改名。
 
 ## 1. 架构与总入口
 
