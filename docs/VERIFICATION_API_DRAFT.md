@@ -1,7 +1,7 @@
 # Verification API Draft (Read-only)
 
 更新时间：2026-03-12
-状态：draft-v1（接口定义预留，尚未实现服务）
+状态：draft-v1（最小文件后端实现已落地）
 
 ## 1. 目标
 
@@ -96,3 +96,10 @@
 
 - 不在本阶段实现告警投递。
 - 不在本阶段替换现有脚本执行链。
+
+## 7. 当前实现位置（最小版）
+
+- API 应用：`verification/api/app.py`
+- 启动入口：`python3 -m verification.api.main`
+- 本地脚本：`tools/local/run_verification_api.sh`
+- 单测：`verification/text/test_verification_api.py`

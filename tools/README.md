@@ -12,3 +12,4 @@ Local:
 - `tools/local/replay_event_center.sh`
 - `tools/local/verify_report_aggregate.sh`
 - `tools/local/verify_thresholds.sh`
+- `tools/local/run_verification_api.sh`

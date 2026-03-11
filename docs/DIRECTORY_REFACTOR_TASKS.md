@@ -59,6 +59,9 @@
 - [x] 预留 HTTP 查询接口定义（只读）
 - [x] 对接告警阈值（失败率、退化率、schema 漂移）
 
+当前进展补充：
+- 已落地最小只读 API 文件后端实现（`verification/api`），用于查询 latest/list/summary/report。
+
 验收：
 - 验证结果可被外部监控系统直接消费。
 
