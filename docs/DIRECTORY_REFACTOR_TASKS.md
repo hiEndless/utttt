@@ -47,6 +47,7 @@
 - [x] 将 replay 公共能力迁入 `verification/replay`
 - [x] 将跨服务 contract fixture 显式化到 `fixtures/contract_cases`
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
+  - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 
 验收：
 - 验证能力可在不依赖业务服务源码路径的情况下独立运行。

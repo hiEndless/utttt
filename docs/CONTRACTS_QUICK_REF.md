@@ -166,6 +166,7 @@ agent_server_new -> execution_service
 - 总览：`ARCHITECTURE_NEW.md`
 - 目录架构重构任务：`DIRECTORY_REFACTOR_TASKS.md`
 - 验证查询接口草案：`VERIFICATION_API_DRAFT.md`
+- 验证兼容窗口：`VERIFICATION_COMPAT_WINDOW.md`
 - 契约索引：`CONTRACT_INDEX.md`
 - 迁移执行清单：`REFACTOR_PLAYBOOK_NEW.md`
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
