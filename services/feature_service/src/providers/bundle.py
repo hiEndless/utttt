@@ -16,7 +16,7 @@ from services.feature_service.src.providers.noop import (
     NoopOpenInterestProvider,
     NoopOrderbookProvider,
 )
-from feature_service.providers.fallback_structure_providers import (
+from services.feature_service.src.providers.fallback_structure_providers import (
     FallbackBehaviorProvider,
     FallbackHorizonsProvider,
     FallbackIndicatorsProvider,
