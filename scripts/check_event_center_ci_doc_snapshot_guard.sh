@@ -102,6 +102,10 @@ if ! rg -q -F 'commit` 使用 7~12 位短 SHA' "$BASELINE_TEMPLATE"; then
   echo "[失败] 基线模板缺少 commit 短 SHA 填写规范"
   exit 1
 fi
+if ! rg -q -F '同一 `commit` 必须同时记录 `quick` 与 `full` 两条基线结果（成对出现）。' "$BASELINE_TEMPLATE"; then
+  echo "[失败] 基线模板缺少 quick/full 成对记录规范"
+  exit 1
+fi
 
 echo "[7/7] 校验基线记录同一 commit 同时包含 quick/full"
 if ! test -x ./venv/bin/python; then
