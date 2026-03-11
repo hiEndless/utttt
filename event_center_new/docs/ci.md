@@ -169,6 +169,10 @@ pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 - `result`：`pass|fail`
 - `commit`：执行时对应提交（短 SHA）
 
+填写规范：
+- `result` 只能填写 `pass` 或 `fail`（小写）。
+- `commit` 使用 7~12 位短 SHA（示例：`73c9048`）。
+
 | date | command | mode | result | commit |
 |---|---|---|---|---|
 | 2026-03-11 | `bash scripts/check_new_arch_guards.sh --event-center-quick` | `quick` | `pass` | `73c9048` |
