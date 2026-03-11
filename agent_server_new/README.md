@@ -2,7 +2,7 @@
 
 统一契约入口：`/docs/CONTRACT_INDEX.md`
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
-统一告警码清单：`/docs/ALERT_CODES.md`
+统一告警码清单（含 owner/introduced_in/lifecycle）：`/docs/ALERT_CODES.md`
 本模块重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
 记忆层升级计划：`agent_server_new/docs/MEMORY_UPGRADE_PLAN.md`
 记忆归档代办：`agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`

@@ -1,7 +1,7 @@
 # event_center_new
 
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
-统一告警码清单：`/docs/ALERT_CODES.md`
+统一告警码清单（含 owner/introduced_in/lifecycle）：`/docs/ALERT_CODES.md`
 运行时配置总表：`event_center_new/docs/runtime.md`
 运行时配置版本号与变更日志也在该文档中维护（`runtime_config_version`）。
 版本升级可使用：`bash scripts/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验、`--no-duplicate-log` 防重复日志、`--strict` 一键严格模式）。当前版本可用 `--print-current-version` 只读查询。
