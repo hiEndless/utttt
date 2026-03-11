@@ -277,12 +277,12 @@
   "confidence_migration": {
     "metrics": {
       "decide_requests_total": 3,
-      "confidence_only_requests": 1,
-      "decision_confidence_requests": 2,
+      "confidence_only_requests": 0,
+      "decision_confidence_requests": 3,
       "confidence_alias_mismatch_rejections": 1
     },
     "v2_cutover_readiness": {
-      "confidence_only_zero": false,
+      "confidence_only_zero": true,
       "alias_mismatch_zero": false
     }
   },
@@ -330,8 +330,8 @@
   "service": "execution_service",
   "confidence_migration_metrics": {
     "decide_requests_total": 3,
-    "confidence_only_requests": 1,
-    "decision_confidence_requests": 2,
+    "confidence_only_requests": 0,
+    "decision_confidence_requests": 3,
     "confidence_alias_mismatch_rejections": 1
   },
   "ts": 1760000000000,
