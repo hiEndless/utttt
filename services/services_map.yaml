@@ -27,6 +27,8 @@ services:
       - "services/feature_service/src/providers/indicators_provider.py"
       - "services/feature_service/src/providers/future_source_providers.py"
       - "services/feature_service/src/providers/__init__.py"
+      - "services/feature_service/src/normalizers/response_normalizer.py"
+      - "services/feature_service/src/normalizers/__init__.py"
     legacy_wrapper:
       - "feature_service/main.py"
       - "feature_service/app.py"
@@ -42,6 +44,8 @@ services:
       - "feature_service/providers/indicators_provider.py"
       - "feature_service/providers/future_source_providers.py"
       - "feature_service/providers/__init__.py"
+      - "feature_service/normalizers/response_normalizer.py"
+      - "feature_service/normalizers/__init__.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

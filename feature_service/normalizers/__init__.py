@@ -1,15 +1,5 @@
-from feature_service.normalizers.response_normalizer import (
-    normalize_degraded_reasons,
-    normalize_exchange,
-    normalize_features_payload,
-    normalize_raw_market_structure,
-    normalize_symbol,
-)
+from __future__ import annotations
 
-__all__ = [
-    "normalize_exchange",
-    "normalize_symbol",
-    "normalize_degraded_reasons",
-    "normalize_raw_market_structure",
-    "normalize_features_payload",
-]
+# Legacy package kept for compatibility during migration window.
+from services.feature_service.src.normalizers import *  # noqa: F401,F403
+

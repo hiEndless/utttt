@@ -73,6 +73,10 @@
 - migrated impl: `services/feature_service/src/providers/{indicators_provider,future_source_providers,__init__}.py`
 - legacy wrapper kept: `feature_service/providers/{indicators_provider,future_source_providers,__init__}.py`
 
+17. `feature_service/normalizers/{response_normalizer,__init__}.py`
+- migrated impl: `services/feature_service/src/normalizers/{response_normalizer,__init__}.py`
+- legacy wrapper kept: `feature_service/normalizers/{response_normalizer,__init__}.py`
+
 ## 3. 保障机制
 
 - 结构检查：`bash tools/local/check_structure.sh`

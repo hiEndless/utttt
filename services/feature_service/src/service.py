@@ -8,7 +8,7 @@ from feature_service.ports.horizons_provider import HorizonsProvider
 from feature_service.ports.indicators_provider import IndicatorsProvider
 from feature_service.ports.open_interest_provider import OpenInterestProvider
 from feature_service.ports.orderbook_provider import OrderbookProvider
-from feature_service.normalizers.response_normalizer import (
+from services.feature_service.src.normalizers.response_normalizer import (
     normalize_degraded_reasons,
     normalize_exchange,
     normalize_features_payload,
