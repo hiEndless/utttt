@@ -149,8 +149,10 @@ event_center_new(signal_event + active_events)
 - Contract Docs Index 守卫脚本（CI 可用）：`scripts/check_contract_docs_index_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
+- 告警码入口守卫（CI 可用）：`scripts/check_alert_codes_entry_guard.sh`
 - 仅跑 event_center quick：`scripts/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`scripts/check_new_arch_guards.sh --event-center-only`
+- 说明：`--event-center-quick/--event-center-only` 都会先执行告警码入口守卫
 - event_center CI workflow 守卫：`scripts/check_event_center_ci_workflow_guard.sh`
 - event_center CI 文档快照守卫：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
 - event_center 帮助快照同步守卫：`scripts/check_event_center_help_snapshot_sync_guard.sh`
