@@ -18,6 +18,9 @@ Local:
 - `tools/local/sync_contract_indexes.sh`
 - `tools/local/audit_semantics.sh`
 - `tools/local/check_semantic_warning_budget.sh`
+- `tools/local/check_state_to_agent_contract_guard.sh`
+- `tools/local/check_agent_to_execution_guard.sh`
+- `tools/local/check_event_center_replay_guard.sh`
 - `tools/local/verify_quick.sh`
 - `tools/local/verify_full.sh`
 - `tools/local/verify_quick_report.sh`

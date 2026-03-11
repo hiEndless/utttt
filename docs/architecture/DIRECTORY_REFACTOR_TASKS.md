@@ -53,6 +53,7 @@
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
 - [x] 增加语义审计入口（`verification/auditors/semantic_contract_audit.py`）
 - [x] 将 event_center CI 组合入口实现迁入 `tools/ci`（旧 `scripts/ci_event_center_*` 保留兼容转发）
+- [x] 将 state/agent/event_center 三个核心 guard 实现迁入 `tools/local`（旧 `scripts/check_*` 保留兼容转发）
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
   - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 

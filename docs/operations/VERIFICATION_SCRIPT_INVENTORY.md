@@ -17,6 +17,12 @@
 | `scripts/check_agent_to_execution_guard.sh` | `verification/guards/agent_to_execution.sh` | mapped |
 | `scripts/check_event_center_replay_guard.sh` + `scripts/check_event_center_replay_summary_schema_guard.sh` | `verification/guards/event_center_replay.sh` | mapped |
 
+补充：以下 legacy 脚本实现已迁入 `tools/local`，`scripts/*` 仅保留兼容转发壳：
+
+- `scripts/check_state_to_agent_contract_guard.sh` -> `tools/local/check_state_to_agent_contract_guard.sh`
+- `scripts/check_agent_to_execution_guard.sh` -> `tools/local/check_agent_to_execution_guard.sh`
+- `scripts/check_event_center_replay_guard.sh` -> `tools/local/check_event_center_replay_guard.sh`
+
 ## 3. 保留为底层脚本（暂不迁移）
 
 这些脚本当前作为“稳定底层执行单元”保留在 `scripts/`，由 verification wrapper 调用：
