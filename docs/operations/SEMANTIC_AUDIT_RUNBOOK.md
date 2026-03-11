@@ -30,6 +30,7 @@ bash tools/local/audit_semantics.sh --strict
 ## Output
 
 - report: `verification/reports/semantic_audit.latest.json`
+- aggregated summary field sink: `verification/reports/summary.latest.json` via `bash tools/local/aggregate_and_check.sh`
 - exit code:
   - `0`: no error (warnings allowed in non-strict)
   - `1`: semantic hard errors (missing source/disallowed location)

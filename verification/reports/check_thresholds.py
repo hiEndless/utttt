@@ -32,6 +32,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-pass-rate", type=float, default=1.0, help="最低通过率")
     p.add_argument("--max-failed", type=int, default=0, help="最大失败报告数")
     p.add_argument("--min-reports", type=int, default=1, help="最小报告数")
+    p.add_argument("--max-semantic-errors", type=int, default=0, help="最大语义审计错误数")
+    p.add_argument("--max-semantic-warnings", type=int, default=-1, help="最大语义审计告警数，-1 表示忽略")
     return p
 
 
@@ -42,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     report_count = _to_int(summary.get("report_count"), 0)
     failed = _to_int(summary.get("failed"), 0)
     pass_rate = _to_float(summary.get("pass_rate"), 0.0)
+    semantic_errors = _to_int(summary.get("semantic_error_count"), 0)
+    semantic_warnings = _to_int(summary.get("semantic_warning_count"), 0)
 
     errors = []
     if report_count < int(args.min_reports):
@@ -50,6 +54,10 @@ def main(argv: list[str] | None = None) -> int:
         errors.append(f"failed>{int(args.max_failed)} (actual={failed})")
     if pass_rate < float(args.min_pass_rate):
         errors.append(f"pass_rate<{float(args.min_pass_rate)} (actual={pass_rate})")
+    if semantic_errors > int(args.max_semantic_errors):
+        errors.append(f"semantic_error_count>{int(args.max_semantic_errors)} (actual={semantic_errors})")
+    if int(args.max_semantic_warnings) >= 0 and semantic_warnings > int(args.max_semantic_warnings):
+        errors.append(f"semantic_warning_count>{int(args.max_semantic_warnings)} (actual={semantic_warnings})")
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -58,7 +66,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print("[passed] verification thresholds satisfied")
-    print(f"report_count={report_count} failed={failed} pass_rate={pass_rate}")
+    print(
+        f"report_count={report_count} failed={failed} pass_rate={pass_rate} "
+        f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings}"
+    )
     return 0
 
 

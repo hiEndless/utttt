@@ -19,11 +19,19 @@ python3 -m verification.reports.aggregate_reports \
   --output verification/reports/summary.latest.json
 ```
 
+Notes:
+- Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
+  and semantic audit reports (`semantic-audit-v1`).
+- Summary includes:
+  - `report_count/passed/failed/pass_rate` (verification suites)
+  - `semantic_audit_count/semantic_error_count/semantic_warning_count`
+
 Check thresholds:
 ```bash
 python3 -m verification.reports.check_thresholds \
   --summary verification/reports/summary.latest.json \
   --min-pass-rate 1.0 \
   --max-failed 0 \
-  --min-reports 1
+  --min-reports 1 \
+  --max-semantic-errors 0
 ```

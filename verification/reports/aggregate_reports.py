@@ -19,7 +19,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
             continue
         if isinstance(data, dict):
             schema_version = str(data.get("schema_version") or "").strip()
-            if schema_version not in {"verification-report-v1", "verification-report-v2"}:
+            if schema_version not in {"verification-report-v1", "verification-report-v2", "semantic-audit-v1"}:
                 continue
             data["_path"] = str(p)
             out.append(data)
@@ -34,14 +34,19 @@ def _to_int(v: Any, default: int = 0) -> int:
 
 
 def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
-    total = len(reports)
+    verification_reports = [
+        x for x in reports if str(x.get("schema_version") or "") in {"verification-report-v1", "verification-report-v2"}
+    ]
+    semantic_reports = [x for x in reports if str(x.get("schema_version") or "") == "semantic-audit-v1"]
+
+    total = len(verification_reports)
     passed = 0
     failed = 0
     duration_sum = 0
     latest_finished = 0
     by_suite: Dict[str, Dict[str, Any]] = {}
 
-    for item in reports:
+    for item in verification_reports:
         suite = str(item.get("suite") or "unknown")
         status = str(item.get("status") or "unknown")
         duration_ms = _to_int(item.get("duration_ms"), 0)
@@ -84,8 +89,19 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     pass_rate = 0.0 if total <= 0 else round(float(passed) / float(total), 6)
     avg_duration = 0 if total <= 0 else int(duration_sum / total)
 
+    semantic_error_count = 0
+    semantic_warning_count = 0
+    latest_semantic_report_path = ""
+    if semantic_reports:
+        latest_semantic = semantic_reports[-1]
+        stats = latest_semantic.get("stats") if isinstance(latest_semantic.get("stats"), dict) else {}
+        semantic_error_count = _to_int(stats.get("error_count"), 0)
+        semantic_warning_count = _to_int(stats.get("warning_count"), 0)
+        latest_semantic_report_path = str(latest_semantic.get("_path") or "")
+
     return {
         "schema_version": "verification-report-aggregate-v1",
+        "verification_report_count": total,
         "report_count": total,
         "passed": passed,
         "failed": failed,
@@ -93,6 +109,10 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "avg_duration_ms": avg_duration,
         "latest_finished_at_ms": latest_finished,
         "suites": suites,
+        "semantic_audit_count": len(semantic_reports),
+        "semantic_error_count": semantic_error_count,
+        "semantic_warning_count": semantic_warning_count,
+        "latest_semantic_report_path": latest_semantic_report_path,
     }
 
 
