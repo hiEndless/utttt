@@ -30,11 +30,15 @@ services:
   - name: event_center_new
     current_path: "event_center_new/"
     target_path: "services/event_center_new/"
-    status: "soft_entrypoint_ready"
+    status: "pilot_entrypoint_migrated"
     scaffold_readme: "services/event_center_new/README.md"
     soft_entrypoints:
       - "services/event_center_new/main.py"
       - "services/event_center_new/replay_main.py"
+    pilot_migrated_impl:
+      - "services/event_center_new/runtime/main.py"
+    legacy_wrapper:
+      - "event_center_new/main.py"
 
   - name: agent_server_new
     current_path: "agent_server_new/"

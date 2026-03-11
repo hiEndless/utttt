@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from event_center_new.main import main
+from services.event_center_new.runtime.main import main
 
 __all__ = ["main"]
 

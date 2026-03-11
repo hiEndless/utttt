@@ -56,6 +56,7 @@
 - [x] 完成首个物理迁移试点：`feature_service/main.py` 实现迁入 `services/feature_service/runtime/main.py`
 - [x] 完成第二个物理迁移试点：`market_state_engine/main.py` 实现迁入 `services/market_state_engine/runtime/main.py`
 - [x] 完成第三个物理迁移试点：`execution_service/main.py` 实现迁入 `services/execution_service/runtime/main.py`
+- [x] 完成第四个物理迁移试点：`event_center_new/main.py` 实现迁入 `services/event_center_new/runtime/main.py`
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
 - [x] 增加语义审计入口（`verification/auditors/semantic_contract_audit.py`）
 - [x] 将 event_center CI 组合入口实现迁入 `tools/ci`（旧 `scripts/ci_event_center_*` 保留兼容转发）
