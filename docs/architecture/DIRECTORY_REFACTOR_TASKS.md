@@ -64,6 +64,7 @@
 - [x] 增加报告聚合脚本（按时间窗口汇总 pass/fail）
 - [x] 预留 HTTP 查询接口定义（只读）
 - [x] 对接告警阈值（失败率、退化率、schema 漂移）
+- [x] 增加场景化 CI 入口（`tools/ci/verify_quick.sh|verify_regression.sh|verify_nightly.sh`）
 
 当前进展补充：
 - 已落地最小只读 API 文件后端实现（`verification/api`），用于查询 latest/list/summary/report。
@@ -85,9 +86,9 @@
 
 ## 5. 当前下一步（本轮执行）
 
-1. 设计并落地首批 `tools/ci` 目录化 CI 场景（quick/nightly/regression）。
-2. 将 semantic audit 报告并入聚合报告（report v2 扩展）。
-3. 逐步将 `scripts/check_*` 迁移为薄包装（指向 `tools/local` 与 `verification/*`）。
+1. 将 semantic audit 报告并入聚合报告（report v2 扩展）。
+2. 逐步将 `scripts/check_*` 迁移为薄包装（指向 `tools/local` 与 `verification/*`）。
+3. 收敛 root 文档兼容层，逐步切到 `docs/{architecture,contracts,operations}`。
 
 ## 6. 验收命令（当前）
 
@@ -95,3 +96,4 @@
 2. `bash tools/local/verify_quick.sh`
 3. `bash tools/local/sync_contract_indexes.sh`
 4. `bash tools/local/audit_semantics.sh`
+5. `bash tools/ci/verify_quick.sh`

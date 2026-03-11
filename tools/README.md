@@ -4,6 +4,9 @@ Unified operational entrypoints.
 
 CI:
 - `tools/ci/verify_all.sh`
+- `tools/ci/verify_quick.sh`
+- `tools/ci/verify_regression.sh`
+- `tools/ci/verify_nightly.sh`
 
 Local:
 - `tools/local/check_structure.sh`
