@@ -23,10 +23,15 @@ root = Path(".").resolve()
 text = index_path.read_text(encoding="utf-8")
 missing = []
 # 必需入口清单（按模块分组维护）：
+# - docs
+#   - docs/ALERT_CODES.md
 # - event_center_new
 #   - event_center_new/docs/ci_baseline_template.md
+#   - event_center_new/docs/selected_event.schema.json
 required_entries = [
+    "docs/ALERT_CODES.md",
     "event_center_new/docs/ci_baseline_template.md",
+    "event_center_new/docs/selected_event.schema.json",
 ]
 missing_required = []
 duplicate_required = []
