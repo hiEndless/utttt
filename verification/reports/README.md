@@ -10,3 +10,10 @@ Example:
 bash verification/run_suite.sh --suite=quick \
   --report-json=verification/reports/quick.latest.json
 ```
+
+Aggregate reports:
+```bash
+python3 -m verification.reports.aggregate_reports \
+  --glob 'verification/reports/*.json' \
+  --output verification/reports/summary.latest.json
+```

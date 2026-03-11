@@ -54,7 +54,7 @@
 ### Phase 4: 监控服务化预留（未开始）
 
 - [ ] 输出统一报告 schema v2（含 git_sha/env/suite_tags）
-- [ ] 增加报告聚合脚本（按时间窗口汇总 pass/fail）
+- [x] 增加报告聚合脚本（按时间窗口汇总 pass/fail）
 - [ ] 预留 HTTP 查询接口定义（只读）
 - [ ] 对接告警阈值（失败率、退化率、schema 漂移）
 
