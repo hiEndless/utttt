@@ -64,3 +64,45 @@
 2. 升级版本号（如 schema mapping version）。
 3. 更新本词典与服务 API 文档。
 4. 通过契约守卫后方可合并。
+
+## 6. 字段弃用生命周期模板
+
+目标：让字段去兼容过程可审计、可回滚、可自动化守卫。
+
+### 6.1 阶段定义
+
+1. `active`
+- 字段为主字段，可作为唯一输入来源。
+- 所有新功能只能基于 `active` 字段扩展。
+
+2. `deprecated`
+- 字段保留兼容读取，但不再作为语义主字段。
+- 新 producer 禁止仅写 deprecated 字段。
+- 若存在主字段与 deprecated 字段双写，必须一致。
+
+3. `removed`
+- 字段从 schema 中移除，并在 domain 解析层拒绝输入。
+- 文档与示例中禁止再出现该字段。
+
+### 6.2 进入条件（建议）
+
+从 `active -> deprecated`：
+- 已有替代主字段并完成 schema 显式声明。
+- 契约守卫覆盖“双字段一致性”或“兼容回退”路径。
+
+从 `deprecated -> removed`：
+- 连续观测窗口（建议 30 天）`deprecated_only_requests = 0`。
+- 连续观测窗口 `alias_mismatch_rejections = 0`。
+- 所有下游联调脚本与 SDK 已升级。
+
+### 6.3 回滚规则
+
+- 若升级后出现兼容故障，可临时回滚到上一稳定提交。
+- 回滚期只允许短期恢复兼容，不允许长期跳过一致性校验。
+- 回滚后必须在文档记录：触发时间、影响范围、恢复条件。
+
+### 6.4 模板示例（Decision Confidence）
+
+- `decision_confidence`: `active`
+- `confidence`: `deprecated`
+- 计划在 `execution-contract-v2` 评审通过后推进 `confidence -> removed`
