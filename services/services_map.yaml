@@ -1,6 +1,8 @@
 version: 1
 updated_at: "2026-03-12"
 mode: "compat"
+phase: "phase-2-pilot-completed"
+milestone_doc: "docs/architecture/SERVICES_PHASE2_MILESTONE.md"
 
 services:
   - name: feature_service
