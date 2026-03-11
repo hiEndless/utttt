@@ -105,16 +105,19 @@ bash scripts/check_execution_breaking_version_bump_guard.sh
 echo "[15/19] execution 合同入口守卫"
 bash scripts/check_execution_contract_entry_guard.sh
 
-echo "[16/19] contract docs index 守卫"
+echo "[16/20] contract docs index 守卫"
 bash scripts/check_contract_docs_index_guard.sh
 
-echo "[17/19] agent->execution 联动守卫"
+echo "[17/20] contract docs index help 快照守卫"
+bash scripts/check_contract_docs_index_help_snapshot_guard.sh
+
+echo "[18/20] agent->execution 联动守卫"
 bash scripts/check_agent_to_execution_guard.sh
 
-echo "[18/19] 告警码入口守卫"
+echo "[19/20] 告警码入口守卫"
 bash scripts/check_alert_codes_entry_guard.sh
 
-echo "[19/19] event_center 契约聚合守卫"
+echo "[20/20] event_center 契约聚合守卫"
 bash scripts/check_event_center_contract_guards.sh "$WIRING_MODE"
 
 echo "[通过] 新架构守卫全量检查完成。"
