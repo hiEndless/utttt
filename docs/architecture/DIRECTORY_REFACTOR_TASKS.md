@@ -52,6 +52,7 @@
 - [x] 建立 `services/*` 五个业务服务迁移占位目录
 - [x] 建立 `services/*` 软迁移统一入口（soft adapters，不搬业务源码）
 - [x] 增加 `tools/local/run_*` 统一启动脚本（默认走 `python -m services.*`）
+- [x] 核心架构文档切换为 `tools/local/run_*` 推荐启动命令
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
 - [x] 增加语义审计入口（`verification/auditors/semantic_contract_audit.py`）
 - [x] 将 event_center CI 组合入口实现迁入 `tools/ci`（旧 `scripts/ci_event_center_*` 保留兼容转发）

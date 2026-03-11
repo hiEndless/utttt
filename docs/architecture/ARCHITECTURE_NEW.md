@@ -225,6 +225,22 @@ event_center_new(signal_event + active_events)
 3. 启动 `event_center_new`，验证事件契约对齐（schema）。
 4. 启动 `agent_server_new`，仅通过状态层和事件层输入做决策输出。
 
+## 7.1 统一启动入口（推荐）
+
+优先使用 `tools/local/run_*.sh`（内部统一走 `python -m services.*`）：
+
+- `bash tools/local/run_feature_service.sh`
+- `bash tools/local/run_market_state_engine.sh`
+- `bash tools/local/run_event_center.sh`
+- `bash tools/local/run_event_center_replay.sh --help`
+- `bash tools/local/run_agent_runner.sh --help`
+- `bash tools/local/run_agent_pipeline_smoke.sh --help`
+- `bash tools/local/run_agent_memory_summary.sh --help`
+- `bash tools/local/run_execution_service.sh`
+
+兼容说明：
+- 旧服务入口（如 `python -m feature_service.main`）仍可用，但不再作为推荐文档入口。
+
 ## 8. 当前完成度判断（面向新架构）
 
 - `feature_service`：已完成独立运行改造与 ports 注入，契约已冻结，具备下游可消费结构化输出。

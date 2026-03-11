@@ -229,3 +229,20 @@ agent_server_new -> execution_service
 兼容说明：
 - 旧 `scripts/check_*` 仍可直接使用。
 - 新旧映射见：`verification/migration_map.yaml`
+
+## 10. 服务启动入口（新增）
+
+推荐（统一入口）：
+- `bash tools/local/run_feature_service.sh`
+- `bash tools/local/run_market_state_engine.sh`
+- `bash tools/local/run_event_center.sh`
+- `bash tools/local/run_agent_runner.sh`
+- `bash tools/local/run_execution_service.sh`
+
+辅助入口：
+- `bash tools/local/run_event_center_replay.sh --help`
+- `bash tools/local/run_agent_pipeline_smoke.sh --help`
+- `bash tools/local/run_agent_memory_summary.sh --help`
+
+兼容说明：
+- 旧 `python -m <legacy_service>.main` 仍可使用，但后续文档与 CI 将优先引用 `tools/local/run_*.sh`。
