@@ -2,4 +2,10 @@
 
 Unified operational entrypoints.
 
-- `tools/ci/verify_all.sh`: aggregation entry for guard execution.
+CI:
+- `tools/ci/verify_all.sh`
+
+Local:
+- `tools/local/verify_quick.sh`
+- `tools/local/verify_full.sh`
+- `tools/local/verify_quick_report.sh`
