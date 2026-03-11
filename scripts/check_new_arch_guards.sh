@@ -42,14 +42,18 @@ EOF
 fi
 
 if [[ "$MODE" == "--event-center-only" ]]; then
-  echo "[1/1] event_center 契约聚合守卫（全量）"
+  echo "[1/2] 告警码入口守卫"
+  bash scripts/check_alert_codes_entry_guard.sh
+  echo "[2/2] event_center 契约聚合守卫（全量）"
   bash scripts/check_event_center_contract_guards.sh "$WIRING_MODE"
   echo "[通过] 新架构守卫检查完成（event_center-only）。"
   exit 0
 fi
 
 if [[ "$MODE" == "--event-center-quick" ]]; then
-  echo "[1/1] event_center 契约聚合守卫（quick）"
+  echo "[1/2] 告警码入口守卫"
+  bash scripts/check_alert_codes_entry_guard.sh
+  echo "[2/2] event_center 契约聚合守卫（quick）"
   bash scripts/check_event_center_contract_guards.sh --quick "$WIRING_MODE"
   echo "[通过] 新架构守卫检查完成（event_center-quick）。"
   exit 0
