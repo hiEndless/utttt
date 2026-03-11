@@ -163,5 +163,8 @@ pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 ## 9. 基线通过记录
 
 - 2026-03-11
+  - 命令：`bash scripts/check_new_arch_guards.sh --event-center-quick`
+  - 结果：通过（包含告警入口守卫 + event_center quick 守卫聚合）
+- 2026-03-11
   - 命令：`bash scripts/check_new_arch_guards.sh --event-center-only`
   - 结果：通过（包含告警入口守卫 + event_center 全量守卫聚合）
