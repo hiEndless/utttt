@@ -23,3 +23,13 @@ Soft migration entrypoints (phase-1 runtime unification):
 - `python -m services.agent_server_new.pipeline_smoke`
 - `python -m services.agent_server_new.memory_summary_runner`
 - `python -m services.execution_service.main`
+
+Recommended local wrappers:
+- `bash tools/local/run_feature_service.sh`
+- `bash tools/local/run_market_state_engine.sh`
+- `bash tools/local/run_event_center.sh`
+- `bash tools/local/run_event_center_replay.sh`
+- `bash tools/local/run_agent_runner.sh`
+- `bash tools/local/run_agent_pipeline_smoke.sh`
+- `bash tools/local/run_agent_memory_summary.sh`
+- `bash tools/local/run_execution_service.sh`

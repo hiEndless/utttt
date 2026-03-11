@@ -54,6 +54,26 @@ for s in feature_service market_state_engine event_center_new agent_server_new e
   fi
 done
 
+echo "[check] service soft entrypoints"
+soft_entrypoints=(
+  "services/feature_service/main.py"
+  "services/market_state_engine/main.py"
+  "services/event_center_new/main.py"
+  "services/event_center_new/replay_main.py"
+  "services/agent_server_new/main.py"
+  "services/agent_server_new/pipeline_smoke.py"
+  "services/agent_server_new/memory_summary_runner.py"
+  "services/execution_service/main.py"
+)
+for p in "${soft_entrypoints[@]}"; do
+  if [[ -f "$p" ]]; then
+    echo "[ok] $p"
+  else
+    echo "[missing] $p"
+    missing=1
+  fi
+done
+
 if [[ $missing -ne 0 ]]; then
   echo "[failed] structure skeleton check failed"
   exit 1

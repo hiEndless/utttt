@@ -33,3 +33,11 @@ Local:
 - `tools/local/run_verification_api.sh`
 - `tools/local/diff_json.sh`
 - `tools/local/aggregate_and_check.sh`
+- `tools/local/run_feature_service.sh`
+- `tools/local/run_market_state_engine.sh`
+- `tools/local/run_event_center.sh`
+- `tools/local/run_event_center_replay.sh`
+- `tools/local/run_agent_runner.sh`
+- `tools/local/run_agent_pipeline_smoke.sh`
+- `tools/local/run_agent_memory_summary.sh`
+- `tools/local/run_execution_service.sh`
