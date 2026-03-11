@@ -17,6 +17,9 @@
 | `scripts/check_agent_to_execution_guard.sh` | `verification/guards/agent_to_execution.sh` | mapped |
 | `scripts/check_event_center_replay_guard.sh` + `scripts/check_event_center_replay_summary_schema_guard.sh` | `verification/guards/event_center_replay.sh` | mapped |
 
+说明：上述 wrapper 当前已优先直连 `tools/` 实现层（`tools/local` 或 `tools/ci`），
+`scripts/*` 仅保留兼容入口与快照/文本扫描约束承载。
+
 补充：以下 legacy 脚本实现已迁入 `tools/local`，`scripts/*` 仅保留兼容转发壳：
 
 - `scripts/check_state_to_agent_contract_guard.sh` -> `tools/local/check_state_to_agent_contract_guard.sh`

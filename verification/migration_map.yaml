@@ -6,7 +6,7 @@ note: "Phase-2 mapping from legacy script entrypoints to verification layer wrap
 guards:
   - old: "scripts/check_new_arch_guards.sh"
     new: "verification/guards/new_arch_full.sh"
-    status: "mapped"
+    status: "mapped_via_tools_ci"
 
   - old: "scripts/check_new_arch_guards.sh --event-center-quick"
     new: "verification/guards/new_arch_event_center_quick.sh"
@@ -14,19 +14,19 @@ guards:
 
   - old: "scripts/check_contract_docs_index_guard.sh + scripts/check_contract_docs_index_help_snapshot_guard.sh"
     new: "verification/guards/contract_docs_index.sh"
-    status: "mapped"
+    status: "mapped_via_tools_local"
 
   - old: "scripts/check_state_to_agent_contract_guard.sh"
     new: "verification/guards/state_to_agent.sh"
-    status: "mapped"
+    status: "mapped_via_tools_local"
 
   - old: "scripts/check_agent_to_execution_guard.sh"
     new: "verification/guards/agent_to_execution.sh"
-    status: "mapped"
+    status: "mapped_via_tools_local"
 
   - old: "scripts/check_event_center_replay_guard.sh + scripts/check_event_center_replay_summary_schema_guard.sh"
     new: "verification/guards/event_center_replay.sh"
-    status: "mapped"
+    status: "mapped_via_tools_local"
 
 suite_entrypoints:
   - old: "bash scripts/check_new_arch_guards.sh"
