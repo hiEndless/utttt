@@ -13,6 +13,7 @@ Entry points:
 - `bash verification/run_suite.sh --suite=new_arch_full`
 - `bash verification/run_suite.sh --suite=quick`
 - `bash tools/ci/verify_all.sh`
+- `python3 -m verification.replay.replay_event_center --help`
 
 Report output:
 - `bash verification/run_suite.sh --suite=quick --report-json=verification/reports/quick.latest.json`
