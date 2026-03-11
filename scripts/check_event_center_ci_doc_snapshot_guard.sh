@@ -2,12 +2,17 @@
 set -euo pipefail
 
 DOC="event_center_new/docs/ci.md"
+BASELINE_TEMPLATE="event_center_new/docs/ci_baseline_template.md"
 HELP_SNAPSHOT_LINES="event_center_new/docs/ci_help_snapshot_lines.txt"
 TRIAGE_SNAPSHOT_LINES="event_center_new/docs/ci_triage_snapshot_lines.txt"
 
 echo "[1/6] 检查 CI 文档与快照关键行文件存在"
 if ! test -f "$DOC"; then
   echo "[失败] 缺少 $DOC"
+  exit 1
+fi
+if ! test -f "$BASELINE_TEMPLATE"; then
+  echo "[失败] 缺少 $BASELINE_TEMPLATE"
   exit 1
 fi
 if ! test -f "$HELP_SNAPSHOT_LINES"; then
@@ -70,9 +75,9 @@ if ! rg -q -F "EC_GUARD_CI_DOC_FAILED" "$HELP_SNAPSHOT_LINES"; then
   exit 1
 fi
 
-echo "[5/6] 校验基线通过记录模板标题存在"
-if ! rg -q -F "记录模板（固定）：" "$DOC"; then
-  echo "[失败] CI 文档缺少“记录模板（固定）”标题"
+echo "[5/6] 校验 CI 文档已引用基线模板文件"
+if ! rg -q -F "event_center_new/docs/ci_baseline_template.md" "$DOC"; then
+  echo "[失败] CI 文档未引用基线模板文件: event_center_new/docs/ci_baseline_template.md"
   exit 1
 fi
 if ! rg -q -F "| date | command | mode | result | commit |" "$DOC"; then
@@ -80,13 +85,21 @@ if ! rg -q -F "| date | command | mode | result | commit |" "$DOC"; then
   exit 1
 fi
 
-echo "[6/6] 校验基线记录填写规范存在"
-if ! rg -q -F 'result` 只能填写 `pass` 或 `fail`' "$DOC"; then
-  echo "[失败] CI 文档缺少 result 填写规范（pass|fail）"
+echo "[6/6] 校验基线模板内容完整"
+if ! rg -q -F "记录模板（固定）：" "$BASELINE_TEMPLATE"; then
+  echo "[失败] 基线模板缺少“记录模板（固定）”标题"
   exit 1
 fi
-if ! rg -q -F 'commit` 使用 7~12 位短 SHA' "$DOC"; then
-  echo "[失败] CI 文档缺少 commit 短 SHA 填写规范"
+if ! rg -q -F "| date | command | mode | result | commit |" "$BASELINE_TEMPLATE"; then
+  echo "[失败] 基线模板缺少标准表头（date/command/mode/result/commit）"
+  exit 1
+fi
+if ! rg -q -F 'result` 只能填写 `pass` 或 `fail`' "$BASELINE_TEMPLATE"; then
+  echo "[失败] 基线模板缺少 result 填写规范（pass|fail）"
+  exit 1
+fi
+if ! rg -q -F 'commit` 使用 7~12 位短 SHA' "$BASELINE_TEMPLATE"; then
+  echo "[失败] 基线模板缺少 commit 短 SHA 填写规范"
   exit 1
 fi
 
