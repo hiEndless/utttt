@@ -7,6 +7,7 @@ CI:
 - `tools/ci/verify_quick.sh`
 - `tools/ci/verify_regression.sh`
 - `tools/ci/verify_nightly.sh`
+- `tools/ci/new_arch_guards_full.sh`
 - `tools/ci/event_center_quick_strict.sh`
 - `tools/ci/event_center_quick_lenient.sh`
 - `tools/ci/event_center_full_strict.sh`

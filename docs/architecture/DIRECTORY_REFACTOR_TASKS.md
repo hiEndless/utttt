@@ -55,6 +55,7 @@
 - [x] 将 event_center CI 组合入口实现迁入 `tools/ci`（旧 `scripts/ci_event_center_*` 保留兼容转发）
 - [x] 将 state/agent/event_center 三个核心 guard 实现迁入 `tools/local`（旧 `scripts/check_*` 保留兼容转发）
 - [x] 将 contract docs index guard 实现迁入 `tools/local`（保留 help 快照守卫在 `scripts/`）
+- [x] 将 `check_new_arch_guards.sh` 全量执行主体迁入 `tools/ci/new_arch_guards_full.sh`
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
   - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 

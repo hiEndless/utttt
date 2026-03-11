@@ -24,6 +24,10 @@
 - `scripts/check_event_center_replay_guard.sh` -> `tools/local/check_event_center_replay_guard.sh`
 - `scripts/check_contract_docs_index_guard.sh` -> `tools/local/check_contract_docs_index_guard.sh`
 
+补充：`scripts/check_new_arch_guards.sh` 的全量执行主体已迁入
+`tools/ci/new_arch_guards_full.sh`；保留 `scripts/check_new_arch_guards.sh`
+中的参数解析与 event_center 分支以兼容现有“文本扫描型守卫”。
+
 ## 3. 保留为底层脚本（暂不迁移）
 
 这些脚本当前作为“稳定底层执行单元”保留在 `scripts/`，由 verification wrapper 调用：
