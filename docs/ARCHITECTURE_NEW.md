@@ -135,6 +135,7 @@ event_center_new(signal_event + active_events)
 ## 5. 契约文档入口
 
 - 验证层任务清单：`DIRECTORY_REFACTOR_TASKS.md`
+- 验证查询接口草案：`VERIFICATION_API_DRAFT.md`
 - 联调速查：`CONTRACTS_QUICK_REF.md`
 - 契约索引：`CONTRACT_INDEX.md`
 - 语义词典（防漂移）：`SEMANTIC_GLOSSARY.md`

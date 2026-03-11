@@ -55,7 +55,7 @@
 
 - [ ] 输出统一报告 schema v2（含 git_sha/env/suite_tags）
 - [x] 增加报告聚合脚本（按时间窗口汇总 pass/fail）
-- [ ] 预留 HTTP 查询接口定义（只读）
+- [x] 预留 HTTP 查询接口定义（只读）
 - [ ] 对接告警阈值（失败率、退化率、schema 漂移）
 
 验收：
