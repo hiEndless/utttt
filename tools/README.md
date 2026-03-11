@@ -14,6 +14,7 @@ CI:
 
 Local:
 - `tools/local/check_structure.sh`
+- `tools/local/check_services_map_consistency.sh`
 - `tools/local/sync_contract_schemas.sh`
 - `tools/local/sync_contract_mappings.sh`
 - `tools/local/sync_contract_indexes.sh`

@@ -60,6 +60,7 @@
 - [x] 完成第五个物理迁移试点：`agent_server_new/runner.py` 实现迁入 `services/agent_server_new/runtime/runner.py`
 - [x] 完成第六个物理迁移试点：`agent_server_new/pipeline_smoke.py` 与 `memory_summary_runner.py` 实现迁入 `services/agent_server_new/runtime/`
 - [x] 完成第七个物理迁移试点：`event_center_new/replay_main.py` 实现迁入 `services/event_center_new/runtime/replay_main.py`
+- [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
 - [x] 增加语义审计入口（`verification/auditors/semantic_contract_audit.py`）
 - [x] 将 event_center CI 组合入口实现迁入 `tools/ci`（旧 `scripts/ci_event_center_*` 保留兼容转发）

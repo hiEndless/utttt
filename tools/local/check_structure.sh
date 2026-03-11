@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
+bash tools/local/check_services_map_consistency.sh
+
 required_dirs=(
   "services"
   "contracts"
