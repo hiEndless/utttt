@@ -169,6 +169,7 @@ agent_server_new -> execution_service
 - cURL 示例：`CONTRACTS_CURL_EXAMPLES.md`
 - HTTPie 示例：`CONTRACTS_HTTPIE_EXAMPLES.md`
 - 一键冒烟脚本：`scripts/integration_smoke_new_arch.sh`
+- 新架构关键脚本纳管守卫（CI 可用）：`scripts/check_new_arch_tracked_scripts_guard.sh`
 - 契约守卫脚本（CI 可用）：`scripts/check_feature_contract_guard.sh`
 - Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
 - State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
