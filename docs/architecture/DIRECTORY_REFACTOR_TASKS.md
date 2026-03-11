@@ -57,6 +57,7 @@
 - [x] 将 contract docs index guard 实现迁入 `tools/local`（保留 help 快照守卫在 `scripts/`）
 - [x] 将 `check_new_arch_guards.sh` 全量执行主体迁入 `tools/ci/new_arch_guards_full.sh`
 - [x] 将 verification wrappers 直连 `tools/*` 实现层（减少 scripts 中间跳转）
+- [x] 建立 `scripts/*` 兼容白名单与机器检查（workflow/snapshot/wiring hard-pinned）
 - [ ] 迁移后保留旧路径薄包装 1 个迭代周期
   - 兼容窗口文档：`VERIFICATION_COMPAT_WINDOW.md`（active）
 
