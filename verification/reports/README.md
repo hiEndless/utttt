@@ -35,3 +35,10 @@ python3 -m verification.reports.check_thresholds \
   --min-reports 1 \
   --max-semantic-errors 0
 ```
+
+Check semantic warning budget by field:
+```bash
+python3 -m verification.reports.check_semantic_warning_budget \
+  --audit verification/reports/semantic_audit.latest.json \
+  --budget verification/reports/semantic_warning_budget.yaml
+```

@@ -27,6 +27,12 @@ bash tools/local/audit_semantics.sh
 bash tools/local/audit_semantics.sh --strict
 ```
 
+4. Check warning budget by field:
+
+```bash
+bash tools/local/check_semantic_warning_budget.sh
+```
+
 ## Output
 
 - report: `verification/reports/semantic_audit.latest.json`
@@ -45,3 +51,6 @@ Hard-fail checks:
 Warning checks:
 - `expected_shape` mismatch
 - same field name appears with multiple shapes
+
+Budget checks:
+- `verification/reports/semantic_warning_budget.yaml`

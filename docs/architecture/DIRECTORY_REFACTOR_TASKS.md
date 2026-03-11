@@ -66,6 +66,7 @@
 - [x] 对接告警阈值（失败率、退化率、schema 漂移）
 - [x] 增加场景化 CI 入口（`tools/ci/verify_quick.sh|verify_regression.sh|verify_nightly.sh`）
 - [x] semantic audit 报告并入聚合阈值检查链路（aggregate + thresholds）
+- [x] semantic warning budget（按字段）并接入 nightly
 
 当前进展补充：
 - 已落地最小只读 API 文件后端实现（`verification/api`），用于查询 latest/list/summary/report。
@@ -89,7 +90,7 @@
 
 1. 逐步将 `scripts/check_*` 迁移为薄包装（指向 `tools/local` 与 `verification/*`）。
 2. 收敛 root 文档兼容层，逐步切到 `docs/{architecture,contracts,operations}`。
-3. 为 semantic warning 建立分级阈值（按字段/模块）并纳入 nightly。
+3. 将 semantic warning budget 结果接入告警渠道（飞书/Slack/Webhook）。
 
 ## 6. 验收命令（当前）
 
