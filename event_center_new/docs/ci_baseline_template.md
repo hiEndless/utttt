@@ -10,6 +10,7 @@
 填写规范：
 - `result` 只能填写 `pass` 或 `fail`（小写）。
 - `commit` 使用 7~12 位短 SHA（示例：`73c9048`）。
+- 同一 `commit` 必须同时记录 `quick` 与 `full` 两条基线结果（成对出现）。
 
 | date | command | mode | result | commit |
 |---|---|---|---|---|
