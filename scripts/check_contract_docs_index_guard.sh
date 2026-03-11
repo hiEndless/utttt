@@ -25,10 +25,11 @@ missing = []
 # 必需入口清单（按模块分组维护）：
 # - event_center_new
 #   - event_center_new/docs/ci_baseline_template.md
-required_entries = {
+required_entries = [
     "event_center_new/docs/ci_baseline_template.md",
-}
+]
 missing_required = []
+duplicate_required = []
 
 for raw in re.findall(r"`([^`]+)`", text):
     candidate = raw.strip()
@@ -47,7 +48,20 @@ if missing:
         print(f"  - {item}")
     sys.exit(1)
 
-for item in sorted(required_entries):
+seen = set()
+for item in required_entries:
+    if item in seen:
+        duplicate_required.append(item)
+        continue
+    seen.add(item)
+
+if duplicate_required:
+    print("[失败] required_entries 存在重复项：")
+    for item in duplicate_required:
+        print(f"  - {item}")
+    sys.exit(1)
+
+for item in sorted(seen):
     if f"`{item}`" not in text:
         missing_required.append(item)
 
