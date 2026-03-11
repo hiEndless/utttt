@@ -168,3 +168,5 @@ pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 |---|---|---|---|---|
 | 2026-03-11 | `bash scripts/check_new_arch_guards.sh --event-center-quick` | `quick` | `pass` | `eebe63f` |
 | 2026-03-11 | `bash scripts/check_new_arch_guards.sh --event-center-only` | `full` | `pass` | `eebe63f` |
+| 2026-03-11 | `bash scripts/check_new_arch_guards.sh --event-center-quick` | `quick` | `pass` | `e335162` |
+| 2026-03-11 | `bash scripts/check_new_arch_guards.sh --event-center-only` | `full` | `pass` | `e335162` |
