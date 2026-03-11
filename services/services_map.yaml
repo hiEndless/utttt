@@ -18,10 +18,14 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "soft_entrypoint_ready"
+    status: "pilot_entrypoint_migrated"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
+    pilot_migrated_impl:
+      - "services/market_state_engine/runtime/main.py"
+    legacy_wrapper:
+      - "market_state_engine/main.py"
 
   - name: event_center_new
     current_path: "event_center_new/"

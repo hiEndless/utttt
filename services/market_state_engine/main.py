@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from market_state_engine.main import app, main
+from services.market_state_engine.runtime.main import app, main
 
 __all__ = ["app", "main"]
 
