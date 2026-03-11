@@ -11,98 +11,67 @@
   ],
   "properties": {
     "mode": {
-      "type": "string",
-      "enum": ["mock", "exchange_skeleton"]
+      "$ref": "./execution_io_payload.schema.json#/properties/mode"
     },
     "venue": {
-      "type": "string"
+      "$ref": "./execution_io_payload.schema.json#/properties/venue"
     },
     "order_id": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "./execution_io_payload.schema.json#/properties/order_id"
     },
     "decision_id": {
-      "type": ["string", "null"]
+      "$ref": "./execution_io_payload.schema.json#/properties/decision_id"
     },
     "account_id": {
-      "type": ["string", "null"]
+      "$ref": "./execution_io_payload.schema.json#/properties/account_id"
     },
     "exchange": {
-      "type": ["string", "null"]
+      "$ref": "./execution_io_payload.schema.json#/properties/exchange"
     },
     "symbol": {
-      "type": ["string", "null"]
+      "$ref": "./execution_io_payload.schema.json#/properties/symbol"
     },
     "status": {
-      "type": "string",
-      "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+      "$ref": "./execution_io_payload.schema.json#/properties/status"
     },
     "filled_qty": {
-      "type": "number"
+      "$ref": "./execution_io_payload.schema.json#/properties/filled_qty"
     },
     "avg_price": {
-      "type": ["number", "null"]
+      "$ref": "./execution_io_payload.schema.json#/properties/avg_price"
     },
     "note": {
-      "type": "string"
+      "$ref": "./execution_io_payload.schema.json#/properties/note"
     },
     "reason_code": {
-      "type": "string",
-      "enum": ["reconcile_retry_exhausted", "reconcile_non_retryable_error", "reconcile_in_progress"]
+      "$ref": "./execution_io_payload.schema.json#/properties/reason_code"
     },
     "error_message": {
-      "type": "string"
+      "$ref": "./execution_io_payload.schema.json#/properties/error_message"
     },
     "idempotency_hit": {
-      "type": "boolean"
+      "$ref": "./execution_io_payload.schema.json#/properties/idempotency_hit"
     },
     "retry_meta": {
       "$ref": "./retry_meta.schema.json"
     },
     "dry_run": {
-      "type": "boolean"
+      "$ref": "./execution_io_payload.schema.json#/properties/dry_run"
     },
     "exchange_status_raw": {
       "type": "string"
     },
     "request": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["symbol", "side", "type", "quantity", "newClientOrderId"],
-      "properties": {
-        "symbol": {
-          "type": "string",
-          "minLength": 1
-        },
-        "side": {
-          "type": "string",
-          "enum": ["BUY", "SELL"]
-        },
-        "type": {
-          "type": "string",
-          "enum": ["MARKET"]
-        },
-        "quantity": {
-          "type": "string",
-          "minLength": 1
-        },
-        "newClientOrderId": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
+      "$ref": "./execution_io_payload.schema.json#/properties/request"
     },
     "exchange_raw": {
-      "type": "object",
-      "additionalProperties": true
+      "$ref": "./execution_io_payload.schema.json#/properties/exchange_raw"
     },
     "ts_ms": {
-      "type": "integer",
-      "minimum": 1
+      "$ref": "./execution_io_payload.schema.json#/properties/ts_ms"
     },
     "ts": {
-      "type": "integer",
-      "minimum": 1
+      "$ref": "./execution_io_payload.schema.json#/properties/ts"
     }
   }
 }

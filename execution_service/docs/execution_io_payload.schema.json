@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionIOPayload",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "submitted": {
+      "type": "boolean"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["mock", "exchange_skeleton"]
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision_id": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "account_id": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "exchange": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "symbol": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "side", "type", "quantity", "newClientOrderId"],
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "side": {
+          "type": "string",
+          "enum": ["BUY", "SELL"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["MARKET"]
+        },
+        "quantity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "newClientOrderId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "exchange_raw": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "ts": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ts_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "submitted_at_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "filled_qty": {
+      "type": "number"
+    },
+    "avg_price": {
+      "type": ["number", "null"]
+    },
+    "note": {
+      "type": "string"
+    },
+    "reason_code": {
+      "type": "string",
+      "enum": ["reconcile_retry_exhausted", "reconcile_non_retryable_error", "reconcile_in_progress"]
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "idempotency_hit": {
+      "type": "boolean"
+    }
+  }
+}

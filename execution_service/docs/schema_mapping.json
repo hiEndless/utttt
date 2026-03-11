@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v11",
+  "version": "execution-schema-mapping-v12",
   "last_updated": "2026-03-11",
   "items": [
     {
@@ -96,6 +96,11 @@
           "schema": "execution_service/docs/execution_result.schema.json",
           "json_path": "properties.signal_result.$ref",
           "expected": "./execution_signal_result.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.mode.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/mode"
         },
         {
           "schema": "execution_service/docs/execution_result.schema.json",
@@ -334,6 +339,59 @@
           "schema": "execution_service/docs/execution_reconcile_result.schema.json",
           "json_path": "properties.retry_meta.$ref",
           "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.mode.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/mode"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionIOPayload",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "execution_service/docs/execution_io_payload.schema.json",
+      "code": "execution_service/adapters/exchange_execution_sink.py",
+      "symbol": "ExchangeExecutionSink",
+      "fields": [
+        "submitted",
+        "mode",
+        "dry_run",
+        "venue",
+        "order_id",
+        "decision_id",
+        "account_id",
+        "exchange",
+        "symbol",
+        "status",
+        "request",
+        "exchange_raw",
+        "ts",
+        "ts_ms",
+        "submitted_at_ms",
+        "filled_qty",
+        "avg_price",
+        "note",
+        "reason_code",
+        "error_message",
+        "idempotency_hit"
+      ],
+      "references": [
+        {
+          "schema": "execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.mode.enum",
+          "expected": ["mock", "exchange_skeleton"]
+        },
+        {
+          "schema": "execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.status.enum",
+          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+        },
+        {
+          "schema": "execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.required",
+          "expected": ["symbol", "side", "type", "quantity", "newClientOrderId"]
         }
       ]
     },
@@ -365,13 +423,13 @@
       "references": [
         {
           "schema": "execution_service/docs/execution_reconcile_result.schema.json",
-          "json_path": "properties.status.enum",
-          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+          "json_path": "properties.status.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/status"
         },
         {
           "schema": "execution_service/docs/execution_reconcile_result.schema.json",
-          "json_path": "properties.reason_code.enum",
-          "expected": ["reconcile_retry_exhausted", "reconcile_non_retryable_error", "reconcile_in_progress"]
+          "json_path": "properties.reason_code.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/reason_code"
         },
         {
           "schema": "execution_service/docs/execution_reconcile_result.schema.json",

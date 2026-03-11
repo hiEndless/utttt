@@ -145,6 +145,7 @@
 3. 双字段同时出现时保持一致性校验（不一致返回 `400`）。
 4. `schema_mapping_version` 已升版为 `execution-schema-mapping-v10`。
 5. `ExecutionResult.order_result` 已收敛为白名单结构（含 `request/retry_meta/submitted_at_ms`），并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v11`。
+6. 抽取共享 `execution_io_payload.schema.json`，复用 `order_result/reconcile_result` 公共字段并将 `schema_mapping_version` 升版为 `execution-schema-mapping-v12`。
 
 ### 观测指标（建议）
 
