@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'EOF'
+用法:
+  bash scripts/check_contract_docs_index_guard.sh
+  bash scripts/check_contract_docs_index_guard.sh --help
+
+受强约束入口（required_entries）:
+  - docs/ALERT_CODES.md
+  - event_center_new/docs/ci_baseline_template.md
+  - event_center_new/docs/selected_event.schema.json
+EOF
+  exit 0
+fi
+
 echo "[1/2] 检查 CONTRACT_INDEX 文档是否存在"
 if ! test -f docs/CONTRACT_INDEX.md; then
   echo "[失败] 缺少 docs/CONTRACT_INDEX.md"
