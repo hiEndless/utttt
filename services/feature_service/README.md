@@ -9,3 +9,4 @@ Notes:
 - `app.py` implementation has moved to `services/feature_service/src/app.py`.
 - `routes.py` implementation has moved to `services/feature_service/src/routes.py`.
 - `service.py` implementation has moved to `services/feature_service/src/service.py`.
+- `contracts.py` implementation has moved to `services/feature_service/src/contracts.py`.

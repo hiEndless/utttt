@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from feature_service.contracts import (
+from services.feature_service.src.contracts import (
     FeatureResponse,
     FeatureSnapshot,
     RawStructureResponse,
