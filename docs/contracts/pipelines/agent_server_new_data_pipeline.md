@@ -14,6 +14,11 @@
 - 可观测 trace 结构：[decision_trace.py](services/agent_server_new/observability/decision_trace.py)
 - runner JSON 输出 schema：[runner_output.schema.json](services/agent_server_new/docs/runner_output.schema.json)
 
+时间语义口径（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
+- signal freshness 优先使用 `event_ts_ms`，并兼容 `ts_ms` 等历史字段
+- active_events evidence 内建议保留 `event_ts_ms/processed_ts_ms`
+- `ts_ms` 仅作为过渡兼容别名
+
 ---
 
 ## 0. 总览：端到端“真实执行顺序”
@@ -190,6 +195,11 @@ HTTP 适配器会对 `msl` 与 `msl_meta.schema_version` 做最小契约检查�
 | evidence | object | Y | JSON object | 证据快照（优先 evidence，否则用 context_snapshot；并注入 trace） |
 
 实现：[active_events_redis.py](services/agent_server_new/adapters/active_events_redis.py#L117-L165)
+
+时间字段归一化（active_events 适配器）：
+- `evidence.event_ts_ms`：优先 `payload.event_ts_ms`，缺失回退 `payload.ts_ms`
+- `evidence.processed_ts_ms`：优先 `payload.processed_ts_ms`，缺失回退 `payload.ts_ms`
+- 该约束用于把 selected_event 的发生/处理时间语义稳定传到 agent 消费侧
 
 优先级到 score 的映射：
 

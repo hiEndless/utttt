@@ -12,6 +12,11 @@
 - State inference 插件与 meta：[state_inference/engine.py](services/market_state_engine/src/state_inference/engine.py)
 - 与上游边界说明：[boundaries.md](services/market_state_engine/docs/boundaries.md)
 
+时间语义口径（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
+- API 响应元字段：`ts/ts_ms`（兼容保留）
+- 事件语义字段（来自 selected_event）：`event_ts_ms`（发生时间）/`processed_ts_ms`（处理时间）
+- `ts_ms` 在 selected_event 语义中仅作为兼容别名
+
 ---
 
 ## 0. 总览：端到端“真实执行顺序”
@@ -185,6 +190,8 @@ Service 不要求 SelectedEvent 具备完整契约，但会从每条事件中读
 | selected_type | string | 汇总到 `selected_event_types` |
 | priority | string | 汇总到 `selected_event_priorities` |
 | direction_hint | string | 汇总到 `selected_event_directions` |
+| event_ts_ms / ts_ms | int | 事件时间（优先 event_ts_ms，缺失回退 ts_ms） |
+| processed_ts_ms / ts_ms | int | 处理时间（优先 processed_ts_ms，缺失回退 ts_ms） |
 | source / source.name | string\|object | 汇总到 `selected_event_sources` |
 | trace.schema_version | string | 汇总到 `selected_event_schema_versions`；缺失会计入 `selected_events_unversioned_count` |
 
