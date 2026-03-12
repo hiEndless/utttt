@@ -18,15 +18,12 @@
 
 ## 3. 当前兼容入口
 
-- `scripts/check_new_arch_guards.sh`
-- `scripts/check_state_to_agent_contract_guard.sh`
-- `scripts/check_agent_to_execution_guard.sh`
-- `scripts/check_contract_docs_index_guard.sh`
-- `scripts/check_contract_docs_index_help_snapshot_guard.sh`
-- `scripts/check_event_center_replay_guard.sh`
-- `scripts/check_event_center_replay_summary_schema_guard.sh`
+- 当前兼容入口以机器清单为准：`verification/guards/script_compat_whitelist.yaml`
+- 人工查看命令：
+  1. `bash tools/local/check_script_compat_whitelist.sh`
+  2. `./venv/bin/python -c "import yaml;d=yaml.safe_load(open('verification/guards/script_compat_whitelist.yaml'));print('hard=',len({i['path'] for k in ['hard_pinned_by_workflows','hard_pinned_by_snapshot_or_help_guards','hard_pinned_by_text_wiring_guards'] for i in d[k]}),'wrappers=',len(d['compatibility_wrappers_retained']))"`
 
-对应新入口：`verification/guards/*.sh`（见 `verification/migration_map.yaml`）。
+对应新入口：`verification/guards/*.sh` 与 `tools/local/*.sh`（见 `verification/migration_map.yaml`）。
 
 ## 4. 下线前检查单
 

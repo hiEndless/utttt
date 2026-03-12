@@ -153,9 +153,10 @@
 
 ## 5. 当前下一步（本轮执行）
 
-1. 逐步将 `scripts/check_*` 迁移为薄包装（指向 `tools/local` 与 `verification/*`）。
-2. 收敛 root 文档兼容层，逐步切到 `docs/{architecture,contracts,operations}`。
-3. 将 semantic warning budget 结果接入告警渠道（飞书/Slack/Webhook）。
+1. 维持 `scripts/*` 兼容窗口，重点治理 hard-pinned 依赖（workflow/help-snapshot/text-wiring）。
+2. 分批将 CI/workflow 入口切到 `tools/ci/*`，并刷新对应守卫规则。
+3. 将 help/snapshot 守卫目标从 `scripts/*` 转向 `tools/*`，完成后再下线 wrapper。
+4. 将 semantic warning budget 结果接入告警渠道（飞书/Slack/Webhook）。
 
 ## 6. 验收命令（当前）
 
