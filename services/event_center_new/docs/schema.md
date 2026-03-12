@@ -138,7 +138,9 @@ select 阶段只做“是否输出”与“输出给谁”，不做市场状态�
 |---|---:|---|
 | selected_type | str | 如 `market.structure_event` / `macro.trigger_event` |
 | asset | str | 标的 |
-| ts_ms | int | 时间 |
+| event_ts_ms | int | 事件发生时间（推荐） |
+| processed_ts_ms | int | 选出/处理时间（推荐） |
+| ts_ms | int | 兼容时间别名（deprecated，过渡期保留） |
 | direction_hint | str | `bullish/bearish/neutral/mixed`，事件方向倾向（非交易结论） |
 | priority | str | 低/中/高 |
 | context_snapshot | EventContextSnapshot | 下游消费的快照（可裁剪字段） |

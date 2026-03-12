@@ -57,13 +57,24 @@ def _sample_inputs() -> tuple[SignalVerdict, ActionIntent, RulePlan]:
     return signal, intent, rule_plan
 
 
-def test_extract_signal_event_ts_ms_prefers_explicit_ts_ms() -> None:
+def test_extract_signal_event_ts_ms_prefers_event_ts_ms_over_ts_ms() -> None:
     out = _extract_signal_event_ts_ms(
         {
+            "event_ts_ms": 1700000000001,
             "ts_ms": 1700000000123,
             "timestamp_ms": 1700000000456,
             "ts": 1700000000789,
             "timestamp": "2026-03-09T12:00:00Z",
+        }
+    )
+    assert out == 1700000000001
+
+
+def test_extract_signal_event_ts_ms_falls_back_to_ts_ms() -> None:
+    out = _extract_signal_event_ts_ms(
+        {
+            "ts_ms": 1700000000123,
+            "timestamp_ms": 1700000000456,
         }
     )
     assert out == 1700000000123

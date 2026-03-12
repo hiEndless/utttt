@@ -88,6 +88,8 @@ agent_server_new -> execution_service
 建议最小字段（跨服务对齐）：
 - `id`
 - `ts_ms`
+- `event_ts_ms`（selected_event 推荐）
+- `processed_ts_ms`（selected_event 推荐）
 - `asset`
 - `type`
 - `source_category`

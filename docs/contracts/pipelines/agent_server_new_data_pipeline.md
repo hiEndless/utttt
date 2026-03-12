@@ -300,7 +300,7 @@ HTTP 适配器：
 在 ContextBuilder 的证据裁剪逻辑中，会尝试从 payload 读取：
 
 - `event_type` / `type` / `kind`：用于选择裁剪 profile（liquidation/macro_sentiment/indicator_signal/generic）
-- `ts_ms / timestamp_ms / ts / generated_at_ms / timestamp`：用于 freshness 判断（strategy_gate_v2）
+- `event_ts_ms / ts_ms / timestamp_ms / ts / generated_at_ms / timestamp`：用于 freshness 判断（strategy_gate_v2）
 
 实现：
 - profile 选择：[context_builder.py](services/agent_server_new/app/context_builder.py#L115-L124)

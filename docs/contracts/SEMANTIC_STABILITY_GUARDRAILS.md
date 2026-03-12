@@ -25,7 +25,7 @@
 - `event_center_new` runner health 同时写入 `updated_ms` 与 `updated_at_ms`。
 - `market_state_engine` `/healthz` 与状态查询响应同时返回 `ts` 与 `ts_ms`。
 - `execution_service` `/healthz` 与 `/version` 同时返回 `ts` 与 `ts_ms`。
-- `agent_server_new.strategy_gate_v2` 时间读取优先 `ts_ms`，兼容 `timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
+- `agent_server_new.strategy_gate_v2` 时间读取优先 `event_ts_ms`，兼容 `ts_ms/timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
 
 5. `risk_flags` 语义标准化（非破坏）
 - `market_state_engine` 聚合层统一输出 `risk_flags: array[string]`。
@@ -50,9 +50,10 @@
 - 进入 v2 前，要求所有上游 producer 契约测试通过 `decision_confidence` 必填守卫。
 
 2. 统一时间字段命名规范
-- 事件/流转层统一 `ts_ms`；
+- 事件语义层统一 `event_ts_ms`（发生）与 `processed_ts_ms`（处理）；
+- `ts_ms` 仅作为兼容别名保留在过渡窗口；
 - 资源快照元信息统一 `generated_at_ms/updated_at_ms`；
-- 语义对象内部保留 `timestamp(ISO8601)` 时，必须同时提供 `ts_ms` 派生字段或转换规则。
+- 语义对象内部保留 `timestamp(ISO8601)` 时，必须同时提供毫秒级字段（`event_ts_ms/processed_ts_ms` 或显式映射规则）。
 
 3. 扩展 confidence 语义字典到全链路
 - `evidence_confidence`（证据置信度）
