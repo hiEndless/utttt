@@ -34,4 +34,5 @@ bash tools/local/check_release_baseline_alignment.sh --check-origin
 
 ```bash
 bash tools/local/check_release_ready.sh
+bash tools/local/finalize_release_baseline.sh
 ```
