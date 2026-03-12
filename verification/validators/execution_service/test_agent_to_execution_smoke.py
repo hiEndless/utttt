@@ -11,6 +11,7 @@ from dataclasses import asdict
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.app.context_builder import ContextBuilder
 from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, RiskAllowance
+from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 from services.execution_service.adapters.agent_execution_plan_adapter import (
     adapt_agent_execution_plan_to_decision_intent,
@@ -96,6 +97,23 @@ class _SemanticSelectedEventProvider:
                 "route": {"to": "market_state_engine"},
             }
         ]
+
+
+class _SemanticRawProviderInvalidProviderState:
+    async def get_raw_structure(self, exchange: str, symbol: str):  # noqa: ARG002
+        return {
+            "symbol": symbol,
+            "horizons": {"fused": {"horizons": {}}},
+            "pre_decision_structure": {},
+            "alternative_sources": {
+                "onchain": {
+                    "source_type": "onchain",
+                    "available": True,
+                    "provider_state": "BAD_STATE",
+                    "features": {"inflow_usd": 123456.0},
+                }
+            },
+        }
 
 
 class _MarketStateFromService:
@@ -280,5 +298,38 @@ def test_semantic_chain_smoke_provider_state_risk_flags_and_decision_confidence(
         assert result.decision_id == "sem-chain-dec-001"
         assert result.execution_action in {"add", "reduce", "hold", "exit", "skip"}
         assert decision_payload.get("risk_hints", {}).get("decision_confidence_source") == "confidence_legacy"
+
+    asyncio.run(_run())
+
+
+def test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code() -> None:
+    async def _run() -> None:
+        state_service = MarketStateService(
+            raw_structure_provider=_SemanticRawProviderInvalidProviderState(),
+            selected_event_provider=_SemanticSelectedEventProvider(),
+        )
+        state_payload = await state_service.get_market_state("binance", "ETHUSDT")
+
+        anomaly_flags = list(state_payload.get("anomaly_flags") or [])
+        assert "state_features_alternative_source_provider_state_invalid" in anomaly_flags
+
+        context_builder = ContextBuilder(
+            market_state=_MarketStateFromService(state_payload),
+            position_context=_PositionContext(),
+            active_events=_ActiveEvents(),
+            max_key_features=20,
+        )
+        built = await context_builder.build(
+            event_id="sem-chain-invalid-001",
+            exchange="binance",
+            symbol="ETHUSDT",
+            signal_payload={"event_type": "indicator_signal"},
+        )
+        contract_warnings = list((built.ctx.key_market_features or {}).get("contract_warnings") or [])
+        assert "state_features_alternative_source_provider_state_invalid" in contract_warnings
+        assert "alternative_sources_provider_state_invalid" in contract_warnings
+
+        alert_codes = map_alert_codes_from_contract_warnings(contract_warnings)
+        assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" in alert_codes
 
     asyncio.run(_run())
