@@ -7,6 +7,15 @@ from typing import Any, Dict, List
 from services.market_state_engine.src.contracts import MarketStateMSL
 
 from .contracts import ActionIntent, RulePlan, SignalVerdict
+from .strategy_gate_reasons import (
+    STRATEGY_GATE_REASON_DIRECTION_BIAS_MISMATCH,
+    STRATEGY_GATE_REASON_FRAGILITY_HIGH_BLOCK_INCREASE,
+    STRATEGY_GATE_REASON_HORIZON_CONFLICT,
+    STRATEGY_GATE_REASON_LIQUIDITY_VACUUM,
+    STRATEGY_GATE_REASON_SIGNAL_REJECTED,
+    STRATEGY_GATE_REASON_SIGNAL_STALE,
+    STRATEGY_GATE_REASON_TRANSITION_AND_UNCERTAIN,
+)
 
 
 @dataclass(frozen=True)
@@ -21,14 +30,14 @@ def strategy_gate(*, msl: MarketStateMSL, signal: SignalVerdict) -> StrategyGate
     """兼容入口：保留旧签名。"""
     reasons: List[str] = []
     if signal.verdict == "reject":
-        return StrategyGateResult(allowed=False, reasons=["signal_rejected"])
+        return StrategyGateResult(allowed=False, reasons=[STRATEGY_GATE_REASON_SIGNAL_REJECTED])
     if msl.horizon_alignment == "conflict":
-        reasons.append("horizon_conflict")
+        reasons.append(STRATEGY_GATE_REASON_HORIZON_CONFLICT)
     if msl.regime == "transition" and signal.verdict == "uncertain":
-        reasons.append("transition_and_uncertain")
+        reasons.append(STRATEGY_GATE_REASON_TRANSITION_AND_UNCERTAIN)
     anomalies = set([str(x) for x in list(msl.anomalies or []) if x])
     if "liquidity_vacuum" in anomalies or "orderbook_liquidity_vacuum" in anomalies:
-        reasons.append("liquidity_vacuum")
+        reasons.append(STRATEGY_GATE_REASON_LIQUIDITY_VACUUM)
     if reasons:
         return StrategyGateResult(allowed=False, reasons=reasons)
     return StrategyGateResult(allowed=True, reasons=[])
@@ -54,20 +63,20 @@ def strategy_gate_v2(
     except Exception:
         age_ms = None
     if age_ms is not None and age_ms > 10 * 60 * 1000:
-        reasons.append("signal_stale")
+        reasons.append(STRATEGY_GATE_REASON_SIGNAL_STALE)
 
     if intent.intent == "increase" and msl.market_fragility == "high":
-        reasons.append("fragility_high_block_increase")
+        reasons.append(STRATEGY_GATE_REASON_FRAGILITY_HIGH_BLOCK_INCREASE)
 
     if intent.intent == "increase" and msl.direction_bias in ("bullish", "bearish") and signal.direction in ("long", "short"):
         if (msl.direction_bias == "bullish" and signal.direction == "short") or (msl.direction_bias == "bearish" and signal.direction == "long"):
-            reasons.append("direction_bias_mismatch")
+            reasons.append(STRATEGY_GATE_REASON_DIRECTION_BIAS_MISMATCH)
 
     if intent.intent in ("increase", "hold") and ("liquidity_vacuum" in anomalies or "orderbook_liquidity_vacuum" in anomalies):
-        reasons.append("liquidity_vacuum")
+        reasons.append(STRATEGY_GATE_REASON_LIQUIDITY_VACUUM)
 
     if intent.intent == "increase" and msl.horizon_alignment == "conflict":
-        reasons.append("horizon_conflict")
+        reasons.append(STRATEGY_GATE_REASON_HORIZON_CONFLICT)
 
     if reasons:
         return StrategyGateResult(allowed=False, reasons=reasons)

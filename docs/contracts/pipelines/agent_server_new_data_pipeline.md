@@ -488,7 +488,9 @@ sizing 输出字段（当前实现约定）：
 - liquidity_vacuum：结构风险阻断
 - horizon_conflict：跨周期冲突阻断 increase
 
-实现：[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L37-L74)
+原因码单源（防漂移）：[strategy_gate_reasons.py](services/agent_server_new/domain/strategy_gate_reasons.py)
+
+实现：[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L47-L84)
 
 ### 7.6 risk_gate：RiskGateContext -> RiskAllowance
 
