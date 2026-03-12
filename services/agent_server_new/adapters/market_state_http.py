@@ -33,6 +33,37 @@ _SEMANTIC_MARKET_STATE_SCOPE = {
 _SEMANTIC_RISK_SCOPE = {"orderbook", "open_interest"}
 logger = logging.getLogger(__name__)
 
+
+def _normalize_state_features_for_agent(state_features: Dict[str, Any]) -> tuple[Dict[str, Any], list[str]]:
+    """消费侧收敛歧义别名，保证 agent 内部优先使用 canonical 字段。"""
+    out = dict(state_features or {})
+    warnings: list[str] = []
+
+    if "market_state" in out and "source_market_state" not in out:
+        out["source_market_state"] = out.get("market_state")
+        warnings.append("state_features_market_state_alias_applied")
+    if "risk_bias" in out and "action_risk_bias" not in out:
+        out["action_risk_bias"] = out.get("risk_bias")
+        warnings.append("state_features_risk_bias_alias_applied")
+
+    horizons_raw = dict(out.get("horizons") or {})
+    horizons_out: Dict[str, Any] = {}
+    confidence_alias_applied = False
+    for hz in ("short_term", "mid_term", "long_term"):
+        node = dict(horizons_raw.get(hz) or {})
+        if not node:
+            continue
+        if ("confidence" not in node) and ("horizon_confidence" in node):
+            node["confidence"] = node.get("horizon_confidence")
+            confidence_alias_applied = True
+        horizons_out[hz] = node
+    if horizons_out:
+        out["horizons"] = horizons_out
+    if confidence_alias_applied:
+        warnings.append("state_features_confidence_alias_applied")
+
+    return out, sorted(set([x for x in warnings if x]))
+
 def _collect_msl_contract_anomalies(*, data: Dict[str, Any]) -> list[str]:
     anomalies: list[str] = []
     msl_raw = dict(data.get("msl") or {})
@@ -152,9 +183,12 @@ class HttpMarketStateProvider(MarketStateProvider):
             response.raise_for_status()
             data = response.json()
         data = dict(data or {})
+        state_features_raw = dict(data.get("state_features") or {})
+        state_features, normalization_warnings = _normalize_state_features_for_agent(state_features_raw)
         anomaly_flags = [str(x) for x in list(data.get("anomaly_flags") or []) if x]
         anomaly_flags.extend(_collect_msl_contract_anomalies(data=data))
         anomaly_flags.extend(_collect_state_feature_semantic_anomalies(data=data))
+        anomaly_flags.extend(normalization_warnings)
         semantic_anomalies = sorted(set([x for x in anomaly_flags if x.startswith("state_features_")]))
         if semantic_anomalies:
             logger.warning(
@@ -172,7 +206,7 @@ class HttpMarketStateProvider(MarketStateProvider):
             msl_bundle=dict(data.get("msl_bundle") or {}),
             msl_bundle_meta=dict(data.get("msl_bundle_meta") or {}),
             cross_horizon=dict(data.get("cross_horizon") or {}),
-            state_features=dict(data.get("state_features") or {}),
+            state_features=state_features,
             anomaly_flags=sorted(set([x for x in anomaly_flags if x])),
             raw_market_structure=dict(data.get("raw_market_structure") or {}),
         )

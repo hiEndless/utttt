@@ -219,6 +219,12 @@ signal_event + active_events + MSL
 - `state_features_confidence_*`（周期 confidence 主从字段锚点不一致）
 - `state_features_risk_*`（`risk_flags` / `risk_metrics` 边界不一致）
 - `state_features_market_state_*` / `state_features_risk_bias_*`（歧义字段污染）
+- `state_features_*_alias_applied`（消费侧已将歧义别名自动收敛到 canonical 字段，便于平滑迁移）
+
+消费侧 canonical 收敛规则（`state_features`）：
+- `market_state -> source_market_state`
+- `risk_bias -> action_risk_bias`
+- `horizons.{hz}.horizon_confidence -> horizons.{hz}.confidence`（缺失 canonical 时回填）
 
 ## CLI Smoke Test
 

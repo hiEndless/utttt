@@ -291,5 +291,9 @@ def test_http_market_state_provider_marks_state_feature_semantic_mismatch(monkey
         assert "state_features_risk_metrics_not_object" in flags
         assert "state_features_market_state_field_ambiguous" in flags
         assert "state_features_risk_bias_field_ambiguous" in flags
+        assert "state_features_market_state_alias_applied" in flags
+        assert "state_features_risk_bias_alias_applied" in flags
+        assert snap.state_features.get("source_market_state") == {"trend": "bullish"}
+        assert snap.state_features.get("action_risk_bias") == "bullish"
 
     asyncio.run(_run())
