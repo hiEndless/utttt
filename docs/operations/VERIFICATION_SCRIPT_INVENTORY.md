@@ -43,6 +43,8 @@
   - JSON 摘要 schema：`verification/reports/release_gate_summary_v1.schema.json`
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
+- decision_trace schema 告警聚合：`tools/local/run_agent_decision_trace_schema_report.sh`
+  - 读取 `agent_name=decision_trace_schema_guard` 记录，输出 `verification/reports/agent_decision_trace_schema_guard.latest.json`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
 - feature 文档 source names 守卫：`tools/local/check_feature_docs_source_names_guard.sh`
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`

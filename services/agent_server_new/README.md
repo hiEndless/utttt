@@ -311,6 +311,7 @@ signal_event + active_events + MSL
 - 按关键字过滤：`bash tools/local/tail_agent_events.sh --contains execution_service_unreachable`
 - 按 jq 过滤：`bash tools/local/tail_agent_events.sh --jq '.agent_name == "decision_trace"'`
 - 友好展示（缩进 JSON）：`bash tools/local/tail_agent_events.sh --pretty`
+- 聚合 decision_trace schema 告警：`bash tools/local/run_agent_decision_trace_schema_report.sh`
 
 ## Memory Observability
 
