@@ -7,6 +7,7 @@
 """
 
 from .execution_service_http import HttpExecutionDecisionProvider
+from .event_recorder_jsonl import JsonlEventRecorder
 from .position_context_execution_http import HttpExecutionPositionContextProvider
 
-__all__ = ["HttpExecutionDecisionProvider", "HttpExecutionPositionContextProvider"]
+__all__ = ["HttpExecutionDecisionProvider", "HttpExecutionPositionContextProvider", "JsonlEventRecorder"]

@@ -7,6 +7,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
+from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
@@ -133,6 +134,26 @@ def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypa
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_enables_jsonl_event_recorder(monkeypatch, tmp_path):
+    monkeypatch.setenv("AGENT_EVENT_RECORDER_MODE", "jsonl")
+    monkeypatch.setenv("AGENT_EVENT_RECORDER_JSONL_PATH", str(tmp_path / "agent_events.jsonl"))
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._recorder, JsonlEventRecorder)  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_invalid_event_recorder_mode(monkeypatch):
+    monkeypatch.setenv("AGENT_EVENT_RECORDER_MODE", "stdout")
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when unsupported event recorder mode is used"
+    except RuntimeError as exc:
+        assert "unsupported AGENT_EVENT_RECORDER_MODE=stdout" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_enables_symbol_memory_inmemory(monkeypatch):

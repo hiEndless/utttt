@@ -6,6 +6,7 @@ import os
 from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
+from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
@@ -77,6 +78,12 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
 
     execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
+    event_recorder_mode = str(os.getenv("AGENT_EVENT_RECORDER_MODE", "none") or "none").strip().lower()
+    recorder = None
+    if event_recorder_mode == "jsonl":
+        recorder = JsonlEventRecorder.from_env()
+    elif event_recorder_mode not in {"none", ""}:
+        raise RuntimeError(f"unsupported AGENT_EVENT_RECORDER_MODE={event_recorder_mode}")
     symbol_memory_enabled = _env_bool("AGENT_SYMBOL_MEMORY_ENABLED", "false")
     symbol_memory_backend = str(os.getenv("AGENT_SYMBOL_MEMORY_BACKEND", "inmemory") or "inmemory").strip().lower()
     symbol_memory_adapter = None
@@ -104,7 +111,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         position_context=position_context_provider,
         active_events=active_events_provider,
         execution_decider=HttpExecutionDecisionProvider.from_env() if execution_enabled else None,
-        recorder=None,
+        recorder=recorder,
         symbol_memory_provider=symbol_memory_adapter,
         symbol_memory_recorder=symbol_memory_adapter,
         memory_recent_topk=memory_recent_topk,

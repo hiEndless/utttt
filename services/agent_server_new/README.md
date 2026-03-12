@@ -180,6 +180,10 @@ signal_event + active_events + MSL
   - 每次读取 active events 的目标条数（默认：`20`）
 - `AGENT_ACTIVE_EVENTS_SCAN_FACTOR`
   - stream 扫描倍率（默认：`5`，实际扫描条数约为 `limit * factor`）
+- `AGENT_EVENT_RECORDER_MODE`
+  - 决策记录器模式（`none|jsonl`，默认：`none`）
+- `AGENT_EVENT_RECORDER_JSONL_PATH`
+  - 当记录器模式为 `jsonl` 时的输出路径（默认：`verification/reports/agent_server_new_events.jsonl`）
 - `AGENT_SYMBOL_MEMORY_ENABLED`
   - 是否启用 symbol 级记忆注入（默认：`false`）
 - `AGENT_SYMBOL_MEMORY_BACKEND`
@@ -214,6 +218,7 @@ signal_event + active_events + MSL
   - `active_events` 默认 `RedisActiveEventsProvider`（默认初始化失败直接抛错；仅非生产且 `AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true` 时回退 null provider）
   - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
+  - `event_recorder = JsonlEventRecorder.from_env()`（当 `AGENT_EVENT_RECORDER_MODE=jsonl`）
 
 ### MarketState 语义告警（非阻断）
 
