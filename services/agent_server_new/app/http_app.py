@@ -24,6 +24,14 @@ def _record_check(*, checks: Dict[str, Any], name: str, ok: bool, detail: Dict[s
     checks[name] = {"ok": bool(ok), **dict(detail)}
 
 
+def _ready_status_level(*, errors: list[str], warnings: list[str]) -> str:
+    if errors:
+        return "red"
+    if warnings:
+        return "yellow"
+    return "green"
+
+
 def _check_market_state_healthz(*, timeout_s: float) -> tuple[bool, Dict[str, Any]]:
     base_url = _env_str("AGENT_MARKET_STATE_BASE_URL", "http://127.0.0.1:8300").rstrip("/")
     url = f"{base_url}/internal/market-state/healthz"
@@ -214,8 +222,10 @@ def create_router() -> APIRouter:
         ok = len(errors) == 0
         if not ok:
             response.status_code = 503
+        status_level = _ready_status_level(errors=errors, warnings=warnings)
         return {
             "ok": ok,
+            "status_level": status_level,
             "service": "agent_server_new",
             "runtime_profile": runtime_profile,
             "checks": checks,

@@ -9,6 +9,7 @@ AGENT_NAME_FILTER=""
 RECORD_TYPE_FILTER=""
 CONTAINS_FILTER=""
 JQ_FILTER=""
+PRETTY_MODE=0
 FOLLOW_MODE=1
 
 print_help() {
@@ -22,6 +23,7 @@ print_help() {
   --record-type <type>    仅显示指定 record_type（market_context|agent_output）
   --contains <keyword>    仅显示包含关键字的 JSON 行（子串匹配）
   --jq <expr>             使用 jq 表达式进一步过滤（例如: .agent_name=="decision_trace"）
+  --pretty                以易读格式输出（默认输出压缩 JSON 行）
   --lines <n>             tail 行数（默认读取 TAIL_LINES 或 100）
   --no-follow             只输出当前内容，不持续跟踪
   --help                  显示帮助
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       LINES="${2:-100}"
       shift 2
       ;;
+    --pretty)
+      PRETTY_MODE=1
+      shift
+      ;;
     --no-follow)
       FOLLOW_MODE=0
       shift
@@ -107,7 +113,7 @@ if [[ "$FOLLOW_MODE" == "1" ]]; then
   TAIL_ARGS+=(-f)
 fi
 
-if [[ -z "$EVENT_ID_FILTER" && -z "$AGENT_NAME_FILTER" && -z "$RECORD_TYPE_FILTER" && -z "$CONTAINS_FILTER" && -z "$JQ_FILTER" ]]; then
+if [[ -z "$EVENT_ID_FILTER" && -z "$AGENT_NAME_FILTER" && -z "$RECORD_TYPE_FILTER" && -z "$CONTAINS_FILTER" && -z "$JQ_FILTER" && "$PRETTY_MODE" == "0" ]]; then
   exec tail "${TAIL_ARGS[@]}" "$LATEST"
 fi
 
@@ -137,7 +143,22 @@ for line in sys.stdin:
         continue
     if record_type and str(obj.get("record_type") or "") != record_type:
         continue
-    print(raw, flush=True)
+    print(json.dumps(obj, ensure_ascii=False), flush=True)
+'
+
+PRETTY_CMD='
+import json
+import sys
+
+for line in sys.stdin:
+    raw = line.rstrip("\n")
+    if not raw:
+        continue
+    try:
+        obj = json.loads(raw)
+    except Exception:
+        continue
+    print(json.dumps(obj, ensure_ascii=False, indent=2), flush=True)
 '
 
 if [[ -n "$JQ_FILTER" ]]; then
@@ -145,8 +166,19 @@ if [[ -n "$JQ_FILTER" ]]; then
     echo "[失败] 未安装 jq，无法使用 --jq 过滤。"
     exit 1
   fi
+  if [[ "$PRETTY_MODE" == "1" ]]; then
+    tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
+    python3 -c "$FILTERED_CMD" | jq -c "select($JQ_FILTER)" | python3 -c "$PRETTY_CMD"
+    exit $?
+  fi
   tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
   python3 -c "$FILTERED_CMD" | jq -c "select($JQ_FILTER)"
+  exit $?
+fi
+
+if [[ "$PRETTY_MODE" == "1" ]]; then
+  tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
+  python3 -c "$FILTERED_CMD" | python3 -c "$PRETTY_CMD"
   exit $?
 fi
 

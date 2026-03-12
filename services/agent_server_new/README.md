@@ -255,6 +255,7 @@ signal_event + active_events + MSL
 - 版本信息：`GET /internal/agent/version`（`contract_version/runtime_version/runtime_profile`）
 - 就绪检查：`GET /internal/agent/readyz`
   - 当 workflow bootstrap 失败时返回 `503`
+  - 响应包含 `status_level`：`green`（无告警）/`yellow`（仅 warning）/`red`（存在 error）
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
   - 可选上游检查（默认开启 market_state / redis）：
     - `AGENT_READY_CHECK_MARKET_STATE=true|false`
@@ -283,6 +284,7 @@ signal_event + active_events + MSL
 - 按字段过滤：`bash tools/local/tail_agent_events.sh --event-id evt-001 --record-type agent_output --agent-name decision_trace`
 - 按关键字过滤：`bash tools/local/tail_agent_events.sh --contains execution_service_unreachable`
 - 按 jq 过滤：`bash tools/local/tail_agent_events.sh --jq '.agent_name == "decision_trace"'`
+- 友好展示（缩进 JSON）：`bash tools/local/tail_agent_events.sh --pretty`
 
 ## Memory Observability
 

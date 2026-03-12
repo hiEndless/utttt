@@ -41,6 +41,7 @@ def test_http_readyz_returns_503_when_bootstrap_invalid(monkeypatch) -> None:  #
     assert resp.status_code == 503
     body = resp.json()
     assert body["ok"] is False
+    assert body["status_level"] == "red"
     assert "workflow_bootstrap_failed" in list(body.get("errors") or [])
 
 
@@ -59,6 +60,7 @@ def test_http_readyz_upstream_warning_in_non_strict_mode(monkeypatch) -> None:  
     assert resp.status_code == 200
     body = resp.json()
     assert body["ok"] is True
+    assert body["status_level"] == "yellow"
     assert "market_state_unreachable" in list(body.get("warnings") or [])
     assert "market_state_unreachable" not in list(body.get("errors") or [])
 
@@ -78,7 +80,26 @@ def test_http_readyz_upstream_error_in_strict_mode(monkeypatch) -> None:  # noqa
     assert resp.status_code == 503
     body = resp.json()
     assert body["ok"] is False
+    assert body["status_level"] == "red"
     assert "market_state_unreachable" in list(body.get("errors") or [])
+
+
+def test_http_readyz_green_when_checks_pass(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EXECUTION_SERVICE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "false")
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert body["status_level"] == "green"
 
 
 def test_http_readyz_recorder_warning_in_non_strict_mode(monkeypatch) -> None:  # noqa: ANN001
