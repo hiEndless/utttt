@@ -1,6 +1,6 @@
 # Verify Quick De-dup Matrix
 
-更新时间：2026-03-12
+更新时间：2026-03-13
 
 ## 1. 目标
 
@@ -36,6 +36,11 @@
 - `contract bundle regression tests` 在外层执行，属于 docs bundle 子步骤，不在 quick suite 内重复执行。
 - `verify_quick` 外层在 docs bundle 失败时会直接打印排障提示：
   标准排障命令：`bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`。
+- CI 红线：禁止在 CI 环境使用 quick skip 开关
+  - 若 `CI=true` 或 `GITHUB_ACTIONS=true`，并设置
+    `VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1` 或
+    `VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1`，
+    `tools/ci/verify_quick.sh` 会直接失败（exit `2`）。
 
 ## 4. 调整原则
 
