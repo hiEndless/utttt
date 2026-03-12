@@ -56,29 +56,17 @@ def create_app() -> FastAPI:
 
     submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
     sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "exchange") or "exchange").strip().lower()
-    allow_mock_sink = _is_true_env("EXECUTION_ALLOW_MOCK_SINK", "false")
     exchange_dry_run = _is_true_env("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
 
     if runtime_profile in {"prod", "production"}:
         if state_provider_mode != "redis":
             raise RuntimeError("production profile requires EXECUTION_STATE_PROVIDER_MODE=redis")
-        if submit_enabled and sink_mode == "mock":
-            raise RuntimeError("production profile forbids EXECUTION_SINK_MODE=mock")
         if submit_enabled and sink_mode == "exchange" and exchange_dry_run:
             raise RuntimeError("production profile forbids EXECUTION_SINK_EXCHANGE_DRY_RUN=true")
 
     execution_sink = None
     if submit_enabled:
-        if sink_mode == "mock":
-            if not allow_mock_sink:
-                raise RuntimeError("mock sink requires EXECUTION_ALLOW_MOCK_SINK=true")
-            from services.execution_service.adapters.mock_execution_sink import MockExecutionSink
-
-            execution_sink = MockExecutionSink(
-                venue=str(os.getenv("EXECUTION_SINK_MOCK_VENUE", "mock_exchange") or "mock_exchange").strip()
-            )
-            logger.info("execution_service 启用执行下沉，mode=mock")
-        elif sink_mode == "exchange":
+        if sink_mode == "exchange":
             execution_sink = ExchangeExecutionSink(
                 venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip(),
                 dry_run=exchange_dry_run,
@@ -99,8 +87,7 @@ def create_app() -> FastAPI:
                 getattr(execution_sink, "dry_run", True),
             )
         else:
-            logger.warning("execution_service submit 已启用，但未识别 sink_mode=%s，回退禁用 submit", sink_mode)
-            submit_enabled = False
+            raise RuntimeError(f"unsupported EXECUTION_SINK_MODE={sink_mode}")
 
     idempotency_enabled = str(os.getenv("EXECUTION_IDEMPOTENCY_ENABLED", "true") or "true").strip().lower() in {
         "1",

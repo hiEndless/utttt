@@ -50,8 +50,7 @@ def test_create_app_prod_reject_unsupported_provider_mode(monkeypatch) -> None: 
         assert "unsupported EXECUTION_STATE_PROVIDER_MODE=stub" in str(exc)
 
 
-def test_create_app_prod_forbid_mock_sink(monkeypatch) -> None:  # noqa: ANN001
-    monkeypatch.setenv("EXECUTION_RUNTIME_PROFILE", "prod")
+def test_create_app_reject_unsupported_sink_mode(monkeypatch) -> None:  # noqa: ANN001
     monkeypatch.setenv("EXECUTION_STATE_PROVIDER_MODE", "redis")
     monkeypatch.setenv("EXECUTION_REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setattr(app_module, "create_redis_client_from_env", lambda redis_url=None: _FakeRedis())
@@ -59,20 +58,6 @@ def test_create_app_prod_forbid_mock_sink(monkeypatch) -> None:  # noqa: ANN001
     monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
     try:
         app_module.create_app()
-        assert False, "expected RuntimeError in prod when sink mode is mock"
+        assert False, "expected RuntimeError when sink mode is unsupported"
     except RuntimeError as exc:
-        assert "EXECUTION_SINK_MODE=mock" in str(exc)
-
-
-def test_create_app_dev_mock_sink_requires_explicit_allow(monkeypatch) -> None:  # noqa: ANN001
-    monkeypatch.setenv("EXECUTION_STATE_PROVIDER_MODE", "redis")
-    monkeypatch.setenv("EXECUTION_REDIS_URL", "redis://localhost:6379/0")
-    monkeypatch.setattr(app_module, "create_redis_client_from_env", lambda redis_url=None: _FakeRedis())
-    monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
-    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
-    monkeypatch.delenv("EXECUTION_ALLOW_MOCK_SINK", raising=False)
-    try:
-        app_module.create_app()
-        assert False, "expected RuntimeError when mock sink is not explicitly enabled"
-    except RuntimeError as exc:
-        assert "EXECUTION_ALLOW_MOCK_SINK=true" in str(exc)
+        assert "unsupported EXECUTION_SINK_MODE=mock" in str(exc)

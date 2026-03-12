@@ -145,7 +145,6 @@ execution_service/
 - `EXECUTION_RUNTIME_PROFILE=dev|prod`（默认 `dev`）
   - `prod` 下门禁：
     - 必须 `EXECUTION_STATE_PROVIDER_MODE=redis`（当前仅支持该值）
-    - 若启用 `EXECUTION_SUBMIT_ENABLED=true`，禁止 `EXECUTION_SINK_MODE=mock`
     - 若 `EXECUTION_SINK_MODE=exchange`，禁止 `EXECUTION_SINK_EXCHANGE_DRY_RUN=true`
 - 当 `redis` 模式启用时：
   - `EXECUTION_REDIS_URL`（默认 `redis://127.0.0.1:6379/0`）
@@ -154,9 +153,7 @@ execution_service/
   - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
-  - `EXECUTION_SINK_MODE=mock|exchange`（默认 `exchange`）
-  - `EXECUTION_ALLOW_MOCK_SINK=true|false`（默认 `false`，仅测试/联调用）
-  - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
+  - `EXECUTION_SINK_MODE=exchange`（默认 `exchange`）
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SINK_EXCHANGE_DRY_RUN=true|false`（默认 `true`，建议联调阶段保持开启）
   - `EXECUTION_SINK_EXCHANGE_API_BASE_URL=https://api.binance.com`

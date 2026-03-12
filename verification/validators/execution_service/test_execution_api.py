@@ -335,10 +335,10 @@ def test_reconcile_sink_not_configured() -> None:
     assert response.json()["detail"] == "execution_sink_not_configured"
 
 
-def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reconcile_exchange_dry_run_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
-    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
-    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "exchange")
+    monkeypatch.setenv("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
     client = TestClient(create_app())
     response = client.post(
         "/internal/execution/reconcile",
@@ -351,16 +351,16 @@ def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["mode"] == "mock"
+    assert data["mode"] == "exchange"
     assert data["order_id"] == "mock-order-001"
-    assert data["status"] == "filled"
+    assert data["status"] == "submitted"
     assert data["retry_meta"]["attempts"] == 1
 
 
 def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
-    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
-    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "exchange")
+    monkeypatch.setenv("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
     client = TestClient(create_app())
 
     decide_resp = client.post(
@@ -397,23 +397,23 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
     )
     assert reconcile_resp.status_code == 200
     reconcile_data = reconcile_resp.json()
-    assert reconcile_data["status"] == "filled"
+    assert reconcile_data["status"] == "submitted"
     assert reconcile_data["account_id"] == "main"
 
     debug_resp = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-reconcile-001")
     assert debug_resp.status_code == 200
     debug_data = debug_resp.json()
     assert isinstance(debug_data.get("decision_state"), dict)
-    assert debug_data["decision_state"]["status"] == "filled"
+    assert debug_data["decision_state"]["status"] == "submitted"
     assert debug_data["decision_state"]["account_id"] == "main"
-    assert debug_data["decision_state"]["last_transition"] == "filled"
+    assert debug_data["decision_state"]["last_transition"] == "submitted"
     assert debug_data["decision_state"]["reconcile_order_id"] == order_id
 
 
 def test_reconcile_order_id_idempotency(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
-    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
-    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "exchange")
+    monkeypatch.setenv("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
     client = TestClient(create_app())
     payload = {
         "order_id": "mock-order-idem-001",
