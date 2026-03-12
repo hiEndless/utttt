@@ -50,7 +50,7 @@ class ProviderBundle:
 
 
 def build_noop_provider_bundle() -> ProviderBundle:
-    # 纯占位模式：用于本地快速启动、契约测试或极端故障兜底。
+    # 纯 noop 模式：用于本地快速启动、契约测试或极端故障兜底。
     return ProviderBundle(
         orderbook_provider=NoopOrderbookProvider(),
         open_interest_provider=NoopOpenInterestProvider(),

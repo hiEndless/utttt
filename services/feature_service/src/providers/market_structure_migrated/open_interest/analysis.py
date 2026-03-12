@@ -315,7 +315,7 @@ def analyze_open_interest_hist(
         )
         human_tags = _humanize_tags(str(interval), base_tags) if allow_tags else []
         if allow_tags and not human_tags:
-            # 中期 OI 的变化往往更“慢”，在未命中细分解释标签时，至少输出一个“有变化但不清晰”的占位标签，避免下游看到空推断
+            # 中期 OI 的变化往往更“慢”，未命中细分解释标签时输出兜底标签，避免下游看到空推断
             human_tags = [f"{_dominant_group(str(interval))}_oi_change_detected"]
         risk_flags = sorted(set([r for r in (base_risks if allow_tags else []) if r]))
         participant_inference = _participant_inference(str(interval), human_tags, float(delta_oi_pct), str(velocity)) if allow_tags else None
