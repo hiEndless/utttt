@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from event_center_new.ec.pipeline.replay_cli import format_report, run_replay_report
+from services.event_center_new.ec.pipeline.replay_cli import format_report, run_replay_report
 
 
 def _build_parser() -> argparse.ArgumentParser:

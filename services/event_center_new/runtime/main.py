@@ -6,20 +6,20 @@ import os
 import time
 from typing import Callable
 
-from event_center_new.ec.context.builder import DefaultContextBuilder
-from event_center_new.ec.contracts import EventEnvelope, EventSource
-from event_center_new.ec.correlation.rules import CorrelationEngine, SimpleClusterRule
-from event_center_new.ec.pipeline.defaults import (
+from services.event_center_new.ec.context.builder import DefaultContextBuilder
+from services.event_center_new.ec.contracts import EventEnvelope, EventSource
+from services.event_center_new.ec.correlation.rules import CorrelationEngine, SimpleClusterRule
+from services.event_center_new.ec.pipeline.defaults import (
     DeterministicFinalGate,
     HeuristicL0Processor,
     HeuristicL1Aggregator,
     PassThroughNormalizer,
     PayloadEvidenceExtractor,
 )
-from event_center_new.ec.pipeline.runner import EventPipelineRunner
-from event_center_new.ec.sources.memory import InMemoryEventSource
-from event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
-from event_center_new.ec.storage.redis import RedisLayerStore, RedisLayerStoreConfig
+from services.event_center_new.ec.pipeline.runner import EventPipelineRunner
+from services.event_center_new.ec.sources.memory import InMemoryEventSource
+from services.event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
+from services.event_center_new.ec.storage.redis import RedisLayerStore, RedisLayerStoreConfig
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 logger = logging.getLogger("event_center_new")
