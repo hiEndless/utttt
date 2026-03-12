@@ -18,6 +18,7 @@ STEPS=(
   "check_structure|bash tools/local/check_structure.sh"
   "check_script_compat_whitelist|bash tools/local/check_script_compat_whitelist.sh"
   "check_docs_contracts_bundle|bash tools/local/check_docs_contracts_bundle.sh"
+  "check_source_semantics_guard|bash tools/local/check_source_semantics_guard.sh"
   "verify_all_quick|bash tools/ci/verify_all.sh --quick"
   "sync_contract_indexes|bash tools/local/sync_contract_indexes.sh"
   "audit_semantics|bash tools/local/audit_semantics.sh"
@@ -100,4 +101,3 @@ EOF
 
 echo "[ok] wrote ${REPORT_JSON}"
 echo "[ok] wrote ${REPORT_MD}"
-

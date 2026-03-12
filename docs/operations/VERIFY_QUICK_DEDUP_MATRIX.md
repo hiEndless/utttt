@@ -18,6 +18,7 @@
 | `check_structure.sh` | Y | N | 外层基础结构守卫 |
 | `check_script_compat_whitelist.sh` | Y | N | 外层基础守卫 |
 | `check_docs_contracts_bundle.sh` | Y | N | 外层文档契约聚合守卫（含 `test_contract_change_bundle_guard.py`） |
+| `check_source_semantics_guard.sh` | Y | N | 外层显式来源语义门禁（为日志可见性保留） |
 | `check_release_baseline_alignment.sh` | Y | N | 外层发布基线一致性守卫（RELEASE_LATEST/tag/HEAD） |
 | `check_prod_provider_modes_guard.sh` | Y | N | 外层 prod provider/sink 门禁守卫（agent+execution） |
 | `check_contract_docs_index_guard.sh` | N | Y | 通过 `quick` suite 的 `contract_docs_index` 执行 |
@@ -29,7 +30,8 @@
 | `check_semantic_critical_warning_guard.sh` | Y | N | 外层语义红线守卫 |
 
 结论：
-- 当前 `verify_quick` 与 `verify_all --quick` 无显式重复守卫调用（按脚本入口维度）。
+- 当前 `verify_quick` 与 `verify_all --quick` 无跨层重复守卫调用（按脚本入口维度）。
+- `check_source_semantics_guard.sh` 在 `verify_quick` 外层与 `check_docs_contracts_bundle.sh` 内层存在有意重复执行，目的为提升 CI 日志可见性。
 - 文档契约类守卫由外层 bundle 统一管理；contract index 与链路契约由内层 quick suite 负责。
 - `contract bundle regression tests` 在外层执行，属于 docs bundle 子步骤，不在 quick suite 内重复执行。
 - `verify_quick` 外层在 docs bundle 失败时会直接打印排障提示：

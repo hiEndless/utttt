@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[docs 1/8] semantic policy guard"
+echo "[docs 1/9] semantic policy guard"
 bash tools/local/check_semantic_policy_guard.sh
 
 echo "[docs 2/9] source semantics guard"

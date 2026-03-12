@@ -10,6 +10,9 @@ if ! bash tools/local/check_docs_contracts_bundle.sh; then
   bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions || true
   exit 1
 fi
+# 显式执行来源语义守卫，保证 quick 日志可直接展示该门禁状态。
+# 说明：docs/contracts bundle 内也会执行同一守卫，这里属于“可见性优先”的有意重复。
+bash tools/local/check_source_semantics_guard.sh
 bash tools/local/check_release_baseline_alignment.sh
 bash tools/local/check_prod_provider_modes_guard.sh
 bash tools/ci/verify_all.sh --quick
