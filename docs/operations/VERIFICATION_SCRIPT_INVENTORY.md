@@ -12,6 +12,7 @@
 - 全量守卫：`tools/ci/new_arch_guards_full.sh`
   - 显式包含来源语义门禁：`check_source_semantics_guard.sh`
 - 快速验证：`tools/ci/verify_quick.sh`
+  - 帮助：`bash tools/ci/verify_quick.sh --help`
 - 回归验证：`tools/ci/verify_regression.sh`
 - 夜间验证：`tools/ci/verify_nightly.sh`
 - 本地 quick 代理入口：`tools/local/verify_quick.sh`（代理到 `tools/ci/verify_quick.sh`）

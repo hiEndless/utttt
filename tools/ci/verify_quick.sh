@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'USAGE'
+Usage:
+  bash tools/ci/verify_quick.sh
+
+Description:
+  CI quick 验证入口。执行结构守卫、docs/contracts 聚合守卫、链路 quick suite 与语义审计后处理。
+
+Environment Switches (local debug only):
+  VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1
+  VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1
+
+CI Hard Constraints:
+  当 CI=true 或 GITHUB_ACTIONS=true 时，禁止启用上述 skip 开关；若启用会直接失败（exit 2）。
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
+  exit 2  CI 环境下启用了禁止的 skip 开关
+USAGE
+  exit 0
+fi
+
+if (($# > 0)); then
+  echo "[failed] unsupported args: $*"
+  echo "hint: run 'bash tools/ci/verify_quick.sh --help'"
+  exit 1
+fi
+
 # CI 强约束：禁止在 CI 环境通过 skip 开关绕过关键守卫。
 if [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   if [[ "${VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT:-0}" == "1" ]]; then
