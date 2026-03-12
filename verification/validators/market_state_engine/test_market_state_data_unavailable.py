@@ -68,13 +68,41 @@ class _ExternalMixedRawProvider:
         }
 
 
+class _AlternativeSourceRawProvider:
+    async def get_raw_structure(self, exchange: str, symbol: str):
+        return {
+            "symbol": symbol,
+            "horizons": {},
+            "orderbook": {},
+            "open_interest": {},
+            "behavioral": {},
+            "alternative_sources": {
+                "news": {
+                    "source_type": "news",
+                    "available": True,
+                    "provider_state": "primary",
+                    "as_of_ms": 1700000000000,
+                    "features": {"headline_score": 0.7},
+                }
+            },
+        }
+
+
 class _CapturingEngine:
     def __init__(self) -> None:
         self.last_market_structure = None
 
     def build(self, exchange: str, symbol: str, market_structure: dict):
         self.last_market_structure = dict(market_structure or {})
-        return _FakeMsl(), _FakeFeatures()
+        alt = dict((market_structure or {}).get("alternative_sources") or {})
+
+        class _FeaturesWithAltEvidence:
+            anomalies = {"flags": []}
+
+            def to_dict(self_nonlocal):  # noqa: ANN001
+                return {"status": "ok", "evidence": {"alternative_sources": dict(alt)}}
+
+        return _FakeMsl(), _FeaturesWithAltEvidence()
 
     def get_last_msl_meta(self):
         return {}
@@ -244,6 +272,27 @@ def test_market_state_service_ignores_external_event_fields():
 
         ignored = ((out.get("state_features") or {}).get("evidence") or {}).get("ignored_external_input_keys") or []
         assert "news" in ignored and "social" in ignored and "onchain" in ignored
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_keeps_alternative_sources_in_evidence():
+    async def _run():
+        service = MarketStateService(raw_structure_provider=_AlternativeSourceRawProvider())
+        capturing_engine = _CapturingEngine()
+        service._engine = capturing_engine
+
+        out = await service.get_market_state("binance", "ETHUSDT")
+        assert out["status"] == "ok"
+        assert "external_event_input_ignored" not in list(out.get("anomaly_flags") or [])
+        assert isinstance(capturing_engine.last_market_structure, dict)
+        assert "alternative_sources" in capturing_engine.last_market_structure
+
+        alt = ((out.get("state_features") or {}).get("evidence") or {}).get("alternative_sources") or {}
+        assert alt.get("news", {}).get("source_type") == "news"
+        assert alt.get("news", {}).get("provider_state") == "primary"
+        assert alt.get("social", {}).get("source_type") == "social"
+        assert alt.get("onchain", {}).get("source_type") == "onchain"
 
     asyncio.run(_run())
 

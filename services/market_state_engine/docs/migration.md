@@ -40,6 +40,7 @@
 
 - 上游 `feature_service` 返回 `503 feature_data_unavailable` 时
 - 本服务返回 `200` + `status=data_unavailable`，避免下游误判
+- 上游若提供 `alternative_sources`（news/social/onchain），状态层会标准化后透传到 `state_features.evidence`，当前阶段不纳入主推断链路。
 
 ## 下一阶段
 

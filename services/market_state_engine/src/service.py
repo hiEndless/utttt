@@ -30,6 +30,32 @@ _ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
 logger = logging.getLogger("market_state_engine")
 
 
+def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[str, Any]:
+    raw = payload if isinstance(payload, dict) else {}
+    features = raw.get("features")
+    if not isinstance(features, dict):
+        features = {}
+    available = bool(raw.get("available")) if "available" in raw else bool(features)
+    provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
+    return {
+        "source_type": source_type,
+        "available": available,
+        "provider_state": provider_state,
+        "as_of_ms": raw.get("as_of_ms"),
+        "features": dict(features),
+    }
+
+
+def _extract_alternative_sources(raw_market_structure: Dict[str, Any]) -> Dict[str, Any]:
+    alt = raw_market_structure.get("alternative_sources")
+    alt_obj = alt if isinstance(alt, dict) else {}
+    return {
+        "news": _normalize_alternative_source_entry("news", alt_obj.get("news")),
+        "social": _normalize_alternative_source_entry("social", alt_obj.get("social")),
+        "onchain": _normalize_alternative_source_entry("onchain", alt_obj.get("onchain")),
+    }
+
+
 def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tuple[Dict[str, Any], list[str]]:
     """仅保留结构状态层输入；忽略外部事件域字段。"""
     cleaned = dict(raw_market_structure or {})
@@ -39,6 +65,7 @@ def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tu
         if key_normalized in _EXTERNAL_EVENT_INPUT_KEYS:
             dropped_keys.append(str(key))
             cleaned.pop(key, None)
+    cleaned["alternative_sources"] = _extract_alternative_sources(raw_market_structure)
     return cleaned, sorted(set([k for k in dropped_keys if k]))
 
 

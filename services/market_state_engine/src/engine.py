@@ -192,6 +192,7 @@ class MarketStateEngine:
             "pre_decision_short_term_structural_risks": dict(st_risks),
             "pre_decision_mid_term_structural_risks": dict(_safe_dict(mt.get("structural_risks"))),
             "pre_decision_long_term_structural_context": dict(_safe_dict(lt.get("structural_context"))),
+            "alternative_sources": dict(_safe_dict(market_structure.get("alternative_sources"))),
         }
 
         return MarketStateFeatures(
@@ -249,6 +250,7 @@ class MarketStateEngine:
 
         ob = _safe_dict(features.orderbook)
         oi = _safe_dict(features.open_interest)
+        alternative_sources = _safe_dict(_safe_dict(features.derived).get("alternative_sources"))
 
         return {
             "price_direction_mid": _safe_text(mid_tm.get("price_direction")),
@@ -262,6 +264,7 @@ class MarketStateEngine:
             "oi_velocity": _safe_text(oi.get("oi_velocity")),
             "oi_acceleration": _safe_text(oi.get("oi_acceleration")),
             "delta_oi_pct": float(oi.get("delta_oi_pct") or 0.0),
+            "alternative_sources": dict(alternative_sources),
             "anomaly_flags": [str(x) for x in _safe_list(_safe_dict(anomalies).get("flags")) if x],
         }
 
