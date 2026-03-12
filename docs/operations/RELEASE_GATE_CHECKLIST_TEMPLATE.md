@@ -37,3 +37,23 @@
 2. `bash tools/local/run_agent_readyz_report.sh`
 3. `bash tools/local/aggregate_and_check.sh --with-agent-readyz --skip-thresholds`
 4. 复跑对应 CI 入口（quick/regression/nightly）
+
+## 4. 常见触发最小复现（release gate schema）
+
+场景：修改 `verification/reports/release_gate_summary_v1.schema.json` 后，`contract bundle` 提示需要补齐四件套。
+
+最小复现命令：
+
+```bash
+git checkout -b tmp/release-gate-schema-repro
+echo "// repro" >> verification/reports/release_gate_summary_v1.schema.json
+bash tools/local/check_contract_change_bundle_guard.sh
+```
+
+预期：守卫提示 schema 变更已触发，需要同步四件套。
+
+修复步骤（最小）：
+1. 补 `docs/CONTRACT_INDEX.md`（索引入口）
+2. 补相关契约文档（`verification/reports/README.md`、`docs/contracts/CONTRACTS_QUICK_REF.md`）
+3. 补运行说明（本模板或相关 release/runbook 文档）
+4. 补守卫或测试（如 `verification/text/test_release_gate_summary_schema.py`）
