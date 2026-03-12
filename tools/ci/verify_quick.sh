@@ -3,7 +3,11 @@ set -euo pipefail
 
 bash tools/local/check_structure.sh
 bash tools/local/check_script_compat_whitelist.sh
-bash tools/local/check_docs_contracts_bundle.sh
+if ! bash tools/local/check_docs_contracts_bundle.sh; then
+  echo "[hint] docs/contracts bundle 失败，建议执行："
+  echo "       bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions"
+  exit 1
+fi
 bash tools/ci/verify_all.sh --quick
 bash tools/local/sync_contract_indexes.sh
 bash tools/local/audit_semantics.sh
