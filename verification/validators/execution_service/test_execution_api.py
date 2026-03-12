@@ -177,6 +177,30 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     assert body["ts_ms"] == body["ts"]
 
 
+def test_decide_accepts_confidence_only_and_counts_migration_metric() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-metrics-confidence-only-001",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert response.status_code == 200
+    body = client.get("/internal/execution/debug/confidence-metrics").json()
+    metrics = dict(body.get("confidence_migration_metrics") or {})
+    assert metrics["decide_requests_total"] == 1
+    assert metrics["confidence_only_requests"] == 1
+    assert metrics["decision_confidence_requests"] == 0
+    assert metrics["confidence_alias_mismatch_rejections"] == 0
+
+
 def test_confidence_migration_metrics_reset_disabled_by_default() -> None:
     client = TestClient(create_app())
     resp = client.post("/internal/execution/debug/confidence-metrics/reset")

@@ -21,11 +21,12 @@
 1. 执行裁决主链路稳定：`POST /internal/execution/decide`
 2. 回执对账链路可用：`POST /internal/execution/reconcile`
 3. `decision_confidence` 已为主字段，`confidence` 仅保留兼容镜像
-4. `order_result`/`reconcile_result` 已收敛为白名单结构
-5. 共享 schema 已拆分并通过 `$ref` 复用（confidence/enums/io payload 等）
-6. `schema_mapping_version` 与 `/version`、`CONTRACT_INDEX` 已守卫对齐
-7. `order_result/reconcile_result` 已补充 `*_status` 与 `*_status_source` 语义字段，降低状态语义漂移风险
-8. `decision_state` 已补充 `state_source`（语义来源）字段，保留 `source` 兼容标识
+4. 运行时兼容：当仅提供 `confidence` 时会自动回填 `decision_confidence`，并通过迁移指标持续观测旧字段流量
+5. `order_result`/`reconcile_result` 已收敛为白名单结构
+6. 共享 schema 已拆分并通过 `$ref` 复用（confidence/enums/io payload 等）
+7. `schema_mapping_version` 与 `/version`、`CONTRACT_INDEX` 已守卫对齐
+8. `order_result/reconcile_result` 已补充 `*_status` 与 `*_status_source` 语义字段，降低状态语义漂移风险
+9. `decision_state` 已补充 `state_source`（语义来源）字段，保留 `source` 兼容标识
 
 ## 文档维护规则
 

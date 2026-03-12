@@ -80,6 +80,23 @@ def test_decision_intent_accepts_decision_confidence_alias() -> None:
     assert data["decision_confidence"] == {"level": "high", "score": 0.88}
 
 
+def test_decision_intent_accepts_legacy_confidence_only_with_autofill() -> None:
+    payload = {
+        "decision_id": "dec-004b",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "short",
+        "confidence": {"level": "high", "score": 0.88},
+        "cross_horizon_policy": {},
+        "risk_hints": {},
+    }
+    decision = DecisionIntent.from_dict(payload)
+    data = decision.to_dict()
+    assert data["confidence"] == {"level": "high", "score": 0.88}
+    assert data["decision_confidence"] == {"level": "high", "score": 0.88}
+
+
 def test_decision_intent_rejects_confidence_mismatch() -> None:
     payload = {
         "decision_id": "dec-005",

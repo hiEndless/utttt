@@ -356,7 +356,7 @@
 
 指标说明：
 - `decide_requests_total`: `/decide` 请求总数（进程内计数）。
-- `confidence_only_requests`: 仅提供 `confidence`（未提供 `decision_confidence`）的请求数。
+- `confidence_only_requests`: 仅提供 `confidence`（未提供 `decision_confidence`）的请求数；运行时会自动回填到 canonical 字段 `decision_confidence` 后继续处理。
 - `decision_confidence_requests`: 提供 `decision_confidence` 的请求数（可同时带 `confidence`）。
 - `confidence_alias_mismatch_rejections`: 因双字段不一致被拒绝（400）的次数。
 - 当前为进程内内存指标，重启后清零；用于迁移阶段联调观察，不作为长期计费/审计指标。

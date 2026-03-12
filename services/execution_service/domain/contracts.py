@@ -69,10 +69,13 @@ class DecisionIntent:
         if decision_confidence_raw is not None and not isinstance(decision_confidence_raw, Mapping):
             raise ValueError("decision_confidence 必须是对象")
 
-        if decision_confidence_raw is None:
-            raise ValueError("decision_confidence 必须是对象")
-        confidence = DecisionConfidence.from_dict(decision_confidence_raw)
-        if confidence_raw is not None:
+        if decision_confidence_raw is None and confidence_raw is None:
+            raise ValueError("decision_confidence 或 confidence 必须是对象")
+        decision_conf_for_parse = decision_confidence_raw if decision_confidence_raw is not None else confidence_raw
+        if decision_conf_for_parse is None:
+            raise ValueError("decision_confidence 或 confidence 必须是对象")
+        confidence = DecisionConfidence.from_dict(decision_conf_for_parse)
+        if confidence_raw is not None and decision_confidence_raw is not None:
             legacy_conf = DecisionConfidence.from_dict(confidence_raw)
             if legacy_conf.level != confidence.level or abs(float(legacy_conf.score) - float(confidence.score)) > 1e-9:
                 raise ValueError("confidence 与 decision_confidence 不一致")
