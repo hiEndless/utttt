@@ -72,6 +72,7 @@ EventContextSnapshot 是“给下游使用的事件压缩快照”，它由 Evid
 - `empty`
 
 跨服务统一语义策略入口：`contracts/semantic_policies/source_semantics.yaml`（`alternative_sources_summary.provider_state_policy`）。
+运行时读取入口：`contracts/semantic_policies/source_semantics.py`（避免服务内硬编码枚举）。
 
 ---
 

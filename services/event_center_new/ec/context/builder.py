@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from contracts.semantic_policies.source_semantics import (
+    get_event_center_empty_provider_state,
+    get_event_center_present_provider_state,
+)
 from ..contracts import EventContextSnapshot, Evidence
 from .buckets import BucketTopKPolicy, bucket_by_horizon, select_top_k_by_bucket
 from ..prioritization.scorer import PriorityScorer
@@ -123,6 +127,8 @@ def _detect_alternative_source(ev: Evidence) -> str | None:
 
 def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, object]:
     source_names = ("news", "social", "onchain")
+    present_provider_state = get_event_center_present_provider_state()
+    empty_provider_state = get_event_center_empty_provider_state()
     feature_keys: dict[str, set[str]] = {name: set() for name in source_names}
     counts: dict[str, int] = {name: 0 for name in source_names}
     data_sources: dict[str, str] = {name: f"event_center_new.{name}" for name in source_names}
@@ -156,7 +162,7 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
 
     available_sources = [name for name in source_names if counts[name] > 0]
     unavailable_sources = [name for name in source_names if counts[name] == 0]
-    provider_states = {name: ("event_evidence_present" if counts[name] > 0 else "empty") for name in source_names}
+    provider_states = {name: (present_provider_state if counts[name] > 0 else empty_provider_state) for name in source_names}
 
     return {
         "available_sources": available_sources,

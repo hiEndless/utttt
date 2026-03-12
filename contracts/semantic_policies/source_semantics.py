@@ -50,3 +50,31 @@ def get_alternative_source_unavailable_provider_states() -> Set[str]:
     provider_policy = _safe_dict(item.get("provider_state_policy"))
     unavailable = {str(x).strip().lower() for x in list(provider_policy.get("unavailable_states") or []) if str(x).strip()}
     return unavailable or set(_DEFAULT_UNAVAILABLE_PROVIDER_STATES)
+
+
+def get_event_center_present_provider_state() -> str:
+    item = _load_policy()
+    provider_policy = _safe_dict(item.get("provider_state_policy"))
+    enums = _safe_dict(provider_policy.get("enums"))
+    event_center_values = [str(x).strip().lower() for x in list(enums.get("event_center") or []) if str(x).strip()]
+    if "event_evidence_present" in event_center_values:
+        return "event_evidence_present"
+    unavailable = get_alternative_source_unavailable_provider_states()
+    for value in event_center_values:
+        if value not in unavailable and value != "empty":
+            return value
+    return "event_evidence_present"
+
+
+def get_event_center_empty_provider_state() -> str:
+    item = _load_policy()
+    provider_policy = _safe_dict(item.get("provider_state_policy"))
+    enums = _safe_dict(provider_policy.get("enums"))
+    event_center_values = [str(x).strip().lower() for x in list(enums.get("event_center") or []) if str(x).strip()]
+    if "empty" in event_center_values:
+        return "empty"
+    unavailable = get_alternative_source_unavailable_provider_states()
+    for value in event_center_values:
+        if value in unavailable:
+            return value
+    return "empty"

@@ -9,6 +9,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from contracts.semantic_policies.source_semantics import (
+    get_alternative_source_allowed_provider_states,
+    get_event_center_empty_provider_state,
+    get_event_center_present_provider_state,
+)
+
 
 def test_source_semantics_policy_has_required_structure() -> None:
     path = PROJECT_ROOT / "contracts" / "semantic_policies" / "source_semantics.yaml"
@@ -54,3 +60,9 @@ def test_source_semantics_policy_has_required_structure() -> None:
 
     unavailable_states = [str(x).strip() for x in list(provider_state_policy.get("unavailable_states") or []) if str(x).strip()]
     assert set(unavailable_states) == {"noop", "empty", "unavailable", "none"}
+
+
+def test_source_semantics_runtime_helper_returns_event_center_states_within_allowed() -> None:
+    allowed = get_alternative_source_allowed_provider_states()
+    assert get_event_center_present_provider_state() in allowed
+    assert get_event_center_empty_provider_state() in allowed
