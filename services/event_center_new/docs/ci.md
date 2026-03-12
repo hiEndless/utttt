@@ -3,7 +3,7 @@
 本文件用于统一 `event_center_new` 的 CI 触发方式、守卫矩阵与失败处置路径。
 
 最新稳定基线（守卫体系）：
-- commit: `9a640f0`
+- commit: 以命令结果为准（`git rev-parse --short HEAD`）
 - 验证命令：`bash scripts/check_new_arch_guards.sh --event-center-quick`
 
 ## 1. CI 触发矩阵
