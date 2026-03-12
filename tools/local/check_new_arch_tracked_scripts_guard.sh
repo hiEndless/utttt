@@ -11,6 +11,7 @@ REQUIRED_SCRIPTS=(
   "tools/local/check_market_state_contract_entry_guard.sh"
   "tools/local/check_event_center_contract_entry_guard.sh"
   "tools/local/check_release_baseline_alignment.sh"
+  "tools/local/check_release_ready.sh"
   "tools/local/check_runner_output_schema_guard.sh"
   "tools/local/integration_smoke_new_arch.sh"
 )
