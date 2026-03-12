@@ -45,7 +45,6 @@
 - `check_execution_breaking_version_bump_guard.sh`
 - `check_execution_contract_entry_guard.sh`
 - `check_alert_codes_entry_guard.sh`
-- `check_event_center_contract_guards.sh`
 - `check_event_center_contract_schema_guards.sh`
 - `check_event_center_runtime_*`
 - `check_event_center_ci_*`
