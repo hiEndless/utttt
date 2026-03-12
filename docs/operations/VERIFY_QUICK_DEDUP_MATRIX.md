@@ -17,7 +17,7 @@
 |---|---|---|---|
 | `check_structure.sh` | Y | N | 外层基础结构守卫 |
 | `check_script_compat_whitelist.sh` | Y | N | 外层基础守卫 |
-| `check_docs_contracts_bundle.sh` | Y | N | 外层文档契约聚合守卫 |
+| `check_docs_contracts_bundle.sh` | Y | N | 外层文档契约聚合守卫（含 `test_contract_change_bundle_guard.py`） |
 | `check_contract_docs_index_guard.sh` | N | Y | 通过 `quick` suite 的 `contract_docs_index` 执行 |
 | `check_contract_docs_index_help_snapshot_guard.sh` | N | Y | 同上 |
 | `check_state_to_agent_contract_guard.sh` | N | Y | 通过 `state_to_agent` 执行 |
@@ -29,6 +29,7 @@
 结论：
 - 当前 `verify_quick` 与 `verify_all --quick` 无显式重复守卫调用（按脚本入口维度）。
 - 文档契约类守卫由外层 bundle 统一管理；contract index 与链路契约由内层 quick suite 负责。
+- `contract bundle regression tests` 在外层执行，属于 docs bundle 子步骤，不在 quick suite 内重复执行。
 
 ## 4. 调整原则
 
@@ -43,4 +44,3 @@
 - `tools/ci/verify_all.sh`
 - `verification/run_suite.sh`（尤其 `suite=quick` 分支）
 - `tools/local/check_docs_contracts_bundle.sh`
-

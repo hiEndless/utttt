@@ -54,24 +54,78 @@ check_changed_regex() {
   printf '%s\n' "${CHANGED_FILES}" | rg "${pattern}" >/dev/null 2>&1
 }
 
+extract_index_runtime_version_from_rev() {
+  local rev="$1"
+  git show "${rev}:docs/CONTRACT_INDEX.md" 2>/dev/null \
+    | rg -o 'event_center_runtime_config_version:\s*[A-Za-z0-9._-]+' \
+    | head -n1 \
+    | sed -E 's/.*event_center_runtime_config_version:\s*//' \
+    | xargs || true
+}
+
+extract_manifest_runtime_version_from_rev() {
+  local rev="$1"
+  git show "${rev}:contracts/versions/manifest.yaml" 2>/dev/null \
+    | awk '
+      /- name:\s*event_center_runtime_config_version/ {in_block=1; next}
+      in_block && /value:/ {
+        gsub(/"/, "", $2);
+        print $2;
+        exit
+      }
+      in_block && /^  - name:/ {in_block=0}
+    ' \
+    | head -n1 \
+    | xargs || true
+}
+
+extract_py_runtime_version_from_rev() {
+  local rev="$1"
+  git show "${rev}:services/event_center_new/version.py" 2>/dev/null \
+    | rg -o 'EVENT_CENTER_RUNTIME_CONFIG_VERSION\s*=\s*"[^"]+"' \
+    | head -n1 \
+    | sed -E 's/.*=\s*"([^"]+)"/\1/' \
+    | xargs || true
+}
+
+extract_runtime_doc_version_from_rev() {
+  local rev="$1"
+  git show "${rev}:services/event_center_new/docs/runtime.md" 2>/dev/null \
+    | rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' \
+    | head -n1 \
+    | sed -E 's/.*runtime_config_version:\s*//' \
+    | xargs || true
+}
+
 event_center_runtime_changed=0
-if check_changed_exact "services/event_center_new/version.py"; then
-  if git diff "${BASE_REF}"...HEAD -- services/event_center_new/version.py | rg -q "EVENT_CENTER_RUNTIME_CONFIG_VERSION"; then
+base_idx_ver="$(extract_index_runtime_version_from_rev "${BASE_REF}")"
+head_idx_ver="$(extract_index_runtime_version_from_rev "HEAD")"
+if [[ -n "${base_idx_ver}" || -n "${head_idx_ver}" ]]; then
+  if [[ "${base_idx_ver}" != "${head_idx_ver}" ]]; then
     event_center_runtime_changed=1
   fi
 fi
-if check_changed_exact "services/event_center_new/docs/runtime.md"; then
-  if git diff "${BASE_REF}"...HEAD -- services/event_center_new/docs/runtime.md | rg -q "runtime_config_version:"; then
+
+base_manifest_ver="$(extract_manifest_runtime_version_from_rev "${BASE_REF}")"
+head_manifest_ver="$(extract_manifest_runtime_version_from_rev "HEAD")"
+if [[ -n "${base_manifest_ver}" || -n "${head_manifest_ver}" ]]; then
+  if [[ "${base_manifest_ver}" != "${head_manifest_ver}" ]]; then
     event_center_runtime_changed=1
   fi
 fi
-if check_changed_exact "contracts/versions/manifest.yaml"; then
-  if git diff "${BASE_REF}"...HEAD -- contracts/versions/manifest.yaml | rg -q "event_center_runtime_config_version"; then
+
+base_py_ver="$(extract_py_runtime_version_from_rev "${BASE_REF}")"
+head_py_ver="$(extract_py_runtime_version_from_rev "HEAD")"
+if [[ -n "${base_py_ver}" || -n "${head_py_ver}" ]]; then
+  if [[ "${base_py_ver}" != "${head_py_ver}" ]]; then
     event_center_runtime_changed=1
   fi
 fi
-if check_changed_exact "docs/CONTRACT_INDEX.md"; then
-  if git diff "${BASE_REF}"...HEAD -- docs/CONTRACT_INDEX.md | rg -q "event_center_runtime_config_version"; then
+
+base_doc_ver="$(extract_runtime_doc_version_from_rev "${BASE_REF}")"
+head_doc_ver="$(extract_runtime_doc_version_from_rev "HEAD")"
+if [[ -n "${base_doc_ver}" || -n "${head_doc_ver}" ]]; then
+  if [[ "${base_doc_ver}" != "${head_doc_ver}" ]]; then
     event_center_runtime_changed=1
   fi
 fi
