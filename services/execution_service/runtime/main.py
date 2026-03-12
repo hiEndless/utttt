@@ -5,7 +5,7 @@ import os
 
 import uvicorn
 
-from execution_service.app import create_app
+from services.execution_service.app import create_app
 
 
 app = create_app()

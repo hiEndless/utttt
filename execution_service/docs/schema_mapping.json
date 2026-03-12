@@ -7,7 +7,7 @@
       "owner": "execution_service",
       "change_policy": "breaking",
       "schema": "execution_service/docs/decision_intent.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "DecisionIntent",
       "fields": [
         "decision_id",
@@ -64,7 +64,7 @@
       "owner": "execution_service",
       "change_policy": "breaking",
       "schema": "execution_service/docs/execution_result.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "ExecutionResult",
       "fields": [
         "decision_id",
@@ -119,7 +119,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/decision_state.schema.json",
-      "code": "execution_service/app/service.py",
+      "code": "services/execution_service/app/service.py",
       "symbol": "_save_state",
       "fields": [
         "account_id",
@@ -195,7 +195,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/decision_state_status.schema.json",
-      "code": "execution_service/app/service.py",
+      "code": "services/execution_service/app/service.py",
       "symbol": "_derive_execution_status",
       "fields": [
         "status",
@@ -219,7 +219,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_action.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "ExecutionAction",
       "fields": [
         "execution_action"
@@ -237,7 +237,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/reject_reason.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "reject_reason",
       "fields": [
         "reject_reason"
@@ -255,7 +255,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/policy_snapshot.schema.json",
-      "code": "execution_service/app/service.py",
+      "code": "services/execution_service/app/service.py",
       "symbol": "_build_policy_snapshot",
       "fields": [
         "policy_version",
@@ -279,7 +279,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/risk_policy.schema.json",
-      "code": "execution_service/adapters/redis_state_providers.py",
+      "code": "services/execution_service/adapters/redis_state_providers.py",
       "symbol": "RedisRiskPolicyProvider",
       "fields": [
         "max_position_size",
@@ -325,7 +325,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/retry_meta.schema.json",
-      "code": "execution_service/domain/retry_meta.py",
+      "code": "services/execution_service/domain/retry_meta.py",
       "symbol": "RETRY_META_STATUSES",
       "fields": [
         "attempts",
@@ -357,7 +357,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_io_payload.schema.json",
-      "code": "execution_service/adapters/exchange_execution_sink.py",
+      "code": "services/execution_service/adapters/exchange_execution_sink.py",
       "symbol": "ExchangeExecutionSink",
       "fields": [
         "submitted",
@@ -415,7 +415,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_enums.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "DirectionIntent",
       "fields": [
         "direction_intent",
@@ -453,7 +453,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/decision_confidence.schema.json",
-      "code": "execution_service/domain/contracts.py",
+      "code": "services/execution_service/domain/contracts.py",
       "symbol": "DecisionConfidence",
       "fields": [
         "level",
@@ -482,7 +482,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_reconcile_result.schema.json",
-      "code": "execution_service/domain/reconcile_statuses.py",
+      "code": "services/execution_service/domain/reconcile_statuses.py",
       "symbol": "RECONCILE_STATUSES",
       "fields": [
         "mode",
@@ -525,7 +525,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/execution_signal_result.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "build_risk_decision_result",
       "fields": [
         "signal_action",
@@ -590,7 +590,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/risk_checks.schema.json",
-      "code": "execution_service/domain/risk_check_builder.py",
+      "code": "services/execution_service/domain/risk_check_builder.py",
       "symbol": "build_risk_checks",
       "fields": [
         "risk_checks"
@@ -633,7 +633,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/signal_action.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "\"signal_action\":",
       "fields": [
         "signal_action"
@@ -651,7 +651,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/signal_mode.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "\"mode\": \"simulated\"",
       "fields": [
         "mode"
@@ -669,7 +669,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/signal_scope.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "\"scope\": {",
       "fields": [
         "scope"
@@ -687,7 +687,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/position_before.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "\"position_before\":",
       "fields": [
         "position_before"
@@ -710,7 +710,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/position_mode.schema.json",
-      "code": "execution_service/domain/risk_rules.py",
+      "code": "services/execution_service/domain/risk_rules.py",
       "symbol": "position_mode",
       "fields": [
         "mode",
@@ -734,7 +734,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/position_after_simulation.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "\"position_after_simulation\":",
       "fields": [
         "position_after_simulation"
@@ -752,7 +752,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/rule_debug.schema.json",
-      "code": "execution_service/domain/risk_result_builder.py",
+      "code": "services/execution_service/domain/risk_result_builder.py",
       "symbol": "rule_debug",
       "fields": [
         "hit_rule",
@@ -810,7 +810,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/rule_priority_order.schema.json",
-      "code": "execution_service/domain/risk_rules.py",
+      "code": "services/execution_service/domain/risk_rules.py",
       "symbol": "DEFAULT_RULE_PRIORITY_ORDER",
       "fields": [
         "rule_priority_order"
@@ -843,7 +843,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/evaluation_trace.schema.json",
-      "code": "execution_service/domain/risk_rules.py",
+      "code": "services/execution_service/domain/risk_rules.py",
       "symbol": "evaluation_trace",
       "fields": [
         "evaluation_trace"
@@ -861,7 +861,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/risk_state_change_reason.schema.json",
-      "code": "execution_service/domain/risk_state_change_reasons.py",
+      "code": "services/execution_service/domain/risk_state_change_reasons.py",
       "symbol": "RISK_STATE_CHANGE_REASONS",
       "fields": [
         "reason_code",
@@ -885,7 +885,7 @@
       "owner": "execution_service",
       "change_policy": "non_breaking",
       "schema": "execution_service/docs/risk_state.schema.json",
-      "code": "execution_service/domain/risk_states.py",
+      "code": "services/execution_service/domain/risk_states.py",
       "symbol": "RISK_STATES",
       "fields": [
         "risk_state"

@@ -6,8 +6,8 @@ set -euo pipefail
 # 2) execution 契约与最小联调测试必须通过
 
 echo "[1/2] 检查 agent->execution 适配器是否存在"
-if ! test -f execution_service/adapters/agent_execution_plan_adapter.py; then
-  echo "[失败] 缺少 execution_service/adapters/agent_execution_plan_adapter.py"
+if ! test -f services/execution_service/adapters/agent_execution_plan_adapter.py; then
+  echo "[失败] 缺少 services/execution_service/adapters/agent_execution_plan_adapter.py"
   exit 1
 fi
 
