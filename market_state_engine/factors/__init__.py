@@ -1,2 +1,1 @@
-"""市场状态因子拆层模块。"""
-
+from services.market_state_engine.src.factors import *  # noqa: F401,F403

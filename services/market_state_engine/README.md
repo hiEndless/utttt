@@ -33,3 +33,6 @@ Notes:
   - `services/market_state_engine/src/factors/`
   - `services/market_state_engine/src/state_inference/`
   - `services/market_state_engine/src/config/state_inference_profiles.json`
+- Batch C (phase-2) compatibility convergence:
+  - `market_state_engine/factors/` switched to wrappers
+  - `market_state_engine/state_inference/` switched to wrappers
