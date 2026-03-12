@@ -4,7 +4,7 @@ Runtime source path: `feature_service/`
 Target canonical path: `services/feature_service/`
 
 Notes:
-- Legacy wrappers for `feature_service` have been mostly decommissioned; only `feature_service/main.py` remains as runtime entry compatibility.
+- Legacy wrappers for `feature_service` are fully decommissioned; use `services/feature_service/*` paths only.
 - `main.py` runtime implementation has moved to `services/feature_service/runtime/main.py`.
 - `app.py` implementation has moved to `services/feature_service/src/app.py`.
 - `routes.py` implementation has moved to `services/feature_service/src/routes.py`.

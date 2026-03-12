@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service batch-c wrappers removed)
+状态：in_progress (feature_service fully migrated, no legacy wrappers)
 
 ## 1. 目标
 
@@ -11,7 +11,7 @@
 
 1. `feature_service/main.py`
 - migrated impl: `services/feature_service/runtime/main.py`
-- legacy wrapper kept: `feature_service/main.py`
+- legacy wrapper status: removed after batch-c
 
 2. `market_state_engine/main.py`
 - migrated impl: `services/market_state_engine/runtime/main.py`
@@ -107,3 +107,4 @@
 6. 已完成 Batch A：删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳。
 7. 已完成 Batch B：删除 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/` 目录到 Batch C）。
 8. 已完成 Batch C：删除 `feature_service/providers/market_structure_migrated/` 兼容目录。
+9. 已移除 `feature_service/main.py` 兼容入口，`feature_service` 进入 fully-migrated 状态。

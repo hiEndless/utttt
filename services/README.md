@@ -35,8 +35,8 @@ Recommended local wrappers:
 - `bash tools/local/run_execution_service.sh`
 
 Pilot migration note:
-- `feature_service/main.py` is now a legacy wrapper.
-- runtime implementation moved to `services/feature_service/runtime/main.py`.
+- `feature_service` legacy wrappers are fully removed.
+- runtime entrypoint is `services/feature_service/runtime/main.py`.
 - `market_state_engine/main.py` is now a legacy wrapper.
 - runtime implementation moved to `services/market_state_engine/runtime/main.py`.
 - `execution_service/main.py` is now a legacy wrapper.

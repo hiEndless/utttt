@@ -3,7 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/runtime/main.py`
-- 兼容壳：`feature_service/main.py`
+- 兼容壳：已下线
 
 
 ## 功能作用

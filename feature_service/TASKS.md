@@ -121,3 +121,4 @@
 - [x] Task 71: 执行兼容壳下线 Batch A（删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳）。
 - [x] Task 72: 执行兼容壳下线 Batch B（删除 `feature_service/providers/*.py` 顶层兼容壳，保留 `market_structure_migrated/`）。
 - [x] Task 73: 执行兼容壳下线 Batch C（删除 `feature_service/providers/market_structure_migrated/` 兼容目录）。
+- [x] Task 74: 删除 `feature_service/main.py` 兼容入口；`feature_service` 达到 fully-migrated（无 legacy wrapper）。

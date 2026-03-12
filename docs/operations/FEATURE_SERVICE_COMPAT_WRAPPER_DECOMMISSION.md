@@ -11,6 +11,7 @@
 
 当前已进入兼容壳状态的路径：
 
+- `feature_service/main.py`
 - `feature_service/app.py`
 - `feature_service/routes.py`
 - `feature_service/service.py`
@@ -46,6 +47,14 @@
 1. Batch A 已稳定一个迭代周期。
 2. `feature_service` 生产/回放链路无兼容壳相关告警。
 3. `./venv/bin/pytest -q feature_service/text` 与 quick CI 持续通过。
+
+执行结果：
+
+- 已完成（2026-03-12）
+
+### Batch D（收口）
+
+- `feature_service/main.py`
 
 执行结果：
 

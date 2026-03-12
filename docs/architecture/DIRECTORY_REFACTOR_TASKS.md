@@ -77,6 +77,7 @@
 - [x] 执行 Batch A：删除 `feature_service/{app,routes,service,contracts}.py` 与 `feature_service/{ports,normalizers}/` 兼容壳
 - [x] 执行 Batch B：删除 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/` 到 Batch C）
 - [x] 执行 Batch C：删除 `feature_service/providers/market_structure_migrated/` 兼容目录
+- [x] 删除 `feature_service/main.py` 兼容入口；`feature_service` 达到 fully-migrated（无 legacy wrapper）
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

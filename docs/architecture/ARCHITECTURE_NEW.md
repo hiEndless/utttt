@@ -239,7 +239,8 @@ event_center_new(signal_event + active_events)
 - `bash tools/local/run_execution_service.sh`
 
 兼容说明：
-- 旧服务入口（如 `python -m feature_service.main`）仍可用，但不再作为推荐文档入口。
+- `feature_service` 旧入口已下线，统一使用 `python -m services.feature_service.main`。
+- 其他服务旧入口仍处于兼容窗口（以各服务里程碑文档为准）。
 
 ## 8. 当前完成度判断（面向新架构）
 
