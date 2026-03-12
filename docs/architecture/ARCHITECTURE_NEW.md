@@ -147,10 +147,10 @@ event_center_new(signal_event + active_events)
 - 新架构关键脚本纳管守卫（CI 可用）：`scripts/check_new_arch_tracked_scripts_guard.sh`
 - 契约守卫脚本（CI 可用）：`scripts/check_feature_contract_guard.sh`
 - Feature Schema 守卫脚本（CI 可用）：`scripts/check_feature_service_schema_guard.sh`
-- State Engine 守卫脚本（CI 可用）：`scripts/check_market_state_engine_guard.sh`
+- State Engine 守卫脚本（CI 可用）：`tools/local/check_market_state_engine_guard.sh`
 - State->Agent 联动守卫脚本（CI 可用）：`scripts/check_state_to_agent_contract_guard.sh`
 - Runner 输出 Schema 守卫脚本（CI 可用）：`scripts/check_runner_output_schema_guard.sh`
-- Contract Docs Index 守卫脚本（CI 可用）：`scripts/check_contract_docs_index_guard.sh`
+- Contract Docs Index 守卫脚本（CI 可用）：`tools/local/check_contract_docs_index_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`tools/local/check_new_arch_guards.sh`
 - 告警码入口守卫（CI 可用）：`scripts/check_alert_codes_entry_guard.sh`

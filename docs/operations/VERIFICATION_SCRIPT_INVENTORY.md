@@ -12,7 +12,7 @@
 |---|---|---|
 | `tools/local/check_new_arch_guards.sh` | `verification/guards/new_arch_full.sh` | mapped |
 | `tools/local/check_new_arch_guards.sh --event-center-quick` | `verification/guards/new_arch_event_center_quick.sh` | mapped |
-| `scripts/check_contract_docs_index_guard.sh` + `scripts/check_contract_docs_index_help_snapshot_guard.sh` | `verification/guards/contract_docs_index.sh` | mapped |
+| `tools/local/check_contract_docs_index_guard.sh` + `tools/local/check_contract_docs_index_help_snapshot_guard.sh` | `verification/guards/contract_docs_index.sh` | mapped |
 | `scripts/check_state_to_agent_contract_guard.sh` | `verification/guards/state_to_agent.sh` | mapped |
 | `scripts/check_agent_to_execution_guard.sh` | `verification/guards/agent_to_execution.sh` | mapped |
 | `tools/local/check_event_center_replay_guard.sh` + `tools/local/check_event_center_replay_summary_schema_guard.sh` | `verification/guards/event_center_replay.sh` | mapped |
@@ -24,7 +24,6 @@
 
 - `scripts/check_state_to_agent_contract_guard.sh` -> `tools/local/check_state_to_agent_contract_guard.sh`
 - `scripts/check_agent_to_execution_guard.sh` -> `tools/local/check_agent_to_execution_guard.sh`
-- `scripts/check_contract_docs_index_guard.sh` -> `tools/local/check_contract_docs_index_guard.sh`
 
 补充：`tools/local/check_new_arch_guards.sh` 的全量执行主体已迁入
 `tools/ci/new_arch_guards_full.sh`；`scripts/check_new_arch_guards.sh`
@@ -36,8 +35,6 @@
 
 - `check_feature_contract_guard.sh`
 - `check_feature_service_schema_guard.sh`
-- `check_market_state_engine_guard.sh`
-- `check_market_state_engine_help_snapshot_guard.sh`
 - `check_runner_output_schema_guard.sh`
 - `check_execution_*_schema_guard.sh`
 - `check_execution_schema_mapping_guard.sh`
