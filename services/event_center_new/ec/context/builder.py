@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from contracts.schemas.alternative_source_summary_contract import (
+    get_alternative_source_names,
+    get_alternative_source_required_keys,
+)
 from contracts.semantic_policies.source_semantics import (
     get_event_center_data_source,
     get_event_center_inference_source,
@@ -12,6 +16,9 @@ from contracts.semantic_policies.source_semantics import (
 from ..contracts import EventContextSnapshot, Evidence
 from .buckets import BucketTopKPolicy, bucket_by_horizon, select_top_k_by_bucket
 from ..prioritization.scorer import PriorityScorer
+
+_ALT_SOURCE_NAMES = get_alternative_source_names()
+_ALT_SUMMARY_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
 @dataclass(frozen=True)
@@ -97,7 +104,7 @@ def _build_active_triggers(evidences: list[Evidence]) -> list[dict[str, str | in
 def _detect_alternative_source(ev: Evidence) -> str | None:
     attrs = dict(ev.attrs or {})
     explicit = str(attrs.get("source_type") or "").strip().lower()
-    if explicit in {"news", "social", "onchain"}:
+    if explicit in set(_ALT_SOURCE_NAMES):
         return explicit
 
     category = str(attrs.get("source_category") or "").strip().lower()
@@ -128,7 +135,7 @@ def _detect_alternative_source(ev: Evidence) -> str | None:
 
 
 def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, object]:
-    source_names = ("news", "social", "onchain")
+    source_names = _ALT_SOURCE_NAMES
     present_provider_state = get_event_center_present_provider_state()
     empty_provider_state = get_event_center_empty_provider_state()
     feature_keys: dict[str, set[str]] = {name: set() for name in source_names}
@@ -166,7 +173,7 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
     unavailable_sources = [name for name in source_names if counts[name] == 0]
     provider_states = {name: (present_provider_state if counts[name] > 0 else empty_provider_state) for name in source_names}
 
-    return {
+    out = {
         "available_sources": available_sources,
         "unavailable_sources": unavailable_sources,
         "provider_states": provider_states,
@@ -175,3 +182,6 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
         "feature_keys": {name: sorted(feature_keys[name]) for name in source_names},
         "evidence_counts": counts,
     }
+    if not _ALT_SUMMARY_REQUIRED_KEYS.issubset(set(out.keys())):
+        return {}
+    return out

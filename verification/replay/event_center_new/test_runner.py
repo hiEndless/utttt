@@ -22,16 +22,9 @@ from services.event_center_new.ec.pipeline.defaults import (
 from services.event_center_new.ec.pipeline.runner import EventPipelineRunner
 from services.event_center_new.ec.sources.memory import InMemoryEventSource
 from services.event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_required_keys
 
-_ALT_SUMMARY_REQUIRED_KEYS = {
-    "available_sources",
-    "unavailable_sources",
-    "provider_states",
-    "data_sources",
-    "inference_sources",
-    "feature_keys",
-    "evidence_counts",
-}
+_ALT_SUMMARY_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
 class _BoomExtractor(PayloadEvidenceExtractor):
