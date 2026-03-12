@@ -87,3 +87,50 @@ def test_redis_active_events_provider_normalizes_selected_event_fields():
     assert dict(one["evidence"]).get("reason") == "test"
     assert one["source"] == "event_center_new"
     assert dict(one["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"
+    assert dict(one["evidence"]).get("event_ts_ms") is None
+    assert dict(one["evidence"]).get("processed_ts_ms") is None
+
+
+def test_redis_active_events_provider_time_semantics_precedence_and_fallback():
+    rows = [
+        (
+            "10-0",
+            {
+                "payload": json.dumps(
+                    {
+                        "asset": "binance:ETHUSDT",
+                        "selected_type": "event.selected",
+                        "event_ts_ms": 1710000000001,
+                        "processed_ts_ms": 1710000000009,
+                        "ts_ms": 1710000000000,
+                    }
+                )
+            },
+        ),
+        (
+            "11-0",
+            {
+                "payload": json.dumps(
+                    {
+                        "asset": "binance:ETHUSDT",
+                        "selected_type": "event.selected",
+                        "ts_ms": 1710000001000,
+                    }
+                )
+            },
+        ),
+    ]
+    provider = RedisActiveEventsProvider(
+        client=_FakeRedis(rows),
+        cfg=RedisActiveEventsConfig(stream="ec:selected", limit_default=5, scan_factor=2),
+    )
+    out = asyncio.run(provider.get_active_events("binance", "ETHUSDT"))
+    assert len(out) == 2
+
+    first = dict(out[0]["evidence"])
+    assert first["event_ts_ms"] == 1710000000001
+    assert first["processed_ts_ms"] == 1710000000009
+
+    second = dict(out[1]["evidence"])
+    assert second["event_ts_ms"] == 1710000001000
+    assert second["processed_ts_ms"] == 1710000001000

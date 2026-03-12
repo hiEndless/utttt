@@ -75,7 +75,7 @@ def strategy_gate_v2(
 
 
 def _extract_signal_event_ts_ms(signal_event: Dict[str, Any]) -> int | None:
-    for key in ("ts_ms", "timestamp_ms", "ts", "generated_at_ms"):
+    for key in ("event_ts_ms", "ts_ms", "timestamp_ms", "ts", "generated_at_ms"):
         raw = signal_event.get(key)
         if raw is None:
             continue

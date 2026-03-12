@@ -45,8 +45,22 @@ fields:
       - "services/execution_service/docs/execution_signal_result.schema.json#/properties/risk_state"
 
   - name: ts_ms
-    canonical_semantic: "primary millisecond timestamp"
+    canonical_semantic: "legacy millisecond timestamp alias; prefer event_ts_ms or processed_ts_ms by context"
     expected_shape: "integer"
+
+  - name: event_ts_ms
+    canonical_semantic: "event occurrence timestamp in milliseconds"
+    expected_shape: "integer"
+    owner: "event_center_new"
+    allowed_locations:
+      - "services/event_center_new/docs/selected_event.schema.json#/properties/event_ts_ms"
+
+  - name: processed_ts_ms
+    canonical_semantic: "pipeline processing timestamp in milliseconds"
+    expected_shape: "integer"
+    owner: "event_center_new"
+    allowed_locations:
+      - "services/event_center_new/docs/selected_event.schema.json#/properties/processed_ts_ms"
 
   - name: market_state
     canonical_semantic: "service-local state object; not equivalent to fused MSL conclusion"

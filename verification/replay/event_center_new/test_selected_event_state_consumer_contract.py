@@ -52,3 +52,10 @@ def test_selected_event_can_build_market_state_evidence_summary() -> None:
     assert summary["selected_event_directions"] == ["bullish", "mixed"]
     assert summary["selected_event_priorities"] == ["high", "medium"]
     assert summary["selected_event_assets"] == ["binance:ETHUSDT"]
+    preview = summary["selected_events_preview"]
+    assert len(preview) == 2
+    # 中文注释：兼容期要求 preview 永远暴露 event/processed 双时间语义，即使上游仍只给 ts_ms。
+    assert preview[0]["event_ts_ms"] == 1710000000000
+    assert preview[0]["processed_ts_ms"] == 1710000000000
+    assert preview[1]["event_ts_ms"] == 1710000001000
+    assert preview[1]["processed_ts_ms"] == 1710000001000

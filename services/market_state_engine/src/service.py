@@ -213,6 +213,21 @@ class MarketStateService:
             schema_version = (trace_obj or {}).get("schema_version") if isinstance(trace_obj, dict) else None
             if not isinstance(schema_version, str) or (not schema_version.strip()):
                 unversioned_count += 1
+        preview: list[Dict[str, Any]] = []
+        for item in selected_events[:3]:
+            row = dict(item)
+            event_ts = row.get("event_ts_ms")
+            processed_ts = row.get("processed_ts_ms")
+            if event_ts is None:
+                event_ts = row.get("ts_ms")
+            if processed_ts is None:
+                processed_ts = row.get("ts_ms")
+            if event_ts is not None:
+                row["event_ts_ms"] = event_ts
+            if processed_ts is not None:
+                row["processed_ts_ms"] = processed_ts
+            preview.append(row)
+
         return {
             "selected_events_count": int(len(selected_events)),
             "selected_event_types": event_types,
@@ -222,7 +237,7 @@ class MarketStateService:
             "selected_event_sources": sources,
             "selected_event_schema_versions": schema_versions,
             "selected_events_unversioned_count": int(unversioned_count),
-            "selected_events_preview": selected_events[:3],
+            "selected_events_preview": preview,
         }
 
     async def get_market_state(self, exchange: str, symbol: str) -> Dict[str, Any]:

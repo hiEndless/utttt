@@ -236,5 +236,5 @@ def _load_selected_contract_field_sets() -> tuple[set[str], set[str]]:
         pass
     # 中文注释：schema 读取异常时回退默认值，保证回放工具仍可给出最小契约检查。
     required = {"asset", "ts_ms", "selected_type", "direction_hint", "priority", "context_snapshot", "trace", "route"}
-    allowed = required | {"trigger_event", "source"}
+    allowed = required | {"trigger_event", "source", "event_ts_ms", "processed_ts_ms"}
     return required, allowed

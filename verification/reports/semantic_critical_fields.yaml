@@ -8,6 +8,8 @@ critical_fields:
   - raw_market_structure
   - msl
   - ts_ms
+  - event_ts_ms
+  - processed_ts_ms
   - market_state
   - market_risk_state
   - risk_bias

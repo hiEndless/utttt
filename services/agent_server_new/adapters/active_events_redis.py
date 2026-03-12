@@ -151,6 +151,24 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         trace_obj = payload.get("trace")
         if isinstance(trace_obj, dict) and "trace" not in evidence_obj:
             evidence_obj = {**evidence_obj, "trace": dict(trace_obj)}
+        event_ts_raw = payload.get("event_ts_ms")
+        if event_ts_raw is None:
+            event_ts_raw = payload.get("ts_ms")
+        processed_ts_raw = payload.get("processed_ts_ms")
+        if processed_ts_raw is None:
+            processed_ts_raw = payload.get("ts_ms")
+        try:
+            event_ts_ms = int(event_ts_raw) if event_ts_raw is not None else None
+        except Exception:
+            event_ts_ms = None
+        try:
+            processed_ts_ms = int(processed_ts_raw) if processed_ts_raw is not None else None
+        except Exception:
+            processed_ts_ms = None
+        if event_ts_ms is not None and "event_ts_ms" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "event_ts_ms": event_ts_ms}
+        if processed_ts_ms is not None and "processed_ts_ms" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "processed_ts_ms": processed_ts_ms}
         event_id = str(payload.get("event_id") or payload.get("id") or stream_id).strip() or str(stream_id)
         source = str(payload.get("source") or "event_center_new").strip() or "event_center_new"
         return {

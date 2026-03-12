@@ -106,3 +106,5 @@ class SelectedEvent:
     source: EventSource | None = None
     trace: EventTrace | None = None
     route: dict[str, Any] = field(default_factory=dict)
+    event_ts_ms: int | None = None
+    processed_ts_ms: int | None = None

@@ -179,4 +179,10 @@ class DeterministicFinalGate(FinalGate):
             source=None if inp.trigger_event is None else inp.trigger_event.source,
             trace=trace,
             route=route,
+            event_ts_ms=(
+                int(inp.trigger_event.ts_ms)
+                if inp.trigger_event is not None
+                else int(inp.context.ts_ms)
+            ),
+            processed_ts_ms=int(inp.context.ts_ms),
         )

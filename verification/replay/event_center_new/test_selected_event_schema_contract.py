@@ -32,7 +32,7 @@ def test_selected_event_schema_required_and_allowed_fields() -> None:
         "trace",
         "route",
     }
-    assert set(props.keys()) == set(required) | {"trigger_event", "source", "trace"}
+    assert set(props.keys()) == set(required) | {"trigger_event", "source", "event_ts_ms", "processed_ts_ms"}
 
 
 def test_selected_event_schema_core_enums() -> None:

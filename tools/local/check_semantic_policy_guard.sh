@@ -33,6 +33,8 @@ REQUIRED_FIELDS = {
     "confidence",
     "risk_state",
     "ts_ms",
+    "event_ts_ms",
+    "processed_ts_ms",
     "raw_market_structure",
     "msl",
     "market_state",
