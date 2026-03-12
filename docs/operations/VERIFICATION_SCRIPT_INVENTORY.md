@@ -13,6 +13,8 @@
 - 快速验证：`tools/ci/verify_quick.sh`
 - 回归验证：`tools/ci/verify_regression.sh`
 - 夜间验证：`tools/ci/verify_nightly.sh`
+- 本地 quick 代理入口：`tools/local/verify_quick.sh`（代理到 `tools/ci/verify_quick.sh`）
+- 本地 full 代理入口：`tools/local/verify_full.sh`（代理到 `tools/ci/new_arch_guards_full.sh`）
 - 文档契约守卫聚合：`tools/local/check_docs_contracts_bundle.sh`
   - 失败排障提示：当 contract bundle 守卫失败时，执行标准排障命令。
   - 标准排障命令：`bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`
