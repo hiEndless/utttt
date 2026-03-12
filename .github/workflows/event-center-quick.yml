@@ -6,7 +6,8 @@ on:
       - "event_center_new/**"
       - "scripts/check_event_center_*"
       - "scripts/check_new_arch_guards.sh"
-      - "scripts/ci_event_center_quick_*.sh"
+      - "tools/ci/event_center_quick_*.sh"
+      - "tools/ci/event_center_emit_meta_header.sh"
       - "docs/ARCHITECTURE_NEW.md"
       - "docs/CONTRACTS_QUICK_REF.md"
   push:
@@ -16,7 +17,8 @@ on:
       - "event_center_new/**"
       - "scripts/check_event_center_*"
       - "scripts/check_new_arch_guards.sh"
-      - "scripts/ci_event_center_quick_*.sh"
+      - "tools/ci/event_center_quick_*.sh"
+      - "tools/ci/event_center_emit_meta_header.sh"
       - "docs/ARCHITECTURE_NEW.md"
       - "docs/CONTRACTS_QUICK_REF.md"
 
@@ -33,7 +35,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p /tmp/event_center_ci
-          bash scripts/ci_event_center_quick_strict.sh | tee /tmp/event_center_ci/quick_strict.log
+          bash tools/ci/event_center_quick_strict.sh | tee /tmp/event_center_ci/quick_strict.log
       - name: 上传 quick strict 失败诊断日志
         if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
@@ -61,7 +63,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p /tmp/event_center_ci
-          bash scripts/ci_event_center_quick_lenient.sh | tee /tmp/event_center_ci/quick_lenient.log
+          bash tools/ci/event_center_quick_lenient.sh | tee /tmp/event_center_ci/quick_lenient.log
       - name: 上传 quick lenient 失败诊断日志
         if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
         uses: actions/upload-artifact@v4

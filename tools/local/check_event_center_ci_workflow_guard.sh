@@ -4,7 +4,10 @@ set -euo pipefail
 QUICK_WF=".github/workflows/event-center-quick.yml"
 FULL_WF=".github/workflows/event-center-full.yml"
 SETUP_ACTION=".github/actions/setup-utaker-python/action.yml"
-CI_META_SCRIPT="scripts/ci_event_center_emit_meta_header.sh"
+QUICK_STRICT_ENTRY="tools/ci/event_center_quick_strict.sh"
+QUICK_LENIENT_ENTRY="tools/ci/event_center_quick_lenient.sh"
+FULL_STRICT_ENTRY="tools/ci/event_center_full_strict.sh"
+CI_META_SCRIPT="tools/ci/event_center_emit_meta_header.sh"
 
 echo "[1/4] 检查 event_center CI workflow、复用 action 与 CI 元信息脚本存在"
 if ! test -f "$QUICK_WF"; then
@@ -33,12 +36,12 @@ if ! rg -q "event-center-quick-strict-diagnostics" "$QUICK_WF"; then
   echo "[失败] quick workflow 缺少 strict 诊断 artifact"
   exit 1
 fi
-if ! rg -q "scripts/ci_event_center_quick_strict.sh" "$QUICK_WF"; then
-  echo "[失败] quick workflow 未通过 quick strict wrapper 执行守卫"
+if ! rg -q "$QUICK_STRICT_ENTRY" "$QUICK_WF"; then
+  echo "[失败] quick workflow 未通过 tools/ci quick strict 入口执行守卫"
   exit 1
 fi
-if ! rg -q "scripts/ci_event_center_quick_lenient.sh" "$QUICK_WF"; then
-  echo "[失败] quick workflow 未通过 quick lenient wrapper 执行守卫"
+if ! rg -q "$QUICK_LENIENT_ENTRY" "$QUICK_WF"; then
+  echo "[失败] quick workflow 未通过 tools/ci quick lenient 入口执行守卫"
   exit 1
 fi
 if ! rg -q "event-center-quick-lenient-diagnostics" "$QUICK_WF"; then
@@ -75,8 +78,8 @@ if ! rg -q "event-center-full-diagnostics" "$FULL_WF"; then
   echo "[失败] full workflow 缺少全量诊断 artifact"
   exit 1
 fi
-if ! rg -q "scripts/ci_event_center_full_strict.sh" "$FULL_WF"; then
-  echo "[失败] full workflow 未通过 full strict wrapper 执行守卫"
+if ! rg -q "$FULL_STRICT_ENTRY" "$FULL_WF"; then
+  echo "[失败] full workflow 未通过 tools/ci full strict 入口执行守卫"
   exit 1
 fi
 if ! rg -q "continue-on-error: true" "$FULL_WF"; then

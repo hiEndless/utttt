@@ -8,24 +8,22 @@
 
 ## 2. 当前 hard-pinned 对象
 
-以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 8 个：
+以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 4 个：
 
 1. `scripts/check_new_arch_guards.sh`
 2. `scripts/check_event_center_contract_guards.sh`
 3. `scripts/check_market_state_engine_guard.sh`
-4. `scripts/ci_event_center_quick_strict.sh`
-5. `scripts/ci_event_center_quick_lenient.sh`
-6. `scripts/ci_event_center_full_strict.sh`
-7. `scripts/ci_event_center_emit_meta_header.sh`
-8. `scripts/check_contract_docs_index_guard.sh`
+4. `scripts/check_contract_docs_index_guard.sh`
 
 ## 3. 分批治理
 
 ### Batch A: Workflow pinning
 
-1. 将 `.github/workflows/*` 对 `scripts/ci_event_center_*.sh` 的调用切换为 `tools/ci/*`。
-2. 将 workflow 守卫规则改为校验 `tools/ci/*` 入口。
-3. 验收：CI 连续 7 天通过后，将对应 `scripts/ci_event_center_*.sh` 改为 wrapper 或下线。
+状态：已完成（2026-03-12）
+
+1. `.github/workflows/*` 已从 `scripts/ci_event_center_*.sh` 切换为 `tools/ci/*`。
+2. workflow 守卫已改为校验 `tools/ci/*` 入口。
+3. 相关 `scripts/ci_event_center_*.sh` 已转为 compatibility wrappers。
 
 ### Batch B: Snapshot/help pinning
 

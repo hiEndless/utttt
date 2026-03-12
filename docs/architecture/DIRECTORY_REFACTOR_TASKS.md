@@ -114,6 +114,7 @@
 - [x] 收敛 event_center CI/workflow/help-sync 子守卫到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
 - [x] 收敛 event_center 接线守卫与 new_arch tracked/smoke 脚本到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
 - [x] 收敛 contract-docs/state-engine help-snapshot 守卫到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
+- [x] 将 event_center quick/full workflow 执行入口从 `scripts/ci_event_center_*.sh` 切换为 `tools/ci/*`
 - [x] 将脚本兼容白名单检查接入 nightly CI
 - [x] 将脚本兼容白名单检查接入 regression CI（并使用 warning budget 替代 strict 语义检查）
 - [x] 将脚本兼容白名单检查接入 quick CI（统一三条场景入口）
