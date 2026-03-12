@@ -97,6 +97,7 @@ Description:
 Options:
   --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
   --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
+  --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
 ```
 
 ## `tools/local/check_semantic_critical_warning_guard.sh --help`

@@ -3,6 +3,7 @@ set -euo pipefail
 
 WITH_VERIFICATION_API_SCHEMA_CHECK=0
 SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=0
+SKIP_RELEASE_BASELINE_ALIGNMENT=0
 SHOW_HELP=0
 PASS_ARGS=()
 
@@ -18,6 +19,10 @@ while (($# > 0)); do
       ;;
     --skip-semantic-critical-warning-guard)
       SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=1
+      shift
+      ;;
+    --skip-release-baseline-alignment)
+      SKIP_RELEASE_BASELINE_ALIGNMENT=1
       shift
       ;;
     *)
@@ -39,18 +44,27 @@ Description:
 Options:
   --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
   --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
+  --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
 USAGE
   exit 0
 fi
 
-CMD=(bash tools/ci/verify_quick.sh)
+ENV_PREFIX=()
 if [[ "$SKIP_SEMANTIC_CRITICAL_WARNING_GUARD" == "1" ]]; then
-  CMD=(env VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1 bash tools/ci/verify_quick.sh)
+  ENV_PREFIX+=(VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1)
 fi
+if [[ "$SKIP_RELEASE_BASELINE_ALIGNMENT" == "1" ]]; then
+  ENV_PREFIX+=(VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1)
+fi
+CMD=(bash tools/ci/verify_quick.sh)
 if ((${#PASS_ARGS[@]} > 0)); then
   CMD+=("${PASS_ARGS[@]}")
 fi
-"${CMD[@]}"
+if ((${#ENV_PREFIX[@]} > 0)); then
+  env "${ENV_PREFIX[@]}" "${CMD[@]}"
+else
+  "${CMD[@]}"
+fi
 
 if [[ "$WITH_VERIFICATION_API_SCHEMA_CHECK" == "1" ]]; then
   if test -x ./venv/bin/pytest; then
