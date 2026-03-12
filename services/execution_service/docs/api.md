@@ -1,5 +1,9 @@
 # execution_service API
 
+时间语义口径（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
+- 本服务对外元信息时间字段使用 `ts/ts_ms`（兼容保留）
+- 本服务不直接消费事件层 `event_ts_ms/processed_ts_ms`，该语义由上游（event/agent）维护
+
 ## 健康检查
 
 - `GET /internal/execution/healthz`

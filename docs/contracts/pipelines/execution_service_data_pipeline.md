@@ -15,6 +15,11 @@
 - Schema/枚举冻结（输入/输出/中间结果）：[execution_enums.schema.json](services/execution_service/docs/execution_enums.schema.json)
 - 模块边界声明：[boundaries.md](services/execution_service/docs/boundaries.md)
 
+时间语义口径（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
+- execution API 元信息时间字段保持 `ts/ts_ms`（兼容保留）
+- execution 不直接消费事件层 `event_ts_ms/processed_ts_ms`
+- 若上游（agent/event）已归一化到 `event_ts_ms/processed_ts_ms`，execution 侧不应改写其语义含义
+
 ---
 
 ## 0. 总览：端到端“真实执行顺序”
@@ -700,4 +705,3 @@ agent 侧会向 execution_service 发送 DecisionIntent。execution_service 仓�
 - direction：从 plan.direction 映射到 direction_intent（long/short/none）
 - confidence：优先使用 plan.decision_confidence，否则 plan.confidence
 - risk_hints：注入 agent_action_hint/agent_notes/decision_confidence（用于执行侧解释与下单推导）
-
