@@ -60,6 +60,11 @@
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --quick`
 
+CI 约束：
+- `VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1` 与 `VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1`
+  仅用于本地调试链路；
+- 在 CI 环境（`CI=true` 或 `GITHUB_ACTIONS=true`）若设置上述变量，`tools/ci/verify_quick.sh` 将直接失败（退出码 `2`）。
+
 ### 3.2 verify_regression
 
 - `check_structure.sh`

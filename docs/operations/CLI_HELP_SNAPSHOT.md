@@ -100,6 +100,12 @@ Options:
   --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
 ```
 
+约束说明：
+- 上述 `--skip-*` 仅允许本地调试使用。
+- CI 环境（`CI=true` 或 `GITHUB_ACTIONS=true`）若设置
+  `VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1` 或 `VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1`
+  将直接失败（`tools/ci/verify_quick.sh` 退出码 `2`）。
+
 ## `tools/local/check_semantic_critical_warning_guard.sh --help`
 
 ```text
