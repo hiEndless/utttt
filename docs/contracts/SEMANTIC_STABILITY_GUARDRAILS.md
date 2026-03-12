@@ -23,7 +23,7 @@
 
 4. 时间字段兼容别名（非破坏）
 - `event_center_new` runner health 同时写入 `updated_ms` 与 `updated_at_ms`。
-- `market_state_engine` `/healthz` 与状态查询响应同时返回 `ts` 与 `ts_ms`。
+- `market_state_engine` `/healthz`、`/version` 与状态查询响应同时返回 `ts` 与 `ts_ms`。
 - `execution_service` `/healthz` 与 `/version` 同时返回 `ts` 与 `ts_ms`。
 - `agent_server_new.strategy_gate_v2` 时间读取优先 `event_ts_ms`，兼容 `ts_ms/timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
 
@@ -43,6 +43,7 @@
 - `execution_enums.schema.json` 复用 `direction_intent/execution_action/io_mode/io_status/request_side/request_type`。
 - `execution_schema_mapping_version` 当前为 `execution-schema-mapping-v15`。
 - `feature_response_schema_version` 当前为 `1.0`。
+- `market_state_contract_version` 当前为 `market-state-contract-v1`。
 - `market_state_msl_schema_version` 当前为 `2`。
 
 ## 后续建议

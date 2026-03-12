@@ -203,6 +203,22 @@ def test_market_state_route_healthz_exposes_ts_ms_alias():
     assert body["ts_ms"] == body["ts"]
 
 
+def test_market_state_route_version_exposes_contract_meta():
+    app = FastAPI()
+    service = MarketStateService(raw_structure_provider=_OkRawProvider())
+    app.include_router(create_router(service))
+    client = TestClient(app)
+
+    resp = client.get("/internal/market-state/version")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["service"] == "market_state_engine"
+    assert body["contract_version"] == "market-state-contract-v1"
+    assert body["msl_schema_version"] == 2
+    assert isinstance(body["ts"], int)
+    assert body["ts_ms"] == body["ts"]
+
+
 def test_market_state_service_ignores_external_event_fields():
     async def _run():
         service = MarketStateService(raw_structure_provider=_ExternalMixedRawProvider())

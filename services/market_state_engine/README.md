@@ -89,6 +89,7 @@ data_server
 当前最小接口：
 
 - `GET /internal/market-state/healthz`
+- `GET /internal/market-state/version`
 - `GET /internal/market-state/{exchange}/{symbol}`
 
 返回体包含：

@@ -6,6 +6,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
 
 from services.market_state_engine.src.service import MarketStateService
+from services.market_state_engine.src.version import MARKET_STATE_CONTRACT_VERSION, MSL_SCHEMA_VERSION
 
 
 def create_router(service: MarketStateService) -> APIRouter:
@@ -15,6 +16,17 @@ def create_router(service: MarketStateService) -> APIRouter:
     async def healthz() -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
         return {"ok": True, "service": "market_state_engine", "ts": now_ms, "ts_ms": now_ms}
+
+    @router.get("/version")
+    async def version() -> Dict[str, Any]:
+        now_ms = int(time.time() * 1000)
+        return {
+            "service": "market_state_engine",
+            "contract_version": MARKET_STATE_CONTRACT_VERSION,
+            "msl_schema_version": int(MSL_SCHEMA_VERSION),
+            "ts": now_ms,
+            "ts_ms": now_ms,
+        }
 
     @router.get("/{exchange}/{symbol}")
     async def get_market_state(exchange: str, symbol: str) -> Dict[str, Any]:

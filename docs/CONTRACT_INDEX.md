@@ -27,6 +27,7 @@
 
 ## 3. market_state_engine
 
+- `market_state_contract_version: market-state-contract-v1`
 - `market_state_msl_schema_version: 2`
 - `services/market_state_engine/docs/api.md`
 - `services/market_state_engine/docs/boundaries.md`

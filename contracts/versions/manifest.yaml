@@ -14,5 +14,9 @@ contract_versions:
     value: "2"
     source: "services/market_state_engine/src/version.py"
 
+  - name: market_state_contract_version
+    value: "market-state-contract-v1"
+    source: "services/market_state_engine/src/version.py"
+
 notes:
   - "This manifest is a control-plane summary; service-local version constants remain runtime authority."
