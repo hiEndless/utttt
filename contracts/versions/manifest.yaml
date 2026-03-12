@@ -4,11 +4,15 @@ updated_at: "2026-03-12"
 contract_versions:
   - name: execution_schema_mapping_version
     value: "execution-schema-mapping-v15"
-    source: "execution_service/version.py"
+    source: "services/execution_service/version.py"
 
   - name: feature_response_schema_version
     value: "1.0"
-    source: "feature_service/contracts.py"
+    source: "services/feature_service/src/version.py"
+
+  - name: market_state_msl_schema_version
+    value: "2"
+    source: "services/market_state_engine/src/version.py"
 
 notes:
   - "This manifest is a control-plane summary; service-local version constants remain runtime authority."

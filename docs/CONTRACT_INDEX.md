@@ -21,11 +21,13 @@
 
 ## 2. feature_service
 
+- `feature_response_schema_version: 1.0`
 - `services/feature_service/docs/api.md`
 - `services/feature_service/docs/boundaries.md`
 
 ## 3. market_state_engine
 
+- `market_state_msl_schema_version: 2`
 - `services/market_state_engine/docs/api.md`
 - `services/market_state_engine/docs/boundaries.md`
 - `services/market_state_engine/docs/guard_help_snapshot.txt`

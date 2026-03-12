@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING, List
 
 from services.market_state_engine.src.contracts import KeyLevels, LiquidityState, MarketRegime, MarketStateMSL, PositioningState, RiskState, StructureState, VolatilityState
+from services.market_state_engine.src.version import MSL_SCHEMA_VERSION
 
 if TYPE_CHECKING:
     from services.market_state_engine.src.engine import MarketStateFeatures
@@ -151,7 +152,7 @@ def build_msl_from_features(features: MarketStateFeatures) -> MarketStateMSL:
         summary = summary + "."
 
     return MarketStateMSL(
-        version=2,
+        version=MSL_SCHEMA_VERSION,
         timestamp=_iso_utc_from_ms(int(features.ts)),
         symbol=features.symbol,
         market_regime=MarketRegime(

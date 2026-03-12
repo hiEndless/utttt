@@ -4,8 +4,9 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
+from services.feature_service.src.version import FEATURE_RESPONSE_SCHEMA_VERSION
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = FEATURE_RESPONSE_SCHEMA_VERSION
 
 
 class ResponseMeta(BaseModel):
