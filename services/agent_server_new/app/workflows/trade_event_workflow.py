@@ -34,6 +34,7 @@ from services.agent_server_new.ports.event_recorder import EventRecorder
 from services.agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
 from services.agent_server_new.ports.memory.symbol_memory_recorder import SymbolMemoryRecorder
 from services.agent_server_new.ports.execution import ExecutionDecisionProvider
+from services.agent_server_new.ports.llm_observer import LLMObserver
 from services.agent_server_new.ports.market_state import MarketStateProvider
 from services.agent_server_new.app.context_builder import ContextBuilder
 from .event_context import EventContext
@@ -161,6 +162,7 @@ class TradeEventWorkflow:
         recorder: Optional[EventRecorder] = None,
         symbol_memory_provider: SymbolMemoryProvider | None = None,
         symbol_memory_recorder: SymbolMemoryRecorder | None = None,
+        llm_observer: LLMObserver | None = None,
         memory_recent_topk: int = 5,
         memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
         memory_dedup_key: str = "event_id",
@@ -175,6 +177,7 @@ class TradeEventWorkflow:
         self._recorder = recorder
         self._symbol_memory_provider = symbol_memory_provider
         self._symbol_memory_recorder = symbol_memory_recorder
+        self._llm_observer = llm_observer
         self._memory_recent_topk = max(1, int(memory_recent_topk))
         self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
         self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
@@ -229,6 +232,33 @@ class TradeEventWorkflow:
             ),
             signal_direction=event.signal_direction,
         )
+        if self._llm_observer is not None:
+            llm_payload = {
+                "event_id": event.event_id,
+                "exchange": event.exchange,
+                "symbol": event.symbol,
+                "signal_direction": event.signal_direction,
+                "signal_event": dict(ctx.signal_event or {}),
+                "msl": ctx.msl.to_llm_dict(),
+                "key_market_features": dict(ctx.key_market_features or {}),
+                "active_events": list(ctx.active_events or []),
+            }
+            try:
+                llm_result = await self._llm_observer.observe(llm_payload)
+                if self._recorder:
+                    await self._recorder.record_agent_output(
+                        event.event_id,
+                        "llm_observer",
+                        dict(llm_result or {}),
+                    )
+            except Exception as exc:
+                logger.warning("llm observer failed, fallback to rule engine event_id=%s err=%s", event.event_id, exc)
+                if self._recorder:
+                    await self._recorder.record_agent_output(
+                        event.event_id,
+                        "llm_observer",
+                        {"status": "error", "fallback": "rule_engine", "error": str(exc)},
+                    )
 
         if self._recorder:
             await self._recorder.record_agent_output(

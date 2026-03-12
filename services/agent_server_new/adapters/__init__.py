@@ -8,6 +8,12 @@
 
 from .execution_service_http import HttpExecutionDecisionProvider
 from .event_recorder_jsonl import JsonlEventRecorder
+from .llm_openai_compatible import OpenAICompatibleLLMObserver
 from .position_context_execution_http import HttpExecutionPositionContextProvider
 
-__all__ = ["HttpExecutionDecisionProvider", "HttpExecutionPositionContextProvider", "JsonlEventRecorder"]
+__all__ = [
+    "HttpExecutionDecisionProvider",
+    "HttpExecutionPositionContextProvider",
+    "JsonlEventRecorder",
+    "OpenAICompatibleLLMObserver",
+]

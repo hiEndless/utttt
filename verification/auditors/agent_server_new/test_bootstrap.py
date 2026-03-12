@@ -245,3 +245,16 @@ def test_create_trade_event_workflow_from_env_prod_llm_enabled_accepts_api_key_e
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf is not None
+
+
+def test_create_trade_event_workflow_from_env_enable_llm_observer_wiring(monkeypatch):
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "true")
+    monkeypatch.setenv("AGENT_LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("AGENT_LLM_MODEL_ID", "gpt-4o-mini")
+    monkeypatch.setenv("AGENT_LLM_API_KEY", "sk-test")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert wf._llm_observer is not None  # noqa: SLF001

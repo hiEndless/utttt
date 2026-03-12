@@ -174,6 +174,12 @@ signal_event + active_events + MSL
   - LLM API Key（当 `AGENT_LLM_ENABLED=true` 且生产环境时必填）
 - `AGENT_LLM_API_KEY_ENV`
   - API Key 环境变量名（可选；当未设置 `AGENT_LLM_API_KEY` 时从该变量读取）
+- `AGENT_LLM_TIMEOUT_S`
+  - LLM 旁路观察请求超时秒数（默认：`8`）
+- `AGENT_LLM_RETRY_MAX`
+  - LLM 旁路观察最大重试次数（默认：`1`）
+- `AGENT_LLM_RETRY_BACKOFF_S`
+  - LLM 旁路观察重试基础退避秒数（默认：`0.2`，按指数退避）
 - `AGENT_POSITION_CONTEXT_PROVIDER_MODE`
   - 仓位上下文 provider 模式（仅支持 `http`）
 - `AGENT_POSITION_CONTEXT_BASE_URL`

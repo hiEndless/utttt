@@ -7,6 +7,7 @@ from services.agent_server_new.adapters.active_events_redis import RedisActiveEv
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
+from services.agent_server_new.adapters.llm_openai_compatible import OpenAICompatibleLLMObserver
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
@@ -78,6 +79,12 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         raise RuntimeError(f"unsupported AGENT_POSITION_CONTEXT_PROVIDER_MODE={position_context_provider_mode}")
     position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
     llm_runtime = load_llm_runtime_from_env(runtime_profile=runtime_profile)
+    llm_observer = None
+    if llm_runtime.enabled and llm_runtime.ready:
+        if llm_runtime.provider == "openai_compatible":
+            llm_observer = OpenAICompatibleLLMObserver.from_env(config=llm_runtime)
+        else:
+            logger.warning("unsupported AGENT_LLM_PROVIDER=%s; llm observer disabled", llm_runtime.provider)
     if llm_runtime.enabled and not llm_runtime.ready:
         logger.warning(
             "llm runtime enabled but config incomplete; decision pipeline still uses rule-based flow "
@@ -119,6 +126,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         active_events=active_events_provider,
         execution_decider=HttpExecutionDecisionProvider.from_env() if execution_enabled else None,
         recorder=recorder,
+        llm_observer=llm_observer,
         symbol_memory_provider=symbol_memory_adapter,
         symbol_memory_recorder=symbol_memory_adapter,
         memory_recent_topk=memory_recent_topk,
