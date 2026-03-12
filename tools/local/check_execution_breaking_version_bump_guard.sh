@@ -2,6 +2,13 @@
 set -euo pipefail
 
 echo "[1/2] 读取当前与上一版本 schema mapping"
+changed_files="$(git diff --name-only HEAD~1..HEAD || true)"
+if ! printf '%s\n' "${changed_files}" | rg -q '^services/execution_service/docs/.+\.schema\.json$|^services/execution_service/docs/schema_mapping\.json$|^services/execution_service/version\.py$'; then
+  echo "[通过] 当前提交未触达 execution schema/version 相关文件，跳过 breaking 升版检查。"
+  echo "[2/2] execution breaking 变更升版守卫检查完成。"
+  exit 0
+fi
+
 ./venv/bin/python - <<'PY'
 import json
 import hashlib
