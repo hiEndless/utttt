@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v17",
+  "version": "execution-schema-mapping-v18",
   "last_updated": "2026-03-13",
   "items": [
     {
@@ -144,6 +144,7 @@
         "rule_debug",
         "policy_snapshot",
         "source",
+        "state_source",
         "trace_id",
         "updated_at_ms"
       ],
@@ -177,6 +178,11 @@
           "schema": "services/execution_service/docs/decision_state.schema.json",
           "json_path": "properties.source.const",
           "expected": "execution_service"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.state_source.$ref",
+          "expected": "./execution_enums.schema.json#/properties/decision_state_source"
         },
         {
           "schema": "services/execution_service/docs/decision_state.schema.json",

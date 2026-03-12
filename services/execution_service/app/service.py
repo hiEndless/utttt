@@ -103,6 +103,7 @@ class ExecutionService:
                 "status": "pending",
                 "account_id": account_id,
                 "source": "execution_service",
+                "state_source": "execution_service",
                 "trace_id": decision.trace_id,
             },
         )
@@ -156,6 +157,7 @@ class ExecutionService:
                     "rule_debug": _extract_rule_debug(result),
                     "policy_snapshot": _extract_policy_snapshot(result),
                     "source": "execution_service",
+                    "state_source": _derive_decision_state_source(result),
                     "trace_id": decision.trace_id,
                 },
             )
@@ -273,6 +275,8 @@ class ExecutionService:
                         "last_transition": reconcile_status,
                         "account_id": account_id,
                         "source": "execution_service",
+                        "state_source": str(out.get("reconcile_status_source") or "execution_service").strip().lower()
+                        or "execution_service",
                         "trace_id": str(payload.get("trace_id") or "").strip() or None,
                         "reconcile_order_id": order_id,
                         "reconcile_status_raw": str(out.get("status") or "").strip().lower() or None,
@@ -350,6 +354,8 @@ class ExecutionService:
         payload.update(dict(state or {}))
         payload["decision_id"] = str(decision_id)
         payload["account_id"] = str(payload.get("account_id") or "").strip() or "main"
+        payload["source"] = "execution_service"
+        payload["state_source"] = _normalize_decision_state_source(payload.get("state_source"))
         payload["updated_at_ms"] = int(time.time() * 1000)
         await self._execution_state_store.save_state(str(decision_id), payload)
 
@@ -520,6 +526,25 @@ def _build_policy_snapshot(risk_policy: Mapping[str, Any]) -> Dict[str, str]:
         "policy_version": policy_version,
         "ruleset_hash": ruleset_hash,
     }
+
+
+def _derive_decision_state_source(result: ExecutionResult) -> str:
+    order_result = result.order_result if isinstance(result.order_result, dict) else {}
+    if isinstance(order_result, dict) and order_result:
+        src = _normalize_decision_state_source(order_result.get("order_status_source"))
+        if src != "execution_service":
+            return src
+        if str(result.reject_reason or "").strip() == "execution_submit_failed":
+            return "execution_service"
+        return src
+    return "decision_engine"
+
+
+def _normalize_decision_state_source(raw: Any) -> str:
+    src = str(raw or "").strip().lower()
+    if src in {"decision_engine", "execution_sink", "execution_service"}:
+        return src
+    return "execution_service"
 
 
 def _build_confidence_migration_view(metrics: Mapping[str, Any]) -> Dict[str, Any]:

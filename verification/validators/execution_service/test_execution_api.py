@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v17"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v18"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -304,6 +304,7 @@ def test_debug_state_with_decision_id() -> None:
     assert "attempts" in data["decision_state"]
     assert data["decision_state"]["account_id"] == "main"
     assert data["decision_state"]["source"] == "execution_service"
+    assert data["decision_state"]["state_source"] in {"decision_engine", "execution_sink", "execution_service"}
     assert data["decision_state"]["trace_id"] == "trace-debug-001"
     assert isinstance(data["decision_state"].get("rule_debug"), dict)
     assert isinstance(data["decision_state"]["rule_debug"].get("hit_rule"), str)
@@ -413,6 +414,7 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
     assert debug_data["decision_state"]["status"] == "submitted"
     assert debug_data["decision_state"]["account_id"] == "main"
     assert debug_data["decision_state"]["last_transition"] == "submitted"
+    assert debug_data["decision_state"]["state_source"] == "execution_sink"
     assert debug_data["decision_state"]["reconcile_order_id"] == order_id
 
 

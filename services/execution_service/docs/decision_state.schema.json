@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionDecisionState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id",
+    "account_id",
+    "status",
+    "last_transition",
+    "attempts",
+    "source",
+    "state_source",
+    "updated_at_ms"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "account_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {"$ref": "./decision_state_status.schema.json#/properties/status"},
+    "last_transition": {"$ref": "./decision_state_status.schema.json#/properties/last_transition"},
+    "execution_action": {
+      "$ref": "./execution_enums.schema.json#/properties/execution_action"
+    },
+    "reject_reason": {
+      "$ref": "./reject_reason.schema.json#/properties/reject_reason"
+    },
+    "risk_state": {"$ref": "./risk_state.schema.json#/properties/risk_state"},
+    "attempts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "submitted_at_ms": {
+      "type": ["integer", "null"]
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "const": "execution_service"
+    },
+    "state_source": {
+      "$ref": "./execution_enums.schema.json#/properties/decision_state_source"
+    },
+    "trace_id": {
+      "type": ["string", "null"]
+    },
+    "reconcile_order_id": {
+      "type": ["string", "null"]
+    },
+    "reconcile_status_raw": {
+      "type": ["string", "null"]
+    },
+    "rule_debug": {"$ref": "./rule_debug.schema.json"},
+    "policy_snapshot": {
+      "$ref": "./policy_snapshot.schema.json"
+    },
+    "updated_at_ms": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

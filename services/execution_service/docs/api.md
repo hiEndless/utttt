@@ -32,7 +32,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v17",
+  "schema_mapping_version": "execution-schema-mapping-v18",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -319,6 +319,7 @@
   - `risk_state`: 最近一次裁决风险状态（`normal|warn|reduce_only|frozen`）
   - `rule_debug`: 最近一次裁决命中规则调试信息（命中规则名/规则顺序/值阈值/命中时间戳/逐条评估轨迹中文说明）
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
+  - `state_source`: 状态语义来源（`decision_engine|execution_sink|execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）
   - `policy_snapshot`: 最近一次裁决生效策略快照（`policy_version/ruleset_hash`）
   - `reconcile_order_id`: 最近一次回执对账的订单号（如有）

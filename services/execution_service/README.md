@@ -134,6 +134,7 @@ execution_service/
   - `status_source/order_status_source/reconcile_status_source`（状态来源）
   - `sink_mode`（执行通道）
   - 兼容字段 `status` 保留，但等价于对应 `*_status`
+- `decision_state` 已增加 `state_source`（`decision_engine|execution_sink|execution_service`），用于区分状态语义来源；`source` 继续保留为服务标识
 
 ## 最小接口（当前）
 

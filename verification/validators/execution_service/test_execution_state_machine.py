@@ -61,6 +61,7 @@ def test_state_machine_submitted_status() -> None:
     assert isinstance(state["submitted_at_ms"], int)
     assert state["last_error"] == ""
     assert state["source"] == "execution_service"
+    assert state["state_source"] == "execution_sink"
 
 
 def test_state_machine_failed_status_on_submit_error() -> None:
@@ -82,6 +83,7 @@ def test_state_machine_failed_status_on_submit_error() -> None:
     assert state["attempts"] == 1
     assert state["submitted_at_ms"] is None
     assert state["last_error"] == "down"
+    assert state["state_source"] == "execution_service"
 
 
 def test_state_machine_skipped_status() -> None:
@@ -100,6 +102,7 @@ def test_state_machine_skipped_status() -> None:
     assert state["account_id"] == "main"
     assert state["attempts"] == 0
     assert state["submitted_at_ms"] is None
+    assert state["state_source"] == "decision_engine"
     assert isinstance(state.get("rule_debug"), dict)
 
 

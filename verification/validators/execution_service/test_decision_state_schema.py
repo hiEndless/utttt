@@ -52,6 +52,7 @@ def test_decision_state_schema_samples() -> None:
             "ruleset_hash": "risk-rules-v1",
         },
         "source": "execution_service",
+        "state_source": "decision_engine",
         "trace_id": "trace-001",
         "updated_at_ms": 1760000000001,
     }
@@ -66,6 +67,7 @@ def test_decision_state_schema_samples() -> None:
         "last_transition": "filled",
         "attempts": 1,
         "source": "execution_service",
+        "state_source": "execution_sink",
         "updated_at_ms": 1760000000002,
     }
     assert validate_payload_with_local_refs(
@@ -79,6 +81,7 @@ def test_decision_state_schema_samples() -> None:
         "last_transition": "submitted",
         "attempts": 1,
         "source": "unknown",
+        "state_source": "execution_service",
         "updated_at_ms": 1760000000001,
     }
     assert not validate_payload_with_local_refs(

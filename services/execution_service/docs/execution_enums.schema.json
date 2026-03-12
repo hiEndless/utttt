@@ -23,6 +23,10 @@
       "type": "string",
       "enum": ["execution_sink", "execution_service"]
     },
+    "decision_state_source": {
+      "type": "string",
+      "enum": ["decision_engine", "execution_sink", "execution_service"]
+    },
     "request_side": {
       "type": "string",
       "enum": ["BUY", "SELL"]
