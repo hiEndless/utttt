@@ -32,6 +32,7 @@ Local:
 - `tools/local/verify_quick_report.sh`
 - `tools/local/replay_event_center.sh`
 - `tools/local/verify_report_aggregate.sh`
+- `tools/local/run_agent_memory_summary_report.sh`
 - `tools/local/verify_thresholds.sh`
 - `tools/local/run_verification_api.sh`
 - `tools/local/diff_json.sh`
