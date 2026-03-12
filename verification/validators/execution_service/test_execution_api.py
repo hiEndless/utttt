@@ -338,6 +338,7 @@ def test_reconcile_sink_not_configured() -> None:
 def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
     monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
     client = TestClient(create_app())
     response = client.post(
         "/internal/execution/reconcile",
@@ -359,6 +360,7 @@ def test_reconcile_mock_success(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
     monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
     client = TestClient(create_app())
 
     decide_resp = client.post(
@@ -411,6 +413,7 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
 def test_reconcile_order_id_idempotency(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
     monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    monkeypatch.setenv("EXECUTION_ALLOW_MOCK_SINK", "true")
     client = TestClient(create_app())
     payload = {
         "order_id": "mock-order-idem-001",

@@ -155,6 +155,7 @@ execution_service/
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
   - `EXECUTION_SINK_MODE=mock|exchange`（默认 `exchange`）
+  - `EXECUTION_ALLOW_MOCK_SINK=true|false`（默认 `false`，仅测试/联调用）
   - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SINK_EXCHANGE_DRY_RUN=true|false`（默认 `true`，建议联调阶段保持开启）

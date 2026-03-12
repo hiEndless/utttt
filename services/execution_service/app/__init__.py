@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
 
     submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
     sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "exchange") or "exchange").strip().lower()
+    allow_mock_sink = _is_true_env("EXECUTION_ALLOW_MOCK_SINK", "false")
     exchange_dry_run = _is_true_env("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
 
     if runtime_profile in {"prod", "production"}:
@@ -71,6 +72,8 @@ def create_app() -> FastAPI:
     execution_sink = None
     if submit_enabled:
         if sink_mode == "mock":
+            if not allow_mock_sink:
+                raise RuntimeError("mock sink requires EXECUTION_ALLOW_MOCK_SINK=true")
             from services.execution_service.adapters.mock_execution_sink import MockExecutionSink
 
             execution_sink = MockExecutionSink(
