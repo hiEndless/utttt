@@ -47,6 +47,8 @@ if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then
   # 场景2：runtime 版本升版并同步四件套，可通过
   #   同步更新 docs/CONTRACT_INDEX.md + contracts/versions/manifest.yaml +
   #   services/event_center_new/version.py + services/event_center_new/docs/runtime.md
+  # 场景3：修改 verification/reports/release_gate_summary_v1.schema.json
+  #   属于 schema 变更触发器，需同步四件套（CONTRACT_INDEX + 模块契约文档 + 迁移文档 + 守卫/测试）
 
 调试:
   --show-detected-versions
@@ -182,6 +184,10 @@ echo "[1/3] 检测变更触发器"
 if [[ -n "${schema_changed_services}" ]]; then
   echo "  - schema_changed_services:"
   printf '%s\n' "${schema_changed_services}" | sed 's/^/    - /'
+  if printf '%s\n' "${CHANGED_FILES}" | rg -q '^verification/reports/release_gate_summary_v1\.schema\.json$'; then
+    echo "  - schema_changed_files include verification/reports/release_gate_summary_v1.schema.json"
+    echo "    [hint] 该文件属于发布门禁契约，需同步四件套并更新 CONTRACT_INDEX/相关文档。"
+  fi
 else
   echo "  - schema_changed_services: none"
 fi
