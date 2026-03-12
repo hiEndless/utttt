@@ -163,6 +163,7 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert "external_event_input_ignored" not in contract_warnings
         alert_codes = list(trace_payload.get("alert_codes") or [])
         assert "AGENT_ALTERNATIVE_SOURCES_CONFLICT" in alert_codes
+        assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" not in alert_codes
 
     import pytest
 

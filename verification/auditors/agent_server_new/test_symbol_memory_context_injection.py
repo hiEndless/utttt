@@ -59,6 +59,50 @@ class _MarketState:
         )
 
 
+class _MarketStateInvalidProviderState:
+    async def get_market_state(self, exchange: str, symbol: str):
+        _ = (exchange, symbol)
+        return MarketStateSnapshot(
+            exchange="binance",
+            symbol="ETHUSDT",
+            msl=_build_msl_from_dict(_sample_msl()),
+            msl_meta={"schema_version": 2},
+            cross_horizon={"suggested_policy": "wait_confirmation"},
+            state_features={
+                "evidence": {
+                    "alternative_sources_fusion": {
+                        "preferred_source": "feature",
+                        "conflicts": [],
+                        "merged": {
+                            "available_sources": ["news"],
+                            "unavailable_sources": ["social", "onchain"],
+                            "by_source": {
+                                "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
+                                "social": {"provider_state": "empty", "feature_keys": []},
+                                "onchain": {"provider_state": "mystery_state", "feature_keys": []},
+                            },
+                        },
+                    }
+                },
+                "anomalies": {},
+            },
+        )
+
+
+class _MarketStateRiskFlagsWarning:
+    async def get_market_state(self, exchange: str, symbol: str):
+        _ = (exchange, symbol)
+        return MarketStateSnapshot(
+            exchange="binance",
+            symbol="ETHUSDT",
+            msl=_build_msl_from_dict(_sample_msl()),
+            msl_meta={"schema_version": 2},
+            cross_horizon={"suggested_policy": "wait_confirmation"},
+            state_features={"evidence": {}, "anomalies": {}},
+            anomaly_flags=["state_features_risk_flags_not_array"],
+        )
+
+
 class _Position:
     async def get_position_context(self, exchange: str, symbol: str):
         _ = (exchange, symbol)
@@ -104,5 +148,47 @@ def test_context_builder_injects_symbol_memory_features():
         assert by_name["recent_memory"][0]["event_id"] == "evt-100"
         warnings = list((built.ctx.key_market_features or {}).get("contract_warnings") or [])
         assert "alternative_sources_conflict_detected" in warnings
+
+    asyncio.run(_run())
+
+
+def test_context_builder_marks_invalid_alternative_provider_state_warning():
+    async def _run():
+        builder = ContextBuilder(
+            market_state=_MarketStateInvalidProviderState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            symbol_memory_provider=_Memory(),
+            max_key_features=8,
+        )
+        built = await builder.build(
+            event_id="evt-102",
+            exchange="binance",
+            symbol="ETHUSDT",
+            signal_payload={"event_type": "indicator_signal"},
+        )
+        warnings = list((built.ctx.key_market_features or {}).get("contract_warnings") or [])
+        assert "alternative_sources_provider_state_invalid" in warnings
+
+    asyncio.run(_run())
+
+
+def test_context_builder_passes_state_risk_flags_not_array_warning():
+    async def _run():
+        builder = ContextBuilder(
+            market_state=_MarketStateRiskFlagsWarning(),
+            position_context=_Position(),
+            active_events=_Events(),
+            symbol_memory_provider=_Memory(),
+            max_key_features=8,
+        )
+        built = await builder.build(
+            event_id="evt-103",
+            exchange="binance",
+            symbol="ETHUSDT",
+            signal_payload={"event_type": "indicator_signal"},
+        )
+        warnings = list((built.ctx.key_market_features or {}).get("contract_warnings") or [])
+        assert "state_features_risk_flags_not_array" in warnings
 
     asyncio.run(_run())

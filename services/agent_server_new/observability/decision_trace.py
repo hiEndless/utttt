@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 _CONTRACT_WARNING_TO_ALERT_CODE = {
     "alternative_sources_conflict_detected": "AGENT_ALTERNATIVE_SOURCES_CONFLICT",
+    "alternative_sources_provider_state_invalid": "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID",
 }
 
 

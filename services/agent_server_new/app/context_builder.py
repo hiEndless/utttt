@@ -11,6 +11,16 @@ from services.agent_server_new.ports.data.position_context_provider import Posit
 from services.agent_server_new.ports.market_state import MarketStateProvider
 
 _UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
+_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = {
+    "primary",
+    "fallback",
+    "static",
+    "noop",
+    "unavailable",
+    "empty",
+    "ok",
+    "event_evidence_present",
+}
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -134,11 +144,23 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
 
 
 def _extract_alternative_source_contract_warnings(evidence: Dict[str, Any]) -> List[str]:
+    warnings: List[str] = []
     fusion = _safe_dict(evidence.get("alternative_sources_fusion"))
     conflicts = list(fusion.get("conflicts") or [])
     if conflicts:
-        return ["alternative_sources_conflict_detected"]
-    return []
+        warnings.append("alternative_sources_conflict_detected")
+
+    summary = _extract_alternative_source_summary(evidence)
+    provider_states = dict(summary.get("provider_states") or {})
+    for value in provider_states.values():
+        state = str(value or "").strip().lower()
+        if not state:
+            continue
+        if state not in _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES:
+            warnings.append("alternative_sources_provider_state_invalid")
+            break
+
+    return sorted(set([x for x in warnings if x]))
 
 
 def _normalize_recent_memory(

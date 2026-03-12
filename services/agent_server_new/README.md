@@ -258,8 +258,8 @@ signal_event + active_events + MSL
 - `memory_dropped_count`
 - `memory_summary_field_count`
 - `memory_summary_event_count`
-- `contract_warnings`（来自 `market_state.anomaly_flags` 的契约/语义告警子集，当前收敛 `state_features_*`、`msl_*`，并追加 `alternative_sources_conflict_detected`）
-- `alert_codes`（由 `contract_warnings` 映射出的标准告警码，如 `AGENT_ALTERNATIVE_SOURCES_CONFLICT`）
+- `contract_warnings`（来自 `market_state.anomaly_flags` 的契约/语义告警子集，当前收敛 `state_features_*`、`msl_*`，并追加 `alternative_sources_conflict_detected`、`alternative_sources_provider_state_invalid`）
+- `alert_codes`（由 `contract_warnings` 映射出的标准告警码，如 `AGENT_ALTERNATIVE_SOURCES_CONFLICT`、`AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID`）
 
 ## One-shot Pipeline Smoke
 
