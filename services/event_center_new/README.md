@@ -8,6 +8,8 @@
 
 `event_center_new` 是目标架构中的 **Event Center**，只负责事件层，不负责市场状态归纳，不负责交易决策，不负责执行。
 
+时间语义总词典（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
+
 目标收敛架构：
 
 ```text
@@ -81,6 +83,11 @@ data_server
   - 适合进入状态层或决策层的标准事件
 - `EventBatch`
   - 某个资产某个时间窗内的活跃事件集合，包含去重和优先级结果
+
+`SelectedEvent` 时间字段约定（过渡期）：
+- `event_ts_ms`：事件发生时间（推荐主字段）
+- `processed_ts_ms`：事件处理/产出时间（推荐主字段）
+- `ts_ms`：兼容别名（deprecated）
 
 ## 推荐边界
 

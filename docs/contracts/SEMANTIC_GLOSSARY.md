@@ -47,6 +47,8 @@
 
 ## 3. 时间字段定义（冻结）
 
+事件中心实现说明参考：`services/event_center_new/README.md`
+
 - `event_ts_ms`：事件发生时间（int，毫秒）。
 - `processed_ts_ms`：系统处理/产出时间（int，毫秒）。
 - `ts_ms`：兼容别名（deprecated）；新链路禁止只写 `ts_ms`，若保留必须可映射到上面两类语义。
