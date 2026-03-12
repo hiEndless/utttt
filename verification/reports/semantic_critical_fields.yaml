@@ -1,0 +1,12 @@
+version: 1
+updated_at: "2026-03-12"
+
+# Warnings touching these field names are treated as CI blocking.
+critical_fields:
+  - decision_confidence
+  - confidence
+  - raw_market_structure
+  - msl
+  - ts_ms
+  - market_state
+  - risk_bias

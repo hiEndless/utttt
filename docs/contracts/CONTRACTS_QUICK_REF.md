@@ -180,6 +180,7 @@ agent_server_new -> execution_service
 - Runner 输出 Schema 守卫脚本（CI 可用）：`tools/local/check_runner_output_schema_guard.sh`
 - Contract Docs Index 守卫脚本（CI 可用）：`tools/local/check_contract_docs_index_guard.sh`
 - 语义策略文件守卫脚本（CI 可用）：`tools/local/check_semantic_policy_guard.sh`
+- 语义关键字段告警守卫（CI 可用）：`tools/local/check_semantic_critical_warning_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`tools/local/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`tools/local/check_new_arch_guards.sh`
 - 告警码入口守卫（CI 可用）：`tools/local/check_alert_codes_entry_guard.sh`

@@ -134,8 +134,11 @@ def run_audit() -> dict[str, Any]:
 
         # type drift on same field name
         shapes = sorted({x["shape"] for x in occ})
-        if len(shapes) > 1:
-            warnings.append(f"field {name}: multiple shapes detected {shapes}")
+        known_shapes = sorted({s for s in shapes if s != "unknown"})
+        # Unknown is usually introduced by unresolved $ref leaves and should not
+        # by itself trigger multi-shape drift alarms.
+        if len(known_shapes) > 1:
+            warnings.append(f"field {name}: multiple shapes detected {known_shapes}")
 
     report = {
         "schema_version": "semantic-audit-v1",
