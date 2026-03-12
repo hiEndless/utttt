@@ -44,7 +44,7 @@ AGGREGATE_ARGS=(--glob 'verification/reports/*.json' --output "$SUMMARY_PATH")
 if [[ "$COMPACT" == "1" ]]; then
   AGGREGATE_ARGS+=(--compact)
 fi
-python3 -m verification.reports.aggregate_reports "${AGGREGATE_ARGS[@]}"
+bash tools/local/verify_report_aggregate.sh "${AGGREGATE_ARGS[@]}"
 if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
   python3 -m verification.reports.check_thresholds \
     --summary "$SUMMARY_PATH" \
