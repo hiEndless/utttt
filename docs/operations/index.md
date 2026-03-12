@@ -17,3 +17,7 @@ Canonical operations docs:
 - `VERIFY_QUICK_DEDUP_MATRIX.md`
 - `VERIFY_QUICK_TIMING_BASELINE.md`
 - `PLACEHOLDER_INVENTORY_20260312.md`
+
+使用建议：
+- 本地 quick 入口优先使用 `tools/local/verify_quick.sh`（代理到 `tools/ci/verify_quick.sh`）。
+- 本地 full 入口优先使用 `tools/local/verify_full.sh`（代理到 `tools/ci/new_arch_guards_full.sh`）。
