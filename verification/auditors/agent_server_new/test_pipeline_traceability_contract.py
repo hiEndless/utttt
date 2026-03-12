@@ -48,7 +48,26 @@ def _sample_selected_events() -> List[Dict[str, Any]]:
             "selected_type": "onchain_alert",
             "direction_hint": "bullish",
             "priority": "high",
-            "context_snapshot": {"source_reason": "whale_inflow"},
+            "context_snapshot": {
+                "source_reason": "whale_inflow",
+                "alternative_sources_summary": {
+                    "available_sources": ["onchain"],
+                    "unavailable_sources": ["news", "social"],
+                    "provider_states": {"news": "empty", "social": "empty", "onchain": "event_evidence_present"},
+                    "data_sources": {
+                        "news": "event_center_new.news",
+                        "social": "event_center_new.social",
+                        "onchain": "event_center_new.onchain",
+                    },
+                    "inference_sources": {
+                        "news": "event_center_new.selector",
+                        "social": "event_center_new.selector",
+                        "onchain": "event_center_new.selector",
+                    },
+                    "feature_keys": {"news": [], "social": [], "onchain": ["inflow_usd"]},
+                    "evidence_counts": {"news": 0, "social": 0, "onchain": 2},
+                },
+            },
             "route": {"horizon": "5m"},
         }
     ]
@@ -200,6 +219,11 @@ def test_pipeline_traceability_selected_event_to_decision_trace():
         assert first_event.get("source") == "event_center_new"
         assert first_event.get("type") == "onchain_alert"
         assert first_event.get("direction") == "bullish"
+
+        alt_item = next((x for x in features if str((x or {}).get("name") or "") == "alternative_source_summary"), {})
+        alt_value = dict((alt_item or {}).get("value") or {})
+        assert alt_value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
+        assert alt_value.get("inference_sources", {}).get("onchain") == "event_center_new.selector"
 
     import pytest
 
