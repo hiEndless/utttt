@@ -16,8 +16,9 @@
   - `horizons`
   - `behavioral`
   - `indicators`（仅 features 接口）
+  - `news/social/onchain`（作为 `alternative_sources` 可选输出）
 - 构建标准 `raw_market_structure`
-- 派生 `derived_metrics` 与 `structure_snapshot`
+- 派生 `derived_metrics`、`structure_snapshot` 与 `alternative_sources`
 - 执行输出标准化（normalizer）
 - 维护请求级降级原因采集
 - 在“关键结构全空”时抛出 `FeatureDataUnavailableError`

@@ -49,6 +49,7 @@ class FeatureSnapshot(BaseModel):
     indicators: Dict[str, Any] = Field(default_factory=dict)
     derived_metrics: DerivedMetricsModel = Field(default_factory=DerivedMetricsModel)
     structure_snapshot: StructureSnapshotModel = Field(default_factory=StructureSnapshotModel)
+    alternative_sources: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RawStructureSnapshot(BaseModel):

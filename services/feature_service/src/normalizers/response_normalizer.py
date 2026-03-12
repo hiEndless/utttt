@@ -52,8 +52,22 @@ def normalize_raw_market_structure(raw_market_structure: Any, *, symbol: str) ->
 
 
 def normalize_features_payload(features: Any) -> Dict[str, Any]:
+    def _normalize_alt_entry(source_type: str, payload: Any) -> Dict[str, Any]:
+        raw = _safe_dict(payload)
+        features = _safe_dict(raw.get("features"))
+        available = bool(raw.get("available")) if "available" in raw else bool(features)
+        provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
+        return {
+            "source_type": source_type,
+            "available": available,
+            "provider_state": provider_state,
+            "as_of_ms": raw.get("as_of_ms"),
+            "features": features,
+        }
+
     src = _safe_dict(features)
     derived_metrics = _safe_dict(src.get("derived_metrics"))
+    alt = _safe_dict(src.get("alternative_sources"))
     return {
         "indicators": _safe_dict(src.get("indicators")),
         "derived_metrics": {
@@ -69,5 +83,10 @@ def normalize_features_payload(features: Any) -> Dict[str, Any]:
         "structure_snapshot": {
             "pre_decision_structure": _safe_dict(_safe_dict(src.get("structure_snapshot")).get("pre_decision_structure")),
             "horizons": _safe_dict(_safe_dict(src.get("structure_snapshot")).get("horizons")),
+        },
+        "alternative_sources": {
+            "news": _normalize_alt_entry("news", alt.get("news")),
+            "social": _normalize_alt_entry("social", alt.get("social")),
+            "onchain": _normalize_alt_entry("onchain", alt.get("onchain")),
         },
     }

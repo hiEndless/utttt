@@ -32,6 +32,8 @@
 - `feature_response_schema_version: 1.0`
 - `services/feature_service/docs/api.md`
 - `services/feature_service/docs/boundaries.md`
+- `services/feature_service/docs/schemas/raw_structure_response.schema.json`
+- `services/feature_service/docs/schemas/feature_response.schema.json`
 - `tools/local/check_feature_contract_guard.sh`
 - `tools/local/check_feature_contract_entry_guard.sh`
 

@@ -15,6 +15,11 @@ from services.feature_service.src.providers.noop import (
     NoopOpenInterestProvider,
     NoopOrderbookProvider,
 )
+from services.feature_service.src.providers.future_source_providers import (
+    NoopNewsProvider,
+    NoopOnchainProvider,
+    NoopSocialProvider,
+)
 from services.feature_service.src.providers.bundle import ProviderBundle
 from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
 
@@ -52,6 +57,9 @@ def test_feature_service_contract_with_noop_bundle():
                 horizons_provider=NoopHorizonsProvider(),
                 behavior_provider=NoopBehaviorProvider(),
                 indicators_provider=NoopIndicatorsProvider(),
+                news_provider=NoopNewsProvider(),
+                social_provider=NoopSocialProvider(),
+                onchain_provider=NoopOnchainProvider(),
             )
         )
 
@@ -94,6 +102,9 @@ def test_feature_service_records_degraded_reason_when_fallback_happens():
                 horizons_provider=NoopHorizonsProvider(),
                 behavior_provider=NoopBehaviorProvider(),
                 indicators_provider=NoopIndicatorsProvider(),
+                news_provider=NoopNewsProvider(),
+                social_provider=NoopSocialProvider(),
+                onchain_provider=NoopOnchainProvider(),
             )
         )
         raw = await service.get_raw_structure("binance", "BTCUSDT")
@@ -116,6 +127,9 @@ def test_feature_service_contract_with_partial_non_empty_structure():
                 horizons_provider=NoopHorizonsProvider(),
                 behavior_provider=NoopBehaviorProvider(),
                 indicators_provider=NoopIndicatorsProvider(),
+                news_provider=NoopNewsProvider(),
+                social_provider=NoopSocialProvider(),
+                onchain_provider=NoopOnchainProvider(),
             )
         )
         raw = await service.get_raw_structure("binance", "BTCUSDT")
@@ -130,5 +144,10 @@ def test_feature_service_contract_with_partial_non_empty_structure():
         assert isinstance(root.get("indicators"), dict)
         assert isinstance(root.get("derived_metrics"), dict)
         assert isinstance(root.get("structure_snapshot"), dict)
+        alt = root.get("alternative_sources", {})
+        assert isinstance(alt, dict)
+        assert alt.get("news", {}).get("source_type") == "news"
+        assert alt.get("social", {}).get("source_type") == "social"
+        assert alt.get("onchain", {}).get("source_type") == "onchain"
 
     asyncio.run(_run())

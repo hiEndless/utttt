@@ -138,6 +138,11 @@
     "structure_snapshot": {
       "pre_decision_structure": {},
       "horizons": {}
+    },
+    "alternative_sources": {
+      "news": {"source_type": "news", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}},
+      "social": {"source_type": "social", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}},
+      "onchain": {"source_type": "onchain", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}}
     }
   }
 }
@@ -148,6 +153,7 @@
 - `data.indicators`：多周期基础指标原始输出
 - `data.derived_metrics`：面向下游复用的摘要特征
 - `data.structure_snapshot`：保留较完整的结构快照，供状态层与调试使用
+- `data.alternative_sources`：未来数据源统一包（news/social/onchain），字段稳定但当前默认 `noop`。
 
 ## 错误响应
 

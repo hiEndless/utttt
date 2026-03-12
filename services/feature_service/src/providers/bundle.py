@@ -7,14 +7,22 @@ from typing import Iterable
 from services.feature_service.src.ports.behavior_provider import BehaviorProvider
 from services.feature_service.src.ports.horizons_provider import HorizonsProvider
 from services.feature_service.src.ports.indicators_provider import IndicatorsProvider
+from services.feature_service.src.ports.news_provider import NewsProvider
+from services.feature_service.src.ports.onchain_provider import OnchainProvider
 from services.feature_service.src.ports.open_interest_provider import OpenInterestProvider
 from services.feature_service.src.ports.orderbook_provider import OrderbookProvider
+from services.feature_service.src.ports.social_provider import SocialProvider
 from services.feature_service.src.providers.noop import (
     NoopBehaviorProvider,
     NoopHorizonsProvider,
     NoopIndicatorsProvider,
     NoopOpenInterestProvider,
     NoopOrderbookProvider,
+)
+from services.feature_service.src.providers.future_source_providers import (
+    NoopNewsProvider,
+    NoopOnchainProvider,
+    NoopSocialProvider,
 )
 from services.feature_service.src.providers.fallback_structure_providers import (
     FallbackBehaviorProvider,
@@ -47,6 +55,9 @@ class ProviderBundle:
     horizons_provider: HorizonsProvider
     behavior_provider: BehaviorProvider
     indicators_provider: IndicatorsProvider
+    news_provider: NewsProvider
+    social_provider: SocialProvider
+    onchain_provider: OnchainProvider
 
 
 def build_noop_provider_bundle() -> ProviderBundle:
@@ -57,6 +68,9 @@ def build_noop_provider_bundle() -> ProviderBundle:
         horizons_provider=NoopHorizonsProvider(),
         behavior_provider=NoopBehaviorProvider(),
         indicators_provider=NoopIndicatorsProvider(),
+        news_provider=NoopNewsProvider(),
+        social_provider=NoopSocialProvider(),
+        onchain_provider=NoopOnchainProvider(),
     )
 
 
@@ -85,4 +99,7 @@ def build_independent_provider_bundle(periods: Iterable[str] | None = None) -> P
         horizons_provider=FallbackHorizonsProvider(MigratedHorizonsProvider(), static_horizons),
         behavior_provider=FallbackBehaviorProvider(MigratedBehaviorProvider(), static_behavior),
         indicators_provider=indicators_provider,
+        news_provider=NoopNewsProvider(),
+        social_provider=NoopSocialProvider(),
+        onchain_provider=NoopOnchainProvider(),
     )

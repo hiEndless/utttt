@@ -6,8 +6,11 @@ from typing import Any, Dict, Mapping
 from services.feature_service.src.ports.behavior_provider import BehaviorProvider
 from services.feature_service.src.ports.horizons_provider import HorizonsProvider
 from services.feature_service.src.ports.indicators_provider import IndicatorsProvider
+from services.feature_service.src.ports.news_provider import NewsProvider
+from services.feature_service.src.ports.onchain_provider import OnchainProvider
 from services.feature_service.src.ports.open_interest_provider import OpenInterestProvider
 from services.feature_service.src.ports.orderbook_provider import OrderbookProvider
+from services.feature_service.src.ports.social_provider import SocialProvider
 from services.feature_service.src.normalizers.response_normalizer import (
     normalize_degraded_reasons,
     normalize_exchange,
@@ -417,17 +420,26 @@ class FeatureService:
         horizons_provider: HorizonsProvider,
         behavior_provider: BehaviorProvider,
         indicators_provider: IndicatorsProvider,
+        news_provider: NewsProvider,
+        social_provider: SocialProvider,
+        onchain_provider: OnchainProvider,
     ) -> None:
         self._assert_provider(orderbook_provider, "orderbook_provider", "get_orderbook")
         self._assert_provider(open_interest_provider, "open_interest_provider", "get_open_interest")
         self._assert_provider(horizons_provider, "horizons_provider", "get_horizons")
         self._assert_provider(behavior_provider, "behavior_provider", "get_behavior")
         self._assert_provider(indicators_provider, "indicators_provider", "get_indicators")
+        self._assert_provider(news_provider, "news_provider", "get_news_features")
+        self._assert_provider(social_provider, "social_provider", "get_social_features")
+        self._assert_provider(onchain_provider, "onchain_provider", "get_onchain_features")
         self._orderbook_provider = orderbook_provider
         self._open_interest_provider = open_interest_provider
         self._horizons_provider = horizons_provider
         self._behavior_provider = behavior_provider
         self._indicators_provider = indicators_provider
+        self._news_provider = news_provider
+        self._social_provider = social_provider
+        self._onchain_provider = onchain_provider
 
     @classmethod
     def from_bundle(cls, bundle: ProviderBundle) -> "FeatureService":
@@ -437,6 +449,9 @@ class FeatureService:
             horizons_provider=bundle.horizons_provider,
             behavior_provider=bundle.behavior_provider,
             indicators_provider=bundle.indicators_provider,
+            news_provider=bundle.news_provider,
+            social_provider=bundle.social_provider,
+            onchain_provider=bundle.onchain_provider,
         )
 
     @staticmethod
@@ -484,6 +499,18 @@ class FeatureService:
             "behavioral": dict(behavior_out or {}),
         }
 
+    async def _assemble_alternative_sources(self, exchange: str, symbol: str) -> Dict[str, Any]:
+        news_out, social_out, onchain_out = await asyncio.gather(
+            self._news_provider.get_news_features(exchange, symbol),
+            self._social_provider.get_social_features(exchange, symbol),
+            self._onchain_provider.get_onchain_features(exchange, symbol),
+        )
+        return {
+            "news": dict(news_out or {}),
+            "social": dict(social_out or {}),
+            "onchain": dict(onchain_out or {}),
+        }
+
     async def get_raw_structure(self, exchange: str, symbol: str) -> Dict[str, Any]:
         reset_degradation_state()
         exchange_norm = normalize_exchange(exchange)
@@ -510,9 +537,10 @@ class FeatureService:
         reset_degradation_state()
         exchange_norm = normalize_exchange(exchange)
         symbol_norm = normalize_symbol(symbol)
-        raw_market_structure, indicators = await asyncio.gather(
+        raw_market_structure, indicators, alternative_sources = await asyncio.gather(
             self._assemble_raw_market_structure(exchange_norm, symbol_norm),
             self._indicators_provider.get_indicators(exchange_norm, symbol_norm),
+            self._assemble_alternative_sources(exchange_norm, symbol_norm),
         )
         degraded_reasons = normalize_degraded_reasons(snapshot_degradation_reasons())
         pre = raw_market_structure.get("pre_decision_structure")
@@ -535,6 +563,7 @@ class FeatureService:
                 "pre_decision_structure": pre if isinstance(pre, dict) else {},
                 "horizons": horizons if isinstance(horizons, dict) else {},
             },
+            "alternative_sources": dict(alternative_sources or {}),
         }
         normalized_raw = normalize_raw_market_structure(raw_market_structure, symbol=symbol_norm)
         if _is_core_structure_unavailable(normalized_raw):

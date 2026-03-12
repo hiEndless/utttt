@@ -34,6 +34,11 @@ class _StubFeatureService:
                 "indicators": {"1m": {"rsi": 50.0}},
                 "derived_metrics": {"candidate_horizons": ["short_term", "mid_term", "long_term"]},
                 "structure_snapshot": {"pre_decision_structure": {}, "horizons": {}},
+                "alternative_sources": {
+                    "news": {"source_type": "news", "available": False, "provider_state": "noop", "as_of_ms": None, "features": {}},
+                    "social": {"source_type": "social", "available": False, "provider_state": "noop", "as_of_ms": None, "features": {}},
+                    "onchain": {"source_type": "onchain", "available": False, "provider_state": "noop", "as_of_ms": None, "features": {}},
+                },
             },
         }
 
@@ -87,6 +92,7 @@ def test_features_route_returns_versioned_contract():
     assert isinstance(body["data"]["indicators"], dict)
     assert isinstance(body["data"]["derived_metrics"], dict)
     assert isinstance(body["data"]["structure_snapshot"], dict)
+    assert isinstance(body["data"]["alternative_sources"], dict)
     assert "features" not in body
 
 

@@ -39,3 +39,11 @@
 3. 稳定 contract
 
 再开始真实迁移逻辑。
+
+## 迁移增量记录
+
+### 2026-03-13
+
+- `FeatureResponse` 新增可选输出块 `data.alternative_sources`（`news/social/onchain`）。
+- 输出语义：统一最小包结构 `source_type/available/provider_state/as_of_ms/features`，用于未来多源接入前的字段稳定占位。
+- 兼容性：向后兼容（新增可选字段，不影响既有 `indicators/derived_metrics/structure_snapshot` 读取路径）。
