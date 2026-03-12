@@ -504,6 +504,7 @@ RiskGateContext 枚举：
 当 global_regime=critical 或 cooldown_active=true 时：不允许 open/add，仅允许 reduce/exit。
 
 实现：[risk_gate.py](services/agent_server_new/domain/risk_gate.py#L9-L42)
+原因码单源（`decision_trace.risk_gate.regime_sources`）：[risk_gate_reasons.py](services/agent_server_new/domain/risk_gate_reasons.py)
 
 ### 7.7 execution_planner：RulePlan + RiskAllowance -> ExecutionPlan
 

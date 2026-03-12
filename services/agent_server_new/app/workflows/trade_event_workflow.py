@@ -13,6 +13,16 @@ from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_
 from services.agent_server_new.domain.intent_resolver import resolve_intent
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
 from services.agent_server_new.domain.risk_gate import RiskGateContext, risk_gate
+from services.agent_server_new.domain.risk_gate_reasons import (
+    RISK_GATE_REASON_DEFAULT_NORMAL,
+    RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT,
+    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH,
+    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM,
+    RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH,
+    RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE,
+    risk_gate_reason_active_event,
+    risk_gate_reason_portfolio_risk_state,
+)
 from services.agent_server_new.domain.rule_planner import build_rule_plan
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
@@ -90,30 +100,30 @@ def _derive_global_regime(
     portfolio_risk = dict((position_context or {}).get("portfolio_risk") or {})
     position_risk_state = str(portfolio_risk.get("risk_state") or "normal").strip().lower()
     if position_risk_state == "frozen":
-        _raise("critical", "portfolio_risk_state_frozen")
+        _raise("critical", risk_gate_reason_portfolio_risk_state(position_risk_state))
     elif position_risk_state in {"reduce_only", "warn"}:
-        _raise("elevated", f"portfolio_risk_state_{position_risk_state}")
+        _raise("elevated", risk_gate_reason_portfolio_risk_state(position_risk_state))
 
     if msl.market_fragility == "high":
-        _raise("critical", "msl_market_fragility_high")
+        _raise("critical", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH)
     elif msl.market_fragility == "medium":
-        _raise("elevated", "msl_market_fragility_medium")
+        _raise("elevated", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM)
     if str(msl.volatility.volatility_regime or "unknown") == "high":
-        _raise("elevated", "msl_volatility_regime_high")
+        _raise("elevated", RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH)
     if msl.horizon_alignment == "conflict":
-        _raise("elevated", "msl_horizon_alignment_conflict")
+        _raise("elevated", RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT)
 
     for item in list(active_events or []):
         evt = dict(item or {})
         evt_type = str(evt.get("type") or "").strip().lower()
         score = _to_float(evt.get("score"), 0.0)
         if evt_type in {"liquidation_cluster", "forced_liquidation", "exchange_risk"} and score >= 0.8:
-            _raise("critical", f"active_event_{evt_type}_critical")
+            _raise("critical", risk_gate_reason_active_event(evt_type, "critical"))
         elif evt_type in {"volatility_spike", "funding_extreme", "basis_dislocation"} and score >= 0.7:
-            _raise("elevated", f"active_event_{evt_type}_elevated")
+            _raise("elevated", risk_gate_reason_active_event(evt_type, "elevated"))
 
     if not reasons:
-        reasons.append("default_normal")
+        reasons.append(RISK_GATE_REASON_DEFAULT_NORMAL)
     return regime, reasons
 
 
@@ -130,8 +140,8 @@ def _derive_risk_gate_context(
         position_context=position_context,
         active_events=active_events,
     )
-    if cooldown_seconds_left > 0 and "position_cooldown_active" not in reasons:
-        reasons.append("position_cooldown_active")
+    if cooldown_seconds_left > 0 and RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE not in reasons:
+        reasons.append(RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE)
     return RiskGateContext(
         global_regime=global_regime,
         cooldown_active=(cooldown_seconds_left > 0),
