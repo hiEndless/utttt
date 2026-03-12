@@ -58,6 +58,7 @@ class _SemanticRawProvider:
                 "long_term": {"structural_context": {"trend_maturity": "mid"}},
             },
             "alternative_sources": {
+                "news": {"source_type": "news", "available": True, "provider_state": "primary", "features": {"headline_score": 0.7}},
                 "onchain": {"source_type": "onchain", "available": True, "provider_state": "noop", "features": {}},
             },
         }
@@ -205,13 +206,20 @@ def test_semantic_chain_smoke_provider_state_risk_flags_and_decision_confidence(
         )
         state_payload = await state_service.get_market_state("binance", "ETHUSDT")
 
-        # state 层：risk_flags 已归一化为 list；alternative_sources 融合后应优先 event 侧 onchain。
+        # state 层：risk_flags 已归一化为 list；alternative_sources 融合结果语义稳定。
         open_interest = dict((state_payload.get("state_features") or {}).get("open_interest") or {})
         assert isinstance(open_interest.get("risk_flags"), list)
         assert "fragile_leverage_build" in list(open_interest.get("risk_flags") or [])
         fusion = dict(((state_payload.get("state_features") or {}).get("evidence") or {}).get("alternative_sources_fusion") or {})
-        onchain = dict(dict(fusion.get("merged") or {}).get("by_source") or {}).get("onchain") or {}
-        assert dict(onchain).get("provider_state") == "event_evidence_present"
+        by_source = dict(dict(fusion.get("merged") or {}).get("by_source") or {})
+        news = dict(by_source.get("news") or {})
+        onchain = dict(by_source.get("onchain") or {})
+        assert news.get("provider_state") == "primary"
+        assert news.get("data_source") == "feature_service.news"
+        assert news.get("inference_source") == "feature_service.normalizer"
+        assert onchain.get("provider_state") == "event_evidence_present"
+        assert onchain.get("data_source") == "event_center_new.onchain"
+        assert onchain.get("inference_source") == "event_center_new.selector"
 
         # agent 上下文：应输出语义稳定的 alternative_source_summary 和 oi_risk_flags。
         context_builder = ContextBuilder(
@@ -229,8 +237,14 @@ def test_semantic_chain_smoke_provider_state_risk_flags_and_decision_confidence(
         features = list((built.ctx.key_market_features or {}).get("features") or [])
         by_name = {str(item.get("name")): item.get("value") for item in features}
         alt_summary = dict(by_name.get("alternative_source_summary") or {})
+        assert "news" in list(alt_summary.get("available_sources") or [])
         assert "onchain" in list(alt_summary.get("available_sources") or [])
+        assert dict(alt_summary.get("provider_states") or {}).get("news") == "primary"
         assert dict(alt_summary.get("provider_states") or {}).get("onchain") == "event_evidence_present"
+        assert dict(alt_summary.get("data_sources") or {}).get("news") == "feature_service.news"
+        assert dict(alt_summary.get("inference_sources") or {}).get("news") == "feature_service.normalizer"
+        assert dict(alt_summary.get("data_sources") or {}).get("onchain") == "event_center_new.onchain"
+        assert dict(alt_summary.get("inference_sources") or {}).get("onchain") == "event_center_new.selector"
         assert "fragile_leverage_build" in list(by_name.get("oi_risk_flags") or [])
 
         # execution 输入：只使用 canonical decision_confidence。
