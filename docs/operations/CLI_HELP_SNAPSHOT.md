@@ -17,6 +17,7 @@ bash tools/local/aggregate_and_check.sh --help
 bash tools/local/verify_quick.sh --help
 bash tools/local/verify_full.sh --help
 bash tools/local/check_semantic_critical_warning_guard.sh --help
+bash tools/ci/verify_quick.sh --help
 bash tools/local/check_cli_help_snapshot_guard.sh
 ```
 
@@ -123,4 +124,25 @@ Failure Codes:
   exit 1  命中 critical field warning（阻断）
   exit 2  输入文件缺失或不可读
   exit 3  报告/预算解析失败
+```
+
+## `tools/ci/verify_quick.sh --help`
+
+```text
+Usage:
+  bash tools/ci/verify_quick.sh
+
+Description:
+  CI quick 验证入口。执行结构守卫、docs/contracts 聚合守卫、链路 quick suite 与语义审计后处理。
+
+Environment Switches (local debug only):
+  VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1
+  VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1
+
+CI Hard Constraints:
+  当 CI=true 或 GITHUB_ACTIONS=true 时，禁止启用上述 skip 开关；若启用会直接失败（exit 2）。
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
+  exit 2  CI 环境下启用了禁止的 skip 开关
 ```

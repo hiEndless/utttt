@@ -8,6 +8,7 @@ SCRIPT_C="tools/local/aggregate_and_check.sh"
 SCRIPT_D="tools/local/verify_full.sh"
 SCRIPT_E="tools/local/verify_quick.sh"
 SCRIPT_F="tools/local/check_semantic_critical_warning_guard.sh"
+SCRIPT_G="tools/ci/verify_quick.sh"
 
 extract_text_block() {
   local heading="$1"
@@ -45,30 +46,33 @@ compare_help_snapshot() {
   fi
 }
 
-echo "[1/7] 检查脚本与快照存在"
-for file in "$SNAPSHOT" "$SCRIPT_A" "$SCRIPT_B" "$SCRIPT_C" "$SCRIPT_D" "$SCRIPT_E" "$SCRIPT_F"; do
+echo "[1/8] 检查脚本与快照存在"
+for file in "$SNAPSHOT" "$SCRIPT_A" "$SCRIPT_B" "$SCRIPT_C" "$SCRIPT_D" "$SCRIPT_E" "$SCRIPT_F" "$SCRIPT_G"; do
   if ! test -f "$file"; then
     echo "[失败] 缺少文件: $file"
     exit 1
   fi
 done
 
-echo "[2/7] 比对 run_agent_memory_summary_report help 快照"
+echo "[2/8] 比对 run_agent_memory_summary_report help 快照"
 compare_help_snapshot "$SCRIPT_A" "## \`tools/local/run_agent_memory_summary_report.sh --help\`"
 
-echo "[3/7] 比对 verify_report_aggregate help 快照"
+echo "[3/8] 比对 verify_report_aggregate help 快照"
 compare_help_snapshot "$SCRIPT_B" "## \`tools/local/verify_report_aggregate.sh --help\`"
 
-echo "[4/7] 比对 aggregate_and_check help 快照"
+echo "[4/8] 比对 aggregate_and_check help 快照"
 compare_help_snapshot "$SCRIPT_C" "## \`tools/local/aggregate_and_check.sh --help\`"
 
-echo "[5/7] 比对 verify_full help 快照"
+echo "[5/8] 比对 verify_full help 快照"
 compare_help_snapshot "$SCRIPT_D" "## \`tools/local/verify_full.sh --help\`"
 
-echo "[6/7] 比对 verify_quick help 快照"
+echo "[6/8] 比对 verify_quick help 快照"
 compare_help_snapshot "$SCRIPT_E" "## \`tools/local/verify_quick.sh --help\`"
 
-echo "[7/7] 比对 check_semantic_critical_warning_guard help 快照"
+echo "[7/8] 比对 check_semantic_critical_warning_guard help 快照"
 compare_help_snapshot "$SCRIPT_F" "## \`tools/local/check_semantic_critical_warning_guard.sh --help\`"
+
+echo "[8/8] 比对 ci verify_quick help 快照"
+compare_help_snapshot "$SCRIPT_G" "## \`tools/ci/verify_quick.sh --help\`"
 
 echo "[通过] CLI help 快照守卫检查完成。"
