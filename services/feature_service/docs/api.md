@@ -154,6 +154,7 @@
 - `data.derived_metrics`：面向下游复用的摘要特征
 - `data.structure_snapshot`：保留较完整的结构快照，供状态层与调试使用
 - `data.alternative_sources`：未来数据源统一包（news/social/onchain），字段稳定但当前默认 `noop`。
+  - source names 单源：`contracts/schemas/alternative_source_summary_contract.py`（`get_alternative_source_names()`）
 
 ## 错误响应
 

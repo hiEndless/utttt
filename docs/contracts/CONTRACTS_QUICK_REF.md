@@ -1,6 +1,6 @@
 # UTaker 联调契约速查（新架构）
 
-更新时间：2026-03-11
+更新时间：2026-03-13
 统一契约入口：`docs/CONTRACT_INDEX.md`
 
 ## 1. 服务调用顺序
@@ -25,6 +25,7 @@ agent_server_new -> execution_service
 ### 1.1 alternative_sources provider_state（跨服务统一）
 
 - 结构单源：`contracts/schemas/alternative_source_summary.schema.json`
+- source names 运行时单源：`contracts/schemas/alternative_source_summary_contract.py`（`get_alternative_source_names()`）
 - 语义单源：`contracts/semantic_policies/source_semantics.yaml`
 - 枚举口径：
   - feature: `primary/fallback/static/noop/unavailable/empty/ok`
