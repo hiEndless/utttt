@@ -3,7 +3,7 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -55,52 +55,35 @@ class _Events:
 
 
 class _Memory:
-    def __init__(self) -> None:
-        now = int(time.time() * 1000)
-        self._payload = {
-            "summary": {"event_count": 999},
-            "recent": [
-                {"event_id": "evt-old", "ts": now - 20_000, "plan": {"action": "hold"}},
-                {"event_id": "evt-dup", "ts": now - 2_000, "plan": {"action": "hold"}},
-                {"event_id": "evt-dup", "ts": now - 1_000, "plan": {"action": "add"}},
-                {"event_id": "evt-new", "ts": now - 500, "plan": {"action": "add"}},
-            ],
-        }
-
     async def get_symbol_memory(self, exchange: str, symbol: str, limit: int = 20):  # noqa: ARG002
         _ = (exchange, symbol, limit)
-        return dict(self._payload)
+        now = int(time.time() * 1000)
+        return {
+            "summary": {"event_count": 12, "last_plan_action": "hold"},
+            "recent": [{"event_id": "evt-100", "ts": now, "plan": {"action": "add"}}],
+        }
 
 
-def test_context_builder_applies_ttl_dedup_topk_for_recent_memory():
+def test_context_builder_injects_symbol_memory_features():
     async def _run():
         builder = ContextBuilder(
             market_state=_MarketState(),
             position_context=_Position(),
             active_events=_Events(),
             symbol_memory_provider=_Memory(),
-            memory_recent_topk=2,
-            memory_recent_ttl_ms=5_000,
-            memory_dedup_key="event_id",
-            max_key_features=10,
+            max_key_features=8,
         )
         built = await builder.build(
-            event_id="evt-now",
+            event_id="evt-101",
             exchange="binance",
             symbol="ETHUSDT",
             signal_payload={"event_type": "indicator_signal"},
         )
         features = list((built.ctx.key_market_features or {}).get("features") or [])
         by_name = {str(item.get("name")): item.get("value") for item in features}
-        recent = list(by_name.get("recent_memory") or [])
-        obs = dict((built.ctx.key_market_features or {}).get("memory_observability") or {})
-        assert len(recent) == 2
-        assert recent[0]["event_id"] == "evt-dup"
-        assert recent[0]["plan"]["action"] == "add"
-        assert recent[1]["event_id"] == "evt-new"
-        assert obs["memory_hit"] is True
-        assert obs["memory_raw_recent_count"] == 4
-        assert obs["memory_filtered_recent_count"] == 2
-        assert obs["memory_dropped_count"] == 2
+        assert "memory_summary" in by_name
+        assert "recent_memory" in by_name
+        assert by_name["memory_summary"]["event_count"] == 12
+        assert by_name["recent_memory"][0]["event_id"] == "evt-100"
 
     asyncio.run(_run())

@@ -20,18 +20,18 @@ echo "[2/2] 运行状态层与决策层契约测试（含可追溯守卫）"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
   market_state_engine/text \
-  agent_server_new/text/test_bootstrap.py \
-  agent_server_new/text/test_active_events_redis_adapter.py \
-  agent_server_new/text/test_active_events_contract_guard.py \
-  agent_server_new/text/test_pipeline_traceability_contract.py \
-  agent_server_new/text/test_runner.py \
-  agent_server_new/text/test_pipeline_smoke.py \
-  agent_server_new/text/test_market_state_msl_contract_consumer.py \
-  agent_server_new/text/test_market_state_snapshot_contract.py \
-  agent_server_new/text/test_horizon_policy_gate.py \
-  agent_server_new/text/test_runner_output_schema.py \
-  agent_server_new/text/test_trade_event_workflow_horizon_policy_gate.py \
-  agent_server_new/text/test_trade_event_workflow_execution_decider.py \
-  agent_server_new/text/test_trade_event_workflow_result.py
+  verification/auditors/agent_server_new/test_bootstrap.py \
+  verification/auditors/agent_server_new/test_active_events_redis_adapter.py \
+  verification/auditors/agent_server_new/test_active_events_contract_guard.py \
+  verification/auditors/agent_server_new/test_pipeline_traceability_contract.py \
+  verification/auditors/agent_server_new/test_runner.py \
+  verification/auditors/agent_server_new/test_pipeline_smoke.py \
+  verification/auditors/agent_server_new/test_market_state_msl_contract_consumer.py \
+  verification/auditors/agent_server_new/test_market_state_snapshot_contract.py \
+  verification/auditors/agent_server_new/test_horizon_policy_gate.py \
+  verification/auditors/agent_server_new/test_runner_output_schema.py \
+  verification/auditors/agent_server_new/test_trade_event_workflow_horizon_policy_gate.py \
+  verification/auditors/agent_server_new/test_trade_event_workflow_execution_decider.py \
+  verification/auditors/agent_server_new/test_trade_event_workflow_result.py
 
 echo "[通过] state->agent 契约守卫检查完成（已覆盖 selected_event 可追溯链路）。"

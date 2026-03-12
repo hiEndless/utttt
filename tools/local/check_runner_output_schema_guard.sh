@@ -9,6 +9,6 @@ fi
 
 echo "[2/2] 运行 runner 输出 schema 校验测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
-./venv/bin/pytest -q agent_server_new/text/test_runner_output_schema.py
+./venv/bin/pytest -q verification/auditors/agent_server_new/test_runner_output_schema.py
 
 echo "[通过] runner 输出 schema 守卫检查完成。"

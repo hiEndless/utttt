@@ -10,7 +10,7 @@ contract_cases:
   - "fixtures/contract_cases/execution_decision_intent.sample.json"
   - "verification/validators/feature_service/test_feature_service_schema_guard.py"
   - "market_state_engine/text/test_msl_schema_contract.py"
-  - "agent_server_new/text/test_runner_output_schema.py"
+  - "verification/auditors/agent_server_new/test_runner_output_schema.py"
   - "execution_service/text/test_schema_mapping.py"
 
 replay_cases:
@@ -20,9 +20,9 @@ replay_cases:
   - "verification/replay/event_center_new/test_replay_summary_schema_contract.py"
 
 workflow_cases:
-  - "agent_server_new/text/test_pipeline_traceability_contract.py"
-  - "agent_server_new/text/test_trade_event_workflow_result.py"
-  - "agent_server_new/text/test_trade_event_workflow_execution_decider.py"
+  - "verification/auditors/agent_server_new/test_pipeline_traceability_contract.py"
+  - "verification/auditors/agent_server_new/test_trade_event_workflow_result.py"
+  - "verification/auditors/agent_server_new/test_trade_event_workflow_execution_decider.py"
 
 snapshots:
   - "docs/contract_docs_index_help_snapshot.txt"
