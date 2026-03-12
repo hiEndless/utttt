@@ -6,10 +6,6 @@ hard_pinned_by_workflows:
     reason: "GitHub workflow trigger path filter and event-center quick/full jobs reference this entrypoint."
 
 hard_pinned_by_snapshot_or_help_guards:
-  - path: "scripts/check_contract_docs_index_guard.sh"
-    reason: "--help output snapshot locked by check_contract_docs_index_help_snapshot_guard.sh"
-  - path: "scripts/check_market_state_engine_guard.sh"
-    reason: "--help output snapshot locked by check_market_state_engine_help_snapshot_guard.sh"
   - path: "scripts/check_event_center_contract_guards.sh"
     reason: "--help block and fail-code order locked by check_event_center_help_snapshot_sync_guard.sh"
 
@@ -28,6 +24,8 @@ compatibility_wrappers_retained:
     target: "tools/local/check_event_center_replay_guard.sh"
   - path: "scripts/check_contract_docs_index_guard.sh"
     target: "tools/local/check_contract_docs_index_guard.sh"
+  - path: "scripts/check_market_state_engine_guard.sh"
+    target: "tools/local/check_market_state_engine_guard.sh"
   - path: "scripts/bump_event_center_runtime_version.sh"
     target: "tools/local/bump_event_center_runtime_version.sh"
   - path: "scripts/check_event_center_runtime_doc_guard.sh"

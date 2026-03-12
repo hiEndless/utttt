@@ -14,10 +14,10 @@
 基于 `verification/guards/script_compat_whitelist.yaml`：
 
 - workflow hard-pinned：1
-- snapshot/help hard-pinned：3
+- snapshot/help hard-pinned：1
 - text wiring hard-pinned：2
-- hard-pinned 唯一路径总计：4
-- compatibility wrappers retained：39
+- hard-pinned 唯一路径总计：2
+- compatibility wrappers retained：40
 
 结论：脚本层已进入“兼容窗口治理阶段”，不再是“迁移实施阶段”。
 
@@ -27,8 +27,6 @@
 
 1. `scripts/check_new_arch_guards.sh`
 2. `scripts/check_event_center_contract_guards.sh`
-3. `scripts/check_market_state_engine_guard.sh`
-4. `scripts/check_contract_docs_index_guard.sh`
 
 说明：完整原因与分类以机器清单为准：`verification/guards/script_compat_whitelist.yaml`。
 
@@ -44,7 +42,7 @@
 
 ## 5. Next Actions (Recommended)
 
-1. 将 help/snapshot 守卫改为对 `tools/*` 入口做快照，再刷新 snapshot。  
+1. 将 event_center 帮助快照守卫改为对 `tools/*` 入口做快照，再刷新 snapshot。  
 2. 将 text wiring 守卫从“脚本文本扫描”改为“命令意图检查/语义检查”。  
 3. 完成以上两步后，按批次删除 `scripts/*` compatibility wrappers。
 

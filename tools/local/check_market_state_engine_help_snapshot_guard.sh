@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT="scripts/check_market_state_engine_guard.sh"
+SCRIPT="tools/local/check_market_state_engine_guard.sh"
 SNAPSHOT="market_state_engine/docs/guard_help_snapshot.txt"
 
 echo "[1/3] 检查状态层守卫脚本与快照文件存在"

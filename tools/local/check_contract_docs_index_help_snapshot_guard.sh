@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT="scripts/check_contract_docs_index_guard.sh"
+SCRIPT="tools/local/check_contract_docs_index_guard.sh"
 SNAPSHOT="docs/contract_docs_index_help_snapshot.txt"
 
 echo "[1/4] 检查守卫脚本与快照文件存在"

@@ -8,12 +8,10 @@
 
 ## 2. 当前 hard-pinned 对象
 
-以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 4 个：
+以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 2 个：
 
 1. `scripts/check_new_arch_guards.sh`
 2. `scripts/check_event_center_contract_guards.sh`
-3. `scripts/check_market_state_engine_guard.sh`
-4. `scripts/check_contract_docs_index_guard.sh`
 
 ## 3. 分批治理
 
@@ -27,9 +25,11 @@
 
 ### Batch B: Snapshot/help pinning
 
-1. 将 help 快照守卫的目标入口改为 `tools/local/*`。
-2. 刷新快照文件并在 PR 中附快照 diff。
-3. 验收：快照守卫连续通过后，下线 `scripts/check_*_guard.sh` 的历史快照依赖。
+状态：进行中（2026-03-12）
+
+1. 已完成：`contract_docs_index` 与 `market_state_engine` 帮助快照守卫目标切换到 `tools/local/*`。
+2. 待完成：`event_center` 帮助快照守卫目标切换到 `tools/*` 并刷新快照。
+3. 验收：快照守卫连续通过后，下线对应历史 `scripts/*` 快照依赖。
 
 ### Batch C: Text wiring pinning
 
