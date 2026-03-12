@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
-from market_state_engine.service import MarketStateService
+from services.market_state_engine.src.service import MarketStateService
 
 
 MSL_ALLOWED_KEYS = {

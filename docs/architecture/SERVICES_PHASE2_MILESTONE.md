@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service fully migrated, no legacy wrappers)
+状态：in_progress (feature_service + market_state_engine fully migrated, no legacy wrappers)
 
 ## 1. 目标
 
@@ -15,7 +15,7 @@
 
 2. `market_state_engine/main.py`
 - migrated impl: `services/market_state_engine/runtime/main.py`
-- legacy wrapper kept: `market_state_engine/main.py`
+- legacy wrapper status: removed in 2.16 (batch-d phase-1)
 
 2.1 `market_state_engine/{app,routes,contracts}.py`
 - migrated impl: `services/market_state_engine/src/{app,routes,contracts}.py`
@@ -23,7 +23,7 @@
 
 2.2 `market_state_engine/service.py`
 - migrated impl: `services/market_state_engine/src/service.py`
-- legacy wrapper kept: `market_state_engine/service.py`（模块桥接兼容）
+- legacy wrapper status: removed in 2.16 (batch-d phase-1)
 
 2.3 `market_state_engine/errors.py`
 - migrated impl: `services/market_state_engine/src/errors.py`
@@ -31,7 +31,7 @@
 
 2.4 `market_state_engine/engine.py`
 - migrated impl: `services/market_state_engine/src/engine.py`
-- legacy wrapper kept: `market_state_engine/engine.py`（模块桥接兼容）
+- legacy wrapper status: removed in 2.16 (batch-d phase-1)
 
 2.5 `market_state_engine/msl.py`
 - migrated impl: `services/market_state_engine/src/msl.py`
@@ -60,7 +60,7 @@
 2.11 `market_state_engine/{__init__.py,adapters/__init__.py}`
 - migrated impl: `services/market_state_engine/src/{__init__.py,adapters/__init__.py}`
 - legacy wrapper status:
-  - `market_state_engine/__init__.py` kept
+  - `market_state_engine/__init__.py` removed in 2.16 (batch-d phase-1)
   - `market_state_engine/adapters/__init__.py` removed in 2.14 (batch-b phase-1)
 
 2.12 `market_state_engine` decommission batch-0
@@ -78,6 +78,10 @@
 2.15 `market_state_engine` decommission batch-c (phase-1)
 - removed wrappers: `market_state_engine/factors/**/*.py`, `market_state_engine/state_inference/**/*.py`
 - state_inference tests switched to `services.market_state_engine.src.state_inference.*`
+
+2.16 `market_state_engine` decommission batch-d (phase-1)
+- removed wrappers: `market_state_engine/{__init__,main,service,engine}.py`
+- all state-layer tests switched to `services.market_state_engine.src.*`
 
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
@@ -185,3 +189,4 @@
 22. 已执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳，并迁移测试导入。
 23. 已执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳。
 24. 已执行 `market_state_engine` 下线 Batch C（阶段1）：删除 `market_state_engine/factors/**/*.py` 与 `market_state_engine/state_inference/**/*.py` 兼容壳。
+25. 已执行 `market_state_engine` 下线 Batch D（阶段1）：删除 `market_state_engine/{__init__,main,service,engine}.py` 兼容壳，服务进入 fully-migrated 状态。

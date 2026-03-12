@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from market_state_engine.engine import MarketStateEngine
+from services.market_state_engine.src.engine import MarketStateEngine
 from services.market_state_engine.src.state_inference.engine import infer_msl_from_features, infer_msl_with_meta
 
 

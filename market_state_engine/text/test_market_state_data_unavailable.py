@@ -10,7 +10,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 from services.market_state_engine.src.routes import create_router
-from market_state_engine.service import MarketStateService
+from services.market_state_engine.src.service import MarketStateService
 
 
 class _UnavailableRawProvider:
@@ -307,7 +307,7 @@ def test_market_state_service_marks_unversioned_selected_events():
 
 def test_market_state_service_logs_alert_for_unversioned_selected_events(monkeypatch):
     async def _run():
-        import market_state_engine.service as mod
+        import services.market_state_engine.src.service as mod
 
         captured = []
 

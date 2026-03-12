@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_d3_partial_wrapper_decommission"
+    status: "fully_migrated_no_legacy_wrappers"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
@@ -69,11 +69,7 @@ services:
       - "services/market_state_engine/src/factors"
       - "services/market_state_engine/src/state_inference"
       - "services/market_state_engine/src/config/state_inference_profiles.json"
-    legacy_wrapper:
-      - "market_state_engine/__init__.py"
-      - "market_state_engine/main.py"
-      - "market_state_engine/service.py"
-      - "market_state_engine/engine.py"
+    legacy_wrapper: []
 
   - name: event_center_new
     current_path: "event_center_new/"
