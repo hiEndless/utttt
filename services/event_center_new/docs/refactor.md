@@ -214,7 +214,7 @@ Agent 必须通过 ports 抽象以下外部依赖：
 - 已提供 Redis 时间窗回放 CLI 入口（`python3 -m services.event_center_new.replay_main`）
 - 回放报告已输出稳定签名（online/replay），用于快速漂移检测
 - 回放报告已内置 `selected` 顶层字段白名单校验，防止线上契约悄然漂移
-- `selected` 顶层字段校验已收敛到独立 schema：`event_center_new/docs/selected_event.schema.json`
+- `selected` 顶层字段校验已收敛到独立 schema：`services/event_center_new/docs/selected_event.schema.json`
 - CLI 已支持 `--fail-on-contract` / `--fail-on-diff`，可用于细粒度 CI 失败策略
 
 验收标准：

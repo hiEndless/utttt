@@ -12,7 +12,7 @@ from services.event_center_new.runtime.replay_main import _to_summary_report
 
 
 def _load_schema() -> dict:
-    path = Path(PROJECT_ROOT) / "event_center_new" / "docs" / "replay_summary.schema.json"
+    path = Path(PROJECT_ROOT) / "services" / "event_center_new" / "docs" / "replay_summary.schema.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -56,7 +56,7 @@ def test_summary_only_output_matches_schema_surface() -> None:
             "errors": [],
             "required_fields": ["asset"],
             "allowed_fields": ["asset"],
-            "schema_path": "event_center_new/docs/selected_event.schema.json",
+            "schema_path": "services/event_center_new/docs/selected_event.schema.json",
         },
         "diffs": [],
         "replay_selected": [{"x": 1}],

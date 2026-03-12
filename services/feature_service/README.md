@@ -192,9 +192,9 @@ feature_service/
 
 ## 模块文档
 
-- 模块级独立说明与迭代建议：`feature_service/docs/modules/index.md`
-- 重构完成态总览（主要功能 + 下游输出）：`feature_service/docs/refactor-overview.md`
-- 未来数据源预留骨架说明：`feature_service/docs/modules/future-sources.md`
+- 模块级独立说明与迭代建议：`services/feature_service/docs/modules/index.md`
+- 重构完成态总览（主要功能 + 下游输出）：`services/feature_service/docs/refactor-overview.md`
+- 未来数据源预留骨架说明：`services/feature_service/docs/modules/future-sources.md`
 
 ## 当前阶段目标
 
@@ -315,7 +315,7 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 55：清理迁移脚本模式路径探测，不再查找 `agent_server/agent_context`
 - 已完成 Task 56：清理迁移层旧注释文案，统一为 `feature_service` 本地迁移语义
 - 已完成 Task 57：`verification/validators/feature_service` 回归测试通过，确认本次清理不影响功能
-- 已完成 Task 58：冻结 `RawStructureResponse/FeatureResponse` JSON Schema 到 `feature_service/docs/schemas/`
+- 已完成 Task 58：冻结 `RawStructureResponse/FeatureResponse` JSON Schema 到 `services/feature_service/docs/schemas/`
 - 已完成 Task 59：新增 schema 守卫测试，确保代码模型与冻结 schema 一致
 - 已完成 Task 60：加强路由契约测试，显式禁止旧顶层字段（`raw_market_structure`/`features`）回归
 - 已完成 Task 61：新增 `scripts/check_feature_service_schema_guard.sh`（schema 文件存在性 + 契约守卫测试）

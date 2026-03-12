@@ -10,8 +10,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 受强约束入口（required_entries）:
   - docs/ALERT_CODES.md
   - docs/contract_docs_index_help_snapshot.txt
-  - event_center_new/docs/ci_baseline_template.md
-  - event_center_new/docs/selected_event.schema.json
+  - services/event_center_new/docs/ci_baseline_template.md
+  - services/event_center_new/docs/selected_event.schema.json
 USAGE
   exit 0
 fi
@@ -42,16 +42,16 @@ missing = []
 #   - docs/ALERT_CODES.md
 #   - docs/contract_docs_index_help_snapshot.txt
 # - event_center_new
-#   - event_center_new/docs/ci_baseline_template.md
-#   - event_center_new/docs/selected_event.schema.json
+#   - services/event_center_new/docs/ci_baseline_template.md
+#   - services/event_center_new/docs/selected_event.schema.json
 # - market_state_engine
-#   - market_state_engine/docs/guard_help_snapshot.txt
+#   - services/market_state_engine/docs/guard_help_snapshot.txt
 required_entries = [
     "docs/ALERT_CODES.md",
     "docs/contract_docs_index_help_snapshot.txt",
-    "event_center_new/docs/ci_baseline_template.md",
-    "event_center_new/docs/selected_event.schema.json",
-    "market_state_engine/docs/guard_help_snapshot.txt",
+    "services/event_center_new/docs/ci_baseline_template.md",
+    "services/event_center_new/docs/selected_event.schema.json",
+    "services/market_state_engine/docs/guard_help_snapshot.txt",
 ]
 missing_required = []
 duplicate_required = []

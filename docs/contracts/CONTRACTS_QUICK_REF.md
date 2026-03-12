@@ -144,14 +144,14 @@ agent_server_new -> execution_service
 - 支持 `stub` 与 `redis` 双模式（`EXECUTION_STATE_PROVIDER_MODE`）
 
 执行层冻结 Schema：
-- `execution_service/docs/decision_intent.schema.json`
-- `execution_service/docs/execution_result.schema.json`
-- `execution_service/docs/execution_signal_result.schema.json`
-- `execution_service/docs/decision_state.schema.json`
-- `execution_service/docs/execution_reconcile_result.schema.json`
-- `execution_service/docs/retry_meta.schema.json`
-- `execution_service/docs/risk_policy.schema.json`
-- `execution_service/docs/schema_mapping.json`
+- `services/execution_service/docs/decision_intent.schema.json`
+- `services/execution_service/docs/execution_result.schema.json`
+- `services/execution_service/docs/execution_signal_result.schema.json`
+- `services/execution_service/docs/decision_state.schema.json`
+- `services/execution_service/docs/execution_reconcile_result.schema.json`
+- `services/execution_service/docs/retry_meta.schema.json`
+- `services/execution_service/docs/risk_policy.schema.json`
+- `services/execution_service/docs/schema_mapping.json`
 - `docs/CONTRACT_INDEX.md` 中 `execution_schema_mapping_version` 必须与 `/internal/execution/version` 一致
 
 ## 7. 联调判定清单（最小）
@@ -195,25 +195,25 @@ agent_server_new -> execution_service
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
 - GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
-- CI 失败排障入口：`event_center_new/docs/ci.md`
-- Feature API：`feature_service/docs/api.md`
-- State API：`market_state_engine/docs/api.md`
-- Event Schema：`event_center_new/docs/schema.md`
-- Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
-- Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
-- Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
-- Execution API：`execution_service/docs/api.md`
-- Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
-- Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
-- Execution SignalResult Schema：`execution_service/docs/execution_signal_result.schema.json`
-- Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
-- Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
-- Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`
-- Execution RiskPolicy Schema：`execution_service/docs/risk_policy.schema.json`
-- Execution Schema Mapping：`execution_service/docs/schema_mapping.json`
-- Execution cURL 示例：`execution_service/docs/curl_examples.md`
-- Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
-- Execution Redis 键契约：`execution_service/docs/redis_keys.md`
+- CI 失败排障入口：`services/event_center_new/docs/ci.md`
+- Feature API：`services/feature_service/docs/api.md`
+- State API：`services/market_state_engine/docs/api.md`
+- Event Schema：`services/event_center_new/docs/schema.md`
+- Agent 重构方案：`services/agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Agent runner 输出契约：`services/agent_server_new/docs/runner_output_contract.md`
+- Agent runner 输出 Schema：`services/agent_server_new/docs/runner_output.schema.json`
+- Execution API：`services/execution_service/docs/api.md`
+- Execution DecisionIntent Schema：`services/execution_service/docs/decision_intent.schema.json`
+- Execution ExecutionResult Schema：`services/execution_service/docs/execution_result.schema.json`
+- Execution SignalResult Schema：`services/execution_service/docs/execution_signal_result.schema.json`
+- Execution DecisionState Schema：`services/execution_service/docs/decision_state.schema.json`
+- Execution ReconcileResult Schema：`services/execution_service/docs/execution_reconcile_result.schema.json`
+- Execution RetryMeta Schema：`services/execution_service/docs/retry_meta.schema.json`
+- Execution RiskPolicy Schema：`services/execution_service/docs/risk_policy.schema.json`
+- Execution Schema Mapping：`services/execution_service/docs/schema_mapping.json`
+- Execution cURL 示例：`services/execution_service/docs/curl_examples.md`
+- Execution HTTPie 示例：`services/execution_service/docs/httpie_examples.md`
+- Execution Redis 键契约：`services/execution_service/docs/redis_keys.md`
 
 ## 9. 验证入口（新增）
 

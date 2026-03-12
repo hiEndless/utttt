@@ -66,7 +66,7 @@
 2. 离线：DB（审计与复盘）
 
 当前决策：DB 归档暂不实现，按代办推进：
-- `agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`
+- `services/agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`
 
 ## 3.4 开关与灰度预留
 

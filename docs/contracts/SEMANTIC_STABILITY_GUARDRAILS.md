@@ -7,7 +7,7 @@
 ## 已落地基线
 
 1. 统一回放摘要契约类型
-- `event_center_new/docs/replay_summary.schema.json` 的 `diffs` 与实现保持一致（`array[string]`）。
+- `services/event_center_new/docs/replay_summary.schema.json` 的 `diffs` 与实现保持一致（`array[string]`）。
 
 2. 收紧 selected_event 资产匹配
 - `services/market_state_engine/src/adapters/selected_events_redis.py` 只接受：

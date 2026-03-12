@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "[1/2] 检查 runner 输出 schema 文件"
-if ! test -f agent_server_new/docs/runner_output.schema.json; then
-  echo "[失败] 缺少 agent_server_new/docs/runner_output.schema.json"
+if ! test -f services/agent_server_new/docs/runner_output.schema.json; then
+  echo "[失败] 缺少 services/agent_server_new/docs/runner_output.schema.json"
   exit 1
 fi
 

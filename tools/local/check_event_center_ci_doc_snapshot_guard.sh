@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOC="event_center_new/docs/ci.md"
-BASELINE_TEMPLATE="event_center_new/docs/ci_baseline_template.md"
-HELP_SNAPSHOT_LINES="event_center_new/docs/ci_help_snapshot_lines.txt"
-TRIAGE_SNAPSHOT_LINES="event_center_new/docs/ci_triage_snapshot_lines.txt"
+DOC="services/event_center_new/docs/ci.md"
+BASELINE_TEMPLATE="services/event_center_new/docs/ci_baseline_template.md"
+HELP_SNAPSHOT_LINES="services/event_center_new/docs/ci_help_snapshot_lines.txt"
+TRIAGE_SNAPSHOT_LINES="services/event_center_new/docs/ci_triage_snapshot_lines.txt"
 
 echo "[1/7] 检查 CI 文档与快照关键行文件存在"
 if ! test -f "$DOC"; then
@@ -76,8 +76,8 @@ if ! rg -q -F "EC_GUARD_CI_DOC_FAILED" "$HELP_SNAPSHOT_LINES"; then
 fi
 
 echo "[5/7] 校验 CI 文档已引用基线模板文件"
-if ! rg -q -F "event_center_new/docs/ci_baseline_template.md" "$DOC"; then
-  echo "[失败] CI 文档未引用基线模板文件: event_center_new/docs/ci_baseline_template.md"
+if ! rg -q -F "services/event_center_new/docs/ci_baseline_template.md" "$DOC"; then
+  echo "[失败] CI 文档未引用基线模板文件: services/event_center_new/docs/ci_baseline_template.md"
   exit 1
 fi
 if ! rg -q -F "| date | command | mode | result | commit |" "$DOC"; then
@@ -118,7 +118,7 @@ from pathlib import Path
 import re
 import sys
 
-doc = Path("event_center_new/docs/ci.md").read_text(encoding="utf-8")
+doc = Path("services/event_center_new/docs/ci.md").read_text(encoding="utf-8")
 pairs: dict[str, set[str]] = {}
 for line in doc.splitlines():
     text = line.strip()

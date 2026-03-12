@@ -72,7 +72,7 @@
 
 ## 契约冻结文档（第十一阶段）
 
-- [x] Task 43: 更新 `feature_service/docs/api.md` 为当前标准契约（`meta + data`）。
+- [x] Task 43: 更新 `services/feature_service/docs/api.md` 为当前标准契约（`meta + data`）。
 - [x] Task 44: 在 API 文档中补充 503 错误体、`degraded_reasons` 语义、下游兼容建议。
 - [x] Task 45: 同步更新 `README.md`/`TASKS.md`，标记契约冻结文档完成。
 
@@ -86,7 +86,7 @@
 
 - [x] Task 49: 将原根目录 `tests/` 测试迁移到对应模块下的 `text/` 目录（`feature_service/market_state_engine/event_center/agent_server`）。
 - [x] Task 50: 修复迁移后的测试路径与导入问题（含 `feature_service` 根路径计算、`event_center` grading 导入）。
-- [x] Task 51: 将根目录工程文档迁移到对应模块 `docs/`（已迁入 `agent_server_new/docs/`）。
+- [x] Task 51: 将根目录工程文档迁移到对应模块 `docs/`（已迁入 `services/agent_server_new/docs/`）。
 - [x] Task 52: 更新 `pytest.ini` 使用模块级 `testpaths`，确保默认发现新目录。
 - [x] Task 53: 更新 `feature_service/README.md` 与 `market_state_engine/README.md` 目录树，避免文档与代码结构不一致。
 - [x] Task 54: 范围收口：`agent_server` 属于旧链路，不纳入 `feature_service` 重构验收项。
@@ -99,7 +99,7 @@
 
 ## 契约强约束守卫（第十五阶段）
 
-- [x] Task 58: 冻结 `RawStructureResponse/FeatureResponse` JSON Schema 到 `feature_service/docs/schemas/`。
+- [x] Task 58: 冻结 `RawStructureResponse/FeatureResponse` JSON Schema 到 `services/feature_service/docs/schemas/`。
 - [x] Task 59: 新增 schema 守卫测试，确保代码模型与冻结 schema 文件一致。
 - [x] Task 60: 加强路由契约测试，显式禁止旧顶层字段（`raw_market_structure`/`features`）回归。
 

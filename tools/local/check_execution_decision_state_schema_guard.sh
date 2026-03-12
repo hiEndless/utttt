@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "[1/2] 检查 execution decision_state schema 文件"
-if ! test -f execution_service/docs/decision_state.schema.json; then
-  echo "[失败] 缺少 execution_service/docs/decision_state.schema.json"
+if ! test -f services/execution_service/docs/decision_state.schema.json; then
+  echo "[失败] 缺少 services/execution_service/docs/decision_state.schema.json"
   exit 1
 fi
 

@@ -6,14 +6,14 @@ fields:
     canonical_semantic: "agent decision confidence"
     owner: "execution_service"
     allowed_locations:
-      - "execution_service/docs/decision_intent.schema.json#/properties/decision_confidence"
+      - "services/execution_service/docs/decision_intent.schema.json#/properties/decision_confidence"
 
   - name: confidence
     canonical_semantic: "deprecated alias of decision_confidence"
     lifecycle: "deprecated"
     owner: "execution_service"
     allowed_locations:
-      - "execution_service/docs/decision_intent.schema.json#/properties/confidence"
+      - "services/execution_service/docs/decision_intent.schema.json#/properties/confidence"
 
   - name: evidence_confidence
     canonical_semantic: "evidence-level confidence"

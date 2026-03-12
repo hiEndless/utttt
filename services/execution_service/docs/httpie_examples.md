@@ -58,10 +58,10 @@ python -m services.execution_service.main
 ## 7) 契约入口
 
 - 项目级入口：`docs/CONTRACT_INDEX.md`
-- API 说明：`execution_service/docs/api.md`
+- API 说明：`services/execution_service/docs/api.md`
 
 ## 8) Schema 快速定位
 
-- DecisionIntent：`execution_service/docs/decision_intent.schema.json`
-- ExecutionResult：`execution_service/docs/execution_result.schema.json`
-- DecisionState：`execution_service/docs/decision_state.schema.json`
+- DecisionIntent：`services/execution_service/docs/decision_intent.schema.json`
+- ExecutionResult：`services/execution_service/docs/execution_result.schema.json`
+- DecisionState：`services/execution_service/docs/decision_state.schema.json`

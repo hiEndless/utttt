@@ -5,8 +5,8 @@ set -euo pipefail
 # 1) 冻结 schema 文件必须存在
 # 2) feature_service schema 守卫测试必须通过
 
-RAW_SCHEMA="feature_service/docs/schemas/raw_structure_response.schema.json"
-FEATURE_SCHEMA="feature_service/docs/schemas/feature_response.schema.json"
+RAW_SCHEMA="services/feature_service/docs/schemas/raw_structure_response.schema.json"
+FEATURE_SCHEMA="services/feature_service/docs/schemas/feature_response.schema.json"
 
 echo "[1/2] 检查冻结 schema 文件"
 test -f "${RAW_SCHEMA}" || { echo "[失败] 缺少 ${RAW_SCHEMA}"; exit 1; }

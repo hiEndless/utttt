@@ -2,13 +2,13 @@ version: 1
 updated_at: '2026-03-12'
 source_of_truth: contracts/registry.yaml
 sources:
-- agent_server_new/docs/runner_output.schema.json
-- event_center_new/docs/replay_summary.schema.json
-- event_center_new/docs/selected_event.schema.json
-- execution_service/docs/decision_intent.schema.json
-- execution_service/docs/decision_state.schema.json
-- execution_service/docs/execution_result.schema.json
-- feature_service/docs/schemas/feature_response.schema.json
-- feature_service/docs/schemas/raw_structure_response.schema.json
-- market_state_engine/docs/msl.schema.json
+- services/agent_server_new/docs/runner_output.schema.json
+- services/event_center_new/docs/replay_summary.schema.json
+- services/event_center_new/docs/selected_event.schema.json
+- services/execution_service/docs/decision_intent.schema.json
+- services/execution_service/docs/decision_state.schema.json
+- services/execution_service/docs/execution_result.schema.json
+- services/feature_service/docs/schemas/feature_response.schema.json
+- services/feature_service/docs/schemas/raw_structure_response.schema.json
+- services/market_state_engine/docs/msl.schema.json
 note: Auto-generated from registry kind=schema entries.

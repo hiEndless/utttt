@@ -167,30 +167,30 @@ event_center_new(signal_event + active_events)
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
 - GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
-- CI 失败排障入口：`event_center_new/docs/ci.md`
-- Feature API：`feature_service/docs/api.md`
-- Feature 边界：`feature_service/docs/boundaries.md`
-- State API：`market_state_engine/docs/api.md`
-- State 边界：`market_state_engine/docs/boundaries.md`
-- Event 事件契约：`event_center_new/docs/schema.md`
-- Event 重构说明：`event_center_new/docs/refactor.md`
-- Agent 重构方案：`agent_server_new/docs/REFACTOR_PLAN_V2.md`
-- Agent AI 自适应预留：`agent_server_new/docs/AI_ADAPTIVE_RESERVE_PLAN.md`
-- Agent runner 输出契约：`agent_server_new/docs/runner_output_contract.md`
-- Agent runner 输出 Schema：`agent_server_new/docs/runner_output.schema.json`
-- Execution API：`execution_service/docs/api.md`
-- Execution DecisionIntent Schema：`execution_service/docs/decision_intent.schema.json`
-- Execution ExecutionResult Schema：`execution_service/docs/execution_result.schema.json`
-- Execution SignalResult Schema：`execution_service/docs/execution_signal_result.schema.json`
-- Execution DecisionState Schema：`execution_service/docs/decision_state.schema.json`
-- Execution ReconcileResult Schema：`execution_service/docs/execution_reconcile_result.schema.json`
-- Execution RetryMeta Schema：`execution_service/docs/retry_meta.schema.json`
-- Execution RiskPolicy Schema：`execution_service/docs/risk_policy.schema.json`
-- Execution cURL 示例：`execution_service/docs/curl_examples.md`
-- Execution HTTPie 示例：`execution_service/docs/httpie_examples.md`
-- Execution 边界：`execution_service/docs/boundaries.md`
-- Execution 迁移：`execution_service/docs/migration.md`
-- Execution Redis 键契约：`execution_service/docs/redis_keys.md`
+- CI 失败排障入口：`services/event_center_new/docs/ci.md`
+- Feature API：`services/feature_service/docs/api.md`
+- Feature 边界：`services/feature_service/docs/boundaries.md`
+- State API：`services/market_state_engine/docs/api.md`
+- State 边界：`services/market_state_engine/docs/boundaries.md`
+- Event 事件契约：`services/event_center_new/docs/schema.md`
+- Event 重构说明：`services/event_center_new/docs/refactor.md`
+- Agent 重构方案：`services/agent_server_new/docs/REFACTOR_PLAN_V2.md`
+- Agent AI 自适应预留：`services/agent_server_new/docs/AI_ADAPTIVE_RESERVE_PLAN.md`
+- Agent runner 输出契约：`services/agent_server_new/docs/runner_output_contract.md`
+- Agent runner 输出 Schema：`services/agent_server_new/docs/runner_output.schema.json`
+- Execution API：`services/execution_service/docs/api.md`
+- Execution DecisionIntent Schema：`services/execution_service/docs/decision_intent.schema.json`
+- Execution ExecutionResult Schema：`services/execution_service/docs/execution_result.schema.json`
+- Execution SignalResult Schema：`services/execution_service/docs/execution_signal_result.schema.json`
+- Execution DecisionState Schema：`services/execution_service/docs/decision_state.schema.json`
+- Execution ReconcileResult Schema：`services/execution_service/docs/execution_reconcile_result.schema.json`
+- Execution RetryMeta Schema：`services/execution_service/docs/retry_meta.schema.json`
+- Execution RiskPolicy Schema：`services/execution_service/docs/risk_policy.schema.json`
+- Execution cURL 示例：`services/execution_service/docs/curl_examples.md`
+- Execution HTTPie 示例：`services/execution_service/docs/httpie_examples.md`
+- Execution 边界：`services/execution_service/docs/boundaries.md`
+- Execution 迁移：`services/execution_service/docs/migration.md`
+- Execution Redis 键契约：`services/execution_service/docs/redis_keys.md`
 
 ## 5.1 验证入口收敛（新增）
 

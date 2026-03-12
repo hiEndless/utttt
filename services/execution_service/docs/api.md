@@ -68,7 +68,7 @@
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
 11. `trace_id`: 可选字符串
-12. JSON Schema：`execution_service/docs/decision_intent.schema.json`
+12. JSON Schema：`services/execution_service/docs/decision_intent.schema.json`
 
 一致性约束：
 - `decision_confidence` 为必填主字段。
@@ -97,7 +97,7 @@
 6. `notes`: 可选字符串（中文解释）
 7. `signal_result`: 可选对象（执行层模拟信号结构，当前默认返回）
 8. `policy_snapshot`: 可选对象（当前生效策略快照：`policy_version/ruleset_hash`）
-9. JSON Schema：`execution_service/docs/execution_result.schema.json`
+9. JSON Schema：`services/execution_service/docs/execution_result.schema.json`
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。
@@ -121,21 +121,21 @@
     - Redis `account_state.risk_state` 非法值会自动归一化为 `normal`
     - Stub `account_state.risk_state` 也采用相同归一化规则，保证多运行模式一致
     - `risk_state` 枚举由代码常量单点维护，并通过契约测试校验与 schema 一致
-    - `risk_state`（含 `previous/current_risk_state`）在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_state.schema.json`
+    - `risk_state`（含 `previous/current_risk_state`）在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/risk_state.schema.json`
   - `mode`: 当前固定 `simulated`
   - `scope/position_before/position_after_simulation` 在 schema 层通过 `$ref` 复用独立定义：
-    - `execution_service/docs/signal_scope.schema.json`
-    - `execution_service/docs/position_before.schema.json`
-    - `execution_service/docs/position_after_simulation.schema.json`
-  - `signal_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/signal_action.schema.json`
-  - `mode` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/signal_mode.schema.json`
-  - `risk_checks` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_checks.schema.json`
-  - `rule_priority_order` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/rule_priority_order.schema.json`
-  - `position_mode` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/position_mode.schema.json`
-  - `decision_state.status/last_transition` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/decision_state_status.schema.json`
-  - `execution_result/decision_state.execution_action` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/execution_action.schema.json`
-  - `execution_result/decision_state.reject_reason` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/reject_reason.schema.json`
-  - `execution_result/decision_state.policy_snapshot` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/policy_snapshot.schema.json`
+    - `services/execution_service/docs/signal_scope.schema.json`
+    - `services/execution_service/docs/position_before.schema.json`
+    - `services/execution_service/docs/position_after_simulation.schema.json`
+  - `signal_action` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/signal_action.schema.json`
+  - `mode` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/signal_mode.schema.json`
+  - `risk_checks` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/risk_checks.schema.json`
+  - `rule_priority_order` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/rule_priority_order.schema.json`
+  - `position_mode` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/position_mode.schema.json`
+  - `decision_state.status/last_transition` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/decision_state_status.schema.json`
+  - `execution_result/decision_state.execution_action` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/execution_action.schema.json`
+  - `execution_result/decision_state.reject_reason` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/reject_reason.schema.json`
+  - `execution_result/decision_state.policy_snapshot` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/policy_snapshot.schema.json`
   - `scope`: `exchange/account_id/symbol`
   - `position_before`: 模拟前仓位快照（long/short/net）
   - `position_after_simulation`: 按步长模拟后的仓位快照（long/short/net）
@@ -154,11 +154,11 @@
     - `risk_state_change_reason`：标准原因码（`reject_frozen|reject_reduce_only|pressure_warn|hysteresis_soften|default_normal`）
     - `risk_state_change_reason_zh`：与原因码对应的中文解释
     - 以上原因码与中文解释由代码常量单点维护，并通过契约测试校验与 schema 一致
-    - `risk_state_change_reason(_zh)` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/risk_state_change_reason.schema.json`
-    - `rule_debug` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/rule_debug.schema.json`
+    - `risk_state_change_reason(_zh)` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/risk_state_change_reason.schema.json`
+    - `rule_debug` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/rule_debug.schema.json`
     - `matched_at_ms`：本次规则命中时间戳（毫秒）
     - `evaluation_trace`：按规则顺序记录每条规则的 `order`、`scope`、`pass/fail`、`value/threshold` 与 `note_zh`
-      - `evaluation_trace` 在 schema 层通过 `$ref` 复用独立定义：`execution_service/docs/evaluation_trace.schema.json`
+      - `evaluation_trace` 在 schema 层通过 `$ref` 复用独立定义：`services/execution_service/docs/evaluation_trace.schema.json`
   - `policy_snapshot`: 当前裁决生效策略快照
     - `policy_version`: 风控策略版本（来自 `risk_policy.policy_version`，缺省回退 `risk-policy-default-v1`）
     - `ruleset_hash`: 规则集版本/哈希（来自 `risk_policy.ruleset_hash`，缺省回退 `risk-rules-v1`）
@@ -179,7 +179,7 @@
 ## 执行回执对账（骨架）
 
 - `POST /internal/execution/reconcile`
-- JSON Schema：`execution_service/docs/execution_reconcile_result.schema.json`
+- JSON Schema：`services/execution_service/docs/execution_reconcile_result.schema.json`
 
 请求示例：
 
@@ -242,14 +242,14 @@
 - `reason_code` 枚举由 `execution_service/domain/reconcile_codes.py` 单点定义，并由测试校验与 schema 一致。
 - `status` 枚举由 `execution_service/domain/reconcile_statuses.py` 单点定义，并由测试校验与 schema 一致。
 - `retry_meta.status` 枚举由 `execution_service/domain/retry_meta.py` 单点定义，并由测试校验两份 schema 一致。
-- `retry_meta` 独立 schema：`execution_service/docs/retry_meta.schema.json`
+- `retry_meta` 独立 schema：`services/execution_service/docs/retry_meta.schema.json`
 - `execution_result.schema.json` 与 `execution_reconcile_result.schema.json` 通过 `$ref` 统一引用 `retry_meta.schema.json`。
 
 ## 调试状态快照
 
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true|false&decision_id=...`
   - 可选：`account_id`（默认 `main`）
-- `decision_state` JSON Schema：`execution_service/docs/decision_state.schema.json`
+- `decision_state` JSON Schema：`services/execution_service/docs/decision_state.schema.json`
 
 返回示例：
 
@@ -420,14 +420,14 @@
 
 ## Schema 与字段来源映射
 
-机器可校验清单：`execution_service/docs/schema_mapping.json`
+机器可校验清单：`services/execution_service/docs/schema_mapping.json`
 
 | 语义对象 | 关键字段 | Schema 文件 | 代码定义位置 | Owner | Change Policy |
 | --- | --- | --- | --- | --- | --- |
-| DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `decision_confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
-| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `policy_snapshot` `notes` | `execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
-| DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `policy_snapshot` `source` `trace_id` `updated_at_ms` | `execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
-| RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `max_account_notional` `max_margin_ratio` `max_daily_loss` `max_consecutive_loss_count` `simulation_step_size` `rule_priority_order` | `execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
+| DecisionIntent | `decision_id` `exchange` `account_id` `symbol` `direction_intent` `confidence` `decision_confidence` `cross_horizon_policy` `risk_hints` `trace_id` | `services/execution_service/docs/decision_intent.schema.json` | `execution_service/domain/contracts.py` `DecisionIntent` | `execution_service` | `breaking` |
+| ExecutionResult | `decision_id` `execution_action` `reject_reason` `applied_risk_rules` `order_result` `signal_result` `policy_snapshot` `notes` | `services/execution_service/docs/execution_result.schema.json` | `execution_service/domain/contracts.py` `ExecutionResult` | `execution_service` | `breaking` |
+| DecisionState | `account_id` `status` `last_transition` `attempts` `submitted_at_ms` `last_error` `policy_snapshot` `source` `trace_id` `updated_at_ms` | `services/execution_service/docs/decision_state.schema.json` | `execution_service/app/service.py` `_save_state` 与状态写入逻辑 | `execution_service` | `non_breaking` |
+| RiskPolicy | `max_position_size` `max_long_position_size` `max_short_position_size` `max_drawdown_ratio` `position_mode` `allow_dual_side` `min_available_balance` `max_symbol_exposure_ratio` `max_account_notional` `max_margin_ratio` `max_daily_loss` `max_consecutive_loss_count` `simulation_step_size` `rule_priority_order` | `services/execution_service/docs/risk_policy.schema.json` | `execution_service/adapters/redis_state_providers.py` `RedisRiskPolicyProvider` | `execution_service` | `non_breaking` |
 
 说明：
 - schema 用于契约冻结与守卫检查。

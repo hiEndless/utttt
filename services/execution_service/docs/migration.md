@@ -8,7 +8,7 @@
 
 ## 当前基线（Latest Only）
 
-1. API 入口：`execution_service/docs/api.md`
+1. API 入口：`services/execution_service/docs/api.md`
 2. 契约映射版本：`execution-schema-mapping-v14`
 3. 核心输入契约：`decision_intent.schema.json`
 4. 核心输出契约：`execution_result.schema.json`

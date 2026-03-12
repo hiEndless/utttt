@@ -104,7 +104,7 @@ Markdown 策略：
 当前决策（2026-03-10）：
 
 1. DB 归档暂不实现代码。
-2. 作为代办保留到文档：`agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`
+2. 作为代办保留到文档：`services/agent_server_new/docs/MEMORY_ARCHIVE_TODO.md`
 3. 后续按代办文档中的建议表结构创建归档工程与迁移脚本。
 
 ## 5. 第一优先改造建议（可立即开工）

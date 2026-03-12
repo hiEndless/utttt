@@ -15,9 +15,9 @@ def _load_schema(path: str) -> dict:
 
 
 def test_risk_state_enum_matches_signal_and_decision_schema() -> None:
-    signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
-    decision_schema = _load_schema("execution_service/docs/decision_state.schema.json")
-    risk_state_schema = _load_schema("execution_service/docs/risk_state.schema.json")
+    signal_schema = _load_schema("services/execution_service/docs/execution_signal_result.schema.json")
+    decision_schema = _load_schema("services/execution_service/docs/decision_state.schema.json")
+    risk_state_schema = _load_schema("services/execution_service/docs/risk_state.schema.json")
     signal_ref = signal_schema.get("properties", {}).get("risk_state", {}).get("$ref", "")
     decision_ref = decision_schema.get("properties", {}).get("risk_state", {}).get("$ref", "")
     signal_enum = risk_state_schema.get("properties", {}).get("risk_state", {}).get("enum", [])

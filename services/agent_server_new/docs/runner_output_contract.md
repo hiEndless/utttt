@@ -10,7 +10,7 @@ python -m services.agent_server_new.main ... --print-json
 
 Schema 文件：
 
-- `agent_server_new/docs/runner_output.schema.json`
+- `services/agent_server_new/docs/runner_output.schema.json`
 
 ## 1. 输出结构
 

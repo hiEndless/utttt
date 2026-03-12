@@ -93,6 +93,6 @@ http GET "${STATE_BASE_URL}/internal/market-state/${EXCHANGE}/${SYMBOL}" | jq '{
 
 ## 4. Execution Schema 快速定位
 
-- DecisionIntent：`execution_service/docs/decision_intent.schema.json`
-- ExecutionResult：`execution_service/docs/execution_result.schema.json`
-- DecisionState：`execution_service/docs/decision_state.schema.json`
+- DecisionIntent：`services/execution_service/docs/decision_intent.schema.json`
+- ExecutionResult：`services/execution_service/docs/execution_result.schema.json`
+- DecisionState：`services/execution_service/docs/decision_state.schema.json`

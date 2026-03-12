@@ -30,7 +30,7 @@ fi
 
 echo "[2/5] 校验 --print-current-version"
 current_version="$(bash tools/local/bump_event_center_runtime_version.sh --print-current-version)"
-doc_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' event_center_new/docs/runtime.md | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
+doc_version="$(rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' services/event_center_new/docs/runtime.md | head -n1 | sed -E 's/.*runtime_config_version:\s*//' | xargs)"
 if [[ -z "$doc_version" ]]; then
   echo "[失败] 未能从 runtime.md 解析版本号"
   exit 1

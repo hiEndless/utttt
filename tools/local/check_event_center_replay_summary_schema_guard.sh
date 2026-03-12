@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "[1/2] 检查 replay summary schema 文件"
-if ! test -f event_center_new/docs/replay_summary.schema.json; then
-  echo "[失败] 缺少 event_center_new/docs/replay_summary.schema.json"
+if ! test -f services/event_center_new/docs/replay_summary.schema.json; then
+  echo "[失败] 缺少 services/event_center_new/docs/replay_summary.schema.json"
   exit 1
 fi
 

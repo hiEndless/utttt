@@ -2,8 +2,8 @@
 set -euo pipefail
 
 GUARD_SCRIPT="tools/local/check_event_center_contract_guards.sh"
-SNAPSHOT_LINES="event_center_new/docs/ci_help_snapshot_lines.txt"
-SNAPSHOT_BLOCK="event_center_new/docs/ci_help_block_snapshot.txt"
+SNAPSHOT_LINES="services/event_center_new/docs/ci_help_snapshot_lines.txt"
+SNAPSHOT_BLOCK="services/event_center_new/docs/ci_help_block_snapshot.txt"
 
 echo "[1/7] 检查脚本与快照文件存在"
 if ! test -f "$GUARD_SCRIPT"; then

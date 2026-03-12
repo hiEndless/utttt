@@ -50,12 +50,12 @@
 ## 4. 对齐清单
 
 1. 文档
-- `execution_service/docs/api.md`
+- `services/execution_service/docs/api.md`
 - `docs/CONTRACTS_QUICK_REF.md`
-- `execution_service/docs/migration.md`
+- `services/execution_service/docs/migration.md`
 
 2. 契约
-- `execution_service/docs/decision_intent.schema.json`
+- `services/execution_service/docs/decision_intent.schema.json`
 - `services/execution_service/domain/contracts.py`
 
 3. 测试

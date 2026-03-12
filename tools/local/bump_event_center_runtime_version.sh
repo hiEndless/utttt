@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RUNTIME_DOC="event_center_new/docs/runtime.md"
+RUNTIME_DOC="services/event_center_new/docs/runtime.md"
 MAIN_FILE="services/event_center_new/runtime/main.py"
 
 usage() {

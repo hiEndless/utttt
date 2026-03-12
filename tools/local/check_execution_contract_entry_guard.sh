@@ -37,7 +37,7 @@ if not match:
     raise SystemExit("[失败] CONTRACT_INDEX 更新时间格式不正确")
 index_day = date.fromisoformat(match.group(1))
 
-mapping = json.loads(Path("execution_service/docs/schema_mapping.json").read_text(encoding="utf-8"))
+mapping = json.loads(Path("services/execution_service/docs/schema_mapping.json").read_text(encoding="utf-8"))
 mapping_day = date.fromisoformat(str(mapping.get("last_updated") or "").strip())
 
 if mapping_day != index_day:

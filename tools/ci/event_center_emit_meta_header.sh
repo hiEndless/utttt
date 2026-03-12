@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RUN_MODE="${1:-unknown}"
-RUNTIME_DOC="event_center_new/docs/runtime.md"
+RUNTIME_DOC="services/event_center_new/docs/runtime.md"
 
 git_sha="unknown"
 if command -v git >/dev/null 2>&1; then

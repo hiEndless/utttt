@@ -26,7 +26,7 @@ workflow_cases:
 
 snapshots:
   - "docs/contract_docs_index_help_snapshot.txt"
-  - "market_state_engine/docs/guard_help_snapshot.txt"
-  - "event_center_new/docs/ci_help_block_snapshot.txt"
-  - "event_center_new/docs/ci_help_snapshot_lines.txt"
-  - "event_center_new/docs/ci_triage_snapshot_lines.txt"
+  - "services/market_state_engine/docs/guard_help_snapshot.txt"
+  - "services/event_center_new/docs/ci_help_block_snapshot.txt"
+  - "services/event_center_new/docs/ci_help_snapshot_lines.txt"
+  - "services/event_center_new/docs/ci_triage_snapshot_lines.txt"

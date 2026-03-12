@@ -12,7 +12,7 @@
 
 MSL 契约文件：
 
-- `market_state_engine/docs/msl.schema.json`
+- `services/market_state_engine/docs/msl.schema.json`
 
 ## 接口列表
 

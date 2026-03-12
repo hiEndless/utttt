@@ -93,14 +93,14 @@
 ## 6. CI 文档快照守卫
 
 - 脚本：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
-- 作用：校验 `event_center_new/docs/ci.md` 中 `--help` 快照与“最短排障命令串”关键行未漂移。
+- 作用：校验 `services/event_center_new/docs/ci.md` 中 `--help` 快照与“最短排障命令串”关键行未漂移。
 - 附加校验：快照关键行文件必须非空且无重复行。
 - 附加校验：
   - 快照关键行文件禁止全角空格（防止不可见字符漂移）
-  - `event_center_new/docs/ci_triage_snapshot_lines.txt` 必须 ASCII-only
+  - `services/event_center_new/docs/ci_triage_snapshot_lines.txt` 必须 ASCII-only
 - 关键行来源：
-  - `event_center_new/docs/ci_help_snapshot_lines.txt`
-  - `event_center_new/docs/ci_triage_snapshot_lines.txt`
+  - `services/event_center_new/docs/ci_help_snapshot_lines.txt`
+  - `services/event_center_new/docs/ci_triage_snapshot_lines.txt`
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
 ## 7. 帮助快照同步守卫
@@ -108,8 +108,8 @@
 - 脚本：`scripts/check_event_center_help_snapshot_sync_guard.sh`
 - 作用：校验 `scripts/check_event_center_contract_guards.sh --help` 完整输出块与失败码顺序均与快照一致。
 - 快照来源：
-  - `event_center_new/docs/ci_help_block_snapshot.txt`（完整输出块）
-  - `event_center_new/docs/ci_help_snapshot_lines.txt`（失败码关键行）
+  - `services/event_center_new/docs/ci_help_block_snapshot.txt`（完整输出块）
+  - `services/event_center_new/docs/ci_help_snapshot_lines.txt`（失败码关键行）
 - 接入：已纳入 `scripts/check_event_center_contract_guards.sh` 的 quick/full 路径。
 
 ## 8. Artifact 日志锚点（下载后）
@@ -166,7 +166,7 @@ pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 
 ## 9. 基线通过记录
 
-模板文件：`event_center_new/docs/ci_baseline_template.md`
+模板文件：`services/event_center_new/docs/ci_baseline_template.md`
 
 | date | command | mode | result | commit |
 |---|---|---|---|---|

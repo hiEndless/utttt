@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "[1/2] 检查 execution schema mapping 清单文件"
-if ! test -f execution_service/docs/schema_mapping.json; then
-  echo "[失败] 缺少 execution_service/docs/schema_mapping.json"
+if ! test -f services/execution_service/docs/schema_mapping.json; then
+  echo "[失败] 缺少 services/execution_service/docs/schema_mapping.json"
   exit 1
 fi
 

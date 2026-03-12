@@ -13,12 +13,12 @@ def _load_schema(path: str) -> dict:
 
 
 def test_signal_result_uses_mode_ref() -> None:
-    signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
+    signal_schema = _load_schema("services/execution_service/docs/execution_signal_result.schema.json")
     assert signal_schema.get("properties", {}).get("mode", {}).get("$ref", "") == "./signal_mode.schema.json#/properties/mode"
 
 
 def test_signal_mode_enum_frozen() -> None:
-    mode_schema = _load_schema("execution_service/docs/signal_mode.schema.json")
+    mode_schema = _load_schema("services/execution_service/docs/signal_mode.schema.json")
     enum_values = mode_schema.get("properties", {}).get("mode", {}).get("enum", [])
     assert enum_values == ["simulated"]
 

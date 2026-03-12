@@ -186,32 +186,32 @@ execution_service/
 
 - 测试文件：`verification/validators/execution_service/test_execution_service_redis_ethusdt.py`
 - 说明：使用 `binance/ETHUSDT` 的 execution 键数据做端到端裁决验证（`integration` 标记）
-- Redis 键契约：`execution_service/docs/redis_keys.md`
-- cURL 示例：`execution_service/docs/curl_examples.md`
-- HTTPie 示例：`execution_service/docs/httpie_examples.md`
-- decision_state schema：`execution_service/docs/decision_state.schema.json`
-- execution_action schema：`execution_service/docs/execution_action.schema.json`
-- reject_reason schema：`execution_service/docs/reject_reason.schema.json`
-- policy_snapshot schema：`execution_service/docs/policy_snapshot.schema.json`
-- decision_intent schema：`execution_service/docs/decision_intent.schema.json`
-- execution_result schema：`execution_service/docs/execution_result.schema.json`
-- execution_signal_result schema：`execution_service/docs/execution_signal_result.schema.json`
-- execution_reconcile_result schema：`execution_service/docs/execution_reconcile_result.schema.json`
-- signal_action schema：`execution_service/docs/signal_action.schema.json`
-- signal_mode schema：`execution_service/docs/signal_mode.schema.json`
-- risk_checks schema：`execution_service/docs/risk_checks.schema.json`
-- rule_priority_order schema：`execution_service/docs/rule_priority_order.schema.json`
-- position_mode schema：`execution_service/docs/position_mode.schema.json`
-- rule_debug schema：`execution_service/docs/rule_debug.schema.json`
-- evaluation_trace schema：`execution_service/docs/evaluation_trace.schema.json`
-- signal_scope schema：`execution_service/docs/signal_scope.schema.json`
-- position_before schema：`execution_service/docs/position_before.schema.json`
-- position_after_simulation schema：`execution_service/docs/position_after_simulation.schema.json`
-- retry_meta schema：`execution_service/docs/retry_meta.schema.json`
-- risk_state schema：`execution_service/docs/risk_state.schema.json`
-- risk_state_change_reason schema：`execution_service/docs/risk_state_change_reason.schema.json`
-- decision_state_status schema：`execution_service/docs/decision_state_status.schema.json`
-- risk_policy schema：`execution_service/docs/risk_policy.schema.json`
+- Redis 键契约：`services/execution_service/docs/redis_keys.md`
+- cURL 示例：`services/execution_service/docs/curl_examples.md`
+- HTTPie 示例：`services/execution_service/docs/httpie_examples.md`
+- decision_state schema：`services/execution_service/docs/decision_state.schema.json`
+- execution_action schema：`services/execution_service/docs/execution_action.schema.json`
+- reject_reason schema：`services/execution_service/docs/reject_reason.schema.json`
+- policy_snapshot schema：`services/execution_service/docs/policy_snapshot.schema.json`
+- decision_intent schema：`services/execution_service/docs/decision_intent.schema.json`
+- execution_result schema：`services/execution_service/docs/execution_result.schema.json`
+- execution_signal_result schema：`services/execution_service/docs/execution_signal_result.schema.json`
+- execution_reconcile_result schema：`services/execution_service/docs/execution_reconcile_result.schema.json`
+- signal_action schema：`services/execution_service/docs/signal_action.schema.json`
+- signal_mode schema：`services/execution_service/docs/signal_mode.schema.json`
+- risk_checks schema：`services/execution_service/docs/risk_checks.schema.json`
+- rule_priority_order schema：`services/execution_service/docs/rule_priority_order.schema.json`
+- position_mode schema：`services/execution_service/docs/position_mode.schema.json`
+- rule_debug schema：`services/execution_service/docs/rule_debug.schema.json`
+- evaluation_trace schema：`services/execution_service/docs/evaluation_trace.schema.json`
+- signal_scope schema：`services/execution_service/docs/signal_scope.schema.json`
+- position_before schema：`services/execution_service/docs/position_before.schema.json`
+- position_after_simulation schema：`services/execution_service/docs/position_after_simulation.schema.json`
+- retry_meta schema：`services/execution_service/docs/retry_meta.schema.json`
+- risk_state schema：`services/execution_service/docs/risk_state.schema.json`
+- risk_state_change_reason schema：`services/execution_service/docs/risk_state_change_reason.schema.json`
+- decision_state_status schema：`services/execution_service/docs/decision_state_status.schema.json`
+- risk_policy schema：`services/execution_service/docs/risk_policy.schema.json`
 - `execution_result/execution_reconcile_result` 中的 `retry_meta` 已统一通过 `$ref` 引用独立 schema，避免枚举漂移
 - `execution_signal_result/decision_state` 中的 `risk_state`（含 `previous/current_risk_state`）已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `execution_signal_result/decision_state` 中的 `risk_state_change_reason(_zh)` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
@@ -228,7 +228,7 @@ execution_service/
 - `execution_result/decision_state` 中的 `reject_reason` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - `execution_result/decision_state` 中的 `policy_snapshot` 已统一通过 `$ref` 引用独立 schema，避免重复定义漂移
 - execution 契约测试工具已支持带 JSON Pointer 的本地 `$ref`（如 `#/properties/...`），可稳定校验子 schema 复用
-- schema mapping 清单：`execution_service/docs/schema_mapping.json`
+- schema mapping 清单：`services/execution_service/docs/schema_mapping.json`
 - `schema_mapping.json` 已登记 `RetryMeta` 的 `$ref` 引用来源，守卫会校验引用路径和值不漂移
 - `DecisionIntent/ExecutionResult` 的关键枚举与边界也已纳入 `schema_mapping.references` 机器校验
 - `ExecutionReconcileResult` 也已纳入 `schema_mapping`，关键状态/错误码与 `retry_meta` 引用受守卫保护

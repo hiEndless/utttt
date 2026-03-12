@@ -23,12 +23,12 @@ event_center_new(signal_event + active_events)
 ### Phase A: 契约冻结（文档与类型先行）
 
 1. 冻结 `agent -> execution` 输入契约
-- 修改模块：`services/execution_service/ports/decision_intent.py`、`execution_service/docs/api.md`
+- 修改模块：`services/execution_service/ports/decision_intent.py`、`services/execution_service/docs/api.md`
 - 最小字段：`decision_id/exchange/symbol/direction_intent/confidence/cross_horizon_policy/risk_hints`
 - 验收：契约文档与类型定义一致
 
 2. 冻结 execution 输出契约
-- 修改模块：`services/execution_service/ports/execution_result.py`、`execution_service/docs/api.md`
+- 修改模块：`services/execution_service/ports/execution_result.py`、`services/execution_service/docs/api.md`
 - 最小字段：`execution_action/reject_reason/applied_risk_rules/order_result`
 - 验收：拒绝码字典与示例响应一致
 

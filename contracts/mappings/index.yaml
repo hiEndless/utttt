@@ -3,7 +3,7 @@ updated_at: '2026-03-12'
 source_of_truth: contracts/registry.yaml
 mappings:
 - id: execution.schema_mapping
-  source: execution_service/docs/schema_mapping.json
+  source: services/execution_service/docs/schema_mapping.json
   owner: execution_service
   status: active
 note: Auto-generated from registry kind=mapping entries.

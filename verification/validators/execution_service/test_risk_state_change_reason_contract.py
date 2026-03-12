@@ -18,10 +18,10 @@ def _load_schema(path: str) -> dict:
 
 
 def test_risk_state_change_reason_enum_matches_schemas() -> None:
-    signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
-    decision_schema = _load_schema("execution_service/docs/decision_state.schema.json")
-    rule_debug_schema = _load_schema("execution_service/docs/rule_debug.schema.json")
-    reason_schema = _load_schema("execution_service/docs/risk_state_change_reason.schema.json")
+    signal_schema = _load_schema("services/execution_service/docs/execution_signal_result.schema.json")
+    decision_schema = _load_schema("services/execution_service/docs/decision_state.schema.json")
+    rule_debug_schema = _load_schema("services/execution_service/docs/rule_debug.schema.json")
+    reason_schema = _load_schema("services/execution_service/docs/risk_state_change_reason.schema.json")
     signal_rule_debug_ref = signal_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     decision_rule_debug_ref = decision_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     signal_ref = (
@@ -45,9 +45,9 @@ def test_risk_state_change_reason_enum_matches_schemas() -> None:
 
 
 def test_risk_state_change_reason_zh_mapping_complete() -> None:
-    signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
-    decision_schema = _load_schema("execution_service/docs/decision_state.schema.json")
-    rule_debug_schema = _load_schema("execution_service/docs/rule_debug.schema.json")
+    signal_schema = _load_schema("services/execution_service/docs/execution_signal_result.schema.json")
+    decision_schema = _load_schema("services/execution_service/docs/decision_state.schema.json")
+    rule_debug_schema = _load_schema("services/execution_service/docs/rule_debug.schema.json")
     signal_rule_debug_ref = signal_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     decision_rule_debug_ref = decision_schema.get("properties", {}).get("rule_debug", {}).get("$ref", "")
     signal_zh_ref = (

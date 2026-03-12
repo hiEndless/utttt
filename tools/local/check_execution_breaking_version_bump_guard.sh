@@ -11,7 +11,7 @@ from pathlib import Path
 
 from execution_service.version import SCHEMA_MAPPING_VERSION
 
-MAPPING_PATH = "execution_service/docs/schema_mapping.json"
+MAPPING_PATH = "services/execution_service/docs/schema_mapping.json"
 version_re = re.compile(r".*-v(\d+)$")
 
 

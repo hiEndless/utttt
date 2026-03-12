@@ -13,7 +13,7 @@ def _load_schema(path: str) -> dict:
 
 
 def test_decision_state_uses_status_refs() -> None:
-    decision_state_schema = _load_schema("execution_service/docs/decision_state.schema.json")
+    decision_state_schema = _load_schema("services/execution_service/docs/decision_state.schema.json")
     assert (
         decision_state_schema.get("properties", {}).get("status", {}).get("$ref", "")
         == "./decision_state_status.schema.json#/properties/status"
@@ -25,7 +25,7 @@ def test_decision_state_uses_status_refs() -> None:
 
 
 def test_decision_state_status_enum_frozen() -> None:
-    status_schema = _load_schema("execution_service/docs/decision_state_status.schema.json")
+    status_schema = _load_schema("services/execution_service/docs/decision_state_status.schema.json")
     expected = ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
     assert status_schema.get("properties", {}).get("status", {}).get("enum", []) == expected
     assert status_schema.get("properties", {}).get("last_transition", {}).get("enum", []) == expected

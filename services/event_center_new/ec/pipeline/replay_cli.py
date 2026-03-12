@@ -19,10 +19,13 @@ class RedisRangeClient(Protocol):
 
 def _selected_schema_path() -> Path:
     here = Path(__file__).resolve()
+    canonical = here.parents[2] / "docs" / "selected_event.schema.json"
+    if canonical.is_file():
+        return canonical
     legacy = here.parents[4] / "event_center_new" / "docs" / "selected_event.schema.json"
     if legacy.is_file():
         return legacy
-    return here.parents[2] / "docs" / "selected_event.schema.json"
+    return canonical
 
 
 def load_payloads_by_window(

@@ -13,15 +13,15 @@ def _load_schema(path: str) -> dict:
 
 
 def test_rule_priority_order_ref_used_by_risk_policy_and_rule_debug() -> None:
-    policy_schema = _load_schema("execution_service/docs/risk_policy.schema.json")
-    rule_debug_schema = _load_schema("execution_service/docs/rule_debug.schema.json")
+    policy_schema = _load_schema("services/execution_service/docs/risk_policy.schema.json")
+    rule_debug_schema = _load_schema("services/execution_service/docs/rule_debug.schema.json")
     ref_expected = "./rule_priority_order.schema.json#/properties/rule_priority_order"
     assert policy_schema.get("properties", {}).get("rule_priority_order", {}).get("$ref", "") == ref_expected
     assert rule_debug_schema.get("properties", {}).get("rule_priority_order", {}).get("$ref", "") == ref_expected
 
 
 def test_rule_priority_order_enum_and_bounds_frozen() -> None:
-    order_schema = _load_schema("execution_service/docs/rule_priority_order.schema.json")
+    order_schema = _load_schema("services/execution_service/docs/rule_priority_order.schema.json")
     node = order_schema.get("properties", {}).get("rule_priority_order", {})
     assert node.get("minItems") == 8
     assert node.get("maxItems") == 8

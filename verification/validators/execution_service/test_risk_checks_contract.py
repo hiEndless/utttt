@@ -13,7 +13,7 @@ def _load_schema(path: str) -> dict:
 
 
 def test_signal_result_uses_risk_checks_ref() -> None:
-    signal_schema = _load_schema("execution_service/docs/execution_signal_result.schema.json")
+    signal_schema = _load_schema("services/execution_service/docs/execution_signal_result.schema.json")
     assert (
         signal_schema.get("properties", {}).get("risk_checks", {}).get("$ref", "")
         == "./risk_checks.schema.json#/properties/risk_checks"
@@ -21,7 +21,7 @@ def test_signal_result_uses_risk_checks_ref() -> None:
 
 
 def test_risk_checks_required_fields_frozen() -> None:
-    checks_schema = _load_schema("execution_service/docs/risk_checks.schema.json")
+    checks_schema = _load_schema("services/execution_service/docs/risk_checks.schema.json")
     required_fields = (
         checks_schema.get("properties", {})
         .get("risk_checks", {})

@@ -15,14 +15,14 @@ def _load_json(path: Path) -> dict:
 
 
 def test_raw_structure_schema_is_frozen():
-    schema_file = Path(PROJECT_ROOT) / "feature_service/docs/schemas/raw_structure_response.schema.json"
+    schema_file = Path(PROJECT_ROOT) / "services/feature_service/docs/schemas/raw_structure_response.schema.json"
     frozen = _load_json(schema_file)
     current = RawStructureResponse.model_json_schema()
     assert current == frozen
 
 
 def test_feature_response_schema_is_frozen():
-    schema_file = Path(PROJECT_ROOT) / "feature_service/docs/schemas/feature_response.schema.json"
+    schema_file = Path(PROJECT_ROOT) / "services/feature_service/docs/schemas/feature_response.schema.json"
     frozen = _load_json(schema_file)
     current = FeatureResponse.model_json_schema()
     assert current == frozen
