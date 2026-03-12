@@ -20,6 +20,8 @@ bash tools/ci/new_arch_guards_full.sh --quick
 
 ```bash
 bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
+rg -n "^\[CI_GUARD\]" quick_strict.log quick_lenient.log full_guard.log
+cat guard_summary.quick_strict.log guard_summary.quick_lenient.log guard_summary.full.log
 ```
 
 发布基线一致性检查（含远端）：
