@@ -12,6 +12,7 @@ REQUIRED_SCRIPTS=(
   "tools/local/check_event_center_contract_entry_guard.sh"
   "tools/local/check_event_center_runtime_mode_guard.sh"
   "tools/local/check_prod_provider_modes_guard.sh"
+  "tools/ci/event_center_emit_guard_summary.sh"
   "tools/local/check_release_baseline_alignment.sh"
   "tools/local/check_release_ready.sh"
   "tools/local/check_runner_output_schema_guard.sh"

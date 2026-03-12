@@ -40,6 +40,14 @@
 - `[CI_META] git_sha=...`
 - `[CI_META] runtime_config_version=...`
 - `[CI_META] ts_utc=...`
+- `[CI_GUARD] contract_guard_mode=quick|full`
+- `[CI_GUARD] wiring_mode=strict|lenient`
+- `[CI_GUARD] replay_strict_ci_guard=true`
+- `[CI_GUARD] runtime_mode_guard=true`
+- `[CI_GUARD] runtime.layer_store_mode=...`
+- `[CI_GUARD] runtime.run_loop=...`
+- `[CI_GUARD] runtime.self_check_only=...`
+- `[CI_GUARD] runtime.stop_on_error=...`
 
 ## 3. 失败分类与定位
 

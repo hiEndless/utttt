@@ -460,6 +460,7 @@ CI 便捷入口：
 - `tools/ci/event_center_quick_lenient.sh`
 - `tools/ci/event_center_full_strict.sh`
 - `tools/ci/event_center_emit_meta_header.sh`（输出统一 CI 元信息头部：run_mode/git_sha/runtime_config_version/ts_utc）
+- `tools/ci/event_center_emit_guard_summary.sh`（输出统一 CI 门禁摘要：guard mode/wiring/runtime/replay strict 开关）
 - `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫；失败自动上传 strict/lenient 诊断 artifact）
 - `.github/workflows/event-center-full.yml`（GitHub Actions：每日定时 + 手动触发，全量 strict 守卫；失败自动上传诊断 artifact）
 - `.github/actions/setup-utaker-python/action.yml`（quick/full 复用的 Python+依赖初始化 action）

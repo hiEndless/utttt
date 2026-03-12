@@ -2,5 +2,6 @@
 set -euo pipefail
 
 bash tools/ci/event_center_emit_meta_header.sh "event-center-quick-lenient"
+bash tools/ci/event_center_emit_guard_summary.sh quick lenient
 echo "[CI] event_center quick lenient"
 bash tools/local/check_new_arch_guards.sh --event-center-quick --lenient-wiring

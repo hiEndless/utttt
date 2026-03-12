@@ -11,6 +11,8 @@ CI:
 - `tools/ci/event_center_quick_strict.sh`
 - `tools/ci/event_center_quick_lenient.sh`
 - `tools/ci/event_center_full_strict.sh`
+- `tools/ci/event_center_emit_meta_header.sh`
+- `tools/ci/event_center_emit_guard_summary.sh`
 
 Local:
 - `tools/local/check_structure.sh`
