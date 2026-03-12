@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'USAGE'
+Usage:
+  bash tools/ci/verify_regression.sh
+
+Description:
+  CI regression 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、event-center quick 回归链路与语义审计。
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
+USAGE
+  exit 0
+fi
+
+if (($# > 0)); then
+  echo "[failed] unsupported args: $*"
+  echo "hint: run 'bash tools/ci/verify_regression.sh --help'"
+  exit 1
+fi
+
 echo "[regression 1/11] structure guard"
 bash tools/local/check_structure.sh
 echo "[regression 2/11] script whitelist guard"

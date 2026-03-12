@@ -1,6 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'USAGE'
+Usage:
+  bash tools/ci/verify_nightly.sh
+
+Description:
+  CI nightly 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、全量报告回归链路与语义聚合校验。
+
+Environment:
+  MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
+USAGE
+  exit 0
+fi
+
+if (($# > 0)); then
+  echo "[failed] unsupported args: $*"
+  echo "hint: run 'bash tools/ci/verify_nightly.sh --help'"
+  exit 1
+fi
+
 echo "[nightly 1/12] structure guard"
 bash tools/local/check_structure.sh
 echo "[nightly 2/12] script whitelist guard"

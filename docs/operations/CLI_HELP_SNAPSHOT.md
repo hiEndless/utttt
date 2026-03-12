@@ -18,6 +18,8 @@ bash tools/local/verify_quick.sh --help
 bash tools/local/verify_full.sh --help
 bash tools/local/check_semantic_critical_warning_guard.sh --help
 bash tools/ci/verify_quick.sh --help
+bash tools/ci/verify_regression.sh --help
+bash tools/ci/verify_nightly.sh --help
 bash tools/local/check_cli_help_snapshot_guard.sh
 ```
 
@@ -146,4 +148,33 @@ CI Hard Constraints:
 Failure Codes:
   exit 1  任一守卫/测试失败
   exit 2  CI 环境下启用了禁止的 skip 开关
+```
+
+## `tools/ci/verify_regression.sh --help`
+
+```text
+Usage:
+  bash tools/ci/verify_regression.sh
+
+Description:
+  CI regression 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、event-center quick 回归链路与语义审计。
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
+```
+
+## `tools/ci/verify_nightly.sh --help`
+
+```text
+Usage:
+  bash tools/ci/verify_nightly.sh
+
+Description:
+  CI nightly 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、全量报告回归链路与语义聚合校验。
+
+Environment:
+  MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
+
+Failure Codes:
+  exit 1  任一守卫/测试失败
 ```
