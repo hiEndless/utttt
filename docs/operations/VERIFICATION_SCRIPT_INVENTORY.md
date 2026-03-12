@@ -80,6 +80,7 @@ CI 约束：
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
+- `check_pipeline_semantic_terms_doc_guard.sh`
 - `verify_all.sh --event-center-quick`
 - `pytest verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code`（锁定非法 provider_state 告警码链路）
 - `sync_contract_indexes.sh`
@@ -93,6 +94,7 @@ CI 约束：
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
+- `check_pipeline_semantic_terms_doc_guard.sh`
 - `verify_all.sh --report-json=verification/reports/nightly.latest.json`
 - `pytest verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code`（锁定非法 provider_state 告警码链路）
 - `sync_contract_indexes.sh`
