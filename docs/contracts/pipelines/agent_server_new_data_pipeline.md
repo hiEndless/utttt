@@ -28,7 +28,7 @@
 1. 事件输入（TradeEventInput）进入 workflow
 2. ContextBuilder 聚合输入：
    - market_state（MSL + cross_horizon + state_features + anomaly_flags + raw_market_structure）
-   - position_context（当前为 stub）
+   - position_context（来自 execution_service debug state）
    - active_events（从 event_center_new 的 selected_event 流归一化而来）
    - symbol_memory（可选，inmemory/redis）
 3. signal_evaluator：输出 SignalVerdict（只裁决“信号有效性”，不直接决定动作）
@@ -36,7 +36,7 @@
 5. rule_planner：输出 RulePlan（规则化 sizing）
 6. horizon_policy_gate：读取 `cross_horizon.suggested_policy` 并做保守门控
 7. strategy_gate：策略语义门控（freshness、冲突、脆弱性等）
-8. risk_gate：风险许可（账户级/全局级门控，占位实现）
+8. risk_gate：风险许可（账户级/全局级门控，按 MSL + position_context + active_events 动态推导）
 9. execution_planner：输出 ExecutionPlan（最终 agent 计划）
 10. （可选）execution_decider：HTTP 调用 execution_service 返回最终裁决 dict
 11. （可选）recorder：写出 market_context/agent_output/decision_trace
@@ -69,7 +69,7 @@
 不负责：
 - 原始数据采集、特征计算（由 feature_service / market_state_engine 负责）
 - 事件去重/分类/优先级（由 event_center_new 负责）
-- 真实仓位/账户系统（当前 position_context 为 stub，规划上更倾向下沉至 execution_service）
+- 真实仓位/账户系统（通过 execution_service 提供的状态快照接入，最终执行裁决仍在 execution_service）
 
 ---
 

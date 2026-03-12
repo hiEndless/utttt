@@ -63,6 +63,69 @@ def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[s
     return {"suggested_policy": "no_action", "policy_reason": "insufficient_evidence"}
 
 
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def _derive_global_regime(
+    *,
+    msl: MarketStateMSL,
+    position_context: Dict[str, Any],
+    active_events: list[Dict[str, Any]],
+) -> str:
+    regime_rank = {"normal": 0, "elevated": 1, "critical": 2}
+    regime = "normal"
+
+    def _raise(next_regime: str) -> None:
+        nonlocal regime
+        if regime_rank.get(next_regime, 0) > regime_rank.get(regime, 0):
+            regime = next_regime
+
+    portfolio_risk = dict((position_context or {}).get("portfolio_risk") or {})
+    position_risk_state = str(portfolio_risk.get("risk_state") or "normal").strip().lower()
+    if position_risk_state == "frozen":
+        _raise("critical")
+    elif position_risk_state in {"reduce_only", "warn"}:
+        _raise("elevated")
+
+    if msl.market_fragility == "high":
+        _raise("critical")
+    elif msl.market_fragility == "medium":
+        _raise("elevated")
+    if str(msl.volatility.volatility_regime or "unknown") == "high":
+        _raise("elevated")
+    if msl.horizon_alignment == "conflict":
+        _raise("elevated")
+
+    for item in list(active_events or []):
+        evt = dict(item or {})
+        evt_type = str(evt.get("type") or "").strip().lower()
+        score = _to_float(evt.get("score"), 0.0)
+        if evt_type in {"liquidation_cluster", "forced_liquidation", "exchange_risk"} and score >= 0.8:
+            _raise("critical")
+        elif evt_type in {"volatility_spike", "funding_extreme", "basis_dislocation"} and score >= 0.7:
+            _raise("elevated")
+
+    return regime
+
+
+def _derive_risk_gate_context(
+    *,
+    msl: MarketStateMSL,
+    position_context: Dict[str, Any],
+    active_events: list[Dict[str, Any]],
+) -> RiskGateContext:
+    pos = dict((position_context or {}).get("current_position") or {})
+    cooldown_seconds_left = int(pos.get("cooldown_seconds_left") or 0)
+    return RiskGateContext(
+        global_regime=_derive_global_regime(msl=msl, position_context=position_context, active_events=active_events),
+        cooldown_active=(cooldown_seconds_left > 0),
+    )
+
+
 class TradeEventWorkflow:
     """示例工作流：load context -> call expert -> rule planner -> risk gate -> execution planner -> persist。"""
 
@@ -176,7 +239,12 @@ class TradeEventWorkflow:
             position_context=position_ctx,
             signal_event=dict(ctx.signal_event or {}),
         )
-        allowance = risk_gate(RiskGateContext(global_regime="normal", cooldown_active=False))
+        risk_ctx = _derive_risk_gate_context(
+            msl=ctx.msl,
+            position_context=position_ctx,
+            active_events=list(ctx.active_events),
+        )
+        allowance = risk_gate(risk_ctx)
         if not hpg.allowed:
             plan = ExecutionPlan(
                 action="skip",
@@ -320,6 +388,8 @@ class TradeEventWorkflow:
                     "reasons": [*list(hpg.reasons), *list(sg.reasons)],
                 },
                 risk_gate={
+                    "global_regime": risk_ctx.global_regime,
+                    "cooldown_active": bool(risk_ctx.cooldown_active),
                     "allow_open": allowance.allow_open,
                     "allow_add": allowance.allow_add,
                     "allow_reduce": allowance.allow_reduce,
