@@ -121,6 +121,9 @@ MSL 契约文件：
     - `merged.by_source.{news|social|onchain}.data_source`（当前源数据来源）
     - `merged.by_source.{news|social|onchain}.inference_source`（当前推断来源）
     - `conflicts`（同来源状态冲突清单）
+  - `alternative_sources_fusion.merged.by_source.*.provider_state` 枚举口径（state 融合结果）：
+    - `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
+  - 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`（`alternative_sources_summary.provider_state_policy`）
   - 当 `selected_events_unversioned_count > 0` 时，`anomaly_flags` 会包含 `selected_events_unversioned`
 - `msl_meta`
   - `schema_version`：MSL 契约版本（当前主分支为 `2`）
