@@ -4,6 +4,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict
 
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
 from contracts.semantic_policies.source_semantics import (
     get_market_state_feature_fallback_data_source,
     get_market_state_feature_fallback_inference_source,
@@ -14,6 +15,7 @@ from services.feature_service.src.ports.social_provider import SocialProvider
 from services.feature_service.src.providers.degradation_state import mark_degraded
 
 logger = logging.getLogger(__name__)
+_SOURCE_NEWS, _SOURCE_SOCIAL, _SOURCE_ONCHAIN = get_alternative_source_names()
 
 
 def _normalize_source_payload(
@@ -61,17 +63,17 @@ def _reserved_unavailable_payload(source_type: str, *, provider_state: str) -> D
 
 class NoopNewsProvider(NewsProvider):
     async def get_news_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        return _reserved_unavailable_payload("news", provider_state="noop")
+        return _reserved_unavailable_payload(_SOURCE_NEWS, provider_state="noop")
 
 
 class NoopSocialProvider(SocialProvider):
     async def get_social_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        return _reserved_unavailable_payload("social", provider_state="noop")
+        return _reserved_unavailable_payload(_SOURCE_SOCIAL, provider_state="noop")
 
 
 class NoopOnchainProvider(OnchainProvider):
     async def get_onchain_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        return _reserved_unavailable_payload("onchain", provider_state="noop")
+        return _reserved_unavailable_payload(_SOURCE_ONCHAIN, provider_state="noop")
 
 
 class StaticNewsProvider(NewsProvider):
@@ -80,7 +82,7 @@ class StaticNewsProvider(NewsProvider):
 
     async def get_news_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         return _normalize_source_payload(
-            source_type="news",
+            source_type=_SOURCE_NEWS,
             payload=deepcopy(self._payload),
             provider_state="static",
         )
@@ -92,7 +94,7 @@ class StaticSocialProvider(SocialProvider):
 
     async def get_social_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         return _normalize_source_payload(
-            source_type="social",
+            source_type=_SOURCE_SOCIAL,
             payload=deepcopy(self._payload),
             provider_state="static",
         )
@@ -104,7 +106,7 @@ class StaticOnchainProvider(OnchainProvider):
 
     async def get_onchain_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         return _normalize_source_payload(
-            source_type="onchain",
+            source_type=_SOURCE_ONCHAIN,
             payload=deepcopy(self._payload),
             provider_state="static",
         )
@@ -118,7 +120,7 @@ class FallbackNewsProvider(NewsProvider):
     async def get_news_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         try:
             return _normalize_source_payload(
-                source_type="news",
+                source_type=_SOURCE_NEWS,
                 payload=dict(await self._primary.get_news_features(exchange, symbol) or {}),
                 provider_state="primary",
             )
@@ -131,7 +133,7 @@ class FallbackNewsProvider(NewsProvider):
                 exc_info=True,
             )
             return _normalize_source_payload(
-                source_type="news",
+                source_type=_SOURCE_NEWS,
                 payload=dict(await self._fallback.get_news_features(exchange, symbol) or {}),
                 provider_state="fallback",
             )
@@ -145,7 +147,7 @@ class FallbackSocialProvider(SocialProvider):
     async def get_social_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         try:
             return _normalize_source_payload(
-                source_type="social",
+                source_type=_SOURCE_SOCIAL,
                 payload=dict(await self._primary.get_social_features(exchange, symbol) or {}),
                 provider_state="primary",
             )
@@ -158,7 +160,7 @@ class FallbackSocialProvider(SocialProvider):
                 exc_info=True,
             )
             return _normalize_source_payload(
-                source_type="social",
+                source_type=_SOURCE_SOCIAL,
                 payload=dict(await self._fallback.get_social_features(exchange, symbol) or {}),
                 provider_state="fallback",
             )
@@ -172,7 +174,7 @@ class FallbackOnchainProvider(OnchainProvider):
     async def get_onchain_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         try:
             return _normalize_source_payload(
-                source_type="onchain",
+                source_type=_SOURCE_ONCHAIN,
                 payload=dict(await self._primary.get_onchain_features(exchange, symbol) or {}),
                 provider_state="primary",
             )
@@ -185,7 +187,7 @@ class FallbackOnchainProvider(OnchainProvider):
                 exc_info=True,
             )
             return _normalize_source_payload(
-                source_type="onchain",
+                source_type=_SOURCE_ONCHAIN,
                 payload=dict(await self._fallback.get_onchain_features(exchange, symbol) or {}),
                 provider_state="fallback",
             )
@@ -194,16 +196,16 @@ class FallbackOnchainProvider(OnchainProvider):
 class UnavailableNewsProvider(NewsProvider):
     async def get_news_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         mark_degraded("news_provider_unavailable")
-        return _reserved_unavailable_payload("news", provider_state="unavailable")
+        return _reserved_unavailable_payload(_SOURCE_NEWS, provider_state="unavailable")
 
 
 class UnavailableSocialProvider(SocialProvider):
     async def get_social_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         mark_degraded("social_provider_unavailable")
-        return _reserved_unavailable_payload("social", provider_state="unavailable")
+        return _reserved_unavailable_payload(_SOURCE_SOCIAL, provider_state="unavailable")
 
 
 class UnavailableOnchainProvider(OnchainProvider):
     async def get_onchain_features(self, exchange: str, symbol: str) -> Dict[str, Any]:
         mark_degraded("onchain_provider_unavailable")
-        return _reserved_unavailable_payload("onchain", provider_state="unavailable")
+        return _reserved_unavailable_payload(_SOURCE_ONCHAIN, provider_state="unavailable")

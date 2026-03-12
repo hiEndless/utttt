@@ -7,6 +7,7 @@ TARGET_FILES=(
   "services/event_center_new/ec/context/builder.py"
   "services/execution_service/adapters/agent_execution_plan_adapter.py"
   "services/execution_service/domain/contracts.py"
+  "services/feature_service/src/providers/future_source_providers.py"
 )
 
 IMPORT_PATTERN='contracts\.schemas\.alternative_source_summary_contract'
