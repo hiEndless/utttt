@@ -8,6 +8,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
+from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.app.bootstrap import create_trade_event_workflow_from_env
@@ -19,7 +20,7 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     monkeypatch.delenv("AGENT_EXECUTION_ENABLED", raising=False)
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._market_state, HttpMarketStateProvider)  # noqa: SLF001
-    assert isinstance(wf._position_context, StubPositionContextProvider)  # noqa: SLF001
+    assert isinstance(wf._position_context, HttpExecutionPositionContextProvider)  # noqa: SLF001
     assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
     assert wf._execution_decider is None  # noqa: SLF001
     assert wf._symbol_memory_provider is None  # noqa: SLF001
@@ -28,6 +29,12 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert wf._ai_adaptive_mode == "observe"  # noqa: SLF001
     assert wf._market_state._base_url == "http://localhost:8300"  # noqa: SLF001
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_allows_stub_position_context_in_dev(monkeypatch):
+    monkeypatch.setenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "stub")
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._position_context, StubPositionContextProvider)  # noqa: SLF001
 
 
 def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkeypatch):
@@ -80,6 +87,23 @@ def test_create_trade_event_workflow_from_env_prod_forbid_redis_fallback(monkeyp
         assert False, "expected RuntimeError when redis provider init fails in prod profile"
     except RuntimeError as exc:
         assert "failed to initialize redis active events provider in production" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_prod_forbid_stub_position_context(monkeypatch):
+    import services.agent_server_new.app.bootstrap as mod
+
+    class _FakeRedisActiveEventsProvider:
+        pass
+
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
+    monkeypatch.setenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "stub")
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when prod profile uses stub position context provider"
+    except RuntimeError as exc:
+        assert "AGENT_POSITION_CONTEXT_PROVIDER_MODE=stub" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypatch):

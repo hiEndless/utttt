@@ -7,6 +7,7 @@ from services.agent_server_new.adapters.active_events_redis import RedisActiveEv
 from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
+from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.adapters.symbol_memory_redis import (
@@ -39,7 +40,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
 
     当前默认接线：
     - market_state: HttpMarketStateProvider.from_env()
-    - position_context: StubPositionContextProvider()
+    - position_context: 由 AGENT_POSITION_CONTEXT_PROVIDER_MODE 控制（默认 http）
     - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 stub）
     - execution_decider: 按环境变量 AGENT_EXECUTION_ENABLED 决定是否启用
     """
@@ -58,6 +59,16 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             # 中文注释：非生产环境允许降级到 stub，保障本地联调和回放可用。
             logger.warning("active_events redis provider init failed, fallback to stub: %s", exc)
             active_events_provider = StubActiveEventsProvider()
+
+    position_context_provider_mode = str(
+        os.getenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "http") or "http"
+    ).strip().lower()
+    if runtime_profile in {"prod", "production"} and position_context_provider_mode == "stub":
+        raise RuntimeError("production profile forbids AGENT_POSITION_CONTEXT_PROVIDER_MODE=stub")
+    if position_context_provider_mode == "stub":
+        position_context_provider = StubPositionContextProvider()
+    else:
+        position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
 
     execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
     symbol_memory_enabled = _env_bool("AGENT_SYMBOL_MEMORY_ENABLED", "false")
@@ -84,7 +95,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
-        position_context=StubPositionContextProvider(),
+        position_context=position_context_provider,
         active_events=active_events_provider,
         execution_decider=HttpExecutionDecisionProvider.from_env() if execution_enabled else None,
         recorder=None,

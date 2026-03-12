@@ -150,6 +150,19 @@ signal_event + active_events + MSL
   - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
 - `AGENT_EXECUTION_TIMEOUT_S`
   - execution_service HTTP 请求超时秒数（默认：`10`）
+- `AGENT_POSITION_CONTEXT_PROVIDER_MODE`
+  - 仓位上下文 provider 模式（`http|stub`，默认：`http`）
+  - `prod` 下禁止 `stub`
+- `AGENT_POSITION_CONTEXT_BASE_URL`
+  - 当 provider 为 `http` 时读取 execution debug state 的服务地址（默认回落 `AGENT_EXECUTION_BASE_URL`）
+- `AGENT_POSITION_CONTEXT_TIMEOUT_S`
+  - 仓位上下文 HTTP 请求超时秒数（默认回落 `AGENT_EXECUTION_TIMEOUT_S`）
+- `AGENT_POSITION_CONTEXT_ACCOUNT_ID`
+  - 读取仓位上下文时使用的账户 ID（默认：`main`）
+- `AGENT_POSITION_CONTEXT_REDACT`
+  - 是否请求脱敏 debug state（默认：`true`）
+- `AGENT_POSITION_CONTEXT_FAIL_OPEN`
+  - HTTP 获取失败是否回落空上下文（dev 默认 `true`，prod 默认 `false`）
 - `AGENT_ACTIVE_EVENTS_PROVIDER_MODE`
   - active events provider 模式（`stub|redis`，默认：`stub`）
 - `AGENT_ACTIVE_EVENTS_REDIS_URL`
@@ -190,7 +203,7 @@ signal_event + active_events + MSL
 - 提供默认工厂：`agent_server_new.app.create_trade_event_workflow_from_env`
 - 默认接线：
   - `market_state = HttpMarketStateProvider.from_env()`
-  - `position_context = StubPositionContextProvider()`（兼容占位，后续由 execution 层接管）
+  - `position_context` 默认 `http` 读取 execution debug state（可显式切 `stub` 仅用于联调）
   - `active_events = StubActiveEventsProvider()`（默认）
   - 当 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis` 时启用 `RedisActiveEventsProvider`
   - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`

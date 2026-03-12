@@ -7,5 +7,6 @@
 """
 
 from .execution_service_http import HttpExecutionDecisionProvider
+from .position_context_execution_http import HttpExecutionPositionContextProvider
 
-__all__ = ["HttpExecutionDecisionProvider"]
+__all__ = ["HttpExecutionDecisionProvider", "HttpExecutionPositionContextProvider"]
