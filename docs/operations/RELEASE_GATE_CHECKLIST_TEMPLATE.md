@@ -19,15 +19,17 @@
    - `MAX_AGENT_READYZ_LEVEL`
    - `REQUIRE_AGENT_READYZ_REPORT`
 2. 记录聚合报告实际值（`verification/reports/summary.latest.json`）：
-   - `execution_legacy_confidence_usage_ratio`
-   - `agent_readyz_status_level`
-   - `agent_readyz_report_count`
-   - `agent_readyz_error_count`
-   - `agent_readyz_errors`
-3. 放行条件（建议）：
-   - `execution_legacy_confidence_usage_ratio <= MAX_LEGACY_CONFIDENCE_RATIO`（nightly）
-   - `agent_readyz_report_count > 0`（当 `REQUIRE_AGENT_READYZ_REPORT=1`）
-   - `agent_readyz_status_level <= MAX_AGENT_READYZ_LEVEL`
+  - `execution_legacy_confidence_usage_ratio`
+  - `agent_readyz_status_level`
+  - `agent_readyz_report_count`
+  - `agent_readyz_error_count`
+  - `agent_readyz_errors`
+3. 记录发布门禁摘要（`bash tools/local/check_release_ready.sh --print-summary-only --summary-format json`）：
+   - `env_overrides`
+4. 放行条件（建议）：
+  - `execution_legacy_confidence_usage_ratio <= MAX_LEGACY_CONFIDENCE_RATIO`（nightly）
+  - `agent_readyz_report_count > 0`（当 `REQUIRE_AGENT_READYZ_REPORT=1`）
+  - `agent_readyz_status_level <= MAX_AGENT_READYZ_LEVEL`
 
 ## 3. 标准排障顺序
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 import sys
@@ -23,8 +24,32 @@ def test_release_gate_summary_json_matches_schema() -> None:
     assert proc.returncode == 0
     payload = json.loads(str(proc.stdout or "{}"))
     assert payload.get("source") == "tools/local/check_release_ready.sh"
+    assert isinstance(payload.get("env_overrides"), list)
     assert isinstance(payload.get("ts_ms"), int)
     assert int(payload.get("ts_ms") or 0) > 0
     schema_path = PROJECT_ROOT / "verification" / "reports" / "release_gate_summary_v1.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     assert validate_payload_with_local_refs(schema, payload, schema_path.parent)
+
+
+def test_release_gate_summary_json_contains_env_overrides_when_set() -> None:
+    env = dict(os.environ)
+    env["MAX_AGENT_READYZ_LEVEL"] = "yellow"
+    proc = subprocess.run(
+        [
+            "bash",
+            "tools/local/check_release_ready.sh",
+            "--print-summary-only",
+            "--summary-format",
+            "json",
+        ],
+        cwd=str(PROJECT_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    payload = json.loads(str(proc.stdout or "{}"))
+    overrides = list(payload.get("env_overrides") or [])
+    assert "MAX_AGENT_READYZ_LEVEL" in overrides

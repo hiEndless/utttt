@@ -65,6 +65,35 @@ REGRESSION_REQUIRE_AGENT_READYZ_REPORT="${REGRESSION_REQUIRE_AGENT_READYZ_REPORT
 NIGHTLY_MAX_AGENT_READYZ_LEVEL="${NIGHTLY_MAX_AGENT_READYZ_LEVEL:-yellow}"
 NIGHTLY_REQUIRE_AGENT_READYZ_REPORT="${NIGHTLY_REQUIRE_AGENT_READYZ_REPORT:-1}"
 TS_MS="$(($(date +%s) * 1000))"
+ENV_OVERRIDES=()
+
+collect_override() {
+  local name="$1"
+  if printenv "$name" >/dev/null 2>&1; then
+    ENV_OVERRIDES+=("$name")
+  fi
+}
+
+collect_override "WITH_AGENT_READYZ"
+collect_override "MAX_AGENT_READYZ_LEVEL"
+collect_override "REQUIRE_AGENT_READYZ_REPORT"
+collect_override "REGRESSION_MAX_AGENT_READYZ_LEVEL"
+collect_override "REGRESSION_REQUIRE_AGENT_READYZ_REPORT"
+collect_override "NIGHTLY_MAX_AGENT_READYZ_LEVEL"
+collect_override "NIGHTLY_REQUIRE_AGENT_READYZ_REPORT"
+collect_override "MAX_LEGACY_CONFIDENCE_RATIO"
+
+ENV_OVERRIDES_JSON="[]"
+if ((${#ENV_OVERRIDES[@]} > 0)); then
+  ENV_OVERRIDES_JSON="["
+  for i in "${!ENV_OVERRIDES[@]}"; do
+    if [[ "$i" != "0" ]]; then
+      ENV_OVERRIDES_JSON+=", "
+    fi
+    ENV_OVERRIDES_JSON+="\"${ENV_OVERRIDES[$i]}\""
+  done
+  ENV_OVERRIDES_JSON+="]"
+fi
 
 if [[ "$SUMMARY_FORMAT" == "json" ]]; then
   cat <<JSON
@@ -72,6 +101,7 @@ if [[ "$SUMMARY_FORMAT" == "json" ]]; then
   "schema_version": "release-gate-summary-v1",
   "source": "tools/local/check_release_ready.sh",
   "ts_ms": ${TS_MS},
+  "env_overrides": ${ENV_OVERRIDES_JSON},
   "quick": {
     "with_agent_readyz": ${QUICK_WITH_AGENT_READYZ},
     "max_agent_readyz_level": "${QUICK_MAX_AGENT_READYZ_LEVEL}",
@@ -94,6 +124,11 @@ else
   echo "[release-gate] quick: WITH_AGENT_READYZ=$QUICK_WITH_AGENT_READYZ MAX_AGENT_READYZ_LEVEL=$QUICK_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$QUICK_REQUIRE_AGENT_READYZ_REPORT"
   echo "[release-gate] regression(default): MAX_AGENT_READYZ_LEVEL=$REGRESSION_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REGRESSION_REQUIRE_AGENT_READYZ_REPORT"
   echo "[release-gate] nightly(default): MAX_AGENT_READYZ_LEVEL=$NIGHTLY_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$NIGHTLY_REQUIRE_AGENT_READYZ_REPORT MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
+  if ((${#ENV_OVERRIDES[@]} > 0)); then
+    echo "[release-gate] env_overrides: ${ENV_OVERRIDES[*]}"
+  else
+    echo "[release-gate] env_overrides: (none)"
+  fi
   echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
 fi
 
