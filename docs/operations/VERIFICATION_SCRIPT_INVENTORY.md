@@ -29,6 +29,7 @@
   - 支持：`bash tools/local/check_release_triage_block_guard.sh --show-blocks`
 - 发布文档最小复现片段一致性守卫：`tools/local/check_release_docs_repro_alignment_guard.sh`
   - 支持：`bash tools/local/check_release_docs_repro_alignment_guard.sh --show-missing`
+  - 回归测试：`verification/text/test_release_docs_repro_alignment_guard_script.py`
 - prod provider 门禁守卫：`tools/local/check_prod_provider_modes_guard.sh`
 - 来源语义守卫：`tools/local/check_source_semantics_guard.sh`
 - pipeline 语义字段锚点守卫：`tools/local/check_pipeline_semantic_terms_doc_guard.sh`
