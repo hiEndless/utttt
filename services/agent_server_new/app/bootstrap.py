@@ -16,6 +16,7 @@ from services.agent_server_new.adapters.symbol_memory_redis import (
     create_redis_client_from_env as create_memory_redis_client_from_env,
 )
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
+from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,12 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     if position_context_provider_mode != "http":
         raise RuntimeError(f"unsupported AGENT_POSITION_CONTEXT_PROVIDER_MODE={position_context_provider_mode}")
     position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
+    llm_runtime = load_llm_runtime_from_env(runtime_profile=runtime_profile)
+    if llm_runtime.enabled and not llm_runtime.ready:
+        logger.warning(
+            "llm runtime enabled but config incomplete; decision pipeline still uses rule-based flow "
+            "(missing AGENT_LLM_MODEL_ID/API_KEY)"
+        )
 
     execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
     event_recorder_mode = str(os.getenv("AGENT_EVENT_RECORDER_MODE", "none") or "none").strip().lower()

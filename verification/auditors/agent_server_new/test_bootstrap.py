@@ -218,3 +218,30 @@ def test_create_trade_event_workflow_from_env_enables_ai_adaptive_flags(monkeypa
     wf = create_trade_event_workflow_from_env()
     assert wf._ai_adaptive_enabled is True  # noqa: SLF001
     assert wf._ai_adaptive_mode == "bounded_apply"  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_prod_llm_enabled_requires_credentials(monkeypatch):
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "true")
+    monkeypatch.setenv("AGENT_LLM_MODEL_ID", "gpt-4o-mini")
+    monkeypatch.delenv("AGENT_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("AGENT_LLM_API_KEY_ENV", raising=False)
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when production llm enabled without api key"
+    except RuntimeError as exc:
+        assert "AGENT_LLM_ENABLED=true in production requires" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_prod_llm_enabled_accepts_api_key_env(monkeypatch):
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "true")
+    monkeypatch.setenv("AGENT_LLM_MODEL_ID", "gpt-4o-mini")
+    monkeypatch.setenv("AGENT_LLM_API_KEY_ENV", "OPENAI_API_KEY")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert wf is not None

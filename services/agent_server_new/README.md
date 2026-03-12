@@ -162,6 +162,18 @@ signal_event + active_events + MSL
   - execution_service HTTP 重试基础退避秒数（默认：`0.2`，按指数退避）
 - `AGENT_EXECUTION_RETRY_ON_STATUSES`
   - 触发重试的 HTTP 状态码列表（CSV，默认：`429,500,502,503,504`）
+- `AGENT_LLM_ENABLED`
+  - 是否启用 LLM 运行时配置门禁（默认：`false`；当前仍不接管主决策链路）
+- `AGENT_LLM_PROVIDER`
+  - LLM provider 标识（默认：`openai_compatible`）
+- `AGENT_LLM_MODEL_ID`
+  - LLM 模型 ID（当 `AGENT_LLM_ENABLED=true` 且生产环境时必填）
+- `AGENT_LLM_BASE_URL`
+  - LLM 兼容接口地址（可选）
+- `AGENT_LLM_API_KEY`
+  - LLM API Key（当 `AGENT_LLM_ENABLED=true` 且生产环境时必填）
+- `AGENT_LLM_API_KEY_ENV`
+  - API Key 环境变量名（可选；当未设置 `AGENT_LLM_API_KEY` 时从该变量读取）
 - `AGENT_POSITION_CONTEXT_PROVIDER_MODE`
   - 仓位上下文 provider 模式（仅支持 `http`）
 - `AGENT_POSITION_CONTEXT_BASE_URL`
