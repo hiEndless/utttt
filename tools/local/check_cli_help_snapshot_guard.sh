@@ -5,6 +5,7 @@ SNAPSHOT="docs/operations/CLI_HELP_SNAPSHOT.md"
 SCRIPT_A="tools/local/run_agent_memory_summary_report.sh"
 SCRIPT_B="tools/local/verify_report_aggregate.sh"
 SCRIPT_C="tools/local/aggregate_and_check.sh"
+SCRIPT_D="tools/local/verify_full.sh"
 
 extract_text_block() {
   local heading="$1"
@@ -42,22 +43,24 @@ compare_help_snapshot() {
   fi
 }
 
-echo "[1/4] 检查脚本与快照存在"
-for file in "$SNAPSHOT" "$SCRIPT_A" "$SCRIPT_B" "$SCRIPT_C"; do
+echo "[1/5] 检查脚本与快照存在"
+for file in "$SNAPSHOT" "$SCRIPT_A" "$SCRIPT_B" "$SCRIPT_C" "$SCRIPT_D"; do
   if ! test -f "$file"; then
     echo "[失败] 缺少文件: $file"
     exit 1
   fi
 done
 
-echo "[2/4] 比对 run_agent_memory_summary_report help 快照"
+echo "[2/5] 比对 run_agent_memory_summary_report help 快照"
 compare_help_snapshot "$SCRIPT_A" "## \`tools/local/run_agent_memory_summary_report.sh --help\`"
 
-echo "[3/4] 比对 verify_report_aggregate help 快照"
+echo "[3/5] 比对 verify_report_aggregate help 快照"
 compare_help_snapshot "$SCRIPT_B" "## \`tools/local/verify_report_aggregate.sh --help\`"
 
-echo "[4/4] 比对 aggregate_and_check help 快照"
+echo "[4/5] 比对 aggregate_and_check help 快照"
 compare_help_snapshot "$SCRIPT_C" "## \`tools/local/aggregate_and_check.sh --help\`"
 
-echo "[通过] CLI help 快照守卫检查完成。"
+echo "[5/5] 比对 verify_full help 快照"
+compare_help_snapshot "$SCRIPT_D" "## \`tools/local/verify_full.sh --help\`"
 
+echo "[通过] CLI help 快照守卫检查完成。"

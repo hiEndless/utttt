@@ -10,6 +10,7 @@
 bash tools/local/run_agent_memory_summary_report.sh --help
 bash tools/local/verify_report_aggregate.sh --help
 bash tools/local/aggregate_and_check.sh --help
+bash tools/local/verify_full.sh --help
 bash tools/local/check_cli_help_snapshot_guard.sh
 ```
 
@@ -58,4 +59,19 @@ Options:
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
   --skip-thresholds             仅聚合，不执行阈值检查
   --help, -h                    显示帮助
+```
+
+## `tools/local/verify_full.sh --help`
+
+```text
+Usage:
+  bash tools/local/verify_full.sh [args...]
+
+Description:
+  本地 full 验证入口，代理到：
+    bash tools/ci/new_arch_guards_full.sh [args...]
+
+Examples:
+  bash tools/local/verify_full.sh
+  bash tools/local/verify_full.sh --event-center-only
 ```
