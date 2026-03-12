@@ -33,6 +33,7 @@
 - `services/market_state_engine/docs/boundaries.md`
 - `services/market_state_engine/docs/guard_help_snapshot.txt`
 - `services/market_state_engine/docs/msl.schema.json`
+- `tools/local/check_market_state_contract_entry_guard.sh`
 
 ## 4. event_center_new
 

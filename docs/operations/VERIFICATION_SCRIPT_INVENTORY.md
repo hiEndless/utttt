@@ -16,6 +16,7 @@
 - 文档契约守卫聚合：`tools/local/check_docs_contracts_bundle.sh`
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
+- state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
 
 ## 3. CI 入口关键阶段（显式）
 
