@@ -4,9 +4,8 @@ import argparse
 import asyncio
 from typing import Any, Dict, Optional, Sequence
 
-from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
+from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 from services.market_state_engine.src.service import MarketStateService
@@ -60,6 +59,12 @@ class _InProcessMarketStateProvider:
         )
 
 
+class _StaticActiveEventsProvider:
+    async def get_active_events(self, exchange: str, symbol: str) -> list[Dict[str, Any]]:
+        _ = (exchange, symbol)
+        return []
+
+
 async def run_pipeline_once(
     *,
     exchange: str,
@@ -69,8 +74,8 @@ async def run_pipeline_once(
 ) -> Dict[str, Any]:
     wf = TradeEventWorkflow(
         market_state=_InProcessMarketStateProvider(),
-        position_context=StubPositionContextProvider(),
-        active_events=StubActiveEventsProvider(),
+        position_context=HttpExecutionPositionContextProvider.from_env(runtime_profile="dev"),
+        active_events=_StaticActiveEventsProvider(),
         recorder=None,
     )
     event = TradeEventInput(

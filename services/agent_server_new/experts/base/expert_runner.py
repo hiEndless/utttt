@@ -17,7 +17,7 @@ class ExpertRunConfig:
 
 
 class ExpertRunner:
-    """专家执行器：占位实现，后续可接入真实 LLM client 与 guardrail。"""
+    """专家执行器：统一处理调用重试与结构化解析。"""
 
     def __init__(self, *, config: ExpertRunConfig) -> None:
         self._config = config
@@ -30,9 +30,13 @@ class ExpertRunner:
         parse_output: Callable[[Any], StructuredOutput],
         meta: Optional[Dict[str, Any]] = None,
     ) -> StructuredOutput:
-        raw = await call_model(prompt, self._config)
-        out = parse_output(raw)
-        if out.valid:
-            return out
-        return out
-
+        _ = dict(meta or {})
+        attempts = max(1, int(self._config.max_retries) + 1)
+        last_out: StructuredOutput | None = None
+        for _attempt in range(attempts):
+            raw = await call_model(prompt, self._config)
+            out = parse_output(raw)
+            if out.valid:
+                return out
+            last_out = out
+        return last_out or StructuredOutput(raw=None, parsed=None, valid=False, errors={"error": "empty_result"})
