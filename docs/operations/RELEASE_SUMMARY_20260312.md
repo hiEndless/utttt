@@ -36,9 +36,18 @@
   - `guard_summary.full.log`
 - workflow 失败提示新增摘要查看命令，支持首屏定位配置门禁问题。
 
+6. agent readyz 门禁上线（分层收敛）
+- quick：新增可选观测开关 `WITH_AGENT_READYZ=1`（默认关闭，不影响主链路时延）。
+- regression：默认接入 readyz 聚合门禁（`MAX_AGENT_READYZ_LEVEL=red`，`REQUIRE_AGENT_READYZ_REPORT=1`）。
+- nightly：默认接入更严格 readyz 门禁（`MAX_AGENT_READYZ_LEVEL=yellow`，`REQUIRE_AGENT_READYZ_REPORT=1`）。
+- 聚合报告新增 readyz 字段用于发布核对：`agent_readyz_status_level`、`agent_readyz_report_count`、`agent_readyz_error_count`、`agent_readyz_errors`。
+
 ## 3. 关键验证结果
 
 - `bash tools/ci/verify_quick.sh` -> pass
+- `WITH_AGENT_READYZ=1 bash tools/ci/verify_quick.sh` -> pass（可选观测链路）
+- `bash tools/ci/verify_regression.sh` -> pass（默认 readyz 门禁链路）
+- `bash tools/ci/verify_nightly.sh` -> pass（默认 readyz + confidence 门禁链路）
 - `bash tools/ci/new_arch_guards_full.sh --quick` -> pass
 - `bash tools/local/check_docs_contracts_bundle.sh` -> pass
 - `bash tools/local/check_contract_docs_index_guard.sh` -> pass
