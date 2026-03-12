@@ -155,3 +155,53 @@ def test_http_readyz_execution_error_in_strict_mode(monkeypatch) -> None:  # noq
     body = resp.json()
     assert body["ok"] is False
     assert "execution_service_unreachable" in list(body.get("errors") or [])
+
+
+def test_http_readyz_low_disk_warning_in_non_strict_mode(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_EVENT_RECORDER_MODE", "jsonl")
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EXECUTION_SERVICE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "true")
+    monkeypatch.setattr(mod, "_check_event_recorder_writable", lambda: (True, {"path": "x"}))
+    monkeypatch.setattr(
+        mod,
+        "_check_event_recorder_disk_free",
+        lambda min_free_bytes: (False, {"free_bytes": 1, "min_free_bytes": min_free_bytes}),
+    )
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert "event_recorder_low_disk" in list(body.get("warnings") or [])
+
+
+def test_http_readyz_low_disk_error_in_strict_mode(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_EVENT_RECORDER_MODE", "jsonl")
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "true")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EXECUTION_SERVICE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "true")
+    monkeypatch.setattr(mod, "_check_event_recorder_writable", lambda: (True, {"path": "x"}))
+    monkeypatch.setattr(
+        mod,
+        "_check_event_recorder_disk_free",
+        lambda min_free_bytes: (False, {"free_bytes": 1, "min_free_bytes": min_free_bytes}),
+    )
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["ok"] is False
+    assert "event_recorder_low_disk" in list(body.get("errors") or [])

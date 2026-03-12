@@ -86,6 +86,26 @@ def _check_event_recorder_writable() -> tuple[bool, Dict[str, Any]]:
         return False, {"path": str(target), "error": str(exc)}
 
 
+def _check_event_recorder_disk_free(*, min_free_bytes: int) -> tuple[bool, Dict[str, Any]]:
+    mode = _env_str("AGENT_EVENT_RECORDER_MODE", "none").lower()
+    if mode != "jsonl":
+        return True, {"skipped": True, "reason": "event_recorder_not_jsonl"}
+    path = _env_str("AGENT_EVENT_RECORDER_JSONL_PATH", "verification/reports/agent_server_new_events.jsonl")
+    target = Path(path)
+    parent = target.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+        stat = os.statvfs(str(parent))
+        free_bytes = int(stat.f_bavail * stat.f_frsize)
+        return (free_bytes >= int(min_free_bytes)), {
+            "path": str(target),
+            "free_bytes": free_bytes,
+            "min_free_bytes": int(min_free_bytes),
+        }
+    except Exception as exc:  # pragma: no cover
+        return False, {"path": str(target), "error": str(exc), "min_free_bytes": int(min_free_bytes)}
+
+
 def create_router() -> APIRouter:
     router = APIRouter(prefix="/internal/agent", tags=["agent_server_new"])
 
@@ -124,6 +144,13 @@ def create_router() -> APIRouter:
         check_active_events_redis = _env_bool("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "true")
         check_event_recorder = _env_bool("AGENT_READY_CHECK_EVENT_RECORDER", "true")
         timeout_s = float(_env_str("AGENT_READY_CHECK_TIMEOUT_S", "1.5") or "1.5")
+        recorder_min_free_raw = str(
+            _env_str("AGENT_READY_CHECK_EVENT_RECORDER_MIN_FREE_BYTES", str(100 * 1024 * 1024)) or str(100 * 1024 * 1024)
+        )
+        try:
+            recorder_min_free_bytes = max(0, int(recorder_min_free_raw))
+        except Exception:
+            recorder_min_free_bytes = 100 * 1024 * 1024
 
         try:
             wf = create_trade_event_workflow_from_env()
@@ -174,6 +201,11 @@ def create_router() -> APIRouter:
             _record_check(checks=checks, name="event_recorder_writable", ok=ok, detail=detail)
             if not ok:
                 (errors if strict_upstream else warnings).append("event_recorder_unwritable")
+            else:
+                disk_ok, disk_detail = _check_event_recorder_disk_free(min_free_bytes=recorder_min_free_bytes)
+                _record_check(checks=checks, name="event_recorder_disk_free", ok=disk_ok, detail=disk_detail)
+                if not disk_ok:
+                    (errors if strict_upstream else warnings).append("event_recorder_low_disk")
 
         runtime_profile = _env_str("AGENT_RUNTIME_PROFILE", "dev").lower()
         if runtime_profile in {"prod", "production"} and not execution_enabled:

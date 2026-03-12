@@ -24,6 +24,7 @@ def test_tail_agent_events_help_contains_filter_options() -> None:
     assert "--agent-name <name>" in out
     assert "--record-type <type>" in out
     assert "--contains <keyword>" in out
+    assert "--jq <expr>" in out
 
 
 def test_tail_agent_events_filter_by_event_and_record_type(tmp_path) -> None:

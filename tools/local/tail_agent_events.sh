@@ -8,6 +8,7 @@ EVENT_ID_FILTER=""
 AGENT_NAME_FILTER=""
 RECORD_TYPE_FILTER=""
 CONTAINS_FILTER=""
+JQ_FILTER=""
 FOLLOW_MODE=1
 
 print_help() {
@@ -20,6 +21,7 @@ print_help() {
   --agent-name <name>     仅显示指定 agent_name（仅 record_type=agent_output 有效）
   --record-type <type>    仅显示指定 record_type（market_context|agent_output）
   --contains <keyword>    仅显示包含关键字的 JSON 行（子串匹配）
+  --jq <expr>             使用 jq 表达式进一步过滤（例如: .agent_name=="decision_trace"）
   --lines <n>             tail 行数（默认读取 TAIL_LINES 或 100）
   --no-follow             只输出当前内容，不持续跟踪
   --help                  显示帮助
@@ -56,6 +58,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --contains)
       CONTAINS_FILTER="${2:-}"
+      shift 2
+      ;;
+    --jq)
+      JQ_FILTER="${2:-}"
       shift 2
       ;;
     --lines)
@@ -101,12 +107,11 @@ if [[ "$FOLLOW_MODE" == "1" ]]; then
   TAIL_ARGS+=(-f)
 fi
 
-if [[ -z "$EVENT_ID_FILTER" && -z "$AGENT_NAME_FILTER" && -z "$RECORD_TYPE_FILTER" && -z "$CONTAINS_FILTER" ]]; then
+if [[ -z "$EVENT_ID_FILTER" && -z "$AGENT_NAME_FILTER" && -z "$RECORD_TYPE_FILTER" && -z "$CONTAINS_FILTER" && -z "$JQ_FILTER" ]]; then
   exec tail "${TAIL_ARGS[@]}" "$LATEST"
 fi
 
-tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
-python3 -c '
+FILTERED_CMD='
 import json
 import os
 import sys
@@ -134,3 +139,16 @@ for line in sys.stdin:
         continue
     print(raw, flush=True)
 '
+
+if [[ -n "$JQ_FILTER" ]]; then
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "[失败] 未安装 jq，无法使用 --jq 过滤。"
+    exit 1
+  fi
+  tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
+  python3 -c "$FILTERED_CMD" | jq -c "select($JQ_FILTER)"
+  exit $?
+fi
+
+tail "${TAIL_ARGS[@]}" "$LATEST" | EVENT_ID_FILTER="$EVENT_ID_FILTER" AGENT_NAME_FILTER="$AGENT_NAME_FILTER" RECORD_TYPE_FILTER="$RECORD_TYPE_FILTER" CONTAINS_FILTER="$CONTAINS_FILTER" \
+python3 -c "$FILTERED_CMD"
