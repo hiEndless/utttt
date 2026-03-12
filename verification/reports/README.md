@@ -79,7 +79,9 @@ python3 -m verification.reports.check_thresholds \
   --min-pass-rate 1.0 \
   --max-failed 0 \
   --min-reports 1 \
-  --max-semantic-errors 0
+  --max-semantic-errors 0 \
+  --max-agent-readyz-level yellow \
+  --require-agent-readyz-report
 ```
 
 Check semantic warning budget by field:

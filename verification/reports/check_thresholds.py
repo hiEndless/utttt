@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Any, Dict
 
 
+_LEVEL_ORDER = {"green": 0, "yellow": 1, "red": 2}
+
+
 def _load_json(path: str) -> Dict[str, Any]:
     p = Path(path)
     data = json.loads(p.read_text(encoding="utf-8"))
@@ -40,6 +43,17 @@ def _build_parser() -> argparse.ArgumentParser:
         default=-1.0,
         help="最大 execution legacy confidence 使用占比，-1 表示忽略",
     )
+    p.add_argument(
+        "--max-agent-readyz-level",
+        choices=["green", "yellow", "red"],
+        default="red",
+        help="允许的最大 agent readyz 状态级别（green<yellow<red，默认 red）",
+    )
+    p.add_argument(
+        "--require-agent-readyz-report",
+        action="store_true",
+        help="要求 summary 中存在 agent readyz 报告（agent_readyz_report_count > 0）",
+    )
     return p
 
 
@@ -53,6 +67,10 @@ def main(argv: list[str] | None = None) -> int:
     semantic_errors = _to_int(summary.get("semantic_error_count"), 0)
     semantic_warnings = _to_int(summary.get("semantic_warning_count"), 0)
     legacy_confidence_ratio = _to_float(summary.get("execution_legacy_confidence_usage_ratio"), 0.0)
+    agent_readyz_report_count = _to_int(summary.get("agent_readyz_report_count"), 0)
+    agent_readyz_level = str(summary.get("agent_readyz_status_level") or "red").strip().lower()
+    if agent_readyz_level not in _LEVEL_ORDER:
+        agent_readyz_level = "red"
 
     errors = []
     if report_count < int(args.min_reports):
@@ -70,6 +88,12 @@ def main(argv: list[str] | None = None) -> int:
             "execution_legacy_confidence_usage_ratio>"
             f"{float(args.max_legacy_confidence_ratio)} (actual={legacy_confidence_ratio})"
         )
+    if bool(args.require_agent_readyz_report) and agent_readyz_report_count <= 0:
+        errors.append("agent_readyz_report_count<=0 (required)")
+    if agent_readyz_report_count > 0:
+        max_level = str(args.max_agent_readyz_level).strip().lower()
+        if _LEVEL_ORDER.get(agent_readyz_level, 2) > _LEVEL_ORDER.get(max_level, 2):
+            errors.append(f"agent_readyz_status_level>{max_level} (actual={agent_readyz_level})")
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -81,7 +105,9 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"report_count={report_count} failed={failed} pass_rate={pass_rate} "
         f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings} "
-        f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio}"
+        f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio} "
+        f"agent_readyz_report_count={agent_readyz_report_count} "
+        f"agent_readyz_status_level={agent_readyz_level}"
     )
     return 0
 
