@@ -51,11 +51,25 @@
   "account_id": "main",
   "symbol": "ETHUSDT",
   "direction_intent": "long",
-  "confidence": {"level": "medium", "score": 0.67},
   "decision_confidence": {"level": "medium", "score": 0.67},
   "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
   "risk_hints": {"market_fragility": "medium"},
   "trace_id": "trace-20260310-001"
+}
+```
+
+兼容示例（legacy，迁移期）：
+
+```json
+{
+  "decision_id": "dec-legacy-001",
+  "exchange": "binance",
+  "account_id": "main",
+  "symbol": "ETHUSDT",
+  "direction_intent": "long",
+  "confidence": {"level": "medium", "score": 0.67},
+  "cross_horizon_policy": {},
+  "risk_hints": {}
 }
 ```
 
@@ -68,14 +82,14 @@
 5. `direction_intent`: `long | short | none`
 6. `decision_confidence.level`: `low | medium | high`
 7. `decision_confidence.score`: `[0, 1]` 浮点数
-8. `confidence`: 可选兼容字段（deprecated，若与 `decision_confidence` 同时出现，必须一致）
+8. `confidence`: 可选兼容字段（deprecated，若仅提供该字段，运行时会回填到 `decision_confidence`）
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
 11. `trace_id`: 可选字符串
 12. JSON Schema：`services/execution_service/docs/decision_intent.schema.json`
 
 一致性约束：
-- `decision_confidence` 为必填主字段。
+- 新接入方应始终提供 `decision_confidence` 作为主字段。
 - 同时提供 `confidence` 与 `decision_confidence` 时，若数值不一致，请求将返回 `400`，避免语义错位。
 
 响应示例：

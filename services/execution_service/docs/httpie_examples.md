@@ -1,6 +1,6 @@
 # execution_service HTTPie 示例
 
-更新时间：2026-03-10
+更新时间：2026-03-13
 
 ## 1) 健康检查
 
@@ -23,9 +23,21 @@ http POST :9962/internal/execution/decide \
   symbol=ETHUSDT \
   direction_intent=long \
   decision_confidence:='{"level":"medium","score":0.66}' \
-  confidence:='{"level":"medium","score":0.66}' \
   cross_horizon_policy:='{"suggested_policy":"follow_long_term"}' \
   risk_hints:='{"agent_action_hint":"add"}'
+```
+
+## 3.1) 执行裁决（legacy 兼容示例）
+
+```bash
+http POST :9962/internal/execution/decide \
+  decision_id=dec-legacy-001 \
+  exchange=binance \
+  symbol=ETHUSDT \
+  direction_intent=long \
+  confidence:='{"level":"medium","score":0.66}' \
+  cross_horizon_policy:='{}' \
+  risk_hints:='{}'
 ```
 
 ## 4) 调试状态（原始/脱敏）

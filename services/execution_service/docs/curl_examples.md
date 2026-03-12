@@ -1,6 +1,6 @@
 # execution_service cURL 示例
 
-更新时间：2026-03-10
+更新时间：2026-03-13
 
 ## 1) redis 模式启动
 
@@ -35,9 +35,24 @@ curl -s -X POST http://127.0.0.1:9962/internal/execution/decide \
     "symbol":"ETHUSDT",
     "direction_intent":"long",
     "decision_confidence":{"level":"medium","score":0.66},
-    "confidence":{"level":"medium","score":0.66},
     "cross_horizon_policy":{"suggested_policy":"follow_long_term"},
     "risk_hints":{"agent_action_hint":"add"}
+  }' | jq
+```
+
+## 4.1) 执行裁决（legacy 兼容示例）
+
+```bash
+curl -s -X POST http://127.0.0.1:9962/internal/execution/decide \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "decision_id":"dec-legacy-001",
+    "exchange":"binance",
+    "symbol":"ETHUSDT",
+    "direction_intent":"long",
+    "confidence":{"level":"medium","score":0.66},
+    "cross_horizon_policy":{},
+    "risk_hints":{}
   }' | jq
 ```
 
