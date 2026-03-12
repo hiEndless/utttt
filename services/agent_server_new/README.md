@@ -230,6 +230,8 @@ signal_event + active_events + MSL
 
 - 一次执行：`python -m services.agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
 - 循环执行：`python -m services.agent_server_new.memory_summary_runner --loop --interval-s 60`
+- 结果落盘：`python -m services.agent_server_new.memory_summary_runner --output verification/reports/memory_summary.latest.json`
+- 本地快捷脚本：`bash tools/local/run_agent_memory_summary_report.sh`
 - summary 现包含契约告警聚合：`contract_warning_count`、`contract_warning_event_count`、`contract_warning_type_count`、`recent_contract_warning_types`
 - runner 支持 `--top-risk-n`，输出按 `contract_warning_count` 排序的 `high_risk_symbols`（观测用途）
 - 默认仅输出有告警 symbol；可用 `--risk-warning-min` 提高阈值，或用 `--include-no-warning` 包含 0 告警 symbol

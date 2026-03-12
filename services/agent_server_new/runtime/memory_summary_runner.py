@@ -5,6 +5,8 @@ import asyncio
 import json
 import os
 import sys
+import time
+from pathlib import Path
 from typing import Any
 
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
@@ -26,6 +28,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--top-risk-n", type=int, default=5, help="输出 contract_warning_count 最高的 symbol TopN")
     p.add_argument("--risk-warning-min", type=int, default=1, help="仅纳入 contract_warning_count >= 该阈值的 symbol")
     p.add_argument("--include-no-warning", action="store_true", help="高风险简报中包含 0 告警 symbol（默认仅输出有告警）")
+    p.add_argument("--output", default="", help="可选：将本次结果写入 JSON 文件")
     return p
 
 
@@ -54,10 +57,46 @@ def _create_memory_adapter_from_env() -> Any:
     return InMemorySymbolMemoryAdapter()
 
 
-async def _run_once(*, limit_symbols: int, summary_window: int, top_risk_n: int, risk_warning_min: int, only_risked: bool) -> int:
+def _write_output_if_needed(*, output: str, payload: dict[str, Any]) -> None:
+    path = str(output or "").strip()
+    if not path:
+        return
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+async def _run_once(
+    *,
+    limit_symbols: int,
+    summary_window: int,
+    top_risk_n: int,
+    risk_warning_min: int,
+    only_risked: bool,
+    output: str,
+) -> int:
     adapter = _create_memory_adapter_from_env()
     if adapter is None:
-        print("symbol_memory_disabled")
+        now_ms = int(time.time() * 1000)
+        result = {
+            "schema_version": "symbol-memory-summary-run-v1",
+            "report_type": "symbol_memory_summary",
+            "memory_enabled": False,
+            "ok": True,
+            "total_symbols": 0,
+            "success_symbols": 0,
+            "failed_symbols": 0,
+            "summary_window": int(summary_window),
+            "started_ms": now_ms,
+            "ended_ms": now_ms,
+            "duration_ms": 0,
+            "last_error": "",
+            "high_risk_symbols": [],
+            "risk_warning_min": int(risk_warning_min),
+            "only_risked": bool(only_risked),
+        }
+        print(json.dumps(result, ensure_ascii=False))
+        _write_output_if_needed(output=output, payload=result)
         return 0
     result = await run_symbol_memory_summary_once(
         maintenance=adapter,
@@ -68,6 +107,7 @@ async def _run_once(*, limit_symbols: int, summary_window: int, top_risk_n: int,
         only_risked=only_risked,
     )
     print(json.dumps(result, ensure_ascii=False))
+    _write_output_if_needed(output=output, payload=result)
     return 0 if bool(result.get("ok")) else 2
 
 
@@ -79,6 +119,7 @@ async def _run_loop(
     top_risk_n: int,
     risk_warning_min: int,
     only_risked: bool,
+    output: str,
 ) -> int:
     while True:
         code = await _run_once(
@@ -87,6 +128,7 @@ async def _run_loop(
             top_risk_n=top_risk_n,
             risk_warning_min=risk_warning_min,
             only_risked=only_risked,
+            output=output,
         )
         if code != 0:
             return code
@@ -105,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
             "top_risk_n": int(args.top_risk_n),
             "risk_warning_min": int(args.risk_warning_min),
             "only_risked": not bool(args.include_no_warning),
+            "output": str(args.output or ""),
             "memory_enabled": str(os.getenv("AGENT_SYMBOL_MEMORY_ENABLED", "false")),
             "memory_backend": str(os.getenv("AGENT_SYMBOL_MEMORY_BACKEND", "inmemory")),
         }
@@ -119,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
                 top_risk_n=int(args.top_risk_n),
                 risk_warning_min=int(args.risk_warning_min),
                 only_risked=not bool(args.include_no_warning),
+                output=str(args.output or ""),
             )
         )
     return asyncio.run(
@@ -128,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
             top_risk_n=int(args.top_risk_n),
             risk_warning_min=int(args.risk_warning_min),
             only_risked=not bool(args.include_no_warning),
+            output=str(args.output or ""),
         )
     )
 
