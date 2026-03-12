@@ -356,18 +356,19 @@
 
 `execution_service` 支持两种运行模式：
 
-1. `stub`（默认）：使用内置 stub 状态
-2. `redis`：从 Redis 读取仓位/账户/策略状态
+1. `stub`：使用内置 stub 状态（建议仅用于联调/测试）
+2. `redis`（默认）：从 Redis 读取仓位/账户/策略状态（Redis 不可用时 fail-open 返回默认状态）
 
 环境变量：
 
 - `EXECUTION_STATE_PROVIDER_MODE=stub|redis`
+- `EXECUTION_RUNTIME_PROFILE=dev|prod`（默认 `dev`）
 - `EXECUTION_REDIS_URL`
 - `EXECUTION_POSITION_KEY_TEMPLATE`
 - `EXECUTION_ACCOUNT_KEY_TEMPLATE`
 - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`
 - `EXECUTION_SUBMIT_ENABLED`
-- `EXECUTION_SINK_MODE`
+- `EXECUTION_SINK_MODE=mock|exchange`（默认 `exchange`）
 - `EXECUTION_SINK_MOCK_VENUE`
 - `EXECUTION_SINK_EXCHANGE_VENUE`（当 `EXECUTION_SINK_MODE=exchange`）
 - `EXECUTION_SINK_EXCHANGE_DRY_RUN`（默认 `true`）

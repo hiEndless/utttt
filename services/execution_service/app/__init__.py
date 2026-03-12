@@ -38,7 +38,7 @@ def _is_true_env(name: str, default: str = "false") -> bool:
 
 
 def create_app() -> FastAPI:
-    state_provider_mode = str(os.getenv("EXECUTION_STATE_PROVIDER_MODE", "stub") or "stub").strip().lower()
+    state_provider_mode = str(os.getenv("EXECUTION_STATE_PROVIDER_MODE", "redis") or "redis").strip().lower()
     runtime_profile = str(os.getenv("EXECUTION_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     redis_client = None
     cfg = None
@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
         logger.info("execution_service 使用 Stub 状态提供器")
 
     submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
-    sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "mock") or "mock").strip().lower()
+    sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "exchange") or "exchange").strip().lower()
     exchange_dry_run = _is_true_env("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
 
     if runtime_profile in {"prod", "production"}:

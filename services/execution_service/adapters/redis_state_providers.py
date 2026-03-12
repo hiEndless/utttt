@@ -99,10 +99,17 @@ class RedisPositionStateProvider:
         self._redis = redis_client
         self._key_template = key_template
 
+    async def _load_payload(self, key: str) -> Dict[str, Any]:
+        try:
+            raw = await self._redis.get(key)
+            return _safe_json_load(raw)
+        except Exception:
+            # 中文注释：Redis 不可用时回退空载荷，确保执行裁决主流程可继续。
+            return {}
+
     async def get_position_state(self, exchange: str, symbol: str, account_id: str = "main") -> Dict[str, Any]:
         key = self._key_template.format(exchange=exchange, account_id=account_id, symbol=symbol)
-        raw = await self._redis.get(key)
-        payload = _safe_json_load(raw)
+        payload = await self._load_payload(key)
         # 中文注释：保证关键字段有默认值，避免裁决器遇到缺失字段崩溃。
         return {
             "exchange": exchange,
@@ -131,10 +138,16 @@ class RedisAccountStateProvider:
         self._redis = redis_client
         self._key_template = key_template
 
+    async def _load_payload(self, key: str) -> Dict[str, Any]:
+        try:
+            raw = await self._redis.get(key)
+            return _safe_json_load(raw)
+        except Exception:
+            return {}
+
     async def get_account_state(self, exchange: str, account_id: str = "main") -> Dict[str, Any]:
         key = self._key_template.format(exchange=exchange, account_id=account_id)
-        raw = await self._redis.get(key)
-        payload = _safe_json_load(raw)
+        payload = await self._load_payload(key)
         return {
             "exchange": exchange,
             "account_id": account_id,
@@ -161,10 +174,16 @@ class RedisRiskPolicyProvider:
         self._redis = redis_client
         self._key_template = key_template
 
+    async def _load_payload(self, key: str) -> Dict[str, Any]:
+        try:
+            raw = await self._redis.get(key)
+            return _safe_json_load(raw)
+        except Exception:
+            return {}
+
     async def get_risk_policy(self, exchange: str, symbol: str) -> Dict[str, Any]:
         key = self._key_template.format(exchange=exchange, symbol=symbol)
-        raw = await self._redis.get(key)
-        payload = _safe_json_load(raw)
+        payload = await self._load_payload(key)
         return {
             "exchange": exchange,
             "symbol": symbol,

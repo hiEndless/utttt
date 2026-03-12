@@ -141,7 +141,7 @@ execution_service/
 
 ## 运行模式
 
-- `EXECUTION_STATE_PROVIDER_MODE=stub|redis`（默认 `stub`）
+- `EXECUTION_STATE_PROVIDER_MODE=stub|redis`（默认 `redis`）
 - `EXECUTION_RUNTIME_PROFILE=dev|prod`（默认 `dev`）
   - `prod` 下门禁：
     - 必须 `EXECUTION_STATE_PROVIDER_MODE=redis`
@@ -154,7 +154,7 @@ execution_service/
   - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`（默认 `execution:risk_policy:{exchange}:{symbol}`）
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
-  - `EXECUTION_SINK_MODE=mock|exchange`（`exchange` 为骨架实现）
+  - `EXECUTION_SINK_MODE=mock|exchange`（默认 `exchange`）
   - `EXECUTION_SINK_MOCK_VENUE=mock_exchange`
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SINK_EXCHANGE_DRY_RUN=true|false`（默认 `true`，建议联调阶段保持开启）
