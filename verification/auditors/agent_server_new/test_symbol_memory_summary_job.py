@@ -41,14 +41,16 @@ def test_run_symbol_memory_summary_once():
             limit_symbols=10,
             summary_window=20,
             top_risk_n=2,
+            risk_warning_min=1,
+            only_risked=True,
         )
         assert result["ok"] is True
         assert result["total_symbols"] == 2
         assert result["success_symbols"] == 2
         top = list(result.get("high_risk_symbols") or [])
-        assert len(top) == 2
+        assert len(top) == 1
         assert top[0]["symbol"] == "ETHUSDT"
-        assert top[0]["contract_warning_count"] >= top[1]["contract_warning_count"]
+        assert top[0]["contract_warning_count"] == 1
 
         eth = await memory.get_symbol_memory("binance", "ETHUSDT", limit=3)
         btc = await memory.get_symbol_memory("binance", "BTCUSDT", limit=3)

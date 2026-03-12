@@ -19,6 +19,8 @@ async def run_symbol_memory_summary_once(
     limit_symbols: int = 1000,
     summary_window: int = 50,
     top_risk_n: int = 5,
+    risk_warning_min: int = 1,
+    only_risked: bool = True,
 ) -> Dict[str, Any]:
     started_ms = int(time.time() * 1000)
     symbols = await maintenance.list_symbols(limit=max(1, int(limit_symbols)))
@@ -58,8 +60,18 @@ async def run_symbol_memory_summary_once(
             failed += 1
             last_error = str(exc)
 
+    filtered_candidates = []
+    min_warning = max(0, int(risk_warning_min))
+    for item in candidates:
+        warning_count = _to_int(item.get("contract_warning_count"), 0)
+        if bool(only_risked) and warning_count <= 0:
+            continue
+        if warning_count < min_warning:
+            continue
+        filtered_candidates.append(item)
+
     high_risk_symbols = sorted(
-        candidates,
+        filtered_candidates,
         key=lambda x: (
             -_to_int(x.get("contract_warning_count"), 0),
             -_to_int(x.get("event_count"), 0),
@@ -79,4 +91,6 @@ async def run_symbol_memory_summary_once(
         "duration_ms": max(0, ended_ms - started_ms),
         "last_error": last_error,
         "high_risk_symbols": high_risk_symbols,
+        "risk_warning_min": min_warning,
+        "only_risked": bool(only_risked),
     }

@@ -24,6 +24,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit-symbols", type=int, default=1000, help="每轮最多处理的 symbol 数")
     p.add_argument("--summary-window", type=int, default=50, help="每个 symbol 用于 summary 的 raw 窗口")
     p.add_argument("--top-risk-n", type=int, default=5, help="输出 contract_warning_count 最高的 symbol TopN")
+    p.add_argument("--risk-warning-min", type=int, default=1, help="仅纳入 contract_warning_count >= 该阈值的 symbol")
+    p.add_argument("--include-no-warning", action="store_true", help="高风险简报中包含 0 告警 symbol（默认仅输出有告警）")
     return p
 
 
@@ -52,7 +54,7 @@ def _create_memory_adapter_from_env() -> Any:
     return InMemorySymbolMemoryAdapter()
 
 
-async def _run_once(*, limit_symbols: int, summary_window: int, top_risk_n: int) -> int:
+async def _run_once(*, limit_symbols: int, summary_window: int, top_risk_n: int, risk_warning_min: int, only_risked: bool) -> int:
     adapter = _create_memory_adapter_from_env()
     if adapter is None:
         print("symbol_memory_disabled")
@@ -62,14 +64,30 @@ async def _run_once(*, limit_symbols: int, summary_window: int, top_risk_n: int)
         limit_symbols=limit_symbols,
         summary_window=summary_window,
         top_risk_n=top_risk_n,
+        risk_warning_min=risk_warning_min,
+        only_risked=only_risked,
     )
     print(json.dumps(result, ensure_ascii=False))
     return 0 if bool(result.get("ok")) else 2
 
 
-async def _run_loop(*, interval_s: float, limit_symbols: int, summary_window: int, top_risk_n: int) -> int:
+async def _run_loop(
+    *,
+    interval_s: float,
+    limit_symbols: int,
+    summary_window: int,
+    top_risk_n: int,
+    risk_warning_min: int,
+    only_risked: bool,
+) -> int:
     while True:
-        code = await _run_once(limit_symbols=limit_symbols, summary_window=summary_window, top_risk_n=top_risk_n)
+        code = await _run_once(
+            limit_symbols=limit_symbols,
+            summary_window=summary_window,
+            top_risk_n=top_risk_n,
+            risk_warning_min=risk_warning_min,
+            only_risked=only_risked,
+        )
         if code != 0:
             return code
         await asyncio.sleep(max(1.0, float(interval_s)))
@@ -85,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
             "limit_symbols": int(args.limit_symbols),
             "summary_window": int(args.summary_window),
             "top_risk_n": int(args.top_risk_n),
+            "risk_warning_min": int(args.risk_warning_min),
+            "only_risked": not bool(args.include_no_warning),
             "memory_enabled": str(os.getenv("AGENT_SYMBOL_MEMORY_ENABLED", "false")),
             "memory_backend": str(os.getenv("AGENT_SYMBOL_MEMORY_BACKEND", "inmemory")),
         }
@@ -97,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
                 limit_symbols=int(args.limit_symbols),
                 summary_window=int(args.summary_window),
                 top_risk_n=int(args.top_risk_n),
+                risk_warning_min=int(args.risk_warning_min),
+                only_risked=not bool(args.include_no_warning),
             )
         )
     return asyncio.run(
@@ -104,6 +126,8 @@ def main(argv: list[str] | None = None) -> int:
             limit_symbols=int(args.limit_symbols),
             summary_window=int(args.summary_window),
             top_risk_n=int(args.top_risk_n),
+            risk_warning_min=int(args.risk_warning_min),
+            only_risked=not bool(args.include_no_warning),
         )
     )
 
