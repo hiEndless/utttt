@@ -1,0 +1,33 @@
+version: 1
+updated_at: "2026-03-13"
+
+policies:
+  - name: alternative_sources_summary
+    canonical_chain:
+      - event_center_new.context_snapshot.alternative_sources_summary
+      - market_state_engine.state_features.evidence.alternative_sources_fusion
+      - agent_server_new.key_market_features.features.alternative_source_summary
+    required_keys:
+      - available_sources
+      - unavailable_sources
+      - provider_states
+      - data_sources
+      - inference_sources
+      - feature_keys
+      - evidence_counts
+    default_rules:
+      event_center:
+        data_source_template: "event_center_new.{source}"
+        inference_source: "event_center_new.selector"
+      market_state_feature_fallback:
+        data_source_template: "feature_service.{source}"
+        inference_source: "feature_service.normalizer"
+      market_state_event_fallback:
+        data_source_template: "event_center_new.{source}"
+        inference_source: "event_center_new.selector"
+      agent_fusion_fallback:
+        provider_state_prefix_event: "event_"
+        feature_data_source_template: "feature_service.{source}"
+        event_data_source_template: "event_center_new.{source}"
+        feature_inference_source: "feature_service.normalizer"
+        event_inference_source: "event_center_new.selector"

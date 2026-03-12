@@ -18,6 +18,7 @@ import yaml
 
 ROOT = Path.cwd()
 POLICY_PATH = ROOT / "contracts/semantic_policies/field_semantics.yaml"
+SOURCE_POLICY_PATH = ROOT / "contracts/semantic_policies/source_semantics.yaml"
 
 ALLOWED_OWNERS = {
     "feature_service",
@@ -139,6 +140,62 @@ if errors:
         print(f"- {err}")
     raise SystemExit(1)
 
+source_policy = yaml.safe_load(SOURCE_POLICY_PATH.read_text(encoding="utf-8")) or {}
+if not isinstance(source_policy.get("version"), int):
+    errors.append("source_semantics.version must be integer")
+
+policies = source_policy.get("policies")
+if not isinstance(policies, list) or not policies:
+    errors.append("source_semantics.policies must be non-empty list")
+    policies = []
+
+target = None
+for item in policies:
+    if isinstance(item, dict) and str(item.get("name") or "").strip() == "alternative_sources_summary":
+        target = item
+        break
+if not isinstance(target, dict):
+    errors.append("source_semantics missing alternative_sources_summary policy")
+    target = {}
+
+required_keys = {str(x).strip() for x in list(target.get("required_keys") or []) if str(x).strip()}
+expected_required_keys = {
+    "available_sources",
+    "unavailable_sources",
+    "provider_states",
+    "data_sources",
+    "inference_sources",
+    "feature_keys",
+    "evidence_counts",
+}
+if not expected_required_keys.issubset(required_keys):
+    errors.append(
+        "source_semantics alternative_sources_summary.required_keys missing: "
+        + str(sorted(expected_required_keys - required_keys))
+    )
+
+default_rules = target.get("default_rules") or {}
+if not isinstance(default_rules, dict):
+    errors.append("source_semantics alternative_sources_summary.default_rules must be object")
+    default_rules = {}
+for required_rule in (
+    "event_center",
+    "market_state_feature_fallback",
+    "market_state_event_fallback",
+    "agent_fusion_fallback",
+):
+    if required_rule not in default_rules:
+        errors.append(f"source_semantics missing default_rules.{required_rule}")
+
+if errors:
+    print("[failed] semantic policy guard")
+    for err in errors:
+        print(f"- {err}")
+    raise SystemExit(1)
+
 print("[passed] semantic policy guard")
-print(f"[info] policy={POLICY_PATH.relative_to(ROOT)} fields={len(fields)} required={len(REQUIRED_FIELDS)}")
+print(
+    f"[info] policy={POLICY_PATH.relative_to(ROOT)} fields={len(fields)} required={len(REQUIRED_FIELDS)}; "
+    f"source_policy={SOURCE_POLICY_PATH.relative_to(ROOT)}"
+)
 PY

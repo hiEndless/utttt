@@ -10,3 +10,4 @@ Phase-1 scope:
 Current policy files:
 - `field_semantics.yaml`
 - `deprecation_policy.yaml`
+- `source_semantics.yaml`
