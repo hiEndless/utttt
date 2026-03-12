@@ -123,3 +123,4 @@
 - [x] Task 121: `confidence` 迁移指标新增可选 Redis 持久化存储（默认 memory），并补 app 初始化模式测试与文档。
 - [x] Task 122: `debug/state` 增加 `confidence_migration` 摘要块（metrics + readiness），并补 API 回归测试与文档说明。
 - [x] Task 123: 增加 `confidence` 指标 reset 调试接口（默认禁用 + 环境开关），并补 API 回归测试与文档说明。
+- [x] Task 124: 新增 feature→state→agent→execution 语义链路冒烟用例，冻结 `provider_state/risk_flags/decision_confidence` 三类高风险字段的跨层一致性。
