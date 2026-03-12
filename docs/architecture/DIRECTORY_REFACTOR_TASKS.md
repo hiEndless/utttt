@@ -108,6 +108,7 @@
 - [x] 将 verification wrappers 直连 `tools/*` 实现层（减少 scripts 中间跳转）
 - [x] 建立 `scripts/*` 兼容白名单与机器检查（workflow/snapshot/wiring hard-pinned）
 - [x] 收敛 event_center runtime 脚本到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
+- [x] 收敛 execution schema/breaking/entry 守卫脚本到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
 - [x] 将脚本兼容白名单检查接入 nightly CI
 - [x] 将脚本兼容白名单检查接入 regression CI（并使用 warning budget 替代 strict 语义检查）
 - [x] 将脚本兼容白名单检查接入 quick CI（统一三条场景入口）
