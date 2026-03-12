@@ -170,6 +170,12 @@ Usage:
 Description:
   CI regression 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、event-center quick 回归链路与语义审计。
 
+Environment:
+  MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 red）
+  REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
+  AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
+  AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
+
 Failure Codes:
   exit 1  任一守卫/测试失败
 ```

@@ -89,6 +89,7 @@ CI 约束：
 - `sync_contract_indexes.sh`
 - `audit_semantics.sh`
 - `check_semantic_warning_budget.sh`
+- `aggregate_and_check.sh --with-agent-readyz --max-agent-readyz-level ${MAX_AGENT_READYZ_LEVEL:-red} --require-agent-readyz-report`
 
 ### 3.3 verify_nightly
 
