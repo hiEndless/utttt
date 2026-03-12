@@ -36,3 +36,9 @@ bash tools/local/check_release_baseline_alignment.sh --check-origin
 bash tools/local/check_release_ready.sh
 bash tools/local/finalize_release_baseline.sh
 ```
+
+发布检查补充（confidence 迁移门禁）：
+
+1. 记录当次 CI 生效阈值：`MAX_LEGACY_CONFIDENCE_RATIO`（nightly 默认 `0.05`，可被环境变量覆盖）。
+2. 记录聚合报告实际值：`execution_legacy_confidence_usage_ratio`（来自 `verification/reports/summary.latest.json`）。
+3. 仅当 `execution_legacy_confidence_usage_ratio <= MAX_LEGACY_CONFIDENCE_RATIO` 时允许进入发布基线固化流程。
