@@ -46,3 +46,29 @@ def test_agent_active_events_minimal_schema_is_stable() -> None:
     assert normalized["score"] == 0.6
     assert normalized["source"] == "event_center_new"
     assert dict(normalized["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"
+    assert dict(normalized["evidence"]).get("event_source") == "event_center_new"
+    assert dict(normalized["evidence"]).get("inference_source") == "event_center_new.selector"
+
+
+def test_agent_active_events_source_object_is_normalized_to_source_fields() -> None:
+    selected_payload = {
+        "asset": "binance:ETHUSDT",
+        "selected_type": "event.selected",
+        "direction_hint": "bullish",
+        "priority": "high",
+        "source": {"name": "whale_monitor", "category": "onchain"},
+        "trace": {"schema_version": "selected-v2", "produced_by": "event_center_new.ranker"},
+        "context_snapshot": {"why": "contract-guard"},
+        "route": {"horizon": "5m"},
+    }
+    normalized = RedisActiveEventsProvider._normalize_active_event(  # noqa: SLF001
+        selected_payload,
+        stream_id="124-0",
+        exchange="binance",
+        symbol="ETHUSDT",
+    )
+    assert normalized["source"] == "whale_monitor"
+    evidence = dict(normalized["evidence"])
+    assert evidence.get("event_source") == "whale_monitor"
+    assert evidence.get("event_source_category") == "onchain"
+    assert evidence.get("inference_source") == "event_center_new.ranker"

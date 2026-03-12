@@ -148,9 +148,17 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         if evidence is None:
             evidence = payload.get("context_snapshot")
         evidence_obj = evidence if isinstance(evidence, dict) else {}
+        event_source, event_source_category = cls._extract_event_source(payload)
+        inference_source = cls._extract_inference_source(payload)
         trace_obj = payload.get("trace")
         if isinstance(trace_obj, dict) and "trace" not in evidence_obj:
             evidence_obj = {**evidence_obj, "trace": dict(trace_obj)}
+        if event_source and "event_source" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "event_source": event_source}
+        if event_source_category and "event_source_category" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "event_source_category": event_source_category}
+        if inference_source and "inference_source" not in evidence_obj:
+            evidence_obj = {**evidence_obj, "inference_source": inference_source}
         event_ts_raw = payload.get("event_ts_ms")
         if event_ts_raw is None:
             event_ts_raw = payload.get("ts_ms")
@@ -170,7 +178,7 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         if processed_ts_ms is not None and "processed_ts_ms" not in evidence_obj:
             evidence_obj = {**evidence_obj, "processed_ts_ms": processed_ts_ms}
         event_id = str(payload.get("event_id") or payload.get("id") or stream_id).strip() or str(stream_id)
-        source = str(payload.get("source") or "event_center_new").strip() or "event_center_new"
+        source = event_source or "event_center_new"
         return {
             "event_id": event_id,
             "source": source,
@@ -181,3 +189,25 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
             "timeframe": timeframe,
             "evidence": evidence_obj,
         }
+
+    @staticmethod
+    def _extract_event_source(payload: Dict[str, Any]) -> tuple[str, str | None]:
+        raw = payload.get("source")
+        if isinstance(raw, dict):
+            name = str(raw.get("name") or "").strip()
+            category = str(raw.get("category") or "").strip() or None
+            if name:
+                return name, category
+        source_name = str(raw or "").strip()
+        if source_name:
+            return source_name, None
+        return "event_center_new", None
+
+    @staticmethod
+    def _extract_inference_source(payload: Dict[str, Any]) -> str:
+        trace_obj = payload.get("trace")
+        if isinstance(trace_obj, dict):
+            produced_by = str(trace_obj.get("produced_by") or "").strip()
+            if produced_by:
+                return produced_by
+        return "event_center_new.selector"

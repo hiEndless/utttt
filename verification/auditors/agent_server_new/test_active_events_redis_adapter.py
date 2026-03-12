@@ -87,8 +87,42 @@ def test_redis_active_events_provider_normalizes_selected_event_fields():
     assert dict(one["evidence"]).get("reason") == "test"
     assert one["source"] == "event_center_new"
     assert dict(one["evidence"]).get("trace", {}).get("schema_version") == "selected-v2"
+    assert dict(one["evidence"]).get("event_source") == "event_center_new"
+    assert dict(one["evidence"]).get("inference_source") == "event_center_new.selector"
     assert dict(one["evidence"]).get("event_ts_ms") is None
     assert dict(one["evidence"]).get("processed_ts_ms") is None
+
+
+def test_redis_active_events_provider_normalizes_source_object():
+    rows = [
+        (
+            "12-0",
+            {
+                "payload": json.dumps(
+                    {
+                        "asset": "binance:ETHUSDT",
+                        "selected_type": "event.selected",
+                        "direction_hint": "mixed",
+                        "priority": "medium",
+                        "source": {"name": "news_feed", "category": "news"},
+                        "trace": {"schema_version": "selected-v2", "produced_by": "event_center_new.selector"},
+                    }
+                )
+            },
+        )
+    ]
+    provider = RedisActiveEventsProvider(
+        client=_FakeRedis(rows),
+        cfg=RedisActiveEventsConfig(stream="ec:selected", limit_default=3, scan_factor=2),
+    )
+    out = asyncio.run(provider.get_active_events("binance", "ETHUSDT"))
+    assert len(out) == 1
+    one = out[0]
+    assert one["source"] == "news_feed"
+    evidence = dict(one["evidence"])
+    assert evidence.get("event_source") == "news_feed"
+    assert evidence.get("event_source_category") == "news"
+    assert evidence.get("inference_source") == "event_center_new.selector"
 
 
 def test_redis_active_events_provider_time_semantics_precedence_and_fallback():

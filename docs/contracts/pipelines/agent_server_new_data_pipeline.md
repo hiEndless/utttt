@@ -192,7 +192,7 @@ HTTP 适配器会对 `msl` 与 `msl_meta.schema_version` 做最小契约检查�
 | direction | string | Y | bullish/bearish/neutral/mixed | 方向提示（非法值回退 neutral） |
 | score | number | Y | 0~1（约定） | 优先级/强度分数（优先 payload.score，否则由 priority 映射） |
 | timeframe | string | Y | 任意字符串 | 周期/路由提示（timeframe/route.horizon/context_snapshot.horizon） |
-| evidence | object | Y | JSON object | 证据快照（优先 evidence，否则用 context_snapshot；并注入 trace） |
+| evidence | object | Y | JSON object | 证据快照（优先 evidence，否则用 context_snapshot；并注入 trace + event_source/inference_source） |
 
 实现：[active_events_redis.py](services/agent_server_new/adapters/active_events_redis.py#L117-L165)
 
@@ -200,6 +200,12 @@ HTTP 适配器会对 `msl` 与 `msl_meta.schema_version` 做最小契约检查�
 - `evidence.event_ts_ms`：优先 `payload.event_ts_ms`，缺失回退 `payload.ts_ms`
 - `evidence.processed_ts_ms`：优先 `payload.processed_ts_ms`，缺失回退 `payload.ts_ms`
 - 该约束用于把 selected_event 的发生/处理时间语义稳定传到 agent 消费侧
+
+来源语义归一化（active_events 适配器）：
+- `source`：归一化后的事件来源（优先 `payload.source.name`，其次 `payload.source` 字符串，缺失回退 `event_center_new`）
+- `evidence.event_source`：事件原始来源名（与 `source` 同语义，供下游显式消费）
+- `evidence.event_source_category`：来源分类（当 `payload.source.category` 存在）
+- `evidence.inference_source`：选择/推断来源（优先 `payload.trace.produced_by`，缺失回退 `event_center_new.selector`）
 
 优先级到 score 的映射：
 
