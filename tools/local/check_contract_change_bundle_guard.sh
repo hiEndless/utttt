@@ -1,11 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+SHOW_DETECTED_VERSIONS=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --help|-h)
+      SHOW_HELP=1
+      ;;
+    --show-detected-versions)
+      SHOW_DETECTED_VERSIONS=1
+      ;;
+    *)
+      echo "[失败] 不支持的参数: $arg"
+      echo "使用 --help 查看可用参数。"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then
   cat <<'USAGE'
 用法:
   bash tools/local/check_contract_change_bundle_guard.sh
   CONTRACT_BUNDLE_BASE_REF=<git-ref> bash tools/local/check_contract_change_bundle_guard.sh
+  bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
 
 说明:
   - 当检测到 services/*/docs/*.schema.json 或 schema_mapping.json 发生变更时，
@@ -28,6 +47,10 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   # 场景2：runtime 版本升版并同步四件套，可通过
   #   同步更新 docs/CONTRACT_INDEX.md + contracts/versions/manifest.yaml +
   #   services/event_center_new/version.py + services/event_center_new/docs/runtime.md
+
+调试:
+  --show-detected-versions
+    输出 BASE_REF 与 HEAD 的 runtime 版本探测值（index/manifest/version.py/runtime.md）。
 USAGE
   exit 0
 fi
@@ -66,24 +89,23 @@ extract_index_runtime_version_from_rev() {
   git show "${rev}:docs/CONTRACT_INDEX.md" 2>/dev/null \
     | rg -o 'event_center_runtime_config_version:\s*[A-Za-z0-9._-]+' \
     | head -n1 \
-    | sed -E 's/.*event_center_runtime_config_version:\s*//' \
-    | xargs || true
+    | sed -E 's/.*event_center_runtime_config_version:[[:space:]]*//' \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' || true
 }
 
 extract_manifest_runtime_version_from_rev() {
   local rev="$1"
   git show "${rev}:contracts/versions/manifest.yaml" 2>/dev/null \
     | awk '
-      /- name:\s*event_center_runtime_config_version/ {in_block=1; next}
-      in_block && /value:/ {
+      $1 == "-" && $2 == "name:" && $3 == "event_center_runtime_config_version" {in_block=1; next}
+      in_block && $1 == "value:" {
         gsub(/"/, "", $2);
         print $2;
         exit
       }
-      in_block && /^  - name:/ {in_block=0}
+      in_block && $1 == "-" && $2 == "name:" {in_block=0}
     ' \
-    | head -n1 \
-    | xargs || true
+    | head -n1 || true
 }
 
 extract_py_runtime_version_from_rev() {
@@ -91,8 +113,8 @@ extract_py_runtime_version_from_rev() {
   git show "${rev}:services/event_center_new/version.py" 2>/dev/null \
     | rg -o 'EVENT_CENTER_RUNTIME_CONFIG_VERSION\s*=\s*"[^"]+"' \
     | head -n1 \
-    | sed -E 's/.*=\s*"([^"]+)"/\1/' \
-    | xargs || true
+    | sed -E 's/.*=[[:space:]]*"([^"]+)"/\1/' \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' || true
 }
 
 extract_runtime_doc_version_from_rev() {
@@ -100,8 +122,8 @@ extract_runtime_doc_version_from_rev() {
   git show "${rev}:services/event_center_new/docs/runtime.md" 2>/dev/null \
     | rg -o 'runtime_config_version:\s*[A-Za-z0-9._-]+' \
     | head -n1 \
-    | sed -E 's/.*runtime_config_version:\s*//' \
-    | xargs || true
+    | sed -E 's/.*runtime_config_version:[[:space:]]*//' \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' || true
 }
 
 event_center_runtime_changed=0
@@ -135,6 +157,14 @@ if [[ -n "${base_doc_ver}" || -n "${head_doc_ver}" ]]; then
   if [[ "${base_doc_ver}" != "${head_doc_ver}" ]]; then
     event_center_runtime_changed=1
   fi
+fi
+
+if [[ "${SHOW_DETECTED_VERSIONS}" -eq 1 ]]; then
+  echo "[debug] detected_versions base_ref=${BASE_REF} head=HEAD"
+  echo "  - contract_index: base='${base_idx_ver}' head='${head_idx_ver}'"
+  echo "  - manifest: base='${base_manifest_ver}' head='${head_manifest_ver}'"
+  echo "  - version_py: base='${base_py_ver}' head='${head_py_ver}'"
+  echo "  - runtime_doc: base='${base_doc_ver}' head='${head_doc_ver}'"
 fi
 
 if [[ -z "${schema_changed_services}" && "${event_center_runtime_changed}" -eq 0 ]]; then
