@@ -103,6 +103,8 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
     source_names = ("news", "social", "onchain")
     feature_keys: dict[str, set[str]] = {name: set() for name in source_names}
     counts: dict[str, int] = {name: 0 for name in source_names}
+    data_sources: dict[str, str] = {name: f"event_center_new.{name}" for name in source_names}
+    inference_sources: dict[str, str] = {name: "event_center_new.selector" for name in source_names}
 
     for ev in evidences:
         src = _detect_alternative_source(ev)
@@ -110,6 +112,21 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
             continue
         counts[src] += 1
         attrs = dict(ev.attrs or {})
+        raw_data_source = str(
+            attrs.get("data_source")
+            or attrs.get("source_name")
+            or attrs.get("source")
+            or ""
+        ).strip()
+        if raw_data_source:
+            data_sources[src] = raw_data_source
+        raw_inference_source = str(
+            attrs.get("inference_source")
+            or attrs.get("produced_by")
+            or ""
+        ).strip()
+        if raw_inference_source:
+            inference_sources[src] = raw_inference_source
         for k in attrs.keys():
             key = str(k or "").strip()
             if key:
@@ -123,6 +140,8 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
         "available_sources": available_sources,
         "unavailable_sources": unavailable_sources,
         "provider_states": provider_states,
+        "data_sources": data_sources,
+        "inference_sources": inference_sources,
         "feature_keys": {name: sorted(feature_keys[name]) for name in source_names},
         "evidence_counts": counts,
     }

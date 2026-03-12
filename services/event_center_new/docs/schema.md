@@ -64,7 +64,7 @@ EventContextSnapshot 是“给下游使用的事件压缩快照”，它由 Evid
 | active_triggers | list[dict] | N | 近期触发事件摘要（只保留少量） |
 | conflicts | list[dict] | N | 冲突信息（同类 evidence 的多空对冲、强度差等） |
 | tags | list[str] | N | 事件标签（供下游路由与检索） |
-| alternative_sources_summary | dict | N | news/social/onchain 三类来源摘要（available/provider_state/feature_keys/evidence_counts） |
+| alternative_sources_summary | dict | N | news/social/onchain 三类来源摘要（available/provider_state/data_sources/inference_sources/feature_keys/evidence_counts） |
 
 ---
 

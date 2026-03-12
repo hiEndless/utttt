@@ -75,7 +75,15 @@ def test_runner_end_to_end_bullish_selected() -> None:
     assert "schema_version" in set(dict(out.get("trace") or {}).keys())
     assert isinstance(out["context_snapshot"]["key_evidences"], list)
     alt = dict(out["context_snapshot"].get("alternative_sources_summary") or {})
-    assert set(alt.keys()) >= {"available_sources", "unavailable_sources", "provider_states", "feature_keys", "evidence_counts"}
+    assert set(alt.keys()) >= {
+        "available_sources",
+        "unavailable_sources",
+        "provider_states",
+        "data_sources",
+        "inference_sources",
+        "feature_keys",
+        "evidence_counts",
+    }
     assert len(store.raw) == 1
     assert len(store.normalized) == 1
     assert len(store.evidence) == 2
@@ -108,6 +116,44 @@ def test_runner_builds_alternative_source_summary_from_evidences() -> None:
     assert "news" in list(alt.get("available_sources") or [])
     assert "onchain" in list(alt.get("available_sources") or [])
     assert alt.get("provider_states", {}).get("social") == "empty"
+    assert alt.get("data_sources", {}).get("news") == "event_center_new.news"
+    assert alt.get("inference_sources", {}).get("news") == "event_center_new.selector"
+
+
+def test_runner_alternative_source_summary_uses_attrs_source_semantics() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-alt-2",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="news.macro",
+        source=EventSource(name="news_feed", category="news"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {
+                    "type": "news.macro",
+                    "direction": "bullish",
+                    "strength": 0.5,
+                    "horizon": "mid",
+                    "importance": 0.7,
+                    "attrs": {
+                        "source_category": "news",
+                        "source_name": "coindesk",
+                        "produced_by": "event_center_new.news_parser",
+                    },
+                }
+            ]
+        },
+    )
+    runner, _store = _build_runner([event])
+    selected = runner.run_once()
+    assert len(selected) == 1
+    alt = dict(selected[0]["context_snapshot"].get("alternative_sources_summary") or {})
+    assert alt.get("data_sources", {}).get("news") == "coindesk"
+    assert alt.get("inference_sources", {}).get("news") == "event_center_new.news_parser"
 
 
 def test_runner_mixed_noise_can_be_dropped() -> None:
