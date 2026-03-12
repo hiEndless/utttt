@@ -50,6 +50,33 @@ def _extract_contract_warnings(anomaly_flags: List[Any]) -> List[str]:
     return sorted(set(out))
 
 
+def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, Any]:
+    alt = _safe_dict(evidence.get("alternative_sources"))
+    sources = ("news", "social", "onchain")
+    provider_states: Dict[str, str] = {}
+    available_sources: List[str] = []
+    unavailable_sources: List[str] = []
+    feature_keys: Dict[str, List[str]] = {}
+
+    for name in sources:
+        node = _safe_dict(alt.get(name))
+        state = str(node.get("provider_state") or "empty")
+        provider_states[name] = state
+        available = bool(node.get("available") is True)
+        if available:
+            available_sources.append(name)
+        else:
+            unavailable_sources.append(name)
+        feature_keys[name] = sorted([str(k) for k in _safe_dict(node.get("features")).keys() if str(k).strip()])
+
+    return {
+        "available_sources": available_sources,
+        "unavailable_sources": unavailable_sources,
+        "provider_states": provider_states,
+        "feature_keys": feature_keys,
+    }
+
+
 def _normalize_recent_memory(
     *,
     recent: List[Dict[str, Any]],
@@ -122,6 +149,7 @@ def _signal_context_builder(
     orderbook = _safe_dict(f.get("orderbook"))
     open_interest = _safe_dict(f.get("open_interest"))
     horizons = _safe_dict(f.get("horizons"))
+    alternative_source_summary = _extract_alternative_source_summary(evidence)
 
     payload = _safe_dict(_safe_dict(signal_event).get("payload"))
     event_type = str(payload.get("event_type") or payload.get("type") or payload.get("kind") or "").lower()
@@ -146,6 +174,7 @@ def _signal_context_builder(
         ]
     elif profile == "macro_sentiment":
         candidates = [
+            ("alternative_source_summary", alternative_source_summary),
             ("anomaly_flags", _safe_dict(anomalies).get("flags")),
             ("oi_trend", _safe_dict(open_interest).get("oi_trend")),
             ("oi_velocity", _safe_dict(open_interest).get("oi_velocity")),
@@ -155,6 +184,7 @@ def _signal_context_builder(
         ]
     else:
         candidates = [
+            ("alternative_source_summary", alternative_source_summary),
             ("anomaly_flags", _safe_dict(anomalies).get("flags")),
             ("liquidity_vacuum", _safe_dict(orderbook).get("liquidity_vacuum")),
             ("orderbook_stability", _safe_dict(orderbook).get("stability")),

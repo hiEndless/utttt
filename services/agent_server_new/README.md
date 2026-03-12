@@ -66,6 +66,7 @@ data_server
    - `cross_horizon`（含 `suggested_policy/policy_reason`）
    - `key_features`
    - `anomaly_flags`
+   - `state_features.evidence.alternative_sources`（news/social/onchain 标准化证据包，agent 侧汇总为 `alternative_source_summary`）
 
 仓位与账户上下文（`position_context`）由 `execution_service` 侧读取并裁决，不再作为 agent 裁决输入。
 
