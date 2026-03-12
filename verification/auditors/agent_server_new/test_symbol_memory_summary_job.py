@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import time
 from pathlib import Path
 
 PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
@@ -12,12 +13,13 @@ from services.agent_server_new.app.jobs.symbol_memory_summary_job import run_sym
 
 def test_run_symbol_memory_summary_once():
     async def _run():
+        now_ms = int(time.time() * 1000)
         memory = InMemorySymbolMemoryAdapter()
         await memory.record_symbol_memory(
             "binance",
             "ETHUSDT",
             {
-                "ts": 1000,
+                "ts": now_ms - 1_000,
                 "event_id": "evt-1",
                 "signal": {"direction": "long", "verdict": "accept"},
                 "plan": {"action": "add", "direction": "long"},
@@ -28,7 +30,7 @@ def test_run_symbol_memory_summary_once():
             "binance",
             "BTCUSDT",
             {
-                "ts": 1100,
+                "ts": now_ms - 500,
                 "event_id": "evt-2",
                 "signal": {"direction": "short", "verdict": "accept"},
                 "plan": {"action": "add", "direction": "short"},
@@ -51,6 +53,7 @@ def test_run_symbol_memory_summary_once():
         assert len(top) == 1
         assert top[0]["symbol"] == "ETHUSDT"
         assert top[0]["contract_warning_count"] == 1
+        assert float(top[0]["risk_score"]) > 0.0
 
         eth = await memory.get_symbol_memory("binance", "ETHUSDT", limit=3)
         btc = await memory.get_symbol_memory("binance", "BTCUSDT", limit=3)

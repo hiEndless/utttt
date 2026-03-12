@@ -13,6 +13,16 @@ def _to_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _risk_score(*, now_ms: int, warning_count: int, event_count: int, last_decision_ts: int) -> float:
+    if warning_count <= 0:
+        return 0.0
+    age_ms = max(0, int(now_ms) - max(0, int(last_decision_ts)))
+    half_life_ms = 6 * 60 * 60 * 1000
+    recency_weight = 1.0 / (1.0 + (float(age_ms) / float(half_life_ms)))
+    score = float(warning_count) * 100.0 * recency_weight + min(max(int(event_count), 0), 100) * 0.1
+    return round(float(score), 6)
+
+
 async def run_symbol_memory_summary_once(
     *,
     maintenance: SymbolMemoryMaintenance,
@@ -44,13 +54,22 @@ async def run_symbol_memory_summary_once(
             )
             success += 1
             summary_obj = dict(summary or {})
+            warning_count = _to_int(summary_obj.get("contract_warning_count"), 0)
+            event_count = _to_int(summary_obj.get("event_count"), 0)
+            last_decision_ts = _to_int(summary_obj.get("last_decision_ts"), 0)
             candidates.append(
                 {
                     "exchange": exchange,
                     "symbol": symbol,
-                    "contract_warning_count": _to_int(summary_obj.get("contract_warning_count"), 0),
-                    "event_count": _to_int(summary_obj.get("event_count"), 0),
-                    "last_decision_ts": _to_int(summary_obj.get("last_decision_ts"), 0),
+                    "contract_warning_count": warning_count,
+                    "event_count": event_count,
+                    "last_decision_ts": last_decision_ts,
+                    "risk_score": _risk_score(
+                        now_ms=started_ms,
+                        warning_count=warning_count,
+                        event_count=event_count,
+                        last_decision_ts=last_decision_ts,
+                    ),
                     "recent_contract_warning_types": [
                         str(x) for x in list(summary_obj.get("recent_contract_warning_types") or []) if str(x or "").strip()
                     ][:5],
@@ -73,6 +92,7 @@ async def run_symbol_memory_summary_once(
     high_risk_symbols = sorted(
         filtered_candidates,
         key=lambda x: (
+            -float(x.get("risk_score") or 0.0),
             -_to_int(x.get("contract_warning_count"), 0),
             -_to_int(x.get("event_count"), 0),
             -_to_int(x.get("last_decision_ts"), 0),

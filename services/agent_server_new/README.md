@@ -233,6 +233,7 @@ signal_event + active_events + MSL
 - summary 现包含契约告警聚合：`contract_warning_count`、`contract_warning_event_count`、`contract_warning_type_count`、`recent_contract_warning_types`
 - runner 支持 `--top-risk-n`，输出按 `contract_warning_count` 排序的 `high_risk_symbols`（观测用途）
 - 默认仅输出有告警 symbol；可用 `--risk-warning-min` 提高阈值，或用 `--include-no-warning` 包含 0 告警 symbol
+- `high_risk_symbols` 新增 `risk_score`（`warning_count * recency_weight`）用于更稳定排序
 
 ## Memory Observability
 
