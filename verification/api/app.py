@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException, Query
 
 from verification.reports.aggregate_reports import build_summary
+from verification.validators.local_refs_schema import validate_payload_with_local_refs
 
 _ALLOWED_SCHEMA_VERSIONS = {"verification-report-v1", "verification-report-v2"}
 
@@ -45,9 +47,24 @@ def _list_reports(report_dir: Path) -> List[Dict[str, Any]]:
     return items
 
 
-def create_app(*, report_dir: str = "verification/reports") -> FastAPI:
+def _parse_bool_env(name: str, default: bool = False) -> bool:
+    raw = str(os.getenv(name, "1" if default else "0") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _load_aggregate_schema() -> tuple[Dict[str, Any], Path]:
+    schema_path = Path(__file__).resolve().parents[1] / "reports" / "verification_report_aggregate_v1.schema.json"
+    return json.loads(schema_path.read_text(encoding="utf-8")), schema_path.parent
+
+
+def create_app(*, report_dir: str = "verification/reports", validate_summary_schema: bool | None = None) -> FastAPI:
     app = FastAPI(title="verification_api", version="v1")
     report_root = Path(report_dir)
+    validate_summary = _parse_bool_env("VERIFICATION_API_VALIDATE_SUMMARY_SCHEMA", default=False) if validate_summary_schema is None else bool(validate_summary_schema)
+    aggregate_schema: Dict[str, Any] = {}
+    aggregate_schema_base_dir = Path(".")
+    if validate_summary:
+        aggregate_schema, aggregate_schema_base_dir = _load_aggregate_schema()
 
     @app.get("/internal/verification/healthz")
     async def healthz() -> Dict[str, Any]:
@@ -91,8 +108,9 @@ def create_app(*, report_dir: str = "verification/reports") -> FastAPI:
         suite: str = Query(default="", description="suite name, optional"),
     ) -> Dict[str, Any]:
         all_items = _list_reports(report_root)
+        summary_payload: Dict[str, Any]
         if not all_items:
-            return {
+            summary_payload = {
                 "schema_version": "verification-report-aggregate-v1",
                 "report_count": 0,
                 "passed": 0,
@@ -104,16 +122,24 @@ def create_app(*, report_dir: str = "verification/reports") -> FastAPI:
                 "memory_alert_code_count": 0,
                 "memory_top_alert_codes": [],
             }
+        else:
+            latest_ms = max(_safe_int(x.get("finished_at_ms"), 0) for x in all_items)
+            cutoff = latest_ms - int(window_hours) * 3600 * 1000
 
-        latest_ms = max(_safe_int(x.get("finished_at_ms"), 0) for x in all_items)
-        cutoff = latest_ms - int(window_hours) * 3600 * 1000
+            items = [x for x in all_items if _safe_int(x.get("finished_at_ms"), 0) >= cutoff]
+            suite_norm = str(suite or "").strip()
+            if suite_norm:
+                items = [x for x in items if str(x.get("suite") or "") == suite_norm]
+            summary_payload = build_summary(items)
 
-        items = [x for x in all_items if _safe_int(x.get("finished_at_ms"), 0) >= cutoff]
-        suite_norm = str(suite or "").strip()
-        if suite_norm:
-            items = [x for x in items if str(x.get("suite") or "") == suite_norm]
+        if validate_summary and not validate_payload_with_local_refs(
+            aggregate_schema,
+            summary_payload,
+            aggregate_schema_base_dir,
+        ):
+            raise HTTPException(status_code=500, detail="verification_summary_schema_validation_failed")
 
-        return build_summary(items)
+        return summary_payload
 
     @app.get("/internal/verification/reports/{report_id}")
     async def get_report(report_id: str) -> Dict[str, Any]:

@@ -95,6 +95,13 @@
 - 生产环境必须启用只读鉴权（token 或 service account）。
 - 不提供写接口；写入仍由 CI/工具链落盘。
 
+## 4.1 Debug/Guard 校验开关
+
+- 环境变量：`VERIFICATION_API_VALIDATE_SUMMARY_SCHEMA=1`
+- 作用：对 `/internal/verification/reports/summary` 响应执行 `verification_report_aggregate_v1` schema 运行时校验
+- 默认：关闭（`0`）
+- 建议：在 debug/guard 环境开启，生产默认关闭以避免额外开销
+
 ## 5. 分阶段实现建议
 
 1. 文件后端：从 `verification/reports/*.json` 读取。

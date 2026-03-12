@@ -84,3 +84,32 @@ def test_verification_api_summary_empty_branch_contains_memory_alert_fields(tmp_
     assert int(body.get("report_count") or 0) == 0
     assert int(body.get("memory_alert_code_count") or 0) == 0
     assert body.get("memory_top_alert_codes") == []
+
+
+def test_verification_api_summary_schema_validation_enabled_passes(tmp_path: Path) -> None:
+    reports = tmp_path / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    _write_report(reports / "quick-1.json", suite="quick", status="passed", finished_at_ms=1000, duration_ms=100)
+    app = create_app(report_dir=str(reports), validate_summary_schema=True)
+    client = TestClient(app)
+
+    resp = client.get("/internal/verification/reports/summary", params={"window_hours": 24})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body.get("schema_version") == "verification-report-aggregate-v1"
+
+
+def test_verification_api_summary_schema_validation_enabled_fails_on_invalid_payload(tmp_path: Path, monkeypatch) -> None:  # noqa: ANN001
+    reports = tmp_path / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    _write_report(reports / "quick-1.json", suite="quick", status="passed", finished_at_ms=1000, duration_ms=100)
+
+    import verification.api.app as app_mod
+
+    monkeypatch.setattr(app_mod, "build_summary", lambda items: {"schema_version": "verification-report-aggregate-v1", "report_count": "bad"})  # noqa: ARG005
+    app = create_app(report_dir=str(reports), validate_summary_schema=True)
+    client = TestClient(app)
+
+    resp = client.get("/internal/verification/reports/summary", params={"window_hours": 24})
+    assert resp.status_code == 500
+    assert resp.json().get("detail") == "verification_summary_schema_validation_failed"
