@@ -34,3 +34,6 @@ Validation command:
 2. Move snapshot guards to inspect `tools/*` entrypoints (then refresh snapshots).
 3. Replace text-scanning guards with semantic checks (AST/command intent) or retarget to `tools/*` files.
 4. After one stable iteration window, remove `scripts/*` compatibility wrappers in batches.
+
+Detailed plan:
+- `docs/operations/SCRIPT_HARD_PINNED_DECOMMISSION_PLAN.md`
