@@ -33,8 +33,13 @@ from .service import ExecutionService
 logger = logging.getLogger(__name__)
 
 
+def _is_true_env(name: str, default: str = "false") -> bool:
+    return str(os.getenv(name, default) or default).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def create_app() -> FastAPI:
     state_provider_mode = str(os.getenv("EXECUTION_STATE_PROVIDER_MODE", "stub") or "stub").strip().lower()
+    runtime_profile = str(os.getenv("EXECUTION_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     redis_client = None
     cfg = None
 
@@ -60,13 +65,18 @@ def create_app() -> FastAPI:
         risk_policy_provider = StubRiskPolicyProvider()
         logger.info("execution_service 使用 Stub 状态提供器")
 
-    submit_enabled = str(os.getenv("EXECUTION_SUBMIT_ENABLED", "false") or "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
     sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "mock") or "mock").strip().lower()
+    exchange_dry_run = _is_true_env("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
+
+    if runtime_profile in {"prod", "production"}:
+        if state_provider_mode != "redis":
+            raise RuntimeError("production profile requires EXECUTION_STATE_PROVIDER_MODE=redis")
+        if submit_enabled and sink_mode == "mock":
+            raise RuntimeError("production profile forbids EXECUTION_SINK_MODE=mock")
+        if submit_enabled and sink_mode == "exchange" and exchange_dry_run:
+            raise RuntimeError("production profile forbids EXECUTION_SINK_EXCHANGE_DRY_RUN=true")
+
     execution_sink = None
     if submit_enabled:
         if sink_mode == "mock":
@@ -77,9 +87,7 @@ def create_app() -> FastAPI:
         elif sink_mode == "exchange":
             execution_sink = ExchangeExecutionSink(
                 venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip(),
-                dry_run=str(
-                    os.getenv("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true") or "true"
-                ).strip().lower() in {"1", "true", "yes", "on"},
+                dry_run=exchange_dry_run,
                 api_base_url=str(
                     os.getenv("EXECUTION_SINK_EXCHANGE_API_BASE_URL", "https://api.binance.com")
                     or "https://api.binance.com"
@@ -203,12 +211,7 @@ def create_app() -> FastAPI:
         execution_state_store=execution_state_store,
         confidence_metrics_store=confidence_metrics_store,
     )
-    allow_debug_metrics_reset = str(os.getenv("EXECUTION_DEBUG_ALLOW_METRICS_RESET", "false") or "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    allow_debug_metrics_reset = _is_true_env("EXECUTION_DEBUG_ALLOW_METRICS_RESET", "false")
     app = FastAPI(
         title="execution_service",
         docs_url="/docs",

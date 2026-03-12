@@ -142,6 +142,11 @@ execution_service/
 ## 运行模式
 
 - `EXECUTION_STATE_PROVIDER_MODE=stub|redis`（默认 `stub`）
+- `EXECUTION_RUNTIME_PROFILE=dev|prod`（默认 `dev`）
+  - `prod` 下门禁：
+    - 必须 `EXECUTION_STATE_PROVIDER_MODE=redis`
+    - 若启用 `EXECUTION_SUBMIT_ENABLED=true`，禁止 `EXECUTION_SINK_MODE=mock`
+    - 若 `EXECUTION_SINK_MODE=exchange`，禁止 `EXECUTION_SINK_EXCHANGE_DRY_RUN=true`
 - 当 `redis` 模式启用时：
   - `EXECUTION_REDIS_URL`（默认 `redis://127.0.0.1:6379/0`）
   - `EXECUTION_POSITION_KEY_TEMPLATE`（默认 `execution:position:{exchange}:{account_id}:{symbol}`）

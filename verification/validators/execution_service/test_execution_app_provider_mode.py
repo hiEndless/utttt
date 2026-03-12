@@ -35,3 +35,27 @@ def test_create_app_use_redis_confidence_metrics_mode(monkeypatch) -> None:  # n
     monkeypatch.setattr(app_module, "create_redis_client_from_env", lambda redis_url=None: _FakeRedis())
     app = app_module.create_app()
     assert app.title == "execution_service"
+
+
+def test_create_app_prod_forbid_stub_provider(monkeypatch) -> None:  # noqa: ANN001
+    monkeypatch.setenv("EXECUTION_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("EXECUTION_STATE_PROVIDER_MODE", "stub")
+    try:
+        app_module.create_app()
+        assert False, "expected RuntimeError in prod when provider mode is stub"
+    except RuntimeError as exc:
+        assert "EXECUTION_STATE_PROVIDER_MODE=redis" in str(exc)
+
+
+def test_create_app_prod_forbid_mock_sink(monkeypatch) -> None:  # noqa: ANN001
+    monkeypatch.setenv("EXECUTION_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("EXECUTION_STATE_PROVIDER_MODE", "redis")
+    monkeypatch.setenv("EXECUTION_REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setattr(app_module, "create_redis_client_from_env", lambda redis_url=None: _FakeRedis())
+    monkeypatch.setenv("EXECUTION_SUBMIT_ENABLED", "true")
+    monkeypatch.setenv("EXECUTION_SINK_MODE", "mock")
+    try:
+        app_module.create_app()
+        assert False, "expected RuntimeError in prod when sink mode is mock"
+    except RuntimeError as exc:
+        assert "EXECUTION_SINK_MODE=mock" in str(exc)
