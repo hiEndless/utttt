@@ -11,6 +11,7 @@
 - `docs/new_arch_guards_help_snapshot.txt`
 - `docs/operations/NEW_ARCH_GUARDS_HELP_SNAPSHOT_RUNBOOK.md`
 - `docs/operations/VERIFICATION_SCRIPT_INVENTORY.md`
+- `docs/operations/VERIFY_QUICK_DEDUP_MATRIX.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
