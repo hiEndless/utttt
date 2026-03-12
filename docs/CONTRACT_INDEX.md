@@ -25,6 +25,7 @@
 - `tools/local/check_contract_docs_canonical_layout_guard.sh`
 - `tools/local/check_contract_change_bundle_guard.sh`（强约束触发：schema 文件变更、schema_mapping 变更，或 event_center_runtime_config_version 版本锚点变更）
 - `tools/local/check_release_baseline_alignment.sh`（发布基线对齐守卫：baseline tag/RELEASE_LATEST/HEAD 一致性）
+- `verification/reports/release_gate_summary_v1.schema.json`（release gate 摘要契约）
 
 ## 2. feature_service
 
