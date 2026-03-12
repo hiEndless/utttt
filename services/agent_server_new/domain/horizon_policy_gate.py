@@ -33,9 +33,9 @@ def load_horizon_policy_config_from_env() -> Dict[str, Any]:
             parsed = json.loads(raw_json)
             if isinstance(parsed, dict):
                 base = _normalize_config(parsed)
-        except Exception:
+        except json.JSONDecodeError:
             # JSON 非法时回退默认，不抛异常阻塞流程。
-            pass
+            base = default_horizon_policy_config()
 
     raw_csv = str(os.getenv("AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE", "") or "").strip()
     if raw_csv:

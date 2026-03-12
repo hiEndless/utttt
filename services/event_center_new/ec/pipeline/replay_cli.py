@@ -226,15 +226,15 @@ def validate_selected_contract(items: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _load_selected_contract_field_sets() -> tuple[set[str], set[str]]:
     schema_path = _selected_schema_path()
+    fallback_required = {"asset", "ts_ms", "selected_type", "direction_hint", "priority", "context_snapshot", "trace", "route"}
+    fallback_allowed = fallback_required | {"trigger_event", "source", "event_ts_ms", "processed_ts_ms"}
     try:
         data = json.loads(schema_path.read_text(encoding="utf-8"))
         required = set(str(x) for x in (data.get("required") or []) if str(x).strip())
         allowed = set(str(k) for k in (data.get("properties") or {}).keys() if str(k).strip())
         if required and allowed:
             return required, allowed
-    except Exception:
-        pass
+    except (OSError, ValueError, json.JSONDecodeError):
+        return fallback_required, fallback_allowed
     # 中文注释：schema 读取异常时回退默认值，保证回放工具仍可给出最小契约检查。
-    required = {"asset", "ts_ms", "selected_type", "direction_hint", "priority", "context_snapshot", "trace", "route"}
-    allowed = required | {"trigger_event", "source", "event_ts_ms", "processed_ts_ms"}
-    return required, allowed
+    return fallback_required, fallback_allowed

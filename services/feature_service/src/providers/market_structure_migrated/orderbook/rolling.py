@@ -48,8 +48,8 @@ def wall_persistence(frames_30s: List[Dict[str, Any]], *, side: str) -> str:
                     pxf = float(px)
                     if pxf > 0:
                         wall_prices.append(pxf)
-                except Exception:
-                    pass
+                except (TypeError, ValueError):
+                    continue
     if total <= 0:
         return "flickering"
     ratio = present / total

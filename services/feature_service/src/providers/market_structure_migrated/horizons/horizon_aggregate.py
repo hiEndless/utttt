@@ -155,8 +155,8 @@ def aggregate_participant_by_horizon(
                     wt = float(w.get(p, 1.0))
                     vol_sum += fv * wt
                     vol_w_sum += wt
-            except Exception:
-                pass
+            except (TypeError, ValueError):
+                continue
 
     long_cnt = biases.count("long")
     short_cnt = biases.count("short")
