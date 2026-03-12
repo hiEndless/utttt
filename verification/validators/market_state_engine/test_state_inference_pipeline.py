@@ -379,3 +379,44 @@ def test_cross_horizon_policy_when_aligned():
     assert cross["alignment"] == "aligned"
     assert cross["suggested_policy"] == "follow_long_term"
     assert cross["policy_reason"] == "timeframe_aligned"
+
+
+def test_cross_horizon_policy_when_mixed_without_short_long_conflict():
+    engine = MarketStateEngine()
+    bundle = {
+        "short_term": {"market_regime": {"trend": "unknown", "phase": "continuation"}},
+        "mid_term": {"market_regime": {"trend": "bullish", "phase": "continuation"}},
+        "long_term": {"market_regime": {"trend": "bearish", "phase": "continuation"}},
+    }
+    cross = engine._build_cross_horizon(bundle)  # noqa: SLF001
+    assert cross["alignment"] == "mixed"
+    assert cross["suggested_policy"] == "reduce_risk"
+    assert cross["policy_reason"] == "timeframe_mixed"
+    assert cross["conflicts"] == []
+
+
+def test_cross_horizon_policy_when_conflicting_without_trend_conflict():
+    engine = MarketStateEngine()
+    bundle = {
+        "short_term": {
+            "market_regime": {"trend": "bullish", "phase": "impulse"},
+            "volatility_state": {"volatility_regime": "high"},
+            "liquidity_state": {"liquidity_risk": "neutral"},
+        },
+        "mid_term": {
+            "market_regime": {"trend": "bullish", "phase": "distribution"},
+            "volatility_state": {"volatility_regime": "normal"},
+            "liquidity_state": {"liquidity_risk": "neutral"},
+        },
+        "long_term": {
+            "market_regime": {"trend": "bullish", "phase": "continuation"},
+            "volatility_state": {"volatility_regime": "low"},
+            "liquidity_state": {"liquidity_risk": "neutral"},
+        },
+    }
+    cross = engine._build_cross_horizon(bundle)  # noqa: SLF001
+    assert cross["alignment"] == "conflicting"
+    assert cross["suggested_policy"] == "reduce_risk"
+    assert cross["policy_reason"] == "multi_field_conflict"
+    fields = [str(x.get("field")) for x in list(cross.get("conflicts") or [])]
+    assert fields[:2] == ["phase", "volatility_regime"]
