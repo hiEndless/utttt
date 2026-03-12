@@ -106,3 +106,36 @@ def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> N
     assert "onchain" in list(value.get("available_sources") or [])
     assert value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
     assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"
+
+
+def test_signal_context_builder_fusion_summary_fills_default_source_semantics_when_missing() -> None:
+    out = _signal_context_builder(
+        features={
+            "evidence": {
+                "alternative_sources_fusion": {
+                    "preferred_source": "event_center",
+                    "conflicts": [],
+                    "merged": {
+                        "available_sources": ["onchain"],
+                        "unavailable_sources": ["news", "social"],
+                        "by_source": {
+                            "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
+                            "social": {"provider_state": "empty", "feature_keys": []},
+                            "onchain": {"provider_state": "event_evidence_present", "feature_keys": ["inflow_usd"]},
+                        },
+                    },
+                },
+            }
+        },
+        signal_event={"payload": {"event_type": "macro_news"}},
+        active_events=[],
+        max_features=20,
+    )
+    items = list(out.get("features") or [])
+    summary = next((x for x in items if (x or {}).get("name") == "alternative_source_summary"), {})
+    assert summary
+    value = dict(summary.get("value") or {})
+    assert value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
+    assert value.get("inference_sources", {}).get("onchain") == "event_center_new.selector"
+    assert value.get("data_sources", {}).get("news") == "feature_service.news"
+    assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"

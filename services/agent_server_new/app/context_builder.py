@@ -63,9 +63,13 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         unavailable_sources = [str(x) for x in list(merged.get("unavailable_sources") or []) if str(x).strip()]
         for name in ("news", "social", "onchain"):
             node = _safe_dict(by_source.get(name))
-            provider_states[name] = str(node.get("provider_state") or "empty")
-            data_sources[name] = str(node.get("data_source") or f"feature_service.{name}")
-            inference_sources[name] = str(node.get("inference_source") or "feature_service.normalizer")
+            state = str(node.get("provider_state") or "empty")
+            provider_states[name] = state
+            prefer_event = state.startswith("event_")
+            default_data_source = f"event_center_new.{name}" if prefer_event else f"feature_service.{name}"
+            default_inference_source = "event_center_new.selector" if prefer_event else "feature_service.normalizer"
+            data_sources[name] = str(node.get("data_source") or default_data_source)
+            inference_sources[name] = str(node.get("inference_source") or default_inference_source)
             feature_keys[name] = sorted([str(x) for x in list(node.get("feature_keys") or []) if str(x).strip()])
         out = {
             "available_sources": sorted(set(available_sources)),

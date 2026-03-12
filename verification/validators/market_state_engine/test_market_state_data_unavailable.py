@@ -173,6 +173,30 @@ class _SelectedEventProviderWithAlternativeSummary:
         ]
 
 
+class _SelectedEventProviderWithAlternativeSummaryMissingSources:
+    async def get_selected_events(self, exchange: str, symbol: str, *, limit: int = 20):
+        return [
+            {
+                "asset": f"{exchange}:{symbol}",
+                "ts_ms": 1234567890,
+                "selected_type": "onchain_alert",
+                "direction_hint": "mixed",
+                "priority": "medium",
+                "context_snapshot": {
+                    "alternative_sources_summary": {
+                        "available_sources": ["onchain"],
+                        "unavailable_sources": ["news", "social"],
+                        "provider_states": {"news": "empty", "social": "empty", "onchain": "event_evidence_present"},
+                        "feature_keys": {"news": [], "social": [], "onchain": ["inflow_usd"]},
+                        "evidence_counts": {"news": 0, "social": 0, "onchain": 2},
+                    }
+                },
+                "trace": {"schema_version": "selected-v2"},
+                "route": {"to": "market_state_engine"},
+            }
+        ]
+
+
 def test_market_state_service_short_circuit_on_data_unavailable():
     async def _run():
         service = MarketStateService(raw_structure_provider=_UnavailableRawProvider())
@@ -340,6 +364,24 @@ def test_market_state_service_builds_alternative_sources_fusion():
         assert merged.get("onchain", {}).get("data_source") == "event_center_new.onchain"
         assert merged.get("onchain", {}).get("inference_source") == "event_center_new.selector"
         assert isinstance(fusion.get("conflicts"), list)
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_builds_alternative_sources_fusion_with_default_sources_when_missing():
+    async def _run():
+        service = MarketStateService(
+            raw_structure_provider=_AlternativeSourceRawProvider(),
+            selected_event_provider=_SelectedEventProviderWithAlternativeSummaryMissingSources(),
+        )
+        out = await service.get_market_state("binance", "ETHUSDT")
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        fusion = dict(evidence.get("alternative_sources_fusion") or {})
+        merged = dict((fusion.get("merged") or {}).get("by_source") or {})
+        assert merged.get("onchain", {}).get("data_source") == "event_center_new.onchain"
+        assert merged.get("onchain", {}).get("inference_source") == "event_center_new.selector"
+        assert merged.get("news", {}).get("data_source") == "feature_service.news"
+        assert merged.get("news", {}).get("inference_source") == "feature_service.normalizer"
 
     asyncio.run(_run())
 
