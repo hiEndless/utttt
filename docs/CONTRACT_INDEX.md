@@ -14,6 +14,7 @@
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
 - `docs/ALERT_CODES.md`
+- `tools/local/check_contract_docs_canonical_layout_guard.sh`
 
 ## 2. feature_service
 
