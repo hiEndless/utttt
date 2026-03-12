@@ -3,7 +3,7 @@ import asyncio
 import httpx
 import pytest
 
-from market_state_engine.adapters.raw_structure_http import HttpRawStructureProvider
+from services.market_state_engine.src.adapters.raw_structure_http import HttpRawStructureProvider
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 
 

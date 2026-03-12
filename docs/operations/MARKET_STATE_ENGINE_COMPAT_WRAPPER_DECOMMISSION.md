@@ -1,7 +1,7 @@
 # Market State Engine Compat Wrapper Decommission
 
 更新时间：2026-03-12  
-状态：in_progress (batch-a phase-1 completed)
+状态：in_progress (batch-b phase-1 completed)
 
 ## 1. 目标
 
@@ -48,6 +48,10 @@
 
 - 删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳
 - 保留 `__init__.py`、`main.py`、`service.py`、`engine.py`
+
+执行结果：
+
+- 阶段1已完成（2026-03-12）：`adapters/**/*.py` 与 `ports/**/*.py` 兼容壳已删除。
 
 ### Batch C（高风险，最后）
 

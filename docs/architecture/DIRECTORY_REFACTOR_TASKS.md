@@ -91,6 +91,7 @@
 - [x] 执行 `market_state_engine` Batch C（阶段3）：收敛包级导出兼容层（`market_state_engine/__init__.py` 与 `adapters/__init__.py`）
 - [x] 执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移 + 新增 `check_market_state_legacy_imports.sh` 守卫
 - [x] 执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳
+- [x] 执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

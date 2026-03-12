@@ -10,7 +10,7 @@
 - `event_center_new/docs/replay_summary.schema.json` 的 `diffs` 与实现保持一致（`array[string]`）。
 
 2. 收紧 selected_event 资产匹配
-- `market_state_engine/adapters/selected_events_redis.py` 只接受：
+- `services/market_state_engine/src/adapters/selected_events_redis.py` 只接受：
   - `asset = "{exchange}:{symbol}"`（大小写不敏感，精确匹配）
   - `asset = "{symbol}"`（精确匹配）
 - 禁止子串匹配，避免 `ETH` 命中 `ETHUSDT` 的误判。

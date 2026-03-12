@@ -39,15 +39,15 @@
 
 2.6 `market_state_engine/adapters/{in_memory_feature_store,raw_structure_http}.py`
 - migrated impl: `services/market_state_engine/src/adapters/{in_memory_feature_store,raw_structure_http}.py`
-- legacy wrapper kept: `market_state_engine/adapters/{in_memory_feature_store,raw_structure_http}.py`
+- legacy wrapper status: removed in 2.14 (batch-b phase-1)
 
 2.7 `market_state_engine/adapters/selected_events_redis.py`
 - migrated impl: `services/market_state_engine/src/adapters/selected_events_redis.py`
-- legacy wrapper kept: `market_state_engine/adapters/selected_events_redis.py`
+- legacy wrapper status: removed in 2.14 (batch-b phase-1)
 
 2.8 `market_state_engine/ports/**`
 - migrated impl: `services/market_state_engine/src/ports/**`
-- legacy wrapper kept: `market_state_engine/ports/**`
+- legacy wrapper status: removed in 2.14 (batch-b phase-1)
 
 2.9 `market_state_engine/{factors,state_inference}/**`
 - migrated impl: `services/market_state_engine/src/{factors,state_inference}/**`
@@ -59,7 +59,9 @@
 
 2.11 `market_state_engine/{__init__.py,adapters/__init__.py}`
 - migrated impl: `services/market_state_engine/src/{__init__.py,adapters/__init__.py}`
-- legacy wrapper kept: `market_state_engine/{__init__.py,adapters/__init__.py}`
+- legacy wrapper status:
+  - `market_state_engine/__init__.py` kept
+  - `market_state_engine/adapters/__init__.py` removed in 2.14 (batch-b phase-1)
 
 2.12 `market_state_engine` decommission batch-0
 - 内部调用方迁移至 `services.market_state_engine.src.*`
@@ -68,6 +70,10 @@
 2.13 `market_state_engine` decommission batch-a (phase-1)
 - removed wrappers: `market_state_engine/{app,contracts,routes,errors,msl}.py`
 - guard/test imports switched to `services.market_state_engine.src.*`
+
+2.14 `market_state_engine` decommission batch-b (phase-1)
+- removed wrappers: `market_state_engine/adapters/**/*.py`, `market_state_engine/ports/**/*.py`
+- consumer tests switched to `services.market_state_engine.src.adapters.*`
 
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
@@ -173,3 +179,4 @@
 20. 已执行 `market_state_engine` Batch C（阶段3）：包级导出入口 `__init__.py` 与 `adapters/__init__.py` 已收敛为兼容壳。
 21. 已执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移，并新增 `check_market_state_legacy_imports.sh`。
 22. 已执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳，并迁移测试导入。
+23. 已执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳。

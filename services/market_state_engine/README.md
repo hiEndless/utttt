@@ -38,8 +38,9 @@ Notes:
   - `market_state_engine/state_inference/` switched to wrappers
 - Batch C (phase-3) compatibility convergence:
   - `market_state_engine/__init__.py` switched to wrapper
-  - `market_state_engine/adapters/__init__.py` switched to wrapper
+  - `market_state_engine/adapters/__init__.py` switched to wrapper (later removed in Batch B phase-1 decommission)
 - Decommission plan:
   - `docs/operations/MARKET_STATE_ENGINE_COMPAT_WRAPPER_DECOMMISSION.md`
 - Decommission progress:
   - Batch A (phase-1) removed `market_state_engine/{app,contracts,routes,errors,msl}.py`
+  - Batch B (phase-1) removed `market_state_engine/adapters/**/*.py` and `market_state_engine/ports/**/*.py`

@@ -5,7 +5,7 @@ set -euo pipefail
 # 1) market_state_engine 不得恢复 feature 旧契约回退逻辑
 # 2) 新契约行为测试必须通过
 
-TARGET_FILE="market_state_engine/adapters/raw_structure_http.py"
+TARGET_FILE="services/market_state_engine/src/adapters/raw_structure_http.py"
 
 echo "[1/2] 检查是否出现旧契约回退代码"
 if rg -n 'data\.get\("raw_market_structure"\)' "${TARGET_FILE}" | rg -v 'data_block\.get\("raw_market_structure"\)'; then

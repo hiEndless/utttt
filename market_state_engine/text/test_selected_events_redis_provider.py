@@ -7,7 +7,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from market_state_engine.adapters.selected_events_redis import RedisSelectedEventProvider, RedisSelectedEventProviderConfig
+from services.market_state_engine.src.adapters.selected_events_redis import RedisSelectedEventProvider, RedisSelectedEventProviderConfig
 
 
 class _FakeRedisClient:
