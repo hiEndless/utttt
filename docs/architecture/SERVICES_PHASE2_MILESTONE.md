@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (pilot completed)
+状态：in_progress (feature_service core src migrated)
 
 ## 1. 目标
 
@@ -102,3 +102,4 @@
 1. 进入 Phase-2.5：补齐其余可迁移入口（非主 main，但常用 CLI）。
 2. 启动 Phase-3 前置：明确 `scripts/*` 兼容下线顺序与每批回滚方案。
 3. 将服务真实业务代码按模块批次迁入 `services/<svc>/src`（非仅入口迁移）。
+4. `feature_service` 已进入“core src migrated + compat wrapper”状态，可开始设计兼容壳下线窗口。
