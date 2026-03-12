@@ -1,11 +1,11 @@
-# market_state_engine (migration placeholder)
+# market_state_engine (migration summary)
 
 Runtime source path: `market_state_engine/`
 Target canonical path: `services/market_state_engine/`
 
 Notes:
-- Keep imports/runtime on legacy path during compatibility window.
-- `main.py` runtime implementation has moved to `services/market_state_engine/runtime/main.py`.
+- Runtime entrypoint: `services/market_state_engine/runtime/main.py`.
+- Canonical implementation root: `services/market_state_engine/src/`.
 - Batch A migrated implementations:
   - `services/market_state_engine/src/app.py`
   - `services/market_state_engine/src/routes.py`

@@ -37,8 +37,8 @@ Recommended local wrappers:
 Pilot migration note:
 - `feature_service` legacy wrappers are fully removed.
 - runtime entrypoint is `services/feature_service/runtime/main.py`.
-- `market_state_engine/main.py` is now a legacy wrapper.
-- runtime implementation moved to `services/market_state_engine/runtime/main.py`.
+- `market_state_engine` legacy wrappers are fully removed.
+- runtime entrypoint is `services/market_state_engine/runtime/main.py`.
 - `execution_service/main.py` is now a legacy wrapper.
 - runtime implementation moved to `services/execution_service/runtime/main.py`.
 - `event_center_new/main.py` is now a legacy wrapper.
