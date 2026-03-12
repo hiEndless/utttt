@@ -34,6 +34,10 @@ Recommended local wrappers:
 - `bash tools/local/run_agent_memory_summary.sh`
 - `bash tools/local/run_execution_service.sh`
 
+Verification entry recommendation:
+- quick: `bash tools/local/verify_quick.sh` (proxy to `bash tools/ci/verify_quick.sh`)
+- full: `bash tools/local/verify_full.sh` (proxy to `bash tools/ci/new_arch_guards_full.sh`)
+
 Pilot migration note:
 - `feature_service` legacy wrappers are fully removed.
 - runtime entrypoint is `services/feature_service/runtime/main.py`.
