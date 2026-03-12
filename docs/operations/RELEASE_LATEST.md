@@ -58,3 +58,13 @@ bash tools/local/finalize_release_baseline.sh
 3. 放行条件：
    - `agent_readyz_report_count > 0`（当 `REQUIRE_AGENT_READYZ_REPORT=1`）
    - `agent_readyz_status_level <= MAX_AGENT_READYZ_LEVEL`
+
+发布排障最小复现（release gate schema）：
+
+```bash
+git checkout -b tmp/release-gate-schema-repro
+echo "// repro" >> verification/reports/release_gate_summary_v1.schema.json
+bash tools/local/check_contract_change_bundle_guard.sh
+```
+
+预期：守卫提示 schema 变更触发四件套，需同步更新索引/契约文档/运行说明/守卫测试。
