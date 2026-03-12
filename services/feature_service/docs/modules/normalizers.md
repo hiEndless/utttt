@@ -16,6 +16,7 @@
 - 保证 `raw_market_structure` 与 `features` 的关键字段稳定存在
 - `alternative_sources.provider_state` 按 `contracts/semantic_policies/source_semantics.yaml` 做白名单归一化（非法值回退到 `ok/empty`）
 - `alternative_sources.data_source/inference_source` 使用统一策略模板补默认值（`feature_service.{source}` / `feature_service.normalizer`）
+- `alternative_sources` 的 source names 由 `contracts/schemas/alternative_source_summary_contract.py` 提供（避免服务内硬编码 `news/social/onchain`）
 
 ## 输入输出
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, Mapping
 
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
 from services.feature_service.src.ports.behavior_provider import BehaviorProvider
 from services.feature_service.src.ports.horizons_provider import HorizonsProvider
 from services.feature_service.src.ports.indicators_provider import IndicatorsProvider
@@ -38,6 +39,9 @@ def _safe_float(x: Any, default: float = 0.0) -> float:
 
 def _safe_list(x: Any) -> list[Any]:
     return x if isinstance(x, list) else []
+
+
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 
 class FeatureDataUnavailableError(RuntimeError):
@@ -500,16 +504,13 @@ class FeatureService:
         }
 
     async def _assemble_alternative_sources(self, exchange: str, symbol: str) -> Dict[str, Any]:
-        news_out, social_out, onchain_out = await asyncio.gather(
-            self._news_provider.get_news_features(exchange, symbol),
-            self._social_provider.get_social_features(exchange, symbol),
-            self._onchain_provider.get_onchain_features(exchange, symbol),
-        )
-        return {
-            "news": dict(news_out or {}),
-            "social": dict(social_out or {}),
-            "onchain": dict(onchain_out or {}),
+        task_map = {
+            "news": self._news_provider.get_news_features(exchange, symbol),
+            "social": self._social_provider.get_social_features(exchange, symbol),
+            "onchain": self._onchain_provider.get_onchain_features(exchange, symbol),
         }
+        outputs = await asyncio.gather(*[task_map[name] for name in _ALTERNATIVE_SOURCE_NAMES])
+        return {name: dict(outputs[idx] or {}) for idx, name in enumerate(_ALTERNATIVE_SOURCE_NAMES)}
 
     async def get_raw_structure(self, exchange: str, symbol: str) -> Dict[str, Any]:
         reset_degradation_state()

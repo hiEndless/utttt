@@ -23,6 +23,9 @@ from services.feature_service.src.providers.future_source_providers import (
     NoopOnchainProvider,
     NoopSocialProvider,
 )
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
+
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 
 class _StubFeatureService:
@@ -191,7 +194,7 @@ def test_features_route_e2e_includes_alternative_source_semantics_fields():
     assert resp.status_code == 200
     body = resp.json()
     alt = dict(body["data"].get("alternative_sources") or {})
-    for src in ("news", "social", "onchain"):
+    for src in _ALTERNATIVE_SOURCE_NAMES:
         node = dict(alt.get(src) or {})
         assert node.get("source_type") == src
         assert node.get("data_source") == f"feature_service.{src}"

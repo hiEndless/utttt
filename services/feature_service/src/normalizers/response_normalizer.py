@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
 from contracts.semantic_policies.source_semantics import (
     get_alternative_source_allowed_provider_states,
     get_alternative_source_unavailable_provider_states,
@@ -12,6 +13,7 @@ from contracts.semantic_policies.source_semantics import (
 VALID_HORIZONS = ("short_term", "mid_term", "long_term")
 _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
 _UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -101,9 +103,5 @@ def normalize_features_payload(features: Any) -> Dict[str, Any]:
             "pre_decision_structure": _safe_dict(_safe_dict(src.get("structure_snapshot")).get("pre_decision_structure")),
             "horizons": _safe_dict(_safe_dict(src.get("structure_snapshot")).get("horizons")),
         },
-        "alternative_sources": {
-            "news": _normalize_alt_entry("news", alt.get("news")),
-            "social": _normalize_alt_entry("social", alt.get("social")),
-            "onchain": _normalize_alt_entry("onchain", alt.get("onchain")),
-        },
+        "alternative_sources": {name: _normalize_alt_entry(name, alt.get(name)) for name in _ALTERNATIVE_SOURCE_NAMES},
     }

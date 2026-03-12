@@ -22,6 +22,9 @@ from services.feature_service.src.providers.future_source_providers import (
 )
 from services.feature_service.src.providers.bundle import ProviderBundle
 from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
+
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 
 class _BrokenOrderbookProvider:
@@ -146,8 +149,7 @@ def test_feature_service_contract_with_partial_non_empty_structure():
         assert isinstance(root.get("structure_snapshot"), dict)
         alt = root.get("alternative_sources", {})
         assert isinstance(alt, dict)
-        assert alt.get("news", {}).get("source_type") == "news"
-        assert alt.get("social", {}).get("source_type") == "social"
-        assert alt.get("onchain", {}).get("source_type") == "onchain"
+        for src in _ALTERNATIVE_SOURCE_NAMES:
+            assert alt.get(src, {}).get("source_type") == src
 
     asyncio.run(_run())
