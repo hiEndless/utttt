@@ -71,8 +71,8 @@ execution_service/
 
 ## 契约状态
 
-- `DecisionIntent v1` 已冻结（见 `execution_service/domain/contracts.py`）
-- `ExecutionResult v1` 已冻结（见 `execution_service/domain/contracts.py`）
+- `DecisionIntent v1` 已冻结（见 `services/execution_service/domain/contracts.py`）
+- `ExecutionResult v1` 已冻结（见 `services/execution_service/domain/contracts.py`）
 - `DecisionIntent` 已显式包含 `account_id`（默认 `main`）
 - `decision_state` 快照已包含 `account_id`，支持按账户追踪执行状态
 - 约束：agent 只需提交方向意图与证据提示，不提交仓位上下文
@@ -83,13 +83,13 @@ execution_service/
 - `PositionStateProvider`：仓位侧输入端口
 - `AccountStateProvider`：账户侧输入端口
 - 已提供最小 stub：
-  - `execution_service/adapters/stub_state_providers.py`
+  - `services/execution_service/adapters/stub_state_providers.py`
 - 已提供 Redis 实现：
-  - `execution_service/adapters/redis_state_providers.py`
+  - `services/execution_service/adapters/redis_state_providers.py`
 
 ## 决策引擎（当前）
 
-- `execution_service/domain/decision_engine.py`
+- `services/execution_service/domain/decision_engine.py`
 - 固定优先级：
   1. 仓位上限
   2. 冷却期
@@ -179,7 +179,7 @@ execution_service/
 ## Agent 联调（当前）
 
 - 已提供最小适配器：
-  - `execution_service/adapters/agent_execution_plan_adapter.py`
+  - `services/execution_service/adapters/agent_execution_plan_adapter.py`
 - 用途：把 `agent_server_new` 的 `ExecutionPlan` 映射为 `DecisionIntent v1`
 
 ## Redis 集成测试

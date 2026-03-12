@@ -4,7 +4,7 @@
 统一告警码清单（含 owner/introduced_in/lifecycle）：`/docs/ALERT_CODES.md`
 运行时配置总表：`event_center_new/docs/runtime.md`
 运行时配置版本号与变更日志也在该文档中维护（`runtime_config_version`）。
-版本升级可使用：`bash scripts/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验、`--no-duplicate-log` 防重复日志、`--strict` 一键严格模式）。当前版本可用 `--print-current-version` 只读查询。
+版本升级可使用：`bash tools/local/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验、`--no-duplicate-log` 防重复日志、`--strict` 一键严格模式）。当前版本可用 `--print-current-version` 只读查询。
 
 `event_center_new` 是目标架构中的 **Event Center**，只负责事件层，不负责市场状态归纳，不负责交易决策，不负责执行。
 
@@ -420,38 +420,38 @@ python3 -m services.event_center_new.replay_main \
 `--strict` 等价于同时开启 `--fail-on-contract --fail-on-diff --fail-on-missing-stream`。
 `--summary-only` 仅输出摘要字段，适合守卫/CI 场景降低日志噪音。
 `--summary-only` 输出契约冻结为 `event_center_new/docs/replay_summary.schema.json`。
-仓库守卫 `scripts/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
-仓库守卫 `scripts/check_event_center_replay_strict_ci.sh` 固定 `--strict --summary-only` 调用路径，覆盖严格模式成功/失败分支。
-仓库守卫 `scripts/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
-仓库守卫 `scripts/check_event_center_runtime_guard.sh` 覆盖 `stop_on_error` 与 `self_check_only` 的运行时分支。
-仓库守卫 `scripts/check_event_center_runtime_doc_guard.sh` 校验 runtime 文档与 main.py 的环境变量集合强一致（双向）及版本日志一致性；可加 `--show-sets` 输出集合明细用于排障。
-仓库守卫 `scripts/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
-仓库守卫 `scripts/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
-仓库守卫 `scripts/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
-仓库守卫 `scripts/check_event_center_ci_doc_snapshot_guard.sh` 校验 `event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt` 与 `event_center_new/docs/ci_triage_snapshot_lines.txt`）。
-仓库守卫 `scripts/check_event_center_help_snapshot_sync_guard.sh` 校验聚合守卫 `--help` 的完整输出块与失败码顺序强一致（快照：`ci_help_block_snapshot.txt`/`ci_help_snapshot_lines.txt`）。
-`scripts/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow/ci-doc/help-snapshot-sync），便于日志检索与告警归类；可用 `--help` 查看失败码清单。
+仓库守卫 `tools/local/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
+仓库守卫 `tools/local/check_event_center_replay_strict_ci.sh` 固定 `--strict --summary-only` 调用路径，覆盖严格模式成功/失败分支。
+仓库守卫 `tools/local/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
+仓库守卫 `tools/local/check_event_center_runtime_guard.sh` 覆盖 `stop_on_error` 与 `self_check_only` 的运行时分支。
+仓库守卫 `tools/local/check_event_center_runtime_doc_guard.sh` 校验 runtime 文档与 main.py 的环境变量集合强一致（双向）及版本日志一致性；可加 `--show-sets` 输出集合明细用于排障。
+仓库守卫 `tools/local/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
+仓库守卫 `tools/local/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
+仓库守卫 `tools/local/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
+仓库守卫 `tools/local/check_event_center_ci_doc_snapshot_guard.sh` 校验 `event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt` 与 `event_center_new/docs/ci_triage_snapshot_lines.txt`）。
+仓库守卫 `tools/local/check_event_center_help_snapshot_sync_guard.sh` 校验聚合守卫 `--help` 的完整输出块与失败码顺序强一致（快照：`ci_help_block_snapshot.txt`/`ci_help_snapshot_lines.txt`）。
+`tools/local/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow/ci-doc/help-snapshot-sync），便于日志检索与告警归类；可用 `--help` 查看失败码清单。
 聚合入口：
 
-- `scripts/check_event_center_contract_schema_guards.sh`（契约/Schema 相关）
-- `scripts/check_event_center_runtime_family_guards.sh`（运行时相关）
-- `scripts/check_event_center_contract_guards.sh`（总入口，组合调用上面两个聚合）
+- `tools/local/check_event_center_contract_schema_guards.sh`（契约/Schema 相关）
+- `tools/local/check_event_center_runtime_family_guards.sh`（运行时相关）
+- `tools/local/check_event_center_contract_guards.sh`（总入口，组合调用上面两个聚合）
 
-可通过聚合入口 `scripts/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
+可通过聚合入口 `tools/local/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
 该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
-可用 `bash scripts/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫 + 接线检查）。
+可用 `bash tools/local/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫 + 接线检查）。
 接线检查策略可选：`--strict-wiring`（默认）或 `--lenient-wiring`。
-全仓库守卫支持 event_center 快速模式：`bash scripts/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
-如需跑 event_center 全量子守卫，可用：`bash scripts/check_new_arch_guards.sh --event-center-only`。
+全仓库守卫支持 event_center 快速模式：`bash tools/local/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
+如需跑 event_center 全量子守卫，可用：`bash tools/local/check_new_arch_guards.sh --event-center-only`。
 顶层入口也支持接线策略透传：可追加 `--lenient-wiring`（默认 `--strict-wiring`）。
 该 wiring 参数只影响 event_center 接线守卫，不改变其它模块守卫逻辑。
 
 CI 便捷入口：
 
-- `scripts/ci_event_center_quick_strict.sh`
-- `scripts/ci_event_center_quick_lenient.sh`
-- `scripts/ci_event_center_full_strict.sh`
-- `scripts/ci_event_center_emit_meta_header.sh`（输出统一 CI 元信息头部：run_mode/git_sha/runtime_config_version/ts_utc）
+- `tools/ci/event_center_quick_strict.sh`
+- `tools/ci/event_center_quick_lenient.sh`
+- `tools/ci/event_center_full_strict.sh`
+- `tools/ci/event_center_emit_meta_header.sh`（输出统一 CI 元信息头部：run_mode/git_sha/runtime_config_version/ts_utc）
 - `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫；失败自动上传 strict/lenient 诊断 artifact）
 - `.github/workflows/event-center-full.yml`（GitHub Actions：每日定时 + 手动触发，全量 strict 守卫；失败自动上传诊断 artifact）
 - `.github/actions/setup-utaker-python/action.yml`（quick/full 复用的 Python+依赖初始化 action）

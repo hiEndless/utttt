@@ -125,7 +125,7 @@ signal_event + active_events + MSL
 - 硬约束必须在确定性 gate 中生效
 - `ExecutionPlan` 是决策层终点，不是执行层入口代码
 - `HorizonPolicyGate` 在策略门控前执行，用于把跨周期冲突建议快速转为保守动作（例如 `wait_confirmation -> skip/watch`）
-- `HorizonPolicyGate` 已抽离为独立领域模块：`agent_server_new/domain/horizon_policy_gate.py`
+- `HorizonPolicyGate` 已抽离为独立领域模块：`services/agent_server_new/domain/horizon_policy_gate.py`
 - 账户/仓位/PnL 相关信息由 execution 层读取并做最终动作裁决，agent 不承担该部分权责
 - `HorizonPolicyGate` 规则已配置化：
   - `block_on_increase_policies`（默认：`wait_confirmation,reduce_risk`）
@@ -133,7 +133,7 @@ signal_event + active_events + MSL
   - 也可通过环境变量统一加载：
     - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`（CSV）
     - `AGENT_HORIZON_POLICY_CONFIG_JSON`（JSON，支持完整配置覆盖）
-  - 推荐使用样例文件：`agent_server_new/.env.example`
+  - 推荐使用样例文件：`services/agent_server_new/.env.example`
 
 ## 运行配置（建议）
 
@@ -180,7 +180,7 @@ signal_event + active_events + MSL
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`
   - HorizonPolicyGate JSON 配置（用于覆盖默认规则）
 
-可直接参考：`agent_server_new/.env.example`
+可直接参考：`services/agent_server_new/.env.example`
 
 ## Bootstrap
 
@@ -358,7 +358,7 @@ agent_server_new/
 建议拆成：
 
 - `services/market_state_engine/src/contracts.py`
-- `agent_server_new/domain/contracts.py`
+- `services/agent_server_new/domain/contracts.py`
 
 ## 必须切断的依赖
 
