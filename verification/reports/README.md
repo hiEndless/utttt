@@ -25,6 +25,11 @@ python3 -m verification.reports.aggregate_reports \
   --output verification/reports/summary.latest.json
 ```
 
+One-shot local pipeline (optional include memory summary):
+```bash
+bash tools/local/aggregate_and_check.sh --with-memory-summary
+```
+
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), and symbol memory summary reports (`symbol-memory-summary-run-v1`).
