@@ -34,6 +34,18 @@ def _load_report(path: Path) -> Dict[str, Any] | None:
     return out
 
 
+def _load_any_report(path: Path) -> Dict[str, Any] | None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    out = dict(data)
+    out["report_id"] = path.name
+    return out
+
+
 def _list_reports(report_dir: Path) -> List[Dict[str, Any]]:
     if not report_dir.is_dir():
         return []
@@ -44,6 +56,30 @@ def _list_reports(report_dir: Path) -> List[Dict[str, Any]]:
             continue
         items.append(item)
     items.sort(key=lambda x: _safe_int(x.get("finished_at_ms"), 0), reverse=True)
+    return items
+
+
+def _list_confidence_reports(report_dir: Path) -> List[Dict[str, Any]]:
+    if not report_dir.is_dir():
+        return []
+    items: List[Dict[str, Any]] = []
+    for p in sorted(report_dir.glob("*.json")):
+        item = _load_any_report(p)
+        if item is None:
+            continue
+        schema_version = str(item.get("schema_version") or "").strip()
+        has_metrics = isinstance(item.get("confidence_migration_metrics"), dict)
+        if schema_version != "execution-confidence-metrics-v1" and not has_metrics:
+            continue
+        items.append(item)
+    items.sort(
+        key=lambda x: max(
+            _safe_int(x.get("ts_ms"), 0),
+            _safe_int(x.get("ts"), 0),
+            _safe_int(x.get("finished_at_ms"), 0),
+        ),
+        reverse=True,
+    )
     return items
 
 
@@ -129,6 +165,75 @@ def create_app(*, report_dir: str = "verification/reports", validate_summary_sch
             raise HTTPException(status_code=500, detail="verification_summary_schema_validation_failed")
 
         return summary_payload
+
+    @app.get("/internal/verification/reports/execution-confidence")
+    async def execution_confidence(
+        trend_size: int = Query(default=5, ge=1, le=100),
+    ) -> Dict[str, Any]:
+        confidence_reports = _list_confidence_reports(report_root)
+        latest_metrics = {
+            "decide_requests_total": 0,
+            "confidence_only_requests": 0,
+            "decision_confidence_requests": 0,
+            "confidence_alias_mismatch_rejections": 0,
+        }
+        latest_report_id = ""
+        latest_ts_ms = 0
+        if confidence_reports:
+            latest = confidence_reports[0]
+            metrics_raw = dict(latest.get("confidence_migration_metrics") or {})
+            latest_metrics = {
+                "decide_requests_total": _safe_int(metrics_raw.get("decide_requests_total"), 0),
+                "confidence_only_requests": _safe_int(metrics_raw.get("confidence_only_requests"), 0),
+                "decision_confidence_requests": _safe_int(metrics_raw.get("decision_confidence_requests"), 0),
+                "confidence_alias_mismatch_rejections": _safe_int(
+                    metrics_raw.get("confidence_alias_mismatch_rejections"), 0
+                ),
+            }
+            latest_report_id = str(latest.get("report_id") or "")
+            latest_ts_ms = max(
+                _safe_int(latest.get("ts_ms"), 0),
+                _safe_int(latest.get("ts"), 0),
+                _safe_int(latest.get("finished_at_ms"), 0),
+            )
+
+        denom = latest_metrics["confidence_only_requests"] + latest_metrics["decision_confidence_requests"]
+        legacy_ratio = 0.0 if denom <= 0 else round(float(latest_metrics["confidence_only_requests"]) / float(denom), 6)
+
+        trend: List[Dict[str, Any]] = []
+        for item in confidence_reports[: int(trend_size)]:
+            metrics_raw = dict(item.get("confidence_migration_metrics") or {})
+            confidence_only_requests = _safe_int(metrics_raw.get("confidence_only_requests"), 0)
+            decision_confidence_requests = _safe_int(metrics_raw.get("decision_confidence_requests"), 0)
+            trend_denom = confidence_only_requests + decision_confidence_requests
+            trend_ratio = 0.0 if trend_denom <= 0 else round(float(confidence_only_requests) / float(trend_denom), 6)
+            trend.append(
+                {
+                    "report_id": str(item.get("report_id") or ""),
+                    "ts_ms": max(
+                        _safe_int(item.get("ts_ms"), 0),
+                        _safe_int(item.get("ts"), 0),
+                        _safe_int(item.get("finished_at_ms"), 0),
+                    ),
+                    "confidence_only_requests": confidence_only_requests,
+                    "decision_confidence_requests": decision_confidence_requests,
+                    "confidence_alias_mismatch_rejections": _safe_int(
+                        metrics_raw.get("confidence_alias_mismatch_rejections"), 0
+                    ),
+                    "legacy_confidence_usage_ratio": trend_ratio,
+                }
+            )
+
+        return {
+            "schema_version": "execution-confidence-summary-v1",
+            "report_count": len(confidence_reports),
+            "latest_report_id": latest_report_id,
+            "latest_ts_ms": latest_ts_ms,
+            "metrics": latest_metrics,
+            "legacy_confidence_usage_ratio": legacy_ratio,
+            "trend": trend,
+            "trend_size": int(trend_size),
+        }
 
     @app.get("/internal/verification/reports/{report_id}")
     async def get_report(report_id: str) -> Dict[str, Any]:

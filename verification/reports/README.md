@@ -76,3 +76,8 @@ python3 -m verification.reports.check_semantic_warning_budget \
   --audit verification/reports/semantic_audit.latest.json \
   --budget verification/reports/semantic_warning_budget.yaml
 ```
+
+Verification API execution confidence summary:
+```bash
+curl -s http://127.0.0.1:9970/internal/verification/reports/execution-confidence | jq
+```

@@ -113,3 +113,60 @@ def test_verification_api_summary_schema_validation_enabled_fails_on_invalid_pay
     resp = client.get("/internal/verification/reports/summary", params={"window_hours": 24})
     assert resp.status_code == 500
     assert resp.json().get("detail") == "verification_summary_schema_validation_failed"
+
+
+def test_verification_api_execution_confidence_summary_empty(tmp_path: Path) -> None:
+    reports = tmp_path / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    app = create_app(report_dir=str(reports))
+    client = TestClient(app)
+
+    resp = client.get("/internal/verification/reports/execution-confidence")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body.get("schema_version") == "execution-confidence-summary-v1"
+    assert int(body.get("report_count") or 0) == 0
+    assert float(body.get("legacy_confidence_usage_ratio") or 0.0) == 0.0
+    assert body.get("trend") == []
+
+
+def test_verification_api_execution_confidence_summary_with_trend(tmp_path: Path) -> None:
+    reports = tmp_path / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    payload_latest = {
+        "schema_version": "execution-confidence-metrics-v1",
+        "ts_ms": 2000,
+        "confidence_migration_metrics": {
+            "decide_requests_total": 10,
+            "confidence_only_requests": 2,
+            "decision_confidence_requests": 8,
+            "confidence_alias_mismatch_rejections": 1,
+        },
+    }
+    payload_older = {
+        "schema_version": "execution-confidence-metrics-v1",
+        "ts_ms": 1000,
+        "confidence_migration_metrics": {
+            "decide_requests_total": 5,
+            "confidence_only_requests": 1,
+            "decision_confidence_requests": 4,
+            "confidence_alias_mismatch_rejections": 0,
+        },
+    }
+    (reports / "exec-conf-2.json").write_text(json.dumps(payload_latest, ensure_ascii=False), encoding="utf-8")
+    (reports / "exec-conf-1.json").write_text(json.dumps(payload_older, ensure_ascii=False), encoding="utf-8")
+    app = create_app(report_dir=str(reports))
+    client = TestClient(app)
+
+    resp = client.get("/internal/verification/reports/execution-confidence", params={"trend_size": 2})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body.get("schema_version") == "execution-confidence-summary-v1"
+    assert int(body.get("report_count") or 0) == 2
+    assert body.get("latest_report_id") == "exec-conf-2.json"
+    assert int(body.get("latest_ts_ms") or 0) == 2000
+    assert float(body.get("legacy_confidence_usage_ratio") or 0.0) == 0.2
+    trend = list(body.get("trend") or [])
+    assert len(trend) == 2
+    assert trend[0]["report_id"] == "exec-conf-2.json"
+    assert float(trend[0]["legacy_confidence_usage_ratio"]) == 0.2
