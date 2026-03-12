@@ -35,7 +35,11 @@
     "agent_readyz_status_level",
     "agent_readyz_warning_count",
     "agent_readyz_error_count",
-    "agent_readyz_errors"
+    "agent_readyz_errors",
+    "decision_trace_schema_guard_report_count",
+    "latest_decision_trace_schema_guard_report_path",
+    "decision_trace_schema_guard_invalid_records",
+    "decision_trace_schema_guard_affected_event_count"
   ],
   "properties": {
     "schema_version": {
@@ -235,6 +239,21 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "decision_trace_schema_guard_report_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_decision_trace_schema_guard_report_path": {
+      "type": "string"
+    },
+    "decision_trace_schema_guard_invalid_records": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "decision_trace_schema_guard_affected_event_count": {
+      "type": "integer",
+      "minimum": 0
     }
   }
 }

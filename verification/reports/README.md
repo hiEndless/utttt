@@ -29,6 +29,13 @@ bash tools/local/run_agent_readyz_report.sh \
 bash tools/local/run_agent_readyz_report.sh --help
 ```
 
+Decision trace schema guard report (optional):
+```bash
+bash tools/local/run_agent_decision_trace_schema_report.sh \
+  --output verification/reports/agent_decision_trace_schema_guard.latest.json
+bash tools/local/run_agent_decision_trace_schema_report.sh --help
+```
+
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
@@ -46,6 +53,7 @@ Shortcut wrapper (defaults to `verification/reports/summary.latest.json`):
 bash tools/local/verify_report_aggregate.sh --compact
 bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
 bash tools/local/verify_report_aggregate.sh --with-agent-readyz --compact
+bash tools/local/verify_report_aggregate.sh --with-decision-trace-schema-guard --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
@@ -53,6 +61,7 @@ One-shot local pipeline (optional include memory summary):
 ```bash
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
+bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
 bash tools/local/aggregate_and_check.sh --help
 ```
 
@@ -79,6 +88,7 @@ Notes:
   - `memory_alert_code_count/memory_top_alert_codes`（告警码维度 TopN 与受影响 symbol 集合）
   - `execution_confidence_*`（execution 迁移指标快照与 `execution_legacy_confidence_usage_ratio`）
   - `agent_readyz_*`（agent 可用性分级快照：`green/yellow/red`、warning/error 计数）
+  - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
 
 Check thresholds:
 ```bash

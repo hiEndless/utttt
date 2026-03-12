@@ -67,6 +67,18 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
             "errors": ["event_recorder_low_disk", "market_state_unreachable"],
             "checks": {"market_state_healthz": {"ok": False}},
         },
+        {
+            "schema_version": "agent-decision-trace-schema-guard-report-v1",
+            "generated_at_ms": 3600,
+            "summary": {
+                "total_guard_records": 4,
+                "invalid_guard_records": 2,
+                "affected_event_count": 1,
+            },
+            "events": [
+                {"event_id": "evt-1", "hits": 2, "max_error_count": 3}
+            ],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -98,3 +110,6 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["agent_readyz_warning_count"] == 1
     assert out["agent_readyz_error_count"] == 2
     assert out["agent_readyz_errors"] == ["event_recorder_low_disk", "market_state_unreachable"]
+    assert out["decision_trace_schema_guard_report_count"] == 1
+    assert out["decision_trace_schema_guard_invalid_records"] == 2
+    assert out["decision_trace_schema_guard_affected_event_count"] == 1

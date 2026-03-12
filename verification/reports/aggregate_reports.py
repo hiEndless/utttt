@@ -32,6 +32,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "symbol-memory-summary-run-v1",
                 "execution-confidence-metrics-v1",
                 "agent-readyz-report-v1",
+                "agent-decision-trace-schema-guard-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -82,6 +83,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         )
     ]
     agent_readyz_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-readyz-report-v1"]
+    decision_trace_schema_guard_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-decision-trace-schema-guard-report-v1"
+    ]
 
     total = len(verification_reports)
     passed = 0
@@ -246,6 +250,24 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             agent_readyz_error_count = len(normalized_errors)
             agent_readyz_errors = sorted(set(normalized_errors))
 
+    decision_trace_schema_guard_report_count = len(decision_trace_schema_guard_reports)
+    latest_decision_trace_schema_guard_report_path = ""
+    decision_trace_schema_guard_invalid_records = 0
+    decision_trace_schema_guard_affected_event_count = 0
+    if decision_trace_schema_guard_reports:
+        latest_dt_guard = max(
+            decision_trace_schema_guard_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_decision_trace_schema_guard_report_path = str(latest_dt_guard.get("_path") or "")
+        summary = dict(latest_dt_guard.get("summary") or {})
+        decision_trace_schema_guard_invalid_records = _to_int(summary.get("invalid_guard_records"), 0)
+        decision_trace_schema_guard_affected_event_count = _to_int(summary.get("affected_event_count"), 0)
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -280,6 +302,10 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "agent_readyz_warning_count": agent_readyz_warning_count,
         "agent_readyz_error_count": agent_readyz_error_count,
         "agent_readyz_errors": agent_readyz_errors,
+        "decision_trace_schema_guard_report_count": decision_trace_schema_guard_report_count,
+        "latest_decision_trace_schema_guard_report_path": latest_decision_trace_schema_guard_report_path,
+        "decision_trace_schema_guard_invalid_records": decision_trace_schema_guard_invalid_records,
+        "decision_trace_schema_guard_affected_event_count": decision_trace_schema_guard_affected_event_count,
     }
 
 
