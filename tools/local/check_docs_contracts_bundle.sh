@@ -32,7 +32,10 @@ bash tools/local/check_cli_help_snapshot_guard.sh
 echo "[docs 9/10] contract docs canonical layout guard"
 bash tools/local/check_contract_docs_canonical_layout_guard.sh
 
-echo "[docs 10/10] release triage block guard"
+echo "[docs 10/11] release triage block guard"
 bash tools/local/check_release_triage_block_guard.sh
+
+echo "[docs 11/11] release docs repro alignment guard"
+bash tools/local/check_release_docs_repro_alignment_guard.sh
 
 echo "[passed] docs/contracts bundle guard check"

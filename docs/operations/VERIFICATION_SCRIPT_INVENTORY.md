@@ -27,6 +27,7 @@
   - 失败提示：统一建议先执行 `bash tools/local/check_release_ready.sh`
 - 发布文档排障块一致性守卫：`tools/local/check_release_triage_block_guard.sh`
   - 支持：`bash tools/local/check_release_triage_block_guard.sh --show-blocks`
+- 发布文档最小复现片段一致性守卫：`tools/local/check_release_docs_repro_alignment_guard.sh`
 - prod provider 门禁守卫：`tools/local/check_prod_provider_modes_guard.sh`
 - 来源语义守卫：`tools/local/check_source_semantics_guard.sh`
 - pipeline 语义字段锚点守卫：`tools/local/check_pipeline_semantic_terms_doc_guard.sh`
