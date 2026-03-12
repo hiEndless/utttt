@@ -1,5 +1,11 @@
 # providers/static_structure_providers.py + providers/noop.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/static_structure_providers.py` 与 `services/feature_service/src/providers/noop.py`
+- 兼容壳：`feature_service/providers/static_structure_providers.py` 与 `feature_service/providers/noop.py`
+
+
 ## 功能作用
 
 这两个模块提供兜底 provider：

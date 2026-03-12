@@ -1,5 +1,11 @@
 # contracts.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/contracts.py`
+- 兼容壳：`feature_service/contracts.py`
+
+
 ## 功能作用
 
 `contracts.py` 定义 feature_service 的对外响应契约模型：

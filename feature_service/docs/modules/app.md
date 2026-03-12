@@ -1,5 +1,11 @@
 # app.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/app.py`
+- 兼容壳：`feature_service/app.py`
+
+
 ## 功能作用
 
 `app.py` 负责创建 FastAPI 应用实例，并完成 `FeatureService` 的默认装配。

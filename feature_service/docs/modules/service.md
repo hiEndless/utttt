@@ -1,5 +1,11 @@
 # service.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/service.py`
+- 兼容壳：`feature_service/service.py`
+
+
 ## 功能作用
 
 `service.py` 是 feature_service 的业务核心层，职责包括：

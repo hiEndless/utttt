@@ -1,5 +1,12 @@
 # providers/market_structure_migrated 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/market_structure_migrated/`
+- 兼容壳：`feature_service/providers/market_structure_migrated/`
+- 说明：兼容目录中绝大多数文件已切为转发壳，`behavioral/behavior_output.py` 保留旧路径猴子补丁兼容实现。
+
+
 ## 功能作用
 
 `market_structure_migrated/` 是结构计算核心目录，承载从旧链路迁移的领域算法实现。

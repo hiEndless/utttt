@@ -1,5 +1,11 @@
 # main.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/runtime/main.py`
+- 兼容壳：`feature_service/main.py`
+
+
 ## 功能作用
 
 `main.py` 是进程启动入口，负责读取环境变量并启动 Uvicorn：

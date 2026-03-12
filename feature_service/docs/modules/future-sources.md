@@ -1,5 +1,11 @@
 # 未来数据源骨架（news/social/onchain）
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/future_source_providers.py` 与 `services/feature_service/src/ports/{news_provider,social_provider,onchain_provider}.py`
+- 兼容壳：`feature_service/providers/future_source_providers.py` 与 `feature_service/ports/{news_provider,social_provider,onchain_provider}.py`
+
+
 ## 当前状态
 
 已新增预留骨架，但尚未接入 `FeatureService` 主输出链路。

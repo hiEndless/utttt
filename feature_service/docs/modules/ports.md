@@ -1,5 +1,11 @@
 # ports 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/ports/*.py`
+- 兼容壳：`feature_service/ports/*.py`
+
+
 ## 功能作用
 
 `ports/` 定义 feature_service 对底层数据能力的抽象接口（Protocol）：

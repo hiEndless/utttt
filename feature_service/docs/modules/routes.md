@@ -1,5 +1,11 @@
 # routes.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/routes.py`
+- 兼容壳：`feature_service/routes.py`
+
+
 ## 功能作用
 
 `routes.py` 负责 HTTP 协议层处理，核心职责：

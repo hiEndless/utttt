@@ -1,5 +1,11 @@
 # providers/bundle.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/bundle.py`
+- 兼容壳：`feature_service/providers/bundle.py`
+
+
 ## 功能作用
 
 `bundle.py` 负责 provider 的组合与装配策略，核心包含：

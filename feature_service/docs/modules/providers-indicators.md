@@ -1,5 +1,11 @@
 # providers/indicators_provider.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/indicators_provider.py`
+- 兼容壳：`feature_service/providers/indicators_provider.py`
+
+
 ## 功能作用
 
 `RedisIndicatorsProvider` 负责读取指标数据：

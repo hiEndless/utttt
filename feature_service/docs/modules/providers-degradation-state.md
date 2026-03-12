@@ -1,5 +1,11 @@
 # providers/degradation_state.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/degradation_state.py`
+- 兼容壳：`feature_service/providers/degradation_state.py`
+
+
 ## 功能作用
 
 该模块维护“单次请求”的降级原因集合，使用 `ContextVar` 持有状态：

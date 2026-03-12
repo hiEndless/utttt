@@ -1,5 +1,11 @@
 # providers/fallback_structure_providers.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/fallback_structure_providers.py`
+- 兼容壳：`feature_service/providers/fallback_structure_providers.py`
+
+
 ## 功能作用
 
 该模块提供通用 fallback 包装器：

@@ -1,5 +1,11 @@
 # normalizers 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/normalizers/*.py`
+- 兼容壳：`feature_service/normalizers/*.py`
+
+
 ## 功能作用
 
 `normalizers/response_normalizer.py` 负责响应归一化，主要能力：

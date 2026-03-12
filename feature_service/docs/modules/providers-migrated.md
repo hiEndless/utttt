@@ -1,5 +1,11 @@
 # providers/migrated_structure_providers.py 模块说明
 
+## 路径
+
+- canonical：`services/feature_service/src/providers/migrated_structure_providers.py`
+- 兼容壳：`feature_service/providers/migrated_structure_providers.py`
+
+
 ## 功能作用
 
 该模块是迁移版结构 provider 入口，将四类结构能力映射到 `market_structure_migrated` 子模块：
