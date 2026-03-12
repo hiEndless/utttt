@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# CI 强约束：禁止在 CI 环境通过 skip 开关绕过关键守卫。
+if [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  if [[ "${VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT:-0}" == "1" ]]; then
+    echo "[failed] VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1 is not allowed in CI"
+    exit 2
+  fi
+  if [[ "${VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL:-0}" == "1" ]]; then
+    echo "[failed] VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1 is not allowed in CI"
+    exit 2
+  fi
+fi
+
 bash tools/local/check_structure.sh
 bash tools/local/check_script_compat_whitelist.sh
 if ! bash tools/local/check_docs_contracts_bundle.sh; then
