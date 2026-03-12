@@ -57,19 +57,34 @@ def create_app() -> FastAPI:
     submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
     sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "exchange") or "exchange").strip().lower()
     exchange_dry_run = _is_true_env("EXECUTION_SINK_EXCHANGE_DRY_RUN", "true")
+    legacy_mock_enabled = _is_true_env("EXECUTION_SINK_ENABLE_LEGACY_MOCK", "false")
 
     if runtime_profile in {"prod", "production"}:
         if state_provider_mode != "redis":
             raise RuntimeError("production profile requires EXECUTION_STATE_PROVIDER_MODE=redis")
+        if submit_enabled and sink_mode == "mock":
+            raise RuntimeError("production profile forbids EXECUTION_SINK_MODE=mock")
         if submit_enabled and sink_mode == "exchange" and exchange_dry_run:
             raise RuntimeError("production profile forbids EXECUTION_SINK_EXCHANGE_DRY_RUN=true")
 
     execution_sink = None
     if submit_enabled:
-        if sink_mode == "exchange":
+        normalized_sink_mode = sink_mode
+        normalized_exchange_dry_run = exchange_dry_run
+        if sink_mode == "mock":
+            if not legacy_mock_enabled:
+                raise RuntimeError(
+                    "unsupported EXECUTION_SINK_MODE=mock; use EXECUTION_SINK_MODE=exchange "
+                    "with EXECUTION_SINK_EXCHANGE_DRY_RUN=true, or set "
+                    "EXECUTION_SINK_ENABLE_LEGACY_MOCK=true for temporary compatibility"
+                )
+            normalized_sink_mode = "exchange"
+            normalized_exchange_dry_run = True
+            logger.warning("execution_service legacy mock sink enabled; mapped to exchange dry_run=true")
+        if normalized_sink_mode == "exchange":
             execution_sink = ExchangeExecutionSink(
                 venue=str(os.getenv("EXECUTION_SINK_EXCHANGE_VENUE", "binance") or "binance").strip(),
-                dry_run=exchange_dry_run,
+                dry_run=normalized_exchange_dry_run,
                 api_base_url=str(
                     os.getenv("EXECUTION_SINK_EXCHANGE_API_BASE_URL", "https://api.binance.com")
                     or "https://api.binance.com"
@@ -87,7 +102,7 @@ def create_app() -> FastAPI:
                 getattr(execution_sink, "dry_run", True),
             )
         else:
-            raise RuntimeError(f"unsupported EXECUTION_SINK_MODE={sink_mode}")
+            raise RuntimeError(f"unsupported EXECUTION_SINK_MODE={normalized_sink_mode}")
 
     idempotency_enabled = str(os.getenv("EXECUTION_IDEMPOTENCY_ENABLED", "true") or "true").strip().lower() in {
         "1",

@@ -368,6 +368,7 @@
 - `EXECUTION_RISK_POLICY_KEY_TEMPLATE`
 - `EXECUTION_SUBMIT_ENABLED`
 - `EXECUTION_SINK_MODE=exchange`（默认 `exchange`）
+- `EXECUTION_SINK_ENABLE_LEGACY_MOCK=true|false`（默认 `false`；仅当历史配置仍使用 `EXECUTION_SINK_MODE=mock` 时开启）
 - `EXECUTION_SINK_EXCHANGE_VENUE`（当 `EXECUTION_SINK_MODE=exchange`）
 - `EXECUTION_SINK_EXCHANGE_DRY_RUN`（默认 `true`）
 - `EXECUTION_SINK_EXCHANGE_API_BASE_URL`
@@ -398,6 +399,7 @@
 
 补充说明（exchange sink）：
 - `dry_run=true` 时，`submit/reconcile` 不会请求真实交易所，会在返回结果中提供 `request` 快照用于联调核对。
+- `EXECUTION_SINK_MODE=mock` 不再作为默认模式；若为兼容历史配置必须显式开启 `EXECUTION_SINK_ENABLE_LEGACY_MOCK=true`，并会被映射到 `exchange + dry_run=true`。
 - `dry_run=false` 时，当前提供 Binance 签名请求骨架（`POST/GET /api/v3/order`），网络或鉴权异常将由 submit/reconcile 重试与降级逻辑统一处理。
 - `reconcile` 会将 Binance 原始状态映射为标准 `status`：
   - `FILLED -> filled`

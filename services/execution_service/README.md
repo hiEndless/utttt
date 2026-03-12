@@ -154,6 +154,7 @@ execution_service/
 - 执行下沉（可选）：
   - `EXECUTION_SUBMIT_ENABLED=true|false`（默认 `false`）
   - `EXECUTION_SINK_MODE=exchange`（默认 `exchange`）
+  - `EXECUTION_SINK_ENABLE_LEGACY_MOCK=true|false`（默认 `false`，仅用于临时兼容旧 `mock` 模式）
   - `EXECUTION_SINK_EXCHANGE_VENUE=binance`
   - `EXECUTION_SINK_EXCHANGE_DRY_RUN=true|false`（默认 `true`，建议联调阶段保持开启）
   - `EXECUTION_SINK_EXCHANGE_API_BASE_URL=https://api.binance.com`
@@ -165,6 +166,7 @@ execution_service/
   - `EXECUTION_SUBMIT_BACKOFF_BASE_S`（默认 `0.2`）
   - `EXECUTION_RECONCILE_MAX_RETRIES`（默认 `0`）
   - `EXECUTION_RECONCILE_BACKOFF_BASE_S`（默认 `0.2`）
+  - 兼容说明：若历史配置仍使用 `EXECUTION_SINK_MODE=mock`，需显式设置 `EXECUTION_SINK_ENABLE_LEGACY_MOCK=true`，系统会映射为 `exchange + dry_run=true`
 - 幂等缓存（建议开启）：
   - `EXECUTION_IDEMPOTENCY_ENABLED=true|false`（默认 `true`）
   - `EXECUTION_IDEMPOTENCY_MODE=memory|redis`（默认 `memory`）

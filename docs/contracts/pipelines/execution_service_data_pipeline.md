@@ -622,7 +622,7 @@ Service 会把以下信息写入 decision_state（如可用）：
 
 | 变量 | 默认值 | 含义 |
 |---|---|---|
-| EXECUTION_STATE_PROVIDER_MODE | stub | stub/redis（读取 position/account/risk_policy） |
+| EXECUTION_STATE_PROVIDER_MODE | redis | 仅支持 redis（读取 position/account/risk_policy） |
 | EXECUTION_REDIS_URL | redis://127.0.0.1:6379/0 | Provider Redis URL |
 | EXECUTION_POSITION_KEY_TEMPLATE | execution:position:{exchange}:{account_id}:{symbol} | 仓位 key 模板 |
 | EXECUTION_ACCOUNT_KEY_TEMPLATE | execution:account:{exchange}:{account_id} | 账户 key 模板 |
@@ -635,7 +635,8 @@ Service 会把以下信息写入 decision_state（如可用）：
 | 变量 | 默认值 | 含义 |
 |---|---|---|
 | EXECUTION_SUBMIT_ENABLED | false | 是否启用 submit |
-| EXECUTION_SINK_MODE | mock | mock/exchange |
+| EXECUTION_SINK_MODE | exchange | 默认 exchange（历史 mock 仅兼容模式） |
+| EXECUTION_SINK_ENABLE_LEGACY_MOCK | false | 是否允许历史 `EXECUTION_SINK_MODE=mock` 兼容映射 |
 | EXECUTION_SUBMIT_MAX_RETRIES | 0 | submit 重试次数 |
 | EXECUTION_SUBMIT_BACKOFF_BASE_S | 0.2 | submit 退避基数 |
 
