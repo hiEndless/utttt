@@ -150,6 +150,9 @@ def test_market_state_service_ok_status():
         assert isinstance(out.get("msl_meta"), dict)
         assert isinstance(out.get("msl_bundle"), dict)
         assert isinstance(out.get("cross_horizon"), dict)
+        semantic_contract = dict((out.get("state_features") or {}).get("semantic_contract") or {})
+        assert semantic_contract.get("horizon_confidence", {}).get("canonical_field") == "horizons.{hz}.confidence"
+        assert semantic_contract.get("horizon_confidence", {}).get("compat_alias") == "horizons.{hz}.horizon_confidence"
         assert "suggested_policy" in out.get("cross_horizon")
         assert "reason_code" not in out
         assert "sentiment_state" not in dict(out.get("msl") or {})

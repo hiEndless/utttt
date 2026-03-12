@@ -257,6 +257,23 @@ class MarketStateService:
         msl, features = self._engine.build(exchange=exchange, symbol=symbol, market_structure=sanitized_market_structure)
         msl_payload = msl.to_llm_dict()
         state_features_payload = features.to_dict()
+        # 字段语义锚点：降低跨服务消费时的隐式语义漂移风险。
+        state_features_payload["semantic_contract"] = {
+            "horizon_confidence": {
+                "canonical_field": "horizons.{hz}.confidence",
+                "compat_alias": "horizons.{hz}.horizon_confidence",
+                "status": "compat_alias",
+            },
+            "risk_flags": {
+                "canonical_semantics": "categorical_flags",
+                "detail_field": "risk_metrics",
+                "scope": ["orderbook", "open_interest"],
+            },
+            "market_state_vs_msl": {
+                "state_features": "intermediate_features_for_audit_and_debug",
+                "msl": "final_fused_state_for_agent_consumption",
+            },
+        }
         anomaly_flags = [str(x) for x in list(features.anomalies.get("flags") or []) if x]
         msl_meta = {}
         if hasattr(self._engine, "get_last_msl_meta"):

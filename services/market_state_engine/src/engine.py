@@ -41,6 +41,22 @@ def _normalize_risk_flags(value: Any) -> List[str]:
     return []
 
 
+def _extract_confidence(horizon_obj: Dict[str, Any]) -> float:
+    """统一周期置信度语义：优先读取 confidence，兼容 horizon_confidence。"""
+    source = horizon_obj.get("confidence")
+    if source is None:
+        source = horizon_obj.get("horizon_confidence")
+    try:
+        value = float(source or 0.0)
+    except Exception:
+        value = 0.0
+    if value < 0.0:
+        return 0.0
+    if value > 1.0:
+        return 1.0
+    return value
+
+
 @dataclass(frozen=True)
 class MarketStateFeatures:
 
@@ -113,6 +129,9 @@ class MarketStateEngine:
         mid_mb = _safe_dict(mid_hz.get("market_background"))
         mid_pb = _safe_dict(mid_hz.get("participant_background"))
         long_mb = _safe_dict(long_hz.get("market_background"))
+        short_conf = _extract_confidence(short_hz)
+        mid_conf = _extract_confidence(mid_hz)
+        long_conf = _extract_confidence(long_hz)
 
         horizons_out = {
             "short_term": {
@@ -124,8 +143,8 @@ class MarketStateEngine:
                     "volatility_state": short_mb.get("volatility_state"),
                 },
                 "participant_background": _safe_dict(short_hz.get("participant_background")),
-                "confidence": float(short_hz.get("confidence") or 0.0),
-                "horizon_confidence": float(short_hz.get("confidence") or 0.0),
+                "confidence": short_conf,
+                "horizon_confidence": short_conf,
             },
             "mid_term": {
                 "market_background": {
@@ -136,8 +155,8 @@ class MarketStateEngine:
                     "volatility_state": mid_mb.get("volatility_state"),
                 },
                 "participant_background": mid_pb,
-                "confidence": float(mid_hz.get("confidence") or 0.0),
-                "horizon_confidence": float(mid_hz.get("confidence") or 0.0),
+                "confidence": mid_conf,
+                "horizon_confidence": mid_conf,
             },
             "long_term": {
                 "market_background": {
@@ -148,8 +167,8 @@ class MarketStateEngine:
                     "volatility_state": long_mb.get("volatility_state"),
                 },
                 "participant_background": _safe_dict(long_hz.get("participant_background")),
-                "confidence": float(long_hz.get("confidence") or 0.0),
-                "horizon_confidence": float(long_hz.get("confidence") or 0.0),
+                "confidence": long_conf,
+                "horizon_confidence": long_conf,
             },
         }
 

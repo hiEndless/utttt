@@ -85,6 +85,35 @@ def test_aggregate_features_keeps_legacy_and_explicit_horizon_confidence() -> No
         assert node["horizon_confidence"] == node["confidence"]
 
 
+def test_aggregate_features_confidence_fallback_and_clamp() -> None:
+    engine = MarketStateEngine()
+    features = engine.aggregate_features(
+        exchange="binance",
+        symbol="ETHUSDT",
+        market_structure={
+            "horizons": {
+                "fused": {
+                    "horizons": {
+                        "short_term": {"horizon_confidence": 1.6},
+                        "mid_term": {"confidence": -0.2},
+                        "long_term": {},
+                    }
+                }
+            },
+            "pre_decision_structure": {"short_term": {}, "mid_term": {}, "long_term": {}},
+        },
+    )
+    short_term = dict(features.horizons.get("short_term") or {})
+    mid_term = dict(features.horizons.get("mid_term") or {})
+    long_term = dict(features.horizons.get("long_term") or {})
+    assert short_term["confidence"] == 1.0
+    assert short_term["horizon_confidence"] == 1.0
+    assert mid_term["confidence"] == 0.0
+    assert mid_term["horizon_confidence"] == 0.0
+    assert long_term["confidence"] == 0.0
+    assert long_term["horizon_confidence"] == 0.0
+
+
 def test_aggregate_features_normalizes_risk_flags_and_keeps_risk_metrics() -> None:
     engine = MarketStateEngine()
     features = engine.aggregate_features(

@@ -251,8 +251,8 @@ SelectedEvent 的完整语义契约参考（上游实现对齐版文档）：
 |---|---|:---:|---|
 | horizons.{hz}.market_background | object | Y | 周期背景摘要 |
 | horizons.{hz}.participant_background | object | Y | 参与者背景（透传上游对象） |
-| horizons.{hz}.confidence | number | Y | 上游 horizon confidence（缺失为 0.0） |
-| horizons.{hz}.horizon_confidence | number | Y | 同 confidence（兼容字段） |
+| horizons.{hz}.confidence | number | Y | canonical 置信度（优先读 `confidence`，兼容 `horizon_confidence`，并夹紧到 `[0,1]`） |
+| horizons.{hz}.horizon_confidence | number | Y | `confidence` 的兼容别名（值始终一致） |
 
 其中 `market_background` 字段：
 
@@ -597,6 +597,8 @@ MSL 的枚举集合以 JSON Schema 为准：[msl.schema.json](services/market_st
 | raw_market_structure | object | Y | 清洗后的上游原始结构（审计/调试） |
 | ts | int | Y | 响应生成时间戳（ms） |
 | ts_ms | int | Y | 同 ts（兼容字段） |
+
+补充：`state_features.semantic_contract` 提供关键语义锚点（confidence 主从字段、risk_flags 与 risk_metrics 边界、state_features 与 msl 语义分工）。
 
 组装实现：[service.py](services/market_state_engine/src/service.py#L316-L328) 与 [routes.py](services/market_state_engine/src/routes.py#L33-L38)
 

@@ -107,7 +107,9 @@ MSL 契约文件：
   - 仅包含结构状态字段，不包含 `sentiment_state`
 - `state_features`
   - 引擎聚合后的中间状态特征
+  - `horizons.{hz}.confidence` 为 canonical 字段；`horizons.{hz}.horizon_confidence` 为兼容别名（两者值保持一致）
   - 语义约定：`risk_flags` 为 `array[string]`；若需保留 map 明细使用 `risk_metrics`
+  - `state_features.semantic_contract` 提供字段语义锚点，供下游消费端做稳定映射
   - 当接入 `selected_event_provider` 时，`state_features.evidence` 额外包含：
     - `selected_event_sources`（来源集合）
     - `selected_event_schema_versions`（trace.schema_version 集合）
