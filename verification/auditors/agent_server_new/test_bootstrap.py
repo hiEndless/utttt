@@ -5,12 +5,10 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
-from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.app.bootstrap import create_trade_event_workflow_from_env
 
@@ -18,12 +16,16 @@ from services.agent_server_new.app.bootstrap import create_trade_event_workflow_
 def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch):
     monkeypatch.setenv("AGENT_MARKET_STATE_BASE_URL", "http://localhost:8300")
     monkeypatch.setenv("AGENT_MARKET_STATE_TIMEOUT_S", "9")
-    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
     monkeypatch.delenv("AGENT_EXECUTION_ENABLED", raising=False)
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._market_state, HttpMarketStateProvider)  # noqa: SLF001
     assert isinstance(wf._position_context, HttpExecutionPositionContextProvider)  # noqa: SLF001
-    assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
+    assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
     assert wf._execution_decider is None  # noqa: SLF001
     assert wf._symbol_memory_provider is None  # noqa: SLF001
     assert wf._symbol_memory_recorder is None  # noqa: SLF001
@@ -33,10 +35,13 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_allows_stub_position_context_in_dev(monkeypatch):
+def test_create_trade_event_workflow_from_env_forbid_stub_position_context(monkeypatch):
     monkeypatch.setenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "stub")
-    wf = create_trade_event_workflow_from_env()
-    assert isinstance(wf._position_context, StubPositionContextProvider)  # noqa: SLF001
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when stub position context mode is used"
+    except RuntimeError as exc:
+        assert "unsupported AGENT_POSITION_CONTEXT_PROVIDER_MODE=stub" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkeypatch):
@@ -51,7 +56,7 @@ def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkey
     assert wf._active_events.__class__.__name__ == "_FakeRedisActiveEventsProvider"  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_events_redis_failed(monkeypatch):
+def test_create_trade_event_workflow_from_env_fallbacks_to_null_when_active_events_redis_failed(monkeypatch):
     import services.agent_server_new.app.bootstrap as mod
 
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
@@ -64,10 +69,13 @@ def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_even
     assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_explicit_stub_active_events(monkeypatch):
+def test_create_trade_event_workflow_from_env_forbid_stub_active_events(monkeypatch):
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
-    wf = create_trade_event_workflow_from_env()
-    assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when stub active events mode is used"
+    except RuntimeError as exc:
+        assert "unsupported AGENT_ACTIVE_EVENTS_PROVIDER_MODE=stub" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_prod_requires_redis_active_events(monkeypatch):
@@ -97,27 +105,14 @@ def test_create_trade_event_workflow_from_env_prod_forbid_redis_fallback(monkeyp
         assert "failed to initialize redis active events provider in production" in str(exc)
 
 
-def test_create_trade_event_workflow_from_env_prod_forbid_stub_position_context(monkeypatch):
-    import services.agent_server_new.app.bootstrap as mod
-
-    class _FakeRedisActiveEventsProvider:
-        pass
-
-    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
-    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
-    monkeypatch.setenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "stub")
-    try:
-        create_trade_event_workflow_from_env()
-        assert False, "expected RuntimeError when prod profile uses stub position context provider"
-    except RuntimeError as exc:
-        assert "AGENT_POSITION_CONTEXT_PROVIDER_MODE=stub" in str(exc)
-
-
 def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypatch):
     monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
     monkeypatch.setenv("AGENT_EXECUTION_BASE_URL", "http://localhost:9962")
     monkeypatch.setenv("AGENT_EXECUTION_TIMEOUT_S", "8")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
 
@@ -128,6 +123,10 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_inmemory(mon
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_TOPK", "7")
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", "60000")
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._symbol_memory_provider, InMemorySymbolMemoryAdapter)  # noqa: SLF001
     assert isinstance(wf._symbol_memory_recorder, InMemorySymbolMemoryAdapter)  # noqa: SLF001
@@ -145,6 +144,7 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkey
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_ENABLED", "true")
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_BACKEND", "redis")
     monkeypatch.setattr(mod, "create_memory_redis_client_from_env", lambda redis_url=None: _FakeRedis())  # noqa: ARG005
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
 
     wf = create_trade_event_workflow_from_env()
     assert wf._symbol_memory_provider.__class__.__name__ == "RedisSymbolMemoryAdapter"  # noqa: SLF001
@@ -154,6 +154,10 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkey
 def test_create_trade_event_workflow_from_env_enables_ai_adaptive_flags(monkeypatch):
     monkeypatch.setenv("AGENT_AI_ADAPTIVE_ENABLED", "true")
     monkeypatch.setenv("AGENT_AI_ADAPTIVE_MODE", "bounded_apply")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._ai_adaptive_enabled is True  # noqa: SLF001
     assert wf._ai_adaptive_mode == "bounded_apply"  # noqa: SLF001

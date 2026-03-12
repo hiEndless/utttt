@@ -5,11 +5,9 @@ import os
 
 from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
-from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
-from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.adapters.symbol_memory_redis import (
     RedisSymbolMemoryAdapter,
@@ -60,18 +58,15 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             # 中文注释：非生产环境允许降级为 null provider，避免引入 stub 语义污染。
             logger.warning("active_events redis provider init failed, fallback to null provider: %s", exc)
             active_events_provider = NullActiveEventsProvider()
-    elif active_events_provider_mode == "stub":
-        active_events_provider = StubActiveEventsProvider()
+    else:
+        raise RuntimeError(f"unsupported AGENT_ACTIVE_EVENTS_PROVIDER_MODE={active_events_provider_mode}")
 
     position_context_provider_mode = str(
         os.getenv("AGENT_POSITION_CONTEXT_PROVIDER_MODE", "http") or "http"
     ).strip().lower()
-    if runtime_profile in {"prod", "production"} and position_context_provider_mode == "stub":
-        raise RuntimeError("production profile forbids AGENT_POSITION_CONTEXT_PROVIDER_MODE=stub")
-    if position_context_provider_mode == "stub":
-        position_context_provider = StubPositionContextProvider()
-    else:
-        position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
+    if position_context_provider_mode != "http":
+        raise RuntimeError(f"unsupported AGENT_POSITION_CONTEXT_PROVIDER_MODE={position_context_provider_mode}")
+    position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
 
     execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
     symbol_memory_enabled = _env_bool("AGENT_SYMBOL_MEMORY_ENABLED", "false")
