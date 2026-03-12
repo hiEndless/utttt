@@ -25,3 +25,8 @@ Canonical operations docs:
 - 本地 full 入口优先使用 `tools/local/verify_full.sh`（代理到 `tools/ci/new_arch_guards_full.sh`）。
 - `verify_quick` 的 `--skip-semantic-critical-warning-guard` / `--skip-release-baseline-alignment` 仅限本地调试；
   CI 环境禁止启用对应 skip 变量（启用会直接失败）。
+- readyz 门禁默认策略：
+  - quick：默认关闭（`WITH_AGENT_READYZ=0`，可按需开启观测）
+  - regression：默认启用，`MAX_AGENT_READYZ_LEVEL=red`，`REQUIRE_AGENT_READYZ_REPORT=1`
+  - nightly：默认启用，`MAX_AGENT_READYZ_LEVEL=yellow`，`REQUIRE_AGENT_READYZ_REPORT=1`
+- 详细矩阵与排障步骤见：`docs/operations/SEMANTIC_AUDIT_RUNBOOK.md`
