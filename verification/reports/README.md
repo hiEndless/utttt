@@ -34,6 +34,7 @@ bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
 One-shot local pipeline (optional include memory summary):
 ```bash
 bash tools/local/aggregate_and_check.sh --with-memory-summary
+bash tools/local/aggregate_and_check.sh --help
 ```
 
 Generate summary only (skip thresholds):

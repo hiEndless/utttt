@@ -9,6 +9,21 @@ COMPACT=0
 
 while (($# > 0)); do
   case "$1" in
+    --help|-h)
+      cat <<'USAGE'
+Usage:
+  bash tools/local/aggregate_and_check.sh [options]
+
+Options:
+  --with-memory-summary         先生成 memory summary 再聚合
+  --summary-path <path>         聚合报告输出路径（默认 verification/reports/summary.latest.json）
+  --memory-summary-path <path>  memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
+  --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
+  --skip-thresholds             仅聚合，不执行阈值检查
+  --help, -h                    显示帮助
+USAGE
+      exit 0
+      ;;
     --with-memory-summary)
       WITH_MEMORY_SUMMARY=1
       shift
