@@ -15,7 +15,9 @@
 - 快速验证：`tools/ci/verify_quick.sh`
   - 帮助：`bash tools/ci/verify_quick.sh --help`
 - 回归验证：`tools/ci/verify_regression.sh`
+  - 帮助：`bash tools/ci/verify_regression.sh --help`
 - 夜间验证：`tools/ci/verify_nightly.sh`
+  - 帮助：`bash tools/ci/verify_nightly.sh --help`
 - 本地 quick 代理入口：`tools/local/verify_quick.sh`（代理到 `tools/ci/verify_quick.sh`）
 - 本地 full 代理入口：`tools/local/verify_full.sh`（代理到 `tools/ci/new_arch_guards_full.sh`）
 - 文档契约守卫聚合：`tools/local/check_docs_contracts_bundle.sh`
