@@ -106,6 +106,8 @@ data_server
 
 ### 推荐的稳定输出
 
+- `GET /internal/feature-service/version`
+  - 返回 `feature_contract_version/feature_response_schema_version`
 - `GET /internal/feature-service/features/{exchange}/{symbol}`
   - 返回完整 feature snapshot
 - `GET /internal/feature-service/raw-structure/{exchange}/{symbol}`

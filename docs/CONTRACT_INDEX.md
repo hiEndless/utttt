@@ -21,6 +21,7 @@
 
 ## 2. feature_service
 
+- `feature_contract_version: feature-contract-v1`
 - `feature_response_schema_version: 1.0`
 - `services/feature_service/docs/api.md`
 - `services/feature_service/docs/boundaries.md`

@@ -106,3 +106,15 @@ def test_routes_return_503_when_core_structure_unavailable():
     feat_detail = feat_resp.json().get("detail", {})
     assert feat_detail.get("code") == "feature_data_unavailable"
     assert "open_interest_provider_fallback" in list(feat_detail.get("degraded_reasons") or [])
+
+
+def test_version_route_exposes_contract_meta():
+    client = _build_client()
+    resp = client.get("/internal/feature-service/version")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["service"] == "feature_service"
+    assert body["contract_version"] == "feature-contract-v1"
+    assert body["response_schema_version"] == "1.0"
+    assert isinstance(body["ts"], int)
+    assert body["ts_ms"] == body["ts"]

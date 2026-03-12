@@ -22,7 +22,26 @@
 {
   "ok": true,
   "service": "feature_service",
-  "ts": 1741411200000
+  "ts": 1741411200000,
+  "ts_ms": 1741411200000
+}
+```
+
+### `GET /internal/feature-service/version`
+
+用途：
+
+- 暴露 feature 层契约版本与响应 schema 版本，供跨服务守卫对齐
+
+返回示例：
+
+```json
+{
+  "service": "feature_service",
+  "contract_version": "feature-contract-v1",
+  "response_schema_version": "1.0",
+  "ts": 1741411200000,
+  "ts_ms": 1741411200000
 }
 ```
 

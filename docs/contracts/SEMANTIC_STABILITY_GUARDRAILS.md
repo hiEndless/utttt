@@ -42,6 +42,7 @@
 - `execution_io_payload.schema.json` 复用 `order_result/reconcile_result` 公共结构。
 - `execution_enums.schema.json` 复用 `direction_intent/execution_action/io_mode/io_status/request_side/request_type`。
 - `execution_schema_mapping_version` 当前为 `execution-schema-mapping-v15`。
+- `feature_contract_version` 当前为 `feature-contract-v1`。
 - `feature_response_schema_version` 当前为 `1.0`。
 - `market_state_contract_version` 当前为 `market-state-contract-v1`。
 - `market_state_msl_schema_version` 当前为 `2`。

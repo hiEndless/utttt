@@ -10,6 +10,10 @@ contract_versions:
     value: "1.0"
     source: "services/feature_service/src/version.py"
 
+  - name: feature_contract_version
+    value: "feature-contract-v1"
+    source: "services/feature_service/src/version.py"
+
   - name: market_state_msl_schema_version
     value: "2"
     source: "services/market_state_engine/src/version.py"

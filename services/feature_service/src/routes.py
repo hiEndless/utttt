@@ -12,6 +12,7 @@ from services.feature_service.src.contracts import (
     RawStructureSnapshot,
     ResponseMeta,
 )
+from services.feature_service.src.version import FEATURE_CONTRACT_VERSION, FEATURE_RESPONSE_SCHEMA_VERSION
 from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
 
 
@@ -20,7 +21,19 @@ def create_router(service: FeatureService) -> APIRouter:
 
     @router.get("/healthz")
     async def healthz() -> Dict[str, Any]:
-        return {"ok": True, "service": "feature_service", "ts": int(time.time() * 1000)}
+        now_ms = int(time.time() * 1000)
+        return {"ok": True, "service": "feature_service", "ts": now_ms, "ts_ms": now_ms}
+
+    @router.get("/version")
+    async def version() -> Dict[str, Any]:
+        now_ms = int(time.time() * 1000)
+        return {
+            "service": "feature_service",
+            "contract_version": FEATURE_CONTRACT_VERSION,
+            "response_schema_version": FEATURE_RESPONSE_SCHEMA_VERSION,
+            "ts": now_ms,
+            "ts_ms": now_ms,
+        }
 
     @router.get("/raw-structure/{exchange}/{symbol}", response_model=RawStructureResponse)
     async def get_raw_structure(exchange: str, symbol: str) -> RawStructureResponse:

@@ -9,7 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from services.execution_service.version import SCHEMA_MAPPING_VERSION
-from services.feature_service.src.version import FEATURE_RESPONSE_SCHEMA_VERSION
+from services.feature_service.src.version import FEATURE_CONTRACT_VERSION, FEATURE_RESPONSE_SCHEMA_VERSION
 from services.market_state_engine.src.version import MARKET_STATE_CONTRACT_VERSION, MSL_SCHEMA_VERSION
 
 
@@ -35,6 +35,7 @@ def test_contract_versions_manifest_aligned() -> None:
     text = manifest.read_text(encoding="utf-8")
 
     assert _read_manifest_value(text, name="execution_schema_mapping_version") == SCHEMA_MAPPING_VERSION
+    assert _read_manifest_value(text, name="feature_contract_version") == FEATURE_CONTRACT_VERSION
     assert _read_manifest_value(text, name="feature_response_schema_version") == FEATURE_RESPONSE_SCHEMA_VERSION
     assert _read_manifest_value(text, name="market_state_msl_schema_version") == str(MSL_SCHEMA_VERSION)
     assert _read_manifest_value(text, name="market_state_contract_version") == MARKET_STATE_CONTRACT_VERSION
@@ -45,6 +46,7 @@ def test_contract_versions_manifest_sources_exist() -> None:
     text = manifest.read_text(encoding="utf-8")
     for name in (
         "execution_schema_mapping_version",
+        "feature_contract_version",
         "feature_response_schema_version",
         "market_state_msl_schema_version",
         "market_state_contract_version",
