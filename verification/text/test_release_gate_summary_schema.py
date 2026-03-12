@@ -22,6 +22,8 @@ def test_release_gate_summary_json_matches_schema() -> None:
     )
     assert proc.returncode == 0
     payload = json.loads(str(proc.stdout or "{}"))
+    assert isinstance(payload.get("ts_ms"), int)
+    assert int(payload.get("ts_ms") or 0) > 0
     schema_path = PROJECT_ROOT / "verification" / "reports" / "release_gate_summary_v1.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     assert validate_payload_with_local_refs(schema, payload, schema_path.parent)
