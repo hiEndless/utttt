@@ -19,6 +19,9 @@ bash tools/local/check_release_baseline_alignment.sh
 echo "[4/27] feature 契约守卫"
 bash tools/local/check_feature_contract_guard.sh
 
+echo "[附加] feature 文档 source names 守卫"
+bash tools/local/check_feature_docs_source_names_guard.sh
+
 echo "[5/27] feature 合同入口守卫"
 bash tools/local/check_feature_contract_entry_guard.sh
 

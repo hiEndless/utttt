@@ -34,6 +34,7 @@
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
+- feature 文档 source names 守卫：`tools/local/check_feature_docs_source_names_guard.sh`
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
 - event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
 - event_center runtime mode 门禁守卫：`tools/local/check_event_center_runtime_mode_guard.sh`

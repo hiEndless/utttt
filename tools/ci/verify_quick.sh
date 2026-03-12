@@ -54,6 +54,7 @@ fi
 # 说明：docs/contracts bundle 内也会执行同一守卫，这里属于“可见性优先”的有意重复。
 bash tools/local/check_source_semantics_guard.sh
 bash tools/local/check_alternative_source_single_source_guard.sh
+bash tools/local/check_feature_docs_source_names_guard.sh
 if [[ "${VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT:-0}" == "1" ]]; then
   echo "[warn] skip release baseline alignment guard by VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1"
 else
