@@ -18,3 +18,6 @@ Notes:
   - `services/market_state_engine/src/engine.py`
 - Batch B (phase-4) migrated implementation:
   - `services/market_state_engine/src/msl.py`
+- Batch B (phase-5) migrated implementation:
+  - `services/market_state_engine/src/adapters/in_memory_feature_store.py`
+  - `services/market_state_engine/src/adapters/raw_structure_http.py`

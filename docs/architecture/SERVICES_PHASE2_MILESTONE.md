@@ -37,6 +37,10 @@
 - migrated impl: `services/market_state_engine/src/msl.py`
 - legacy wrapper kept: `market_state_engine/msl.py`
 
+2.6 `market_state_engine/adapters/{in_memory_feature_store,raw_structure_http}.py`
+- migrated impl: `services/market_state_engine/src/adapters/{in_memory_feature_store,raw_structure_http}.py`
+- legacy wrapper kept: `market_state_engine/adapters/{in_memory_feature_store,raw_structure_http}.py`
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -133,3 +137,4 @@
 12. 已执行 `market_state_engine` Batch B（阶段2）：`errors.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
 13. 已执行 `market_state_engine` Batch B（阶段3）：`engine.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。
 14. 已执行 `market_state_engine` Batch B（阶段4）：`msl.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
+15. 已执行 `market_state_engine` Batch B（阶段5）：`adapters/{in_memory_feature_store,raw_structure_http}.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
