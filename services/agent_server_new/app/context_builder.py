@@ -4,23 +4,18 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
+from contracts.semantic_policies.source_semantics import (
+    get_alternative_source_allowed_provider_states,
+    get_alternative_source_unavailable_provider_states,
+)
 from services.agent_server_new.app.workflows.event_context import EventContext
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from services.agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
 from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from services.agent_server_new.ports.market_state import MarketStateProvider
 
-_UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
-_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = {
-    "primary",
-    "fallback",
-    "static",
-    "noop",
-    "unavailable",
-    "empty",
-    "ok",
-    "event_evidence_present",
-}
+_UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
+_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:

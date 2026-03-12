@@ -11,3 +11,6 @@ Current policy files:
 - `field_semantics.yaml`
 - `deprecation_policy.yaml`
 - `source_semantics.yaml`
+
+Runtime helper:
+- `source_semantics.py`：为业务服务提供统一读取入口（如 alternative source 的 `provider_state` 枚举与 unavailable 状态集合）。

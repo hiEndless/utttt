@@ -6,6 +6,10 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
+from contracts.semantic_policies.source_semantics import (
+    get_alternative_source_allowed_provider_states,
+    get_alternative_source_unavailable_provider_states,
+)
 from services.market_state_engine.src.engine import MarketStateEngine
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 from services.market_state_engine.src.ports.raw_structure_provider import RawStructureProvider
@@ -27,19 +31,10 @@ _SELECTED_EVENTS_UNAVAILABLE_FLAG = "selected_events_unavailable"
 _SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
 _ALTERNATIVE_SOURCE_PROVIDER_STATE_INVALID_FLAG = "state_features_alternative_source_provider_state_invalid"
 _ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
-_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = {
-    "primary",
-    "fallback",
-    "static",
-    "noop",
-    "unavailable",
-    "empty",
-    "ok",
-    "event_evidence_present",
-}
+_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
 
 logger = logging.getLogger("market_state_engine")
-_UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
+_UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
 
 
 def _has_nonempty_features(features: Any) -> bool:
