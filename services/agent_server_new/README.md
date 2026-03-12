@@ -258,6 +258,7 @@ signal_event + active_events + MSL
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
   - 可选上游检查（默认开启 market_state / redis）：
     - `AGENT_READY_CHECK_MARKET_STATE=true|false`
+    - `AGENT_READY_CHECK_EXECUTION_SERVICE=true|false`（仅 `AGENT_EXECUTION_ENABLED=true` 时执行，默认跳过）
     - `AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS=true|false`
     - `AGENT_READY_CHECK_EVENT_RECORDER=true|false`
     - `AGENT_READY_CHECK_TIMEOUT_S=1.5`
@@ -279,6 +280,7 @@ signal_event + active_events + MSL
 - 本地追踪最新决策日志：`bash tools/local/tail_agent_events.sh`
 - 指定路径：`bash tools/local/tail_agent_events.sh verification/reports/agent_server_new_events.jsonl`
 - 按字段过滤：`bash tools/local/tail_agent_events.sh --event-id evt-001 --record-type agent_output --agent-name decision_trace`
+- 按关键字过滤：`bash tools/local/tail_agent_events.sh --contains execution_service_unreachable`
 
 ## Memory Observability
 

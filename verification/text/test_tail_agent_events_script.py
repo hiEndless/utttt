@@ -23,6 +23,7 @@ def test_tail_agent_events_help_contains_filter_options() -> None:
     assert "--event-id <id>" in out
     assert "--agent-name <name>" in out
     assert "--record-type <type>" in out
+    assert "--contains <keyword>" in out
 
 
 def test_tail_agent_events_filter_by_event_and_record_type(tmp_path) -> None:
@@ -59,3 +60,33 @@ def test_tail_agent_events_filter_by_event_and_record_type(tmp_path) -> None:
     assert item["event_id"] == "evt-1"
     assert item["record_type"] == "agent_output"
 
+
+def test_tail_agent_events_filter_by_contains_keyword(tmp_path) -> None:
+    file_path = tmp_path / "agent_events.jsonl"
+    rows = [
+        {"record_type": "agent_output", "event_id": "evt-1", "agent_name": "decision_trace", "payload": {"note": "alpha"}},
+        {"record_type": "agent_output", "event_id": "evt-2", "agent_name": "decision_trace", "payload": {"note": "beta"}},
+    ]
+    file_path.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in rows) + "\n", encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            "bash",
+            "tools/local/tail_agent_events.sh",
+            str(file_path),
+            "--no-follow",
+            "--lines",
+            "20",
+            "--contains",
+            "alpha",
+        ],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    out_lines = [x for x in str(proc.stdout or "").splitlines() if x.strip()]
+    assert len(out_lines) == 1
+    item = json.loads(out_lines[0])
+    assert item["event_id"] == "evt-1"
