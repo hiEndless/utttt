@@ -28,15 +28,17 @@
 
 ```json
 {
-  "source_type": "news|social|onchain",
+  "source_type": "<source_name>",
   "available": false,
   "provider_state": "primary|fallback|static|noop|unavailable|empty",
-  "data_source": "feature_service.news|feature_service.social|feature_service.onchain",
+  "data_source": "feature_service.<source_name>",
   "inference_source": "feature_service.normalizer",
   "as_of_ms": null,
   "features": {}
 }
 ```
+
+- `source_name` 单源：`contracts/schemas/alternative_source_summary_contract.py`（`get_alternative_source_names()`，当前为 `news/social/onchain`）。
 
 - 目的：即使未来数据源暂未接入主链路，也保证 provider 输出字段稳定，避免空字典导致语义漂移。
 
@@ -45,10 +47,10 @@
 - 为未来新闻/社交/链上特征接入提供统一接口形态。
 - 复用当前服务的降级语义（`mark_degraded`），保证扩展后可观测性一致。
 
-## 未接入部分
+## 当前接入状态
 
-- 当前 `service.py` 未消费上述 provider。
-- `/features` 暂未输出 `news/social/onchain` 特征字段。
+- `service.py` 已消费上述 provider，并在 `/features` 输出 `alternative_sources`。
+- 当前默认仍以 `noop/unavailable` 等占位语义为主，等待真实新闻/社交/链上数据源逐步替换。
 
 ## 建议接入顺序
 
