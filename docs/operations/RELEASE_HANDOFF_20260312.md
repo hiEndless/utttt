@@ -6,7 +6,7 @@
 
 - branch: `master`
 - baseline tag: `refactor-guard-baseline-20260312`
-- baseline commit: `921aed2`
+- baseline commit: use command output (`git rev-parse --short refactor-guard-baseline-20260312`)
 
 ## 2) 发布前最小验收
 

@@ -5,7 +5,7 @@
 ## 1. Baseline Tag
 
 - tag: `refactor-guard-baseline-20260312`
-- 当前指向: `f623cb6`（`master` HEAD）
+- 当前指向: 以命令结果为准（`git rev-parse --short refactor-guard-baseline-20260312`）
 
 ## 2. 关键修复提交
 
