@@ -1,0 +1,61 @@
+# CLI Help Snapshot
+
+更新时间：2026-03-12
+
+用于冻结本地关键脚本的 `--help` 输出，降低参数语义漂移风险。
+
+## 刷新命令
+
+```bash
+bash tools/local/run_agent_memory_summary_report.sh --help
+bash tools/local/verify_report_aggregate.sh --help
+bash tools/local/aggregate_and_check.sh --help
+```
+
+## `tools/local/run_agent_memory_summary_report.sh --help`
+
+```text
+Usage:
+  bash tools/local/run_agent_memory_summary_report.sh [output_path] [runner_args...]
+  bash tools/local/run_agent_memory_summary_report.sh --output <path> [runner_args...]
+
+Options:
+  --output <path>      memory summary 报告输出路径（默认 verification/reports/memory_summary.latest.json）
+  --help, -h           显示帮助
+
+Examples:
+  bash tools/local/run_agent_memory_summary_report.sh
+  bash tools/local/run_agent_memory_summary_report.sh /tmp/memory_summary.json --top-risk-n 10
+  bash tools/local/run_agent_memory_summary_report.sh --output verification/reports/memory_summary.latest.json --risk-warning-min 2
+```
+
+## `tools/local/verify_report_aggregate.sh --help`
+
+```text
+Usage:
+  bash tools/local/verify_report_aggregate.sh [options]
+
+Options:
+  --glob <pattern>             聚合输入 glob（默认 verification/reports/*.json）
+  --output <path>              聚合输出路径（默认 verification/reports/summary.latest.json）
+  --compact                    生成紧凑 JSON
+  --with-memory-summary        聚合前先生成 memory summary 报告
+  --memory-summary-path <path> memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
+  --help, -h                   显示帮助
+```
+
+## `tools/local/aggregate_and_check.sh --help`
+
+```text
+Usage:
+  bash tools/local/aggregate_and_check.sh [options]
+
+Options:
+  --with-memory-summary         先生成 memory summary 再聚合
+  --summary-path <path>         聚合报告输出路径（默认 verification/reports/summary.latest.json）
+  --memory-summary-path <path>  memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
+  --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
+  --skip-thresholds             仅聚合，不执行阈值检查
+  --help, -h                    显示帮助
+```
+
