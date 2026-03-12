@@ -70,6 +70,7 @@ if [[ "$SUMMARY_FORMAT" == "json" ]]; then
   cat <<JSON
 {
   "schema_version": "release-gate-summary-v1",
+  "source": "tools/local/check_release_ready.sh",
   "ts_ms": ${TS_MS},
   "quick": {
     "with_agent_readyz": ${QUICK_WITH_AGENT_READYZ},

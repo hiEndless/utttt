@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "schema_version",
+    "source",
     "ts_ms",
     "quick",
     "regression_default",
@@ -14,6 +15,10 @@
     "schema_version": {
       "type": "string",
       "const": "release-gate-summary-v1"
+    },
+    "source": {
+      "type": "string",
+      "const": "tools/local/check_release_ready.sh"
     },
     "ts_ms": {
       "type": "integer",
