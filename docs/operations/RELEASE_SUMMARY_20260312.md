@@ -6,7 +6,7 @@
 
 - 分支：`master`
 - 基线 tag：`refactor-guard-baseline-20260312`
-- 基线 commit：`c7f562e`
+- 基线 commit：`f623cb6`
 
 ## 2. 本轮核心变更
 
