@@ -214,6 +214,10 @@ agent_server_new -> execution_service
 - Execution cURL 示例：`services/execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`services/execution_service/docs/httpie_examples.md`
 - Execution Redis 键契约：`services/execution_service/docs/redis_keys.md`
+- 深度流水线（Agent）：`docs/contracts/pipelines/agent_server_new_data_pipeline.md`
+- 深度流水线（State）：`docs/contracts/pipelines/market_state_engine_data_pipeline.md`
+- 深度流水线（Event）：`docs/contracts/pipelines/event_center_new_data_contracts.md`
+- 深度流水线（Execution）：`docs/contracts/pipelines/execution_service_data_pipeline.md`
 
 ## 9. 验证入口（新增）
 
@@ -245,4 +249,4 @@ agent_server_new -> execution_service
 - `bash tools/local/run_agent_memory_summary.sh --help`
 
 兼容说明：
-- 旧 `python -m <legacy_service>.main` 仍可使用，但后续文档与 CI 将优先引用 `tools/local/run_*.sh`。
+- 旧 `<legacy_service>` 根包入口已下线，请统一使用 `services.*` 或 `tools/local/run_*.sh`。

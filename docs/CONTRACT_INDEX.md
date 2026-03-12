@@ -1,6 +1,6 @@
 # UTaker 契约索引
 
-更新时间：2026-03-11
+更新时间：2026-03-12
 说明：部分核心入口受守卫脚本强约束（`tools/local/check_contract_docs_index_guard.sh`），请勿随意移除或改名。
 
 ## 1. 架构与总入口
@@ -77,3 +77,10 @@
 - `services/execution_service/docs/redis_keys.md`
 - `services/execution_service/docs/curl_examples.md`
 - `services/execution_service/docs/httpie_examples.md`
+
+## 7. 深度流水线文档（防语义漂移）
+
+- `docs/contracts/pipelines/agent_server_new_data_pipeline.md`
+- `docs/contracts/pipelines/market_state_engine_data_pipeline.md`
+- `docs/contracts/pipelines/event_center_new_data_contracts.md`
+- `docs/contracts/pipelines/execution_service_data_pipeline.md`
