@@ -21,10 +21,11 @@ python3 -m verification.reports.aggregate_reports \
 
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
-  and semantic audit reports (`semantic-audit-v1`).
+  and semantic audit reports (`semantic-audit-v1`), and symbol memory summary reports (`symbol-memory-summary-run-v1`).
 - Summary includes:
   - `report_count/passed/failed/pass_rate` (verification suites)
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`
+  - `memory_summary_run_count/memory_high_risk_symbol_count/memory_top_risk_score/memory_high_risk_symbols`
 
 Check thresholds:
 ```bash

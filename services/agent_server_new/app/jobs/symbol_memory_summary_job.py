@@ -101,6 +101,8 @@ async def run_symbol_memory_summary_once(
 
     ended_ms = int(time.time() * 1000)
     return {
+        "schema_version": "symbol-memory-summary-run-v1",
+        "report_type": "symbol_memory_summary",
         "ok": failed == 0,
         "total_symbols": total,
         "success_symbols": success,

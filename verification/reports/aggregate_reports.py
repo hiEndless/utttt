@@ -19,7 +19,12 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
             continue
         if isinstance(data, dict):
             schema_version = str(data.get("schema_version") or "").strip()
-            if schema_version not in {"verification-report-v1", "verification-report-v2", "semantic-audit-v1"}:
+            if schema_version not in {
+                "verification-report-v1",
+                "verification-report-v2",
+                "semantic-audit-v1",
+                "symbol-memory-summary-run-v1",
+            }:
                 continue
             data["_path"] = str(p)
             out.append(data)
@@ -38,6 +43,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         x for x in reports if str(x.get("schema_version") or "") in {"verification-report-v1", "verification-report-v2"}
     ]
     semantic_reports = [x for x in reports if str(x.get("schema_version") or "") == "semantic-audit-v1"]
+    memory_summary_reports = [x for x in reports if str(x.get("schema_version") or "") == "symbol-memory-summary-run-v1"]
 
     total = len(verification_reports)
     passed = 0
@@ -99,6 +105,27 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         semantic_warning_count = _to_int(stats.get("warning_count"), 0)
         latest_semantic_report_path = str(latest_semantic.get("_path") or "")
 
+    latest_memory_summary_report_path = ""
+    memory_high_risk_symbols: List[Dict[str, Any]] = []
+    memory_high_risk_symbol_count = 0
+    memory_top_risk_score = 0.0
+    if memory_summary_reports:
+        latest_memory_summary = max(memory_summary_reports, key=lambda x: _to_int(x.get("ended_ms"), 0))
+        latest_memory_summary_report_path = str(latest_memory_summary.get("_path") or "")
+        memory_high_risk_symbols = [
+            dict(x) for x in list(latest_memory_summary.get("high_risk_symbols") or []) if isinstance(x, dict)
+        ]
+        memory_high_risk_symbol_count = len(memory_high_risk_symbols)
+        if memory_high_risk_symbols:
+            memory_top_risk_score = max(
+                [
+                    float(item.get("risk_score") or 0.0)
+                    for item in memory_high_risk_symbols
+                    if isinstance(item, dict)
+                ]
+                or [0.0]
+            )
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -113,6 +140,11 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "semantic_error_count": semantic_error_count,
         "semantic_warning_count": semantic_warning_count,
         "latest_semantic_report_path": latest_semantic_report_path,
+        "memory_summary_run_count": len(memory_summary_reports),
+        "latest_memory_summary_report_path": latest_memory_summary_report_path,
+        "memory_high_risk_symbol_count": memory_high_risk_symbol_count,
+        "memory_top_risk_score": round(float(memory_top_risk_score), 6),
+        "memory_high_risk_symbols": memory_high_risk_symbols,
     }
 
 
