@@ -4,6 +4,25 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 18 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - "event_center_new/**"
+      - "scripts/check_event_center_*"
+      - "tools/local/check_new_arch_guards.sh"
+      - "tools/local/check_event_center_ci_doc_snapshot_guard.sh"
+      - "tools/local/check_event_center_ci_workflow_guard.sh"
+      - "tools/ci/event_center_full_strict.sh"
+      - "tools/ci/event_center_emit_meta_header.sh"
+      - "tools/ci/event_center_emit_guard_summary.sh"
+      - "services/event_center_new/docs/ci.md"
+      - "services/event_center_new/docs/ci_help_snapshot_lines.txt"
+      - "services/event_center_new/docs/ci_triage_snapshot_lines.txt"
+      - "services/event_center_new/docs/ci_help_block_snapshot.txt"
+      - "services/event_center_new/docs/ci_baseline_template.md"
+      - "docs/ARCHITECTURE_NEW.md"
+      - "docs/CONTRACTS_QUICK_REF.md"
 
 jobs:
   full-strict:
