@@ -39,12 +39,14 @@ Shortcut wrapper (defaults to `verification/reports/summary.latest.json`):
 ```bash
 bash tools/local/verify_report_aggregate.sh --compact
 bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
+bash tools/local/verify_report_aggregate.sh --with-agent-readyz --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
 One-shot local pipeline (optional include memory summary):
 ```bash
 bash tools/local/aggregate_and_check.sh --with-memory-summary
+bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --help
 ```
 
