@@ -60,6 +60,15 @@ bash tools/ci/verify_quick.sh
 - 先执行：
   `bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`
 - 查看 `BASE_REF/HEAD` 下的四组版本探测值（`CONTRACT_INDEX` / `manifest` / `version.py` / `runtime.md`）是否真实发生变化，再决定是否补齐联动四件套。
+- 示例输出（脱敏）：
+
+```text
+[debug] detected_versions base_ref=HEAD~1 head=HEAD
+  - contract_index: base='event-center-runtime-v1' head='event-center-runtime-v2'
+  - manifest: base='event-center-runtime-v1' head='event-center-runtime-v2'
+  - version_py: base='event-center-runtime-v1' head='event-center-runtime-v2'
+  - runtime_doc: base='event-center-runtime-v1' head='event-center-runtime-v2'
+```
 
 ## 5. 维护约束
 
