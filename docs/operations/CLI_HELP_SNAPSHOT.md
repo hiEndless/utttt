@@ -85,9 +85,12 @@ Examples:
 
 ```text
 Usage:
-  bash tools/local/verify_quick.sh [args...]
+  bash tools/local/verify_quick.sh [options] [args...]
 
 Description:
   本地 quick 验证入口，代理到：
     bash tools/ci/verify_quick.sh [args...]
+
+Options:
+  --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
 ```
