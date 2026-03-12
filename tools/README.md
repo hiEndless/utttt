@@ -45,3 +45,7 @@ Local:
 - `tools/local/run_agent_pipeline_smoke.sh`
 - `tools/local/run_agent_memory_summary.sh`
 - `tools/local/run_execution_service.sh`
+
+Notes:
+- `tools/local/verify_quick.sh` 是本地 quick 代理入口，实际执行 `tools/ci/verify_quick.sh`。
+- `tools/local/verify_full.sh` 是本地 full 代理入口，实际执行 `tools/ci/new_arch_guards_full.sh`。
