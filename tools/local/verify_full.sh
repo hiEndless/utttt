@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bash verification/run_suite.sh --suite=new_arch_full
+bash tools/ci/new_arch_guards_full.sh "$@"
