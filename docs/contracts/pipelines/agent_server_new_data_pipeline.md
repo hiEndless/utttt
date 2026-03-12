@@ -476,8 +476,11 @@ sizing 输出字段（当前实现约定）：
 
 门控逻辑（默认配置）：
 - 当 intent=increase 且 suggested_policy in {wait_confirmation, reduce_risk} 时阻断
+- 阻断原因码主码来自单源常量：`horizon_policy_wait_confirmation | horizon_policy_reduce_risk | horizon_policy_blocked`
+- 策略原因统一标准标签：`policy_reason:<code>`
 
 实现：[horizon_policy_gate.py](services/agent_server_new/domain/horizon_policy_gate.py#L57-L69)
+原因码单源：[horizon_policy_reasons.py](services/agent_server_new/domain/horizon_policy_reasons.py)
 
 ### 7.5 strategy_gate_v2：语义门控
 
@@ -655,7 +658,7 @@ ExecutionPlan：
 | key_features | object | key_market_features（包含裁剪 features 列表） |
 | evidence/anomalies | object | 从 key_market_features 拿的 evidence/anomalies（通常来自 state_features） |
 | signal_verdict/intent/rule_plan | object | 各阶段关键输出摘要 |
-| strategy_gate_result/risk_gate/execution_plan | object | 门控与计划摘要 |
+| strategy_gate_result/risk_gate/execution_plan | object | 门控与计划摘要（其中 strategy_gate_result 包含 `horizon_reasons/strategy_reasons/reasons`） |
 | memory_metrics | object | memory_observability |
 | tags | array[string] | 标签（当前固定含 decision_trace） |
 

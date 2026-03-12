@@ -5,6 +5,8 @@ import json
 import os
 from typing import Any, Dict, List
 
+from .horizon_policy_reasons import horizon_policy_reason_code, horizon_policy_reason_tag
+
 
 @dataclass(frozen=True)
 class HorizonPolicyGateResult:
@@ -65,5 +67,8 @@ def horizon_policy_gate(
     cfg = _normalize_config(config)
     block_set = set([str(x) for x in list(cfg.get("block_on_increase_policies") or []) if x])
     if suggested_policy in block_set and intent == "increase":
-        return HorizonPolicyGateResult(allowed=False, reasons=[f"horizon_policy_{suggested_policy}", str(policy_reason or "unknown_reason")])
+        return HorizonPolicyGateResult(
+            allowed=False,
+            reasons=[horizon_policy_reason_code(suggested_policy), horizon_policy_reason_tag(policy_reason)],
+        )
     return HorizonPolicyGateResult(allowed=True, reasons=[])

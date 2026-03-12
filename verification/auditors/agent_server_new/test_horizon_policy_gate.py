@@ -16,6 +16,7 @@ def test_horizon_policy_gate_blocks_increase_on_wait_confirmation():
     )
     assert out.allowed is False
     assert "horizon_policy_wait_confirmation" in list(out.reasons or [])
+    assert "policy_reason:short_long_trend_conflict" in list(out.reasons or [])
 
 
 def test_horizon_policy_gate_blocks_increase_on_reduce_risk():
@@ -26,6 +27,7 @@ def test_horizon_policy_gate_blocks_increase_on_reduce_risk():
     )
     assert out.allowed is False
     assert "horizon_policy_reduce_risk" in list(out.reasons or [])
+    assert "policy_reason:timeframe_mixed" in list(out.reasons or [])
 
 
 def test_horizon_policy_gate_allows_non_increase():

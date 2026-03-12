@@ -136,6 +136,9 @@ def test_decision_trace_contains_risk_gate_regime_sources() -> None:
         assert "portfolio_risk_state_warn" in sources
         assert "position_cooldown_active" in sources
         assert "active_event_volatility_spike_elevated" in sources
+        sg = dict(trace_payload.get("strategy_gate_result") or {})
+        assert isinstance(sg.get("horizon_reasons"), list)
+        assert isinstance(sg.get("strategy_reasons"), list)
 
     import pytest
 

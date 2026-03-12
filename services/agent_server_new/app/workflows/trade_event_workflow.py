@@ -397,6 +397,8 @@ class TradeEventWorkflow:
                 },
                 strategy_gate_result={
                     "allowed": bool(hpg.allowed and sg.allowed),
+                    "horizon_reasons": list(hpg.reasons),
+                    "strategy_reasons": list(sg.reasons),
                     "reasons": [*list(hpg.reasons), *list(sg.reasons)],
                 },
                 risk_gate={
