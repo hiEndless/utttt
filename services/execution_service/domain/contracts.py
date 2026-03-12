@@ -3,34 +3,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Mapping, Optional
 
+from contracts.schemas.alternative_source_summary_contract import (
+    get_alternative_source_names,
+    get_alternative_source_provider_states_from_schema,
+    get_alternative_source_required_keys,
+)
+
 
 DirectionIntent = Literal["long", "short", "none"]
 ConfidenceLevel = Literal["low", "medium", "high"]
 ExecutionAction = Literal["add", "reduce", "hold", "exit", "skip"]
-_ALT_SOURCES = ("news", "social", "onchain")
-_ALT_PROVIDER_STATES = {
-    "primary",
-    "fallback",
-    "static",
-    "noop",
-    "unavailable",
-    "empty",
-    "ok",
-    "event_evidence_present",
-}
+_ALT_SOURCES = get_alternative_source_names()
+_ALT_PROVIDER_STATES = get_alternative_source_provider_states_from_schema()
+_ALT_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
 def _validate_alternative_source_summary(summary: Mapping[str, Any]) -> None:
-    required_keys = {
-        "available_sources",
-        "unavailable_sources",
-        "provider_states",
-        "data_sources",
-        "inference_sources",
-        "feature_keys",
-        "evidence_counts",
-    }
-    for key in required_keys:
+    for key in _ALT_REQUIRED_KEYS:
         if key not in summary:
             raise ValueError(f"risk_hints.alternative_source_summary 缺少必填键: {key}")
 

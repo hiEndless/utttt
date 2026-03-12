@@ -2,16 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping
 
-_ALT_SOURCES = ("news", "social", "onchain")
-_ALT_SUMMARY_REQUIRED_KEYS = {
-    "available_sources",
-    "unavailable_sources",
-    "provider_states",
-    "data_sources",
-    "inference_sources",
-    "feature_keys",
-    "evidence_counts",
-}
+from contracts.schemas.alternative_source_summary_contract import (
+    get_alternative_source_names,
+    get_alternative_source_required_keys,
+)
+
+_ALT_SOURCES = get_alternative_source_names()
+_ALT_SUMMARY_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
 def _normalize_alternative_source_summary(value: Any) -> Dict[str, Any]:

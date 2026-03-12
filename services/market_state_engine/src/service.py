@@ -14,6 +14,7 @@ from contracts.semantic_policies.source_semantics import (
     get_market_state_feature_fallback_data_source,
     get_market_state_feature_fallback_inference_source,
 )
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
 from services.market_state_engine.src.engine import MarketStateEngine
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 from services.market_state_engine.src.ports.raw_structure_provider import RawStructureProvider
@@ -36,6 +37,7 @@ _SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
 _ALTERNATIVE_SOURCE_PROVIDER_STATE_INVALID_FLAG = "state_features_alternative_source_provider_state_invalid"
 _ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
 _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 logger = logging.getLogger("market_state_engine")
 _UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
@@ -82,15 +84,11 @@ def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[
 def _extract_alternative_sources(raw_market_structure: Dict[str, Any]) -> Dict[str, Any]:
     alt = raw_market_structure.get("alternative_sources")
     alt_obj = alt if isinstance(alt, dict) else {}
-    return {
-        "news": _normalize_alternative_source_entry("news", alt_obj.get("news")),
-        "social": _normalize_alternative_source_entry("social", alt_obj.get("social")),
-        "onchain": _normalize_alternative_source_entry("onchain", alt_obj.get("onchain")),
-    }
+    return {name: _normalize_alternative_source_entry(name, alt_obj.get(name)) for name in _ALTERNATIVE_SOURCE_NAMES}
 
 
 def _empty_event_alt_summary() -> Dict[str, Any]:
-    sources = ("news", "social", "onchain")
+    sources = _ALTERNATIVE_SOURCE_NAMES
     return {
         "available_sources": [],
         "unavailable_sources": list(sources),
@@ -143,7 +141,7 @@ def _normalize_event_alt_summary(payload: Any) -> Dict[str, Any]:
 
 
 def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[str, Any]]) -> Dict[str, Any]:
-    sources = ("news", "social", "onchain")
+    sources = _ALTERNATIVE_SOURCE_NAMES
     counts: Dict[str, int] = {x: 0 for x in sources}
     provider_states: Dict[str, str] = {x: "empty" for x in sources}
     data_sources: Dict[str, str] = {x: get_market_state_event_fallback_data_source(x) for x in sources}
@@ -188,7 +186,7 @@ def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[s
 
 
 def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_summary: Dict[str, Any]) -> Dict[str, Any]:
-    sources = ("news", "social", "onchain")
+    sources = _ALTERNATIVE_SOURCE_NAMES
     merged: Dict[str, Any] = {}
     conflicts: List[Dict[str, str]] = []
     event_states = dict(event_alt_summary.get("provider_states") or {})

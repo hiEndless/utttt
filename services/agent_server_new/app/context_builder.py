@@ -12,6 +12,7 @@ from contracts.semantic_policies.source_semantics import (
     get_alternative_source_allowed_provider_states,
     get_alternative_source_unavailable_provider_states,
 )
+from contracts.schemas.alternative_source_summary_contract import get_alternative_source_names
 from services.agent_server_new.app.workflows.event_context import EventContext
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from services.agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
@@ -20,6 +21,7 @@ from services.agent_server_new.ports.market_state import MarketStateProvider
 
 _UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
 _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
+_ALTERNATIVE_SOURCE_NAMES = get_alternative_source_names()
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -85,7 +87,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         evidence_counts: Dict[str, int] = {}
         available_sources = [str(x) for x in list(merged.get("available_sources") or []) if str(x).strip()]
         unavailable_sources = [str(x) for x in list(merged.get("unavailable_sources") or []) if str(x).strip()]
-        for name in ("news", "social", "onchain"):
+        for name in _ALTERNATIVE_SOURCE_NAMES:
             node = _safe_dict(by_source.get(name))
             state = str(node.get("provider_state") or "empty")
             provider_states[name] = state
@@ -116,7 +118,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         return out
 
     alt = _safe_dict(evidence.get("alternative_sources"))
-    sources = ("news", "social", "onchain")
+    sources = _ALTERNATIVE_SOURCE_NAMES
     provider_states: Dict[str, str] = {}
     data_sources: Dict[str, str] = {}
     inference_sources: Dict[str, str] = {}
