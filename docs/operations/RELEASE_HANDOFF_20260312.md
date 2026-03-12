@@ -59,3 +59,13 @@ git checkout refactor-guard-baseline-20260312
 - 已执行：`bash tools/local/verify_quick.sh`，结果通过。
 - 已执行：`bash tools/ci/new_arch_guards_full.sh --quick`，结果通过。
 - 已执行：`bash tools/local/check_release_ready.sh`，结果通过。
+
+## 7) 交接排障最小复现（release gate schema）
+
+```bash
+git checkout -b tmp/release-gate-schema-repro
+echo "// repro" >> verification/reports/release_gate_summary_v1.schema.json
+bash tools/local/check_contract_change_bundle_guard.sh
+```
+
+预期：守卫提示 schema 变更触发四件套，需同步更新索引/契约文档/运行说明/守卫测试。
