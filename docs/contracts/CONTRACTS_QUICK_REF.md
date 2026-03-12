@@ -251,6 +251,7 @@ agent_server_new -> execution_service
 - `tools/local/verify_quick.sh`
 - `tools/local/verify_full.sh`
 - `tools/local/verify_quick_report.sh`
+  - 支持 `--with-agent-readyz`，可在 quick suite 后一键生成 `agent-readyz-report-v1` 并聚合到 `summary.latest.json`
 
 兼容说明：
 - 旧 `scripts/check_*` 仍可直接使用。
