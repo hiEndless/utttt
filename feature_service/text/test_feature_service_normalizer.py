@@ -5,7 +5,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from feature_service.normalizers.response_normalizer import (
+from services.feature_service.src.normalizers.response_normalizer import (
     normalize_degraded_reasons,
     normalize_exchange,
     normalize_features_payload,

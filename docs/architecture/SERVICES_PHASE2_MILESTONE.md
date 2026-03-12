@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service core src migrated)
+状态：in_progress (feature_service batch-a wrappers removed)
 
 ## 1. 目标
 
@@ -43,19 +43,19 @@
 
 9. `feature_service/app.py`
 - migrated impl: `services/feature_service/src/app.py`
-- legacy wrapper kept: `feature_service/app.py`
+- legacy wrapper status: removed in batch A
 
 10. `feature_service/routes.py`
 - migrated impl: `services/feature_service/src/routes.py`
-- legacy wrapper kept: `feature_service/routes.py`
+- legacy wrapper status: removed in batch A
 
 11. `feature_service/service.py`
 - migrated impl: `services/feature_service/src/service.py`
-- legacy wrapper kept: `feature_service/service.py`
+- legacy wrapper status: removed in batch A
 
 12. `feature_service/contracts.py`
 - migrated impl: `services/feature_service/src/contracts.py`
-- legacy wrapper kept: `feature_service/contracts.py`
+- legacy wrapper status: removed in batch A
 
 13. `feature_service/providers/{bundle,noop,degradation_state}.py`
 - migrated impl: `services/feature_service/src/providers/{bundle,noop,degradation_state}.py`
@@ -75,11 +75,11 @@
 
 17. `feature_service/normalizers/{response_normalizer,__init__}.py`
 - migrated impl: `services/feature_service/src/normalizers/{response_normalizer,__init__}.py`
-- legacy wrapper kept: `feature_service/normalizers/{response_normalizer,__init__}.py`
+- legacy wrapper status: removed in batch A
 
 18. `feature_service/ports/*.py`
 - migrated impl: `services/feature_service/src/ports/*.py`
-- legacy wrapper kept: `feature_service/ports/*.py`
+- legacy wrapper status: removed in batch A
 
 19. `feature_service/providers/market_structure_migrated/`
 - migrated impl: `services/feature_service/src/providers/market_structure_migrated/`
@@ -104,3 +104,4 @@
 3. 将服务真实业务代码按模块批次迁入 `services/<svc>/src`（非仅入口迁移）。
 4. `feature_service` 已进入“core src migrated + compat wrapper”状态，可开始设计兼容壳下线窗口。
 5. 兼容壳下线草案已落地：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`。
+6. 已完成 Batch A：删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳。

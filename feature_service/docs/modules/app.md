@@ -3,7 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/src/app.py`
-- 兼容壳：`feature_service/app.py`
+- 兼容壳：已在 Batch A 下线
 
 
 ## 功能作用

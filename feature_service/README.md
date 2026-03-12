@@ -244,8 +244,8 @@ feature_service/
 示例：
 
 ```python
-from feature_service.providers import build_independent_provider_bundle
-from feature_service.service import FeatureService
+from services.feature_service.src.providers import build_independent_provider_bundle
+from services.feature_service.src.service import FeatureService
 
 bundle = build_independent_provider_bundle()
 service = FeatureService.from_bundle(bundle)
@@ -272,7 +272,7 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 8：新增第二阶段任务组，开始切换 `app.py` 默认装配到独立模式
 - 已完成 Task 9：`app.py` 默认切换到 `build_independent_provider_bundle` + `FeatureService.from_bundle`
 - 已完成 Task 10：启动装配切换已完成，运行路径统一为独立 provider 注入
-- 已完成 Task 11：最小启动链路自检通过（`from feature_service.app import create_app; create_app()`）
+- 已完成 Task 11：最小启动链路自检通过（`from services.feature_service.src.app import create_app; create_app()`）
 - 已完成 Task 12：启动第三阶段，开始用旧 `market_structure` 逻辑迁移替代静态伪 provider
 - 已完成 Task 13：新增 `providers/migrated_structure_providers.py`，落地四类迁移版结构 provider
 - 已完成 Task 14：`build_independent_provider_bundle` 默认注入迁移版结构 provider，运行失败自动降级静态 provider
@@ -328,6 +328,7 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 68：模块文档已补充 canonical 路径与兼容壳路径说明
 - 已完成 Task 69：新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）
 - 已完成 Task 70：新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）
+- 已完成 Task 71：执行 Batch A，下线 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳
 
 ## 错误码约定（新增）
 

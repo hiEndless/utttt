@@ -1,7 +1,7 @@
 # Feature Service Compat Wrapper Decommission
 
 更新时间：2026-03-12  
-状态：draft
+状态：active (batch-a completed)
 
 ## 1. 目标
 
@@ -32,6 +32,10 @@
 1. `bash tools/local/check_feature_legacy_imports.sh --strict` 通过。
 2. `./venv/bin/pytest -q feature_service/text` 通过。
 3. `bash tools/ci/verify_quick.sh` 通过。
+
+执行结果：
+
+- 已完成（2026-03-12）
 
 ### Batch B（中风险）
 

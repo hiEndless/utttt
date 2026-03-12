@@ -118,3 +118,4 @@
 - [x] Task 68: 更新模块文档为 canonical 路径表达，并补充兼容壳路径说明。
 - [x] Task 69: 新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）。
 - [x] Task 70: 新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）。
+- [x] Task 71: 执行兼容壳下线 Batch A（删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳）。

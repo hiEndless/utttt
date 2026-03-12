@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from feature_service.contracts import FeatureResponse, RawStructureResponse
+from services.feature_service.src.contracts import FeatureResponse, RawStructureResponse
 
 
 def _load_json(path: Path) -> dict:

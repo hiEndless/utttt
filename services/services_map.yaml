@@ -8,7 +8,7 @@ services:
   - name: feature_service
     current_path: "feature_service/"
     target_path: "services/feature_service/"
-    status: "core_src_migrated_with_compat_wrappers"
+    status: "batch_a_wrappers_removed"
     scaffold_readme: "services/feature_service/README.md"
     soft_entrypoints:
       - "services/feature_service/main.py"
@@ -41,10 +41,6 @@ services:
       - "services/feature_service/src/ports/social_provider.py"
     legacy_wrapper:
       - "feature_service/main.py"
-      - "feature_service/app.py"
-      - "feature_service/routes.py"
-      - "feature_service/service.py"
-      - "feature_service/contracts.py"
       - "feature_service/providers/bundle.py"
       - "feature_service/providers/noop.py"
       - "feature_service/providers/degradation_state.py"
@@ -55,17 +51,6 @@ services:
       - "feature_service/providers/future_source_providers.py"
       - "feature_service/providers/__init__.py"
       - "feature_service/providers/market_structure_migrated"
-      - "feature_service/normalizers/response_normalizer.py"
-      - "feature_service/normalizers/__init__.py"
-      - "feature_service/ports/__init__.py"
-      - "feature_service/ports/behavior_provider.py"
-      - "feature_service/ports/horizons_provider.py"
-      - "feature_service/ports/indicators_provider.py"
-      - "feature_service/ports/news_provider.py"
-      - "feature_service/ports/onchain_provider.py"
-      - "feature_service/ports/open_interest_provider.py"
-      - "feature_service/ports/orderbook_provider.py"
-      - "feature_service/ports/social_provider.py"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

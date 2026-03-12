@@ -8,7 +8,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from feature_service.routes import create_router
+from services.feature_service.src.routes import create_router
 
 
 class _StubFeatureService:
@@ -46,12 +46,12 @@ def _build_client() -> TestClient:
 
 class _UnavailableFeatureService:
     async def get_raw_structure(self, exchange: str, symbol: str):
-        from feature_service.service import FeatureDataUnavailableError
+        from services.feature_service.src.service import FeatureDataUnavailableError
 
         raise FeatureDataUnavailableError(exchange=exchange, symbol=symbol, degraded_reasons=["horizons_provider_fallback"])
 
     async def get_features(self, exchange: str, symbol: str):
-        from feature_service.service import FeatureDataUnavailableError
+        from services.feature_service.src.service import FeatureDataUnavailableError
 
         raise FeatureDataUnavailableError(exchange=exchange, symbol=symbol, degraded_reasons=["open_interest_provider_fallback"])
 

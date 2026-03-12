@@ -9,7 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from feature_service.providers import build_independent_provider_bundle
-from feature_service.service import FeatureService
+from services.feature_service.src.service import FeatureService
 
 
 @pytest.mark.integration

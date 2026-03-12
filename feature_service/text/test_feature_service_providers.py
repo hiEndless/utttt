@@ -16,7 +16,7 @@ from feature_service.providers.noop import (
     NoopOrderbookProvider,
 )
 from feature_service.providers.bundle import ProviderBundle
-from feature_service.service import FeatureDataUnavailableError, FeatureService
+from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
 
 
 class _BrokenOrderbookProvider:
