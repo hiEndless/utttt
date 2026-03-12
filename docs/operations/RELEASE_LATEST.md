@@ -5,7 +5,7 @@
 当前生效基线（single source）：
 
 - branch: `master`
-- commit: `e2d2252`
+- commit: 以命令结果为准（`git rev-parse --short HEAD`）
 - tag: `refactor-guard-baseline-20260312`
 - tag commit: 以命令结果为准（`git rev-parse --short refactor-guard-baseline-20260312^{}`）
 
