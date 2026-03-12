@@ -42,3 +42,8 @@ git checkout refactor-guard-baseline-20260312
 - [x] baseline tag 与 `master` 对齐
 - [x] baseline 文档与 tag 指向一致
 - [x] contract/docs 守卫链路通过
+
+## 6) 滚动更新记录（2026-03-13）
+
+- 已将 baseline tag `refactor-guard-baseline-20260312` 重新对齐到当日 `HEAD`。
+- 已执行：`bash tools/local/verify_quick.sh`，结果通过。
