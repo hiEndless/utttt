@@ -56,6 +56,30 @@ def test_signal_context_builder_includes_alternative_source_summary() -> None:
     assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"
 
 
+def test_signal_context_builder_treats_noop_empty_source_as_unavailable() -> None:
+    out = _signal_context_builder(
+        features={
+            "evidence": {
+                "alternative_sources": {
+                    "news": {"available": True, "provider_state": "noop", "features": {}},
+                    "social": {"available": False, "provider_state": "empty", "features": {}},
+                    "onchain": {"available": False, "provider_state": "event_evidence_present", "features": {"inflow_usd": 10}},
+                }
+            }
+        },
+        signal_event={"payload": {"event_type": "macro_news"}},
+        active_events=[],
+        max_features=20,
+    )
+    items = list(out.get("features") or [])
+    summary = next((x for x in items if (x or {}).get("name") == "alternative_source_summary"), {})
+    assert summary
+    value = dict(summary.get("value") or {})
+    assert "news" not in list(value.get("available_sources") or [])
+    assert "news" in list(value.get("unavailable_sources") or [])
+    assert "onchain" in list(value.get("available_sources") or [])
+
+
 def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> None:
     out = _signal_context_builder(
         features={

@@ -10,6 +10,8 @@ from services.agent_server_new.ports.memory.symbol_memory_provider import Symbol
 from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from services.agent_server_new.ports.market_state import MarketStateProvider
 
+_UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
+
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
     return x if isinstance(x, dict) else {}
@@ -48,6 +50,18 @@ def _extract_contract_warnings(anomaly_flags: List[Any]) -> List[str]:
         if flag.startswith("state_features_") or flag.startswith("msl_"):
             out.append(flag)
     return sorted(set(out))
+
+
+def _has_nonempty_features(value: Any) -> bool:
+    return isinstance(value, dict) and any(v is not None for v in value.values())
+
+
+def _is_effective_source_available(*, available: bool, provider_state: str, features: Any) -> bool:
+    state = str(provider_state or "").strip().lower()
+    has_features = _has_nonempty_features(features)
+    if state in _UNAVAILABLE_PROVIDER_STATES and not has_features:
+        return False
+    return bool(available) or has_features
 
 
 def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, Any]:
@@ -98,7 +112,11 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         provider_states[name] = state
         data_sources[name] = str(node.get("data_source") or f"feature_service.{name}")
         inference_sources[name] = str(node.get("inference_source") or "feature_service.normalizer")
-        available = bool(node.get("available") is True)
+        available = _is_effective_source_available(
+            available=bool(node.get("available") is True),
+            provider_state=state,
+            features=node.get("features"),
+        )
         if available:
             available_sources.append(name)
         else:
