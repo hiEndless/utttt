@@ -41,3 +41,16 @@ def test_source_semantics_policy_has_required_structure() -> None:
         "agent_fusion_fallback",
     ):
         assert key in default_rules
+
+    provider_state_policy = item.get("provider_state_policy") or {}
+    assert isinstance(provider_state_policy, dict)
+    enums = provider_state_policy.get("enums") or {}
+    assert isinstance(enums, dict)
+    assert set(enums.keys()) == {"feature", "event_center", "market_state_fusion"}
+    for scope in ("feature", "event_center", "market_state_fusion"):
+        values = [str(x).strip() for x in list(enums.get(scope) or []) if str(x).strip()]
+        assert values
+        assert len(values) == len(set(values))
+
+    unavailable_states = [str(x).strip() for x in list(provider_state_policy.get("unavailable_states") or []) if str(x).strip()]
+    assert set(unavailable_states) == {"noop", "empty", "unavailable", "none"}

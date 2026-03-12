@@ -1,6 +1,6 @@
-# 语义防漂移护栏（v14）
+# 语义防漂移护栏（v15）
 
-更新时间：2026-03-11
+更新时间：2026-03-13
 
 目标：防止“字段不报错但语义已错位”。
 
@@ -46,6 +46,15 @@
 - `feature_response_schema_version` 当前为 `1.0`。
 - `market_state_contract_version` 当前为 `market-state-contract-v1`。
 - `market_state_msl_schema_version` 当前为 `2`。
+
+8. `alternative_sources.provider_state` 枚举冻结（跨服务）
+- 策略单源：`contracts/semantic_policies/source_semantics.yaml`。
+- 枚举范围：
+  - feature: `primary/fallback/static/noop/unavailable/empty/ok`
+  - event_center: `event_evidence_present/empty`
+  - market_state_fusion: `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
+- 不可用状态集合冻结：`noop/empty/unavailable/none`。
+- 已新增跨服务守卫：`verification/validators/contracts/test_alternative_source_provider_state_enum_guard.py`。
 
 ## 后续建议
 

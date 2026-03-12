@@ -1,4 +1,4 @@
-version: 1
+version: 2
 updated_at: "2026-03-13"
 
 policies:
@@ -31,3 +31,30 @@ policies:
         event_data_source_template: "event_center_new.{source}"
         feature_inference_source: "feature_service.normalizer"
         event_inference_source: "event_center_new.selector"
+    provider_state_policy:
+      enums:
+        feature:
+          - primary
+          - fallback
+          - static
+          - noop
+          - unavailable
+          - empty
+          - ok
+        event_center:
+          - event_evidence_present
+          - empty
+        market_state_fusion:
+          - primary
+          - fallback
+          - static
+          - noop
+          - unavailable
+          - empty
+          - ok
+          - event_evidence_present
+      unavailable_states:
+        - noop
+        - empty
+        - unavailable
+        - none
