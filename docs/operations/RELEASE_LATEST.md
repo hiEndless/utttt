@@ -27,3 +27,9 @@ bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
 ```bash
 bash tools/local/check_release_baseline_alignment.sh --check-origin
 ```
+
+一键发布就绪检查：
+
+```bash
+bash tools/local/check_release_ready.sh
+```

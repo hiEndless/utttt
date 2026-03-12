@@ -17,6 +17,7 @@
   - 失败排障提示：当 contract bundle 守卫失败时，执行标准排障命令。
   - 标准排障命令：`bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`
 - 发布基线对齐守卫：`tools/local/check_release_baseline_alignment.sh`
+- 一键发布就绪检查：`tools/local/check_release_ready.sh`
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
