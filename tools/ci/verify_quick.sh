@@ -7,7 +7,7 @@ Usage:
   bash tools/ci/verify_quick.sh
 
 Description:
-  CI quick 验证入口。执行结构守卫、docs/contracts 聚合守卫、链路 quick suite 与语义审计后处理。
+  CI quick 验证入口。执行结构守卫、docs/contracts 聚合守卫（含 pipeline semantic terms doc guard）、链路 quick suite 与语义审计后处理。
 
 Environment Switches (local debug only):
   VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1
