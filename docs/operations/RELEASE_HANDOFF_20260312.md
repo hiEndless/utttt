@@ -27,6 +27,8 @@ bash tools/local/check_release_ready.sh
 
 ```bash
 bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
+rg -n "^\[CI_GUARD\]" quick_strict.log quick_lenient.log full_guard.log
+cat guard_summary.quick_strict.log guard_summary.quick_lenient.log guard_summary.full.log
 ```
 
 ## 4) 快速回滚

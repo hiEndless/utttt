@@ -28,6 +28,14 @@
 - 统一 operations 文档中的标准排障文案。
 - 增加 baseline 记录与索引入口。
 
+5. event_center CI 可观测增强
+- quick/full 入口统一输出 `[CI_GUARD]` 摘要行（guard mode / wiring / runtime 开关）。
+- CI 失败 artifact 产出独立摘要文件：
+  - `guard_summary.quick_strict.log`
+  - `guard_summary.quick_lenient.log`
+  - `guard_summary.full.log`
+- workflow 失败提示新增摘要查看命令，支持首屏定位配置门禁问题。
+
 ## 3. 关键验证结果
 
 - `bash tools/ci/verify_quick.sh` -> pass
@@ -40,6 +48,8 @@
 
 ```bash
 bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
+rg -n "^\[CI_GUARD\]" quick_strict.log quick_lenient.log full_guard.log
+cat guard_summary.quick_strict.log guard_summary.quick_lenient.log guard_summary.full.log
 ```
 
 ## 5. 回滚建议
