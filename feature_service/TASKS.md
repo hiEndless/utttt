@@ -108,3 +108,11 @@
 - [x] Task 61: 新增 `scripts/check_feature_service_schema_guard.sh`，检查 schema 文件存在并执行契约守卫测试。
 - [x] Task 62: 本地执行守卫脚本通过，确认可直接接入 CI。
 - [x] Task 63: 同步更新项目导航文档入口，纳入 schema 守卫脚本。
+
+## services canonical 路径收敛（第十七阶段）
+
+- [x] Task 64: 将 `app/routes/service/contracts` 主实现迁入 `services/feature_service/src/`，旧路径改为兼容壳。
+- [x] Task 65: 将 `providers` / `normalizers` / `ports` 主实现迁入 `services/feature_service/src/`，旧路径改为兼容壳。
+- [x] Task 66: 将 `providers/market_structure_migrated` 镜像迁入 `services/feature_service/src/providers/market_structure_migrated/`。
+- [x] Task 67: 旧 `feature_service/providers/market_structure_migrated/**/*.py` 基本改为兼容壳；保留 `behavioral/behavior_output.py` 旧路径猴子补丁兼容实现。
+- [x] Task 68: 更新模块文档为 canonical 路径表达，并补充兼容壳路径说明。

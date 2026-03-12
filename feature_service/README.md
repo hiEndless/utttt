@@ -321,6 +321,11 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 61：新增 `scripts/check_feature_service_schema_guard.sh`（schema 文件存在性 + 契约守卫测试）
 - 已完成 Task 62：守卫脚本本地执行通过，可直接接入 CI
 - 已完成 Task 63：项目级文档入口已纳入 feature schema 守卫脚本
+- 已完成 Task 64：`app/routes/service/contracts` 主实现已迁入 `services/feature_service/src/`，旧路径为兼容壳
+- 已完成 Task 65：`providers/normalizers/ports` 主实现已迁入 `services/feature_service/src/`，旧路径为兼容壳
+- 已完成 Task 66：`market_structure_migrated` 已镜像迁入 `services/feature_service/src/providers/market_structure_migrated/`
+- 已完成 Task 67：旧 `feature_service/providers/market_structure_migrated/**/*.py` 基本改为兼容壳（`behavioral/behavior_output.py` 保留猴子补丁兼容实现）
+- 已完成 Task 68：模块文档已补充 canonical 路径与兼容壳路径说明
 
 ## 错误码约定（新增）
 
