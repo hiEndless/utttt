@@ -2,6 +2,7 @@
 
 Canonical contracts docs:
 
+- `README.md`（仓库导航入口）
 - `CONTRACT_INDEX.md`
 - `CONTRACTS_QUICK_REF.md`
 - `CONTRACTS_CURL_EXAMPLES.md`
