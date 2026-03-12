@@ -8,7 +8,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from event_center_new.replay_main import _to_summary_report
+from services.event_center_new.runtime.replay_main import _to_summary_report
 
 
 def _load_schema() -> dict:

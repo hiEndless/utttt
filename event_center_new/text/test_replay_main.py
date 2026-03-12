@@ -9,7 +9,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import event_center_new.replay_main as replay_main
+import services.event_center_new.runtime.replay_main as replay_main
 
 
 class _FakeRedisClient:

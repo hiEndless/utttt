@@ -8,7 +8,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import event_center_new.main as main_mod
+import services.event_center_new.runtime.main as main_mod
 
 
 @dataclass

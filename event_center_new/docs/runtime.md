@@ -1,6 +1,6 @@
 # event_center_new 运行时配置
 
-本文冻结 `event_center_new/main.py` 的运行时环境变量契约，避免不同环境口口相传导致配置漂移。
+本文冻结 `services/event_center_new/runtime/main.py` 的运行时环境变量契约，避免不同环境口口相传导致配置漂移。
 
 ## 0. 版本信息
 
@@ -48,7 +48,7 @@
 ```bash
 EVENT_CENTER_LAYER_STORE_MODE=memory \
 EVENT_CENTER_RUN_LOOP=false \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 ### 3.2 CI 快速探活（自检）
@@ -58,7 +58,7 @@ EVENT_CENTER_LAYER_STORE_MODE=redis \
 EVENT_CENTER_REDIS_URL=redis://127.0.0.1:6379/0 \
 EVENT_CENTER_SELF_CHECK_ONLY=true \
 EVENT_CENTER_HEALTH_KEY=ec:runner:health \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 ### 3.3 准生产常驻（循环）
@@ -71,7 +71,7 @@ EVENT_CENTER_RUN_INTERVAL_MS=1000 \
 EVENT_CENTER_RUN_MAX_TICKS=0 \
 EVENT_CENTER_STOP_ON_ERROR=false \
 EVENT_CENTER_HEALTH_KEY=ec:runner:health \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 ### 3.4 严格失败模式（问题定位）
@@ -80,7 +80,7 @@ python3 -m event_center_new.main
 EVENT_CENTER_RUN_LOOP=true \
 EVENT_CENTER_STOP_ON_ERROR=true \
 EVENT_CENTER_RUN_MAX_TICKS=1 \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 ## 4. 健康信号

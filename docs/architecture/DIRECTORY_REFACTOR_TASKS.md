@@ -60,6 +60,7 @@
 - [x] 完成第五个物理迁移试点：`agent_server_new/runner.py` 实现迁入 `services/agent_server_new/runtime/runner.py`
 - [x] 完成第六个物理迁移试点：`agent_server_new/pipeline_smoke.py` 与 `memory_summary_runner.py` 实现迁入 `services/agent_server_new/runtime/`
 - [x] 完成第七个物理迁移试点：`event_center_new/replay_main.py` 实现迁入 `services/event_center_new/runtime/replay_main.py`
+- [x] 执行 `event_center_new` 下线 Batch A（阶段1）：删除 `event_center_new/{main,replay_main}.py` 兼容壳并迁移测试/守卫引用
 - [x] 完成第八个物理迁移试点：`feature_service/app.py` 实现迁入 `services/feature_service/src/app.py`
 - [x] 完成第九个物理迁移试点：`feature_service/routes.py` 实现迁入 `services/feature_service/src/routes.py`
 - [x] 完成第十个物理迁移试点：`feature_service/service.py` 实现迁入 `services/feature_service/src/service.py`

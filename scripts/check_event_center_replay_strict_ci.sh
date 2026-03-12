@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "[1/2] 检查 replay CLI strict CI 参数"
-help_text="$(python3 -m event_center_new.replay_main --help)"
+help_text="$(python3 -m services.event_center_new.replay_main --help)"
 if ! echo "$help_text" | rg -q -- "--strict"; then
   echo "[失败] replay CLI 缺少 --strict 参数"
   exit 1
@@ -25,7 +25,7 @@ PROJECT_ROOT = str(Path.cwd())
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import event_center_new.replay_main as replay_main
+import services.event_center_new.runtime.replay_main as replay_main
 
 
 class _FakeRedisClient:

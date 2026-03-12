@@ -41,10 +41,8 @@ Pilot migration note:
 - runtime entrypoint is `services/market_state_engine/runtime/main.py`.
 - `execution_service/main.py` is now a legacy wrapper.
 - runtime implementation moved to `services/execution_service/runtime/main.py`.
-- `event_center_new/main.py` is now a legacy wrapper.
-- runtime implementation moved to `services/event_center_new/runtime/main.py`.
-- `event_center_new/replay_main.py` is now a legacy wrapper.
-- runtime implementation moved to `services/event_center_new/runtime/replay_main.py`.
+- `event_center_new` legacy wrappers are fully removed.
+- runtime entrypoints are `services/event_center_new/runtime/main.py` and `services/event_center_new/runtime/replay_main.py`.
 - `agent_server_new/runner.py` is now a legacy wrapper.
 - runtime implementation moved to `services/agent_server_new/runtime/runner.py`.
 - `agent_server_new/pipeline_smoke.py` is now a legacy wrapper.

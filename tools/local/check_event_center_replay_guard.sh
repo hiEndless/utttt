@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "[1/3] 检查 event_center replay 入口文件"
-if ! test -f event_center_new/replay_main.py; then
-  echo "[失败] 缺少 event_center_new/replay_main.py"
+if ! test -f services/event_center_new/runtime/replay_main.py; then
+  echo "[失败] 缺少 services/event_center_new/runtime/replay_main.py"
   exit 1
 fi
 if ! test -f event_center_new/ec/pipeline/replay.py; then
@@ -25,16 +25,16 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   event_center_new/text/test_replay_main.py
 
 echo "[3/3] 校验 replay CLI 参数"
-python3 -m event_center_new.replay_main --help >/dev/null
-if ! python3 -m event_center_new.replay_main --help | rg -q -- "--fail-on-missing-stream"; then
+python3 -m services.event_center_new.replay_main --help >/dev/null
+if ! python3 -m services.event_center_new.replay_main --help | rg -q -- "--fail-on-missing-stream"; then
   echo "[失败] replay CLI 缺少 --fail-on-missing-stream 参数"
   exit 1
 fi
-if ! python3 -m event_center_new.replay_main --help | rg -q -- "--strict"; then
+if ! python3 -m services.event_center_new.replay_main --help | rg -q -- "--strict"; then
   echo "[失败] replay CLI 缺少 --strict 参数"
   exit 1
 fi
-if ! python3 -m event_center_new.replay_main --help | rg -q -- "--summary-only"; then
+if ! python3 -m services.event_center_new.replay_main --help | rg -q -- "--summary-only"; then
   echo "[失败] replay CLI 缺少 --summary-only 参数"
   exit 1
 fi
@@ -52,7 +52,7 @@ PROJECT_ROOT = str(Path.cwd())
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import event_center_new.replay_main as replay_main
+import services.event_center_new.runtime.replay_main as replay_main
 
 
 class _FakeRedisClient:

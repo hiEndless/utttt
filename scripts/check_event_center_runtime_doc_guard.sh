@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RUNTIME_DOC="event_center_new/docs/runtime.md"
-MAIN_FILE="event_center_new/main.py"
+MAIN_FILE="services/event_center_new/runtime/main.py"
 SHOW_SETS="false"
 
 if [[ "${1:-}" == "--show-sets" ]]; then

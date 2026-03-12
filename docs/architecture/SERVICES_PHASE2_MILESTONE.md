@@ -89,11 +89,11 @@
 
 4. `event_center_new/main.py`
 - migrated impl: `services/event_center_new/runtime/main.py`
-- legacy wrapper kept: `event_center_new/main.py`
+- legacy wrapper status: removed in 26 (decommission batch-a phase-1)
 
 5. `event_center_new/replay_main.py`
 - migrated impl: `services/event_center_new/runtime/replay_main.py`
-- legacy wrapper kept: `event_center_new/replay_main.py`
+- legacy wrapper status: removed in 26 (decommission batch-a phase-1)
 
 6. `agent_server_new/runner.py`
 - migrated impl: `services/agent_server_new/runtime/runner.py`
@@ -190,3 +190,4 @@
 23. 已执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳。
 24. 已执行 `market_state_engine` 下线 Batch C（阶段1）：删除 `market_state_engine/factors/**/*.py` 与 `market_state_engine/state_inference/**/*.py` 兼容壳。
 25. 已执行 `market_state_engine` 下线 Batch D（阶段1）：删除 `market_state_engine/{__init__,main,service,engine}.py` 兼容壳，服务进入 fully-migrated 状态。
+26. 已执行 `event_center_new` 下线 Batch A（阶段1）：删除 `event_center_new/{main,replay_main}.py` 兼容壳，并将测试/守卫迁移到 `services.event_center_new.runtime.*`。

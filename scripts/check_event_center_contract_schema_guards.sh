@@ -12,7 +12,7 @@ EOF
 fi
 
 echo "[1/2] event_center replay CLI 参数快照"
-help_text="$(./venv/bin/python -m event_center_new.replay_main --help)"
+help_text="$(./venv/bin/python -m services.event_center_new.replay_main --help)"
 if ! echo "$help_text" | rg -q -- "--strict"; then
   echo "[失败] replay CLI 缺少 --strict 参数"
   exit 1

@@ -146,7 +146,7 @@ event_center_new/
 说明：
 
 - `event_center_new` 当前以协议与可组合模块为主（contracts + protocols + in-memory 组件）
-- 已提供最小运行时 `EventPipelineRunner` 与 `event_center_new/main.py` 示例入口（内存 source/store）
+- 已提供最小运行时 `EventPipelineRunner` 与 `services/event_center_new/runtime/main.py` 示例入口（内存 source/store）
 - 已提供 Redis 分层写入适配器（`ec/storage/redis.py`），支持写入 `ec:raw/ec:normalized/ec:evidence/ec:context/ec:selected`
 - 当前仅维护 memory/redis 存储适配器，其他适配器暂不纳入近期计划
 - 已提供最小 `event_replay` 工具（`ec/pipeline/replay.py`），可按输入事件重放并比较 selected 差异
@@ -342,7 +342,7 @@ event_center_new/
 内存模式（默认）：
 
 ```bash
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 Redis 分层写入模式：
@@ -350,7 +350,7 @@ Redis 分层写入模式：
 ```bash
 EVENT_CENTER_LAYER_STORE_MODE=redis \
 EVENT_CENTER_REDIS_URL=redis://127.0.0.1:6379/0 \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 循环运行模式（最小调度）：
@@ -361,7 +361,7 @@ EVENT_CENTER_RUN_INTERVAL_MS=1000 \
 EVENT_CENTER_RUN_MAX_TICKS=0 \
 EVENT_CENTER_STOP_ON_ERROR=false \
 EVENT_CENTER_HEALTH_KEY=ec:runner:health \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 说明：
@@ -377,7 +377,7 @@ python3 -m event_center_new.main
 ```bash
 EVENT_CENTER_SELF_CHECK_ONLY=true \
 EVENT_CENTER_HEALTH_KEY=ec:runner:health \
-python3 -m event_center_new.main
+python3 -m services.event_center_new.main
 ```
 
 - `EVENT_CENTER_SELF_CHECK_ONLY=true` 时不会执行事件处理循环，仅执行最小依赖路径并上报一次健康状态。
@@ -401,7 +401,7 @@ from event_center_new.ec.pipeline.replay import EventReplayTool, diff_selected
 Redis 时间窗回放 CLI：
 
 ```bash
-python3 -m event_center_new.replay_main \
+python3 -m services.event_center_new.replay_main \
   --redis-url redis://127.0.0.1:6379/0 \
   --start-ms 1773154000000 \
   --end-ms 1773154999999 \
