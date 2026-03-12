@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from market_state_engine.engine import MarketStateEngine
-from market_state_engine.state_inference.engine import infer_msl_from_features, infer_msl_with_meta
+from services.market_state_engine.src.state_inference.engine import infer_msl_from_features, infer_msl_with_meta
 
 
 def _sample_market_structure() -> dict:

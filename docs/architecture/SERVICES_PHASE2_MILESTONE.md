@@ -51,11 +51,11 @@
 
 2.9 `market_state_engine/{factors,state_inference}/**`
 - migrated impl: `services/market_state_engine/src/{factors,state_inference}/**`
-- legacy implementation kept: `market_state_engine/{factors,state_inference}/**`（兼容窗口暂不收壳）
+- legacy wrapper status: removed in 2.15 (batch-c phase-1)
 
 2.10 `market_state_engine/{factors,state_inference}/**` wrappers
 - migrated impl: `services/market_state_engine/src/{factors,state_inference}/**`
-- legacy wrapper kept: `market_state_engine/{factors,state_inference}/**`
+- legacy wrapper status: removed in 2.15 (batch-c phase-1)
 
 2.11 `market_state_engine/{__init__.py,adapters/__init__.py}`
 - migrated impl: `services/market_state_engine/src/{__init__.py,adapters/__init__.py}`
@@ -74,6 +74,10 @@
 2.14 `market_state_engine` decommission batch-b (phase-1)
 - removed wrappers: `market_state_engine/adapters/**/*.py`, `market_state_engine/ports/**/*.py`
 - consumer tests switched to `services.market_state_engine.src.adapters.*`
+
+2.15 `market_state_engine` decommission batch-c (phase-1)
+- removed wrappers: `market_state_engine/factors/**/*.py`, `market_state_engine/state_inference/**/*.py`
+- state_inference tests switched to `services.market_state_engine.src.state_inference.*`
 
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
@@ -180,3 +184,4 @@
 21. 已执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移，并新增 `check_market_state_legacy_imports.sh`。
 22. 已执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳，并迁移测试导入。
 23. 已执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳。
+24. 已执行 `market_state_engine` 下线 Batch C（阶段1）：删除 `market_state_engine/factors/**/*.py` 与 `market_state_engine/state_inference/**/*.py` 兼容壳。

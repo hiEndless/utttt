@@ -44,3 +44,4 @@ Notes:
 - Decommission progress:
   - Batch A (phase-1) removed `market_state_engine/{app,contracts,routes,errors,msl}.py`
   - Batch B (phase-1) removed `market_state_engine/adapters/**/*.py` and `market_state_engine/ports/**/*.py`
+  - Batch C (phase-1) removed `market_state_engine/factors/**/*.py` and `market_state_engine/state_inference/**/*.py`

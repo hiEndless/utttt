@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_d2_partial_wrapper_decommission"
+    status: "src_batch_d3_partial_wrapper_decommission"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
@@ -74,8 +74,6 @@ services:
       - "market_state_engine/main.py"
       - "market_state_engine/service.py"
       - "market_state_engine/engine.py"
-      - "market_state_engine/factors"
-      - "market_state_engine/state_inference"
 
   - name: event_center_new
     current_path: "event_center_new/"
