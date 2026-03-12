@@ -10,8 +10,8 @@
 
 | legacy script | verification wrapper | status |
 |---|---|---|
-| `scripts/check_new_arch_guards.sh` | `verification/guards/new_arch_full.sh` | mapped |
-| `scripts/check_new_arch_guards.sh --event-center-quick` | `verification/guards/new_arch_event_center_quick.sh` | mapped |
+| `tools/local/check_new_arch_guards.sh` | `verification/guards/new_arch_full.sh` | mapped |
+| `tools/local/check_new_arch_guards.sh --event-center-quick` | `verification/guards/new_arch_event_center_quick.sh` | mapped |
 | `scripts/check_contract_docs_index_guard.sh` + `scripts/check_contract_docs_index_help_snapshot_guard.sh` | `verification/guards/contract_docs_index.sh` | mapped |
 | `scripts/check_state_to_agent_contract_guard.sh` | `verification/guards/state_to_agent.sh` | mapped |
 | `scripts/check_agent_to_execution_guard.sh` | `verification/guards/agent_to_execution.sh` | mapped |
@@ -27,9 +27,9 @@
 - `scripts/check_event_center_replay_guard.sh` -> `tools/local/check_event_center_replay_guard.sh`
 - `scripts/check_contract_docs_index_guard.sh` -> `tools/local/check_contract_docs_index_guard.sh`
 
-补充：`scripts/check_new_arch_guards.sh` 的全量执行主体已迁入
-`tools/ci/new_arch_guards_full.sh`；保留 `scripts/check_new_arch_guards.sh`
-中的参数解析与 event_center 分支以兼容现有“文本扫描型守卫”。
+补充：`tools/local/check_new_arch_guards.sh` 的全量执行主体已迁入
+`tools/ci/new_arch_guards_full.sh`；`scripts/check_new_arch_guards.sh`
+兼容壳已下线。
 
 ## 3. 保留为底层脚本（暂不迁移）
 

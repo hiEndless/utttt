@@ -20,8 +20,6 @@ compatibility_wrappers_retained:
     target: "tools/local/check_market_state_engine_guard.sh"
   - path: "scripts/check_event_center_contract_guards.sh"
     target: "tools/local/check_event_center_contract_guards.sh"
-  - path: "scripts/check_new_arch_guards.sh"
-    target: "tools/local/check_new_arch_guards.sh"
   - path: "scripts/bump_event_center_runtime_version.sh"
     target: "tools/local/bump_event_center_runtime_version.sh"
   - path: "scripts/check_event_center_runtime_doc_guard.sh"
