@@ -15,7 +15,7 @@
 | `scripts/check_contract_docs_index_guard.sh` + `scripts/check_contract_docs_index_help_snapshot_guard.sh` | `verification/guards/contract_docs_index.sh` | mapped |
 | `scripts/check_state_to_agent_contract_guard.sh` | `verification/guards/state_to_agent.sh` | mapped |
 | `scripts/check_agent_to_execution_guard.sh` | `verification/guards/agent_to_execution.sh` | mapped |
-| `scripts/check_event_center_replay_guard.sh` + `scripts/check_event_center_replay_summary_schema_guard.sh` | `verification/guards/event_center_replay.sh` | mapped |
+| `tools/local/check_event_center_replay_guard.sh` + `tools/local/check_event_center_replay_summary_schema_guard.sh` | `verification/guards/event_center_replay.sh` | mapped |
 
 说明：上述 wrapper 当前已优先直连 `tools/` 实现层（`tools/local` 或 `tools/ci`），
 `scripts/*` 仅保留兼容入口与快照/文本扫描约束承载。
@@ -24,7 +24,6 @@
 
 - `scripts/check_state_to_agent_contract_guard.sh` -> `tools/local/check_state_to_agent_contract_guard.sh`
 - `scripts/check_agent_to_execution_guard.sh` -> `tools/local/check_agent_to_execution_guard.sh`
-- `scripts/check_event_center_replay_guard.sh` -> `tools/local/check_event_center_replay_guard.sh`
 - `scripts/check_contract_docs_index_guard.sh` -> `tools/local/check_contract_docs_index_guard.sh`
 
 补充：`tools/local/check_new_arch_guards.sh` 的全量执行主体已迁入
@@ -45,8 +44,6 @@
 - `check_execution_breaking_version_bump_guard.sh`
 - `check_execution_contract_entry_guard.sh`
 - `check_alert_codes_entry_guard.sh`
-- `check_event_center_contract_schema_guards.sh`
-- `check_event_center_runtime_*`
 
 ## 4. 非验证类脚本
 
