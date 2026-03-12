@@ -5,7 +5,7 @@ import os
 from fastapi import FastAPI
 
 from services.market_state_engine.src.adapters.raw_structure_http import HttpRawStructureProvider
-from market_state_engine.adapters.selected_events_redis import (
+from services.market_state_engine.src.adapters.selected_events_redis import (
     RedisSelectedEventProvider,
     RedisSelectedEventProviderConfig,
 )

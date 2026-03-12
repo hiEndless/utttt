@@ -21,3 +21,5 @@ Notes:
 - Batch B (phase-5) migrated implementation:
   - `services/market_state_engine/src/adapters/in_memory_feature_store.py`
   - `services/market_state_engine/src/adapters/raw_structure_http.py`
+- Batch B (phase-6) migrated implementation:
+  - `services/market_state_engine/src/adapters/selected_events_redis.py`
