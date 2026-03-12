@@ -157,9 +157,9 @@ event_center_new(signal_event + active_events)
 - 仅跑 event_center quick：`tools/local/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`tools/local/check_new_arch_guards.sh --event-center-only`
 - 说明：`--event-center-quick/--event-center-only` 都会先执行告警码入口守卫
-- event_center CI workflow 守卫：`scripts/check_event_center_ci_workflow_guard.sh`
-- event_center CI 文档快照守卫：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
-- event_center 帮助快照同步守卫：`scripts/check_event_center_help_snapshot_sync_guard.sh`
+- event_center CI workflow 守卫：`tools/local/check_event_center_ci_workflow_guard.sh`
+- event_center CI 文档快照守卫：`tools/local/check_event_center_ci_doc_snapshot_guard.sh`
+- event_center 帮助快照同步守卫：`tools/local/check_event_center_help_snapshot_sync_guard.sh`
 - 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
 - CI 便捷入口：`tools/ci/event_center_quick_strict.sh` / `tools/ci/event_center_quick_lenient.sh`
 - event_center full CI 便捷入口：`tools/ci/event_center_full_strict.sh`

@@ -47,7 +47,6 @@
 - `check_alert_codes_entry_guard.sh`
 - `check_event_center_contract_schema_guards.sh`
 - `check_event_center_runtime_*`
-- `check_event_center_ci_*`
 
 ## 4. 非验证类脚本
 
