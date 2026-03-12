@@ -31,7 +31,7 @@
 前置门禁：
 
 1. `bash tools/local/check_feature_legacy_imports.sh --strict` 通过。
-2. `./venv/bin/pytest -q feature_service/text` 通过。
+2. `./venv/bin/pytest -q verification/validators/feature_service` 通过。
 3. `bash tools/ci/verify_quick.sh` 通过。
 
 执行结果：
@@ -46,7 +46,7 @@
 
 1. Batch A 已稳定一个迭代周期。
 2. `feature_service` 生产/回放链路无兼容壳相关告警。
-3. `./venv/bin/pytest -q feature_service/text` 与 quick CI 持续通过。
+3. `./venv/bin/pytest -q verification/validators/feature_service` 与 quick CI 持续通过。
 
 执行结果：
 
@@ -80,7 +80,7 @@
 2. 全仓扫描遗留 import：
    - `bash tools/local/check_feature_legacy_imports.sh --strict`
 3. 回归：
-   - `./venv/bin/pytest -q feature_service/text`
+   - `./venv/bin/pytest -q verification/validators/feature_service`
    - `bash tools/ci/verify_quick.sh`
 4. 更新文档：
    - `services/services_map.yaml`
@@ -100,5 +100,5 @@
 已完成，进入维护阶段：
 
 1. `bash tools/local/check_feature_legacy_imports.sh --strict`
-2. `./venv/bin/pytest -q feature_service/text`
+2. `./venv/bin/pytest -q verification/validators/feature_service`
 3. `bash tools/ci/verify_quick.sh`

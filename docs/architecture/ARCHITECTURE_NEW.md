@@ -211,7 +211,7 @@ event_center_new(signal_event + active_events)
 - 文档就近放置在各模块下的 `docs/` 目录。
 
 `pytest` 已配置模块级发现路径（`pytest.ini`）：
-- `feature_service/text`
+- `verification/validators/feature_service`
 - `market_state_engine/text`
 - `event_center/text`
 - `agent_server/text`（旧模块测试，非新架构验收门槛）

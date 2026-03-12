@@ -8,7 +8,7 @@ contract_cases:
   - "fixtures/contract_cases/agent_runner_output.agent.json"
   - "fixtures/contract_cases/event_selected.sample.json"
   - "fixtures/contract_cases/execution_decision_intent.sample.json"
-  - "feature_service/text/test_feature_service_schema_guard.py"
+  - "verification/validators/feature_service/test_feature_service_schema_guard.py"
   - "market_state_engine/text/test_msl_schema_contract.py"
   - "agent_server_new/text/test_runner_output_schema.py"
   - "execution_service/text/test_schema_mapping.py"

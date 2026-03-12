@@ -24,7 +24,7 @@
 - `agent_server_new/text/*.py`
 - `execution_service/text/*.py`
 - `verification/replay/event_center_new/*.py`（已迁移）
-- `feature_service/text/*.py`
+- `verification/validators/feature_service/*.py`
 
 若直接删除，会导致：
 - `tools/local/check_*` 脚本失败
@@ -50,7 +50,7 @@
 ## 清理顺序（建议）
 
 1. `event_center_new/text`（与 replay/selected schema 相关，边界清晰，优先迁）。
-2. `feature_service/text`（规模小，迁移成本低）。
+2. `verification/validators/feature_service`（规模小，迁移成本低）。
 3. `agent_server_new/text`（与 workflow 绑定较多，中等风险）。
 4. `execution_service/text`（数量最多、守卫最密集，最后迁）。
 

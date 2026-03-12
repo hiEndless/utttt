@@ -15,7 +15,7 @@ test -f "${FEATURE_SCHEMA}" || { echo "[失败] 缺少 ${FEATURE_SCHEMA}"; exit 
 echo "[2/2] 运行 schema 守卫测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
-  feature_service/text/test_feature_service_schema_guard.py \
-  feature_service/text/test_feature_service_routes_contract.py
+  verification/validators/feature_service/test_feature_service_schema_guard.py \
+  verification/validators/feature_service/test_feature_service_routes_contract.py
 
 echo "[通过] feature_service schema 守卫检查完成。"
