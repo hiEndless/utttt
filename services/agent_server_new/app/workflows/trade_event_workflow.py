@@ -29,6 +29,7 @@ from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
 from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
+from services.agent_server_new.observability.decision_trace_schema_guard import validate_decision_trace_payload
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from services.agent_server_new.ports.event_recorder import EventRecorder
@@ -171,6 +172,7 @@ class TradeEventWorkflow:
         symbol_memory_provider: SymbolMemoryProvider | None = None,
         symbol_memory_recorder: SymbolMemoryRecorder | None = None,
         llm_observer: LLMObserver | None = None,
+        decision_trace_schema_validate: bool = True,
         memory_recent_topk: int = 5,
         memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
         memory_dedup_key: str = "event_id",
@@ -186,6 +188,7 @@ class TradeEventWorkflow:
         self._symbol_memory_provider = symbol_memory_provider
         self._symbol_memory_recorder = symbol_memory_recorder
         self._llm_observer = llm_observer
+        self._decision_trace_schema_validate = bool(decision_trace_schema_validate)
         self._memory_recent_topk = max(1, int(memory_recent_topk))
         self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
         self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
@@ -491,7 +494,25 @@ class TradeEventWorkflow:
                 alert_codes=map_alert_codes_from_contract_warnings(contract_warnings),
                 tags=["decision_trace"],
             )
-            await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
+            trace_payload = trace.to_dict()
+            if self._decision_trace_schema_validate:
+                valid, errors = validate_decision_trace_payload(trace_payload)
+                if not valid:
+                    logger.warning(
+                        "decision_trace schema validation failed event_id=%s error_count=%s",
+                        event.event_id,
+                        len(errors),
+                    )
+                    await self._recorder.record_agent_output(
+                        event.event_id,
+                        "decision_trace_schema_guard",
+                        {
+                            "status": "invalid",
+                            "error_count": len(errors),
+                            "errors": list(errors[:10]),
+                        },
+                    )
+            await self._recorder.record_agent_output(event.event_id, "decision_trace", trace_payload)
 
         if self._symbol_memory_recorder is not None:
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]

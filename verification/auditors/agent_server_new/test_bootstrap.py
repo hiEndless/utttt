@@ -32,6 +32,7 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert wf._symbol_memory_recorder is None  # noqa: SLF001
     assert wf._ai_adaptive_enabled is False  # noqa: SLF001
     assert wf._ai_adaptive_mode == "observe"  # noqa: SLF001
+    assert wf._decision_trace_schema_validate is True  # noqa: SLF001
     assert wf._market_state._base_url == "http://localhost:8300"  # noqa: SLF001
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
 
@@ -258,3 +259,13 @@ def test_create_trade_event_workflow_from_env_enable_llm_observer_wiring(monkeyp
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._llm_observer is not None  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_disable_decision_trace_schema_validate(monkeypatch):
+    monkeypatch.setenv("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "false")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert wf._decision_trace_schema_validate is False  # noqa: SLF001
