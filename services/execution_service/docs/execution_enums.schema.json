@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionEnums",
+  "type": "object",
+  "properties": {
+    "direction_intent": {
+      "type": "string",
+      "enum": ["long", "short", "none"]
+    },
+    "execution_action": {
+      "type": "string",
+      "enum": ["add", "reduce", "hold", "exit", "skip"]
+    },
+    "io_mode": {
+      "type": "string",
+      "enum": ["mock", "exchange"]
+    },
+    "io_status": {
+      "type": "string",
+      "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
+    },
+    "request_side": {
+      "type": "string",
+      "enum": ["BUY", "SELL"]
+    },
+    "request_type": {
+      "type": "string",
+      "enum": ["MARKET"]
+    }
+  }
+}

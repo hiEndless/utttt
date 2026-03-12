@@ -558,5 +558,5 @@ def _infer_sink_mode(execution_sink: Any) -> str:
         return "mock"
     cls_name = str(getattr(execution_sink, "__class__", type(execution_sink)).__name__).lower()
     if "exchange" in cls_name:
-        return "exchange_skeleton"
+        return "exchange"
     return "mock"

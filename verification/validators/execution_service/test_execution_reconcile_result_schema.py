@@ -33,7 +33,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
     )
 
     good_exchange = {
-        "mode": "exchange_skeleton",
+        "mode": "exchange",
         "venue": "binance",
         "order_id": "binance-ord-001",
         "decision_id": "dec-002",

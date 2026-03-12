@@ -43,7 +43,7 @@ class ExchangeExecutionSink:
             # 中文注释：dry-run 不触发真实下单，返回可追踪请求快照用于联调核对。
             return {
                 "submitted": True,
-                "mode": "exchange_skeleton",
+                "mode": "exchange",
                 "dry_run": True,
                 "venue": self.venue,
                 "order_id": order_id,
@@ -60,7 +60,7 @@ class ExchangeExecutionSink:
             raise RuntimeError(f"exchange venue 暂不支持: {self.venue}")
         out = await self._binance_submit(request_payload)
         return {
-            "mode": "exchange_skeleton",
+            "mode": "exchange",
             "dry_run": False,
             "venue": self.venue,
             "submitted": True,
@@ -84,7 +84,7 @@ class ExchangeExecutionSink:
         if self.dry_run:
             # 中文注释：dry-run 对账返回占位状态，避免引入真实交易所依赖。
             return {
-                "mode": "exchange_skeleton",
+                "mode": "exchange",
                 "dry_run": True,
                 "venue": self.venue,
                 "order_id": str(order_id),
@@ -108,7 +108,7 @@ class ExchangeExecutionSink:
         executed_qty = _to_float(out.get("executedQty"))
         avg_price = self._compute_avg_price(out=out, executed_qty=executed_qty)
         return {
-            "mode": "exchange_skeleton",
+            "mode": "exchange",
             "dry_run": False,
             "venue": self.venue,
             "order_id": str(order_id),

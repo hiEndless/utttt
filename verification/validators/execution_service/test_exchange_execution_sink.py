@@ -59,7 +59,7 @@ def test_exchange_sink_submit_dry_run_add_long_builds_buy_market_order() -> None
     )
 
     out = asyncio.run(sink.submit(decision, "add"))
-    assert out["mode"] == "exchange_skeleton"
+    assert out["mode"] == "exchange"
     assert out["dry_run"] is True
     assert out["status"] == "submitted"
     assert out["symbol"] == "ETHUSDT"
@@ -119,7 +119,7 @@ def test_exchange_sink_reconcile_dry_run_placeholder() -> None:
             },
         )
     )
-    assert out["mode"] == "exchange_skeleton"
+    assert out["mode"] == "exchange"
     assert out["dry_run"] is True
     assert out["status"] == "submitted"
     assert "dry-run" in str(out.get("note") or "").lower()

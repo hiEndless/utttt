@@ -101,7 +101,7 @@ def create_app() -> FastAPI:
                 timeout_s=float(str(os.getenv("EXECUTION_SINK_EXCHANGE_TIMEOUT_S", "5") or "5")),
             )
             logger.info(
-                "execution_service 启用执行下沉，mode=exchange_skeleton dry_run=%s",
+                "execution_service 启用执行下沉，mode=exchange dry_run=%s",
                 getattr(execution_sink, "dry_run", True),
             )
         else:
