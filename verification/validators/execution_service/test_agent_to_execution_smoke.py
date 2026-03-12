@@ -12,8 +12,8 @@ from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan
 from services.execution_service.adapters.agent_execution_plan_adapter import (
     adapt_agent_execution_plan_to_decision_intent,
 )
-from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from services.execution_service.adapters.stub_state_providers import (
+from verification.fixtures.execution_service.stub_risk_policy_provider import StubRiskPolicyProvider
+from verification.fixtures.execution_service.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )

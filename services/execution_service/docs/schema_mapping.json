@@ -1,0 +1,902 @@
+{
+  "version": "execution-schema-mapping-v14",
+  "last_updated": "2026-03-12",
+  "items": [
+    {
+      "name": "DecisionIntent",
+      "owner": "execution_service",
+      "change_policy": "breaking",
+      "schema": "services/execution_service/docs/decision_intent.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "DecisionIntent",
+      "fields": [
+        "decision_id",
+        "exchange",
+        "account_id",
+        "symbol",
+        "direction_intent",
+        "decision_confidence",
+        "confidence",
+        "cross_horizon_policy",
+        "risk_hints",
+        "trace_id"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.direction_intent.$ref",
+          "expected": "./execution_enums.schema.json#/properties/direction_intent"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "required",
+          "expected": ["decision_id", "exchange", "account_id", "symbol", "direction_intent", "decision_confidence", "cross_horizon_policy", "risk_hints"]
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.confidence.$ref",
+          "expected": "./decision_confidence.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.decision_confidence.$ref",
+          "expected": "./decision_confidence.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.account_id.minLength",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.minimum",
+          "expected": 0.0
+        },
+        {
+          "schema": "services/execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.maximum",
+          "expected": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ExecutionResult",
+      "owner": "execution_service",
+      "change_policy": "breaking",
+      "schema": "services/execution_service/docs/execution_result.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "ExecutionResult",
+      "fields": [
+        "decision_id",
+        "execution_action",
+        "reject_reason",
+        "applied_risk_rules",
+        "order_result",
+        "signal_result",
+        "policy_snapshot",
+        "notes"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.reject_reason.$ref",
+          "expected": "./reject_reason.schema.json#/properties/reject_reason"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.additionalProperties",
+          "expected": false
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.signal_result.$ref",
+          "expected": "./execution_signal_result.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.mode.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/mode"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.policy_snapshot.$ref",
+          "expected": "./policy_snapshot.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "DecisionState",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/decision_state.schema.json",
+      "code": "services/execution_service/app/service.py",
+      "symbol": "_save_state",
+      "fields": [
+        "account_id",
+        "status",
+        "execution_action",
+        "reject_reason",
+        "risk_state",
+        "last_transition",
+        "attempts",
+        "submitted_at_ms",
+        "last_error",
+        "rule_debug",
+        "policy_snapshot",
+        "source",
+        "trace_id",
+        "updated_at_ms"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.status.$ref",
+          "expected": "./decision_state_status.schema.json#/properties/status"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.last_transition.$ref",
+          "expected": "./decision_state_status.schema.json#/properties/last_transition"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.reject_reason.$ref",
+          "expected": "./reject_reason.schema.json#/properties/reject_reason"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.source.const",
+          "expected": "execution_service"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.account_id.minLength",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.rule_debug.$ref",
+          "expected": "./rule_debug.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.policy_snapshot.$ref",
+          "expected": "./policy_snapshot.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state.schema.json",
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        }
+      ]
+    },
+    {
+      "name": "DecisionStateStatus",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/decision_state_status.schema.json",
+      "code": "services/execution_service/app/service.py",
+      "symbol": "_derive_execution_status",
+      "fields": [
+        "status",
+        "last_transition"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/decision_state_status.schema.json",
+          "json_path": "properties.status.enum",
+          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        },
+        {
+          "schema": "services/execution_service/docs/decision_state_status.schema.json",
+          "json_path": "properties.last_transition.enum",
+          "expected": ["pending", "submitted", "failed", "skipped", "decided", "filled", "canceled", "rejected"]
+        }
+      ]
+    },
+    {
+      "name": "ExecutionAction",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/execution_action.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "ExecutionAction",
+      "fields": [
+        "execution_action"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_action.schema.json",
+          "json_path": "properties.execution_action.$ref",
+          "expected": "./execution_enums.schema.json#/properties/execution_action"
+        }
+      ]
+    },
+    {
+      "name": "RejectReason",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/reject_reason.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "reject_reason",
+      "fields": [
+        "reject_reason"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/reject_reason.schema.json",
+          "json_path": "properties.reject_reason.enum",
+          "expected": [null, "position_limit_reached", "cooldown_active", "max_drawdown_exceeded", "account_notional_exceeded", "account_margin_ratio_exceeded", "daily_loss_exceeded", "consecutive_loss_exceeded", "direction_conflict_with_position", "execution_submit_failed", "idempotency_in_progress"]
+        }
+      ]
+    },
+    {
+      "name": "PolicySnapshot",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/policy_snapshot.schema.json",
+      "code": "services/execution_service/app/service.py",
+      "symbol": "_build_policy_snapshot",
+      "fields": [
+        "policy_version",
+        "ruleset_hash"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/policy_snapshot.schema.json",
+          "json_path": "properties.policy_version.minLength",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/policy_snapshot.schema.json",
+          "json_path": "properties.ruleset_hash.minLength",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "name": "RiskPolicy",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/risk_policy.schema.json",
+      "code": "services/execution_service/adapters/redis_state_providers.py",
+      "symbol": "RedisRiskPolicyProvider",
+      "fields": [
+        "max_position_size",
+        "max_long_position_size",
+        "max_short_position_size",
+        "max_drawdown_ratio",
+        "position_mode",
+        "allow_dual_side",
+        "min_available_balance",
+        "max_symbol_exposure_ratio",
+        "max_account_notional",
+        "max_margin_ratio",
+        "max_daily_loss",
+        "max_consecutive_loss_count",
+        "simulation_step_size",
+        "rule_priority_order"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.position_mode.$ref",
+          "expected": "./position_mode.schema.json#/properties/position_mode"
+        },
+        {
+          "schema": "services/execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.max_drawdown_ratio.maximum",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.max_symbol_exposure_ratio.maximum",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/risk_policy.schema.json",
+          "json_path": "properties.rule_priority_order.$ref",
+          "expected": "./rule_priority_order.schema.json#/properties/rule_priority_order"
+        }
+      ]
+    },
+    {
+      "name": "RetryMeta",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/retry_meta.schema.json",
+      "code": "services/execution_service/domain/retry_meta.py",
+      "symbol": "RETRY_META_STATUSES",
+      "fields": [
+        "attempts",
+        "max_retries",
+        "status",
+        "retryable",
+        "last_error"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.mode.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/mode"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionIOPayload",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+      "code": "services/execution_service/adapters/exchange_execution_sink.py",
+      "symbol": "ExchangeExecutionSink",
+      "fields": [
+        "submitted",
+        "mode",
+        "dry_run",
+        "venue",
+        "order_id",
+        "decision_id",
+        "account_id",
+        "exchange",
+        "symbol",
+        "status",
+        "request",
+        "exchange_raw",
+        "ts",
+        "ts_ms",
+        "submitted_at_ms",
+        "filled_qty",
+        "avg_price",
+        "note",
+        "reason_code",
+        "error_message",
+        "idempotency_hit"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.mode.$ref",
+          "expected": "./execution_enums.schema.json#/properties/io_mode"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.status.$ref",
+          "expected": "./execution_enums.schema.json#/properties/io_status"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.required",
+          "expected": ["symbol", "side", "type", "quantity", "newClientOrderId"]
+        },
+        {
+          "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.properties.side.$ref",
+          "expected": "./execution_enums.schema.json#/properties/request_side"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_io_payload.schema.json",
+          "json_path": "properties.request.properties.type.$ref",
+          "expected": "./execution_enums.schema.json#/properties/request_type"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionEnums",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/execution_enums.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "DirectionIntent",
+      "fields": [
+        "direction_intent",
+        "execution_action",
+        "io_mode",
+        "io_status",
+        "request_side",
+        "request_type"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.direction_intent.enum",
+          "expected": ["long", "short", "none"]
+        },
+        {
+          "schema": "services/execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.execution_action.enum",
+          "expected": ["add", "reduce", "hold", "exit", "skip"]
+        },
+        {
+          "schema": "services/execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.io_mode.enum",
+          "expected": ["mock", "exchange"]
+        },
+        {
+          "schema": "services/execution_service/docs/execution_enums.schema.json",
+          "json_path": "properties.io_status.enum",
+          "expected": ["submitted", "filled", "canceled", "rejected", "failed"]
+        }
+      ]
+    },
+    {
+      "name": "DecisionConfidence",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/decision_confidence.schema.json",
+      "code": "services/execution_service/domain/contracts.py",
+      "symbol": "DecisionConfidence",
+      "fields": [
+        "level",
+        "score"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.level.enum",
+          "expected": ["low", "medium", "high"]
+        },
+        {
+          "schema": "services/execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.minimum",
+          "expected": 0.0
+        },
+        {
+          "schema": "services/execution_service/docs/decision_confidence.schema.json",
+          "json_path": "properties.score.maximum",
+          "expected": 1.0
+        }
+      ]
+    },
+    {
+      "name": "ExecutionReconcileResult",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+      "code": "services/execution_service/domain/reconcile_statuses.py",
+      "symbol": "RECONCILE_STATUSES",
+      "fields": [
+        "mode",
+        "venue",
+        "order_id",
+        "decision_id",
+        "account_id",
+        "exchange",
+        "symbol",
+        "status",
+        "filled_qty",
+        "avg_price",
+        "note",
+        "reason_code",
+        "error_message",
+        "idempotency_hit",
+        "retry_meta",
+        "ts"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.status.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/status"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.reason_code.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/reason_code"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_reconcile_result.schema.json",
+          "json_path": "properties.retry_meta.$ref",
+          "expected": "./retry_meta.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionSignalResult",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "build_risk_decision_result",
+      "fields": [
+        "signal_action",
+        "risk_state",
+        "mode",
+        "scope",
+        "position_before",
+        "position_after_simulation",
+        "risk_checks",
+        "rule_debug"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.signal_action.$ref",
+          "expected": "./signal_action.schema.json#/properties/signal_action"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.mode.$ref",
+          "expected": "./signal_mode.schema.json#/properties/mode"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.scope.$ref",
+          "expected": "./signal_scope.schema.json#/properties/scope"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.position_before.$ref",
+          "expected": "./position_before.schema.json#/properties/position_before"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.position_after_simulation.$ref",
+          "expected": "./position_after_simulation.schema.json#/properties/position_after_simulation"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.risk_checks.$ref",
+          "expected": "./risk_checks.schema.json#/properties/risk_checks"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.signal_result.$ref",
+          "expected": "./execution_signal_result.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_signal_result.schema.json",
+          "json_path": "properties.rule_debug.$ref",
+          "expected": "./rule_debug.schema.json"
+        }
+      ]
+    },
+    {
+      "name": "RiskChecks",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/risk_checks.schema.json",
+      "code": "services/execution_service/domain/risk_check_builder.py",
+      "symbol": "build_risk_checks",
+      "fields": [
+        "risk_checks"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.required",
+          "expected": ["check", "scope", "status", "value", "threshold", "message_zh"]
+        },
+        {
+          "schema": "services/execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.properties.check.enum",
+          "expected": [
+            "account_drawdown_limit",
+            "account_available_balance",
+            "account_notional_limit",
+            "account_margin_ratio_limit",
+            "account_daily_loss_limit",
+            "account_consecutive_loss_limit",
+            "symbol_exposure_ratio",
+            "long_leg_position_limit",
+            "short_leg_position_limit"
+          ]
+        },
+        {
+          "schema": "services/execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.properties.scope.enum",
+          "expected": ["account", "symbol", "position"]
+        },
+        {
+          "schema": "services/execution_service/docs/risk_checks.schema.json",
+          "json_path": "properties.risk_checks.items.properties.status.enum",
+          "expected": ["pass", "fail"]
+        }
+      ]
+    },
+    {
+      "name": "SignalAction",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/signal_action.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "\"signal_action\":",
+      "fields": [
+        "signal_action"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/signal_action.schema.json",
+          "json_path": "properties.signal_action.enum",
+          "expected": ["add_long", "add_short", "reduce_long", "reduce_short", "hold", "skip", "exit_all"]
+        }
+      ]
+    },
+    {
+      "name": "SignalMode",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/signal_mode.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "\"mode\": \"simulated\"",
+      "fields": [
+        "mode"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/signal_mode.schema.json",
+          "json_path": "properties.mode.enum",
+          "expected": ["simulated"]
+        }
+      ]
+    },
+    {
+      "name": "SignalScope",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/signal_scope.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "\"scope\": {",
+      "fields": [
+        "scope"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/signal_scope.schema.json",
+          "json_path": "properties.scope.required",
+          "expected": ["exchange", "account_id", "symbol"]
+        }
+      ]
+    },
+    {
+      "name": "PositionBefore",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/position_before.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "\"position_before\":",
+      "fields": [
+        "position_before"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/position_before.schema.json",
+          "json_path": "properties.position_before.required",
+          "expected": ["mode", "long_position_size", "short_position_size", "net_position_size"]
+        },
+        {
+          "schema": "services/execution_service/docs/position_before.schema.json",
+          "json_path": "properties.position_before.properties.mode.$ref",
+          "expected": "./position_mode.schema.json#/properties/mode"
+        }
+      ]
+    },
+    {
+      "name": "PositionMode",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/position_mode.schema.json",
+      "code": "services/execution_service/domain/risk_rules.py",
+      "symbol": "position_mode",
+      "fields": [
+        "mode",
+        "position_mode"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/position_mode.schema.json",
+          "json_path": "properties.mode.enum",
+          "expected": ["one_way", "hedge"]
+        },
+        {
+          "schema": "services/execution_service/docs/position_mode.schema.json",
+          "json_path": "properties.position_mode.enum",
+          "expected": ["one_way", "hedge"]
+        }
+      ]
+    },
+    {
+      "name": "PositionAfterSimulation",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/position_after_simulation.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "\"position_after_simulation\":",
+      "fields": [
+        "position_after_simulation"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/position_after_simulation.schema.json",
+          "json_path": "properties.position_after_simulation.required",
+          "expected": ["long_position_size", "short_position_size", "net_position_size"]
+        }
+      ]
+    },
+    {
+      "name": "RuleDebug",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/rule_debug.schema.json",
+      "code": "services/execution_service/domain/risk_result_builder.py",
+      "symbol": "rule_debug",
+      "fields": [
+        "hit_rule",
+        "rule_priority_order",
+        "hit_rule_value",
+        "hit_rule_threshold",
+        "previous_risk_state",
+        "current_risk_state",
+        "risk_state_changed",
+        "risk_state_change_reason",
+        "risk_state_change_reason_zh",
+        "matched_at_ms",
+        "evaluation_trace"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "required",
+          "expected": ["hit_rule", "rule_priority_order", "previous_risk_state", "current_risk_state", "risk_state_changed", "risk_state_change_reason", "risk_state_change_reason_zh", "matched_at_ms"]
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.rule_priority_order.$ref",
+          "expected": "./rule_priority_order.schema.json#/properties/rule_priority_order"
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.previous_risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.current_risk_state.$ref",
+          "expected": "./risk_state.schema.json#/properties/risk_state"
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.risk_state_change_reason.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_code"
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.risk_state_change_reason_zh.$ref",
+          "expected": "./risk_state_change_reason.schema.json#/properties/reason_zh"
+        },
+        {
+          "schema": "services/execution_service/docs/rule_debug.schema.json",
+          "json_path": "properties.evaluation_trace.$ref",
+          "expected": "./evaluation_trace.schema.json#/properties/evaluation_trace"
+        }
+      ]
+    },
+    {
+      "name": "RulePriorityOrder",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/rule_priority_order.schema.json",
+      "code": "services/execution_service/domain/risk_rules.py",
+      "symbol": "DEFAULT_RULE_PRIORITY_ORDER",
+      "fields": [
+        "rule_priority_order"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.items.enum",
+          "expected": ["position_limit", "cooldown", "max_drawdown", "account_notional", "margin_ratio", "daily_loss", "consecutive_loss", "direction_conflict"]
+        },
+        {
+          "schema": "services/execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.minItems",
+          "expected": 8
+        },
+        {
+          "schema": "services/execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.maxItems",
+          "expected": 8
+        },
+        {
+          "schema": "services/execution_service/docs/rule_priority_order.schema.json",
+          "json_path": "properties.rule_priority_order.uniqueItems",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "name": "EvaluationTrace",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/evaluation_trace.schema.json",
+      "code": "services/execution_service/domain/risk_rules.py",
+      "symbol": "evaluation_trace",
+      "fields": [
+        "evaluation_trace"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/evaluation_trace.schema.json",
+          "json_path": "properties.evaluation_trace.items.required",
+          "expected": ["order", "rule", "scope", "status", "value", "threshold", "note_zh"]
+        }
+      ]
+    },
+    {
+      "name": "RiskStateChangeReason",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/risk_state_change_reason.schema.json",
+      "code": "services/execution_service/domain/risk_state_change_reasons.py",
+      "symbol": "RISK_STATE_CHANGE_REASONS",
+      "fields": [
+        "reason_code",
+        "reason_zh"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/risk_state_change_reason.schema.json",
+          "json_path": "properties.reason_code.enum",
+          "expected": ["reject_frozen", "reject_reduce_only", "pressure_warn", "hysteresis_soften", "default_normal"]
+        },
+        {
+          "schema": "services/execution_service/docs/risk_state_change_reason.schema.json",
+          "json_path": "properties.reason_zh.minLength",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "name": "RiskState",
+      "owner": "execution_service",
+      "change_policy": "non_breaking",
+      "schema": "services/execution_service/docs/risk_state.schema.json",
+      "code": "services/execution_service/domain/risk_states.py",
+      "symbol": "RISK_STATES",
+      "fields": [
+        "risk_state"
+      ],
+      "references": [
+        {
+          "schema": "services/execution_service/docs/risk_state.schema.json",
+          "json_path": "properties.risk_state.enum",
+          "expected": ["normal", "warn", "reduce_only", "frozen"]
+        }
+      ]
+    }
+  ]
+}

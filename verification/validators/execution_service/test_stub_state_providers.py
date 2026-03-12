@@ -7,7 +7,7 @@ if str(ROOT_DIR) not in sys.path:
 
 import asyncio
 
-from services.execution_service.adapters.stub_state_providers import (
+from verification.fixtures.execution_service.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )

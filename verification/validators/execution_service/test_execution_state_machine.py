@@ -9,8 +9,8 @@ import asyncio
 
 from services.execution_service.app.service import ExecutionService
 from services.execution_service.adapters.execution_state_store import InMemoryExecutionStateStore
-from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from services.execution_service.adapters.stub_state_providers import (
+from verification.fixtures.execution_service.stub_risk_policy_provider import StubRiskPolicyProvider
+from verification.fixtures.execution_service.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )
