@@ -14,7 +14,7 @@ if ! rg -q "docs/ALERT_CODES.md" docs/CONTRACT_INDEX.md; then
 fi
 
 echo "[3/5] 检查三模块 README 已链接告警码文档"
-for f in market_state_engine/README.md event_center_new/README.md agent_server_new/README.md; do
+for f in services/market_state_engine/README.md services/event_center_new/README.md services/agent_server_new/README.md; do
   if ! rg -q "docs/ALERT_CODES.md" "$f"; then
     echo "[失败] $f 未链接 docs/ALERT_CODES.md"
     exit 1

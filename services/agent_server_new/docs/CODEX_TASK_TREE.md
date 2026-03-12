@@ -117,5 +117,5 @@ P2（事件闭环与生产级关键能力）：
 
 - 全局总控：本文件 `CODEX_TASK_TREE.md`
 - 执行包：按编号创建 `CODEX_RUN_XXX.md`（每次只投喂一个 run）
-- 若某个服务已存在 `TASKS.md`（例如 `feature_service/TASKS.md`），run 完成后同步更新勾选状态，并在 run 文档末尾写“完成摘要 + 验收结果”。
+- 若某个服务已存在 `TASKS.md`（例如 `services/feature_service/TASKS.md`），run 完成后同步更新勾选状态，并在 run 文档末尾写“完成摘要 + 验收结果”。
 

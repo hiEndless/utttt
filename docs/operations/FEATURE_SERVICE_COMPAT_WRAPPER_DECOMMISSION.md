@@ -85,7 +85,7 @@
 4. 更新文档：
    - `services/services_map.yaml`
    - `docs/architecture/SERVICES_PHASE2_MILESTONE.md`
-   - `feature_service/README.md`
+   - `services/feature_service/README.md`
 
 ## 5. 回滚策略
 

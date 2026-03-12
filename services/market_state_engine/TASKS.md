@@ -84,7 +84,7 @@
 - [x] Task 68: 增加 `from_env` 回归测试并同步 README 运行配置说明。
 - [x] Task 69: 新增 `agent_server_new/app/bootstrap.py`，提供 `create_trade_event_workflow_from_env()` 默认装配入口。
 - [x] Task 70: 增加 bootstrap 回归测试，锁定默认 adapter 接线与环境变量生效。
-- [x] Task 71: 更新 `state->agent` 守卫脚本与 `agent_server_new/README.md`，冻结 bootstrap 使用方式。
+- [x] Task 71: 更新 `state->agent` 守卫脚本与 `services/agent_server_new/README.md`，冻结 bootstrap 使用方式。
 - [x] Task 72: 新增 `agent_server_new/runner.py`（`python -m agent_server_new.runner`）作为最小 CLI 运行入口。
 - [x] Task 73: 增加 runner 回归测试（`--dry-run` 与单次执行分支）。
 - [x] Task 74: 更新守卫脚本与 README，冻结 CLI smoke test 使用方式。
@@ -96,7 +96,7 @@
 - [x] Task 80: 在 `agent_server_new/docs` 新增完整重构方案文档（V2），冻结职责收敛与迁移阶段。
 - [x] Task 81: 创建 `execution_service` 目录骨架（README/TASKS/docs/ports/app/domain/adapters/text）。
 - [x] Task 82: 补充 execution 层 API/边界/迁移文档，形成下游服务文档入口。
-- [x] Task 83: 同步项目总览文档（`ARCHITECTURE_NEW.md`、`CONTRACTS_QUICK_REF.md`、`agent_server_new/README.md`）避免入口过时。
+- [x] Task 83: 同步项目总览文档（`ARCHITECTURE_NEW.md`、`CONTRACTS_QUICK_REF.md`、`services/agent_server_new/README.md`）避免入口过时。
 - [x] Task 84: 冻结“agent 裁决链移除 Position Context”文档决议，并同步到 agent/architecture/contracts 文档入口。
 - [x] Task 85: 在入口文档增加“当前实现链路 vs 目标收敛链路”业务流程分析，明确 event_center_new 位置与 execution 权责边界。
 - [x] Task 86: 新增跨模块迁移执行清单（Playbook），并把入口链接同步到总览与契约速查文档。

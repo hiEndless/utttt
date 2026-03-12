@@ -88,7 +88,7 @@
 - [x] Task 50: 修复迁移后的测试路径与导入问题（含 `feature_service` 根路径计算、`event_center` grading 导入）。
 - [x] Task 51: 将根目录工程文档迁移到对应模块 `docs/`（已迁入 `services/agent_server_new/docs/`）。
 - [x] Task 52: 更新 `pytest.ini` 使用模块级 `testpaths`，确保默认发现新目录。
-- [x] Task 53: 更新 `feature_service/README.md` 与 `market_state_engine/README.md` 目录树，避免文档与代码结构不一致。
+- [x] Task 53: 更新 `services/feature_service/README.md` 与 `services/market_state_engine/README.md` 目录树，避免文档与代码结构不一致。
 - [x] Task 54: 范围收口：`agent_server` 属于旧链路，不纳入 `feature_service` 重构验收项。
 
 ## 迁移痕迹清理（第十四阶段）
