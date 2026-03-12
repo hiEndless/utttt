@@ -28,6 +28,21 @@ _SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
 _ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
 
 logger = logging.getLogger("market_state_engine")
+_UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
+
+
+def _has_nonempty_features(features: Any) -> bool:
+    return isinstance(features, dict) and any(v is not None for v in features.values())
+
+
+def _is_effective_alternative_source_entry(entry: Dict[str, Any]) -> bool:
+    provider_state = str(entry.get("provider_state") or "").strip().lower()
+    has_features = _has_nonempty_features(entry.get("features"))
+    if provider_state in _UNAVAILABLE_PROVIDER_STATES and not has_features:
+        return False
+    if bool(entry.get("available")):
+        return True
+    return has_features
 
 
 def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[str, Any]:
@@ -37,6 +52,8 @@ def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[
         features = {}
     available = bool(raw.get("available")) if "available" in raw else bool(features)
     provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
+    if str(provider_state).strip().lower() in _UNAVAILABLE_PROVIDER_STATES and not _has_nonempty_features(features):
+        available = False
     data_source = str(raw.get("data_source") or raw.get("source") or f"feature_service.{source_type}").strip()
     inference_source = str(raw.get("inference_source") or "feature_service.normalizer").strip()
     return {
@@ -170,7 +187,7 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
 
     for src in sources:
         feat = _normalize_alternative_source_entry(src, feature_alt.get(src))
-        feat_available = bool(feat.get("available") is True)
+        feat_available = _is_effective_alternative_source_entry(feat)
         feat_state = str(feat.get("provider_state") or "empty")
         feat_data_source = str(feat.get("data_source") or f"feature_service.{src}")
         feat_inference_source = str(feat.get("inference_source") or "feature_service.normalizer")
@@ -211,9 +228,8 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
 
     available_sources = [x for x in sources if merged[x]["available"]]
     unavailable_sources = [x for x in sources if not merged[x]["available"]]
-    preferred_source = "feature" if any(bool(_normalize_alternative_source_entry(x, feature_alt.get(x)).get("available")) for x in sources) else (
-        "event_center" if any(int(event_counts.get(x) or 0) > 0 for x in sources) else "none"
-    )
+    feature_available = any(_is_effective_alternative_source_entry(_normalize_alternative_source_entry(x, feature_alt.get(x))) for x in sources)
+    preferred_source = "feature" if feature_available else ("event_center" if any(int(event_counts.get(x) or 0) > 0 for x in sources) else "none")
     return {
         "preferred_source": preferred_source,
         "conflicts": conflicts,
