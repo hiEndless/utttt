@@ -2,6 +2,8 @@
 
 更新时间：2026-03-12
 
+统一门禁模板：`docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md`
+
 ## 1) 基线指纹
 
 - branch: `master`
