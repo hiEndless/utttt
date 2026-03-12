@@ -7,27 +7,27 @@ import os
 
 from fastapi import FastAPI
 
-from execution_service.adapters.redis_state_providers import (
+from services.execution_service.adapters.redis_state_providers import (
     RedisAccountStateProvider,
     RedisExecutionStateConfig,
     RedisPositionStateProvider,
     RedisRiskPolicyProvider,
     create_redis_client_from_env,
 )
-from execution_service.adapters.confidence_metrics_store import (
+from services.execution_service.adapters.confidence_metrics_store import (
     InMemoryConfidenceMetricsStore,
     RedisConfidenceMetricsStore,
 )
-from execution_service.adapters.mock_execution_sink import MockExecutionSink
-from execution_service.adapters.exchange_execution_sink import ExchangeExecutionSink
-from execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
-from execution_service.adapters.execution_state_store import InMemoryExecutionStateStore, RedisExecutionStateStore
-from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from execution_service.adapters.stub_state_providers import (
+from services.execution_service.adapters.mock_execution_sink import MockExecutionSink
+from services.execution_service.adapters.exchange_execution_sink import ExchangeExecutionSink
+from services.execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
+from services.execution_service.adapters.execution_state_store import InMemoryExecutionStateStore, RedisExecutionStateStore
+from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
+from services.execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )
-from execution_service.routes import create_router
+from services.execution_service.routes import create_router
 from .service import ExecutionService
 
 logger = logging.getLogger(__name__)

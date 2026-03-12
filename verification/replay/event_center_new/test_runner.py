@@ -8,10 +8,10 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from event_center_new.ec.context.builder import DefaultContextBuilder
-from event_center_new.ec.contracts import EventContextSnapshot, EventEnvelope, EventSource
-from event_center_new.ec.correlation.rules import CorrelationEngine
-from event_center_new.ec.pipeline.defaults import (
+from services.event_center_new.ec.context.builder import DefaultContextBuilder
+from services.event_center_new.ec.contracts import EventContextSnapshot, EventEnvelope, EventSource
+from services.event_center_new.ec.correlation.rules import CorrelationEngine
+from services.event_center_new.ec.pipeline.defaults import (
     DeterministicFinalGate,
     HeuristicL0Processor,
     HeuristicL1Aggregator,
@@ -19,9 +19,9 @@ from event_center_new.ec.pipeline.defaults import (
     PayloadEvidenceExtractor,
     SelectPolicyConfig,
 )
-from event_center_new.ec.pipeline.runner import EventPipelineRunner
-from event_center_new.ec.sources.memory import InMemoryEventSource
-from event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
+from services.event_center_new.ec.pipeline.runner import EventPipelineRunner
+from services.event_center_new.ec.sources.memory import InMemoryEventSource
+from services.event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
 
 
 class _BoomExtractor(PayloadEvidenceExtractor):

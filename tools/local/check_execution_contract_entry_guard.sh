@@ -13,7 +13,7 @@ fi
 
 echo "[2/4] 读取 execution schema mapping 版本常量"
 expected="$(./venv/bin/python - <<'PY'
-from execution_service.version import SCHEMA_MAPPING_VERSION
+from services.execution_service.version import SCHEMA_MAPPING_VERSION
 print(SCHEMA_MAPPING_VERSION)
 PY
 )"

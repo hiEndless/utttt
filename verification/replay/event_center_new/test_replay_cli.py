@@ -9,9 +9,9 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from event_center_new.ec.contracts import EventEnvelope, EventSource
-from event_center_new.ec.pipeline.replay import build_default_replay_tool
-from event_center_new.ec.pipeline.replay_cli import event_dict_to_stream_fields, run_replay_report
+from services.event_center_new.ec.contracts import EventEnvelope, EventSource
+from services.event_center_new.ec.pipeline.replay import build_default_replay_tool
+from services.event_center_new.ec.pipeline.replay_cli import event_dict_to_stream_fields, run_replay_report
 
 
 class _FakeRedisRange:

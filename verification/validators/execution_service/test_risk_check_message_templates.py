@@ -5,7 +5,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from execution_service.domain.risk_check_messages import (
+from services.execution_service.domain.risk_check_messages import (
     RISK_MSG_ACCOUNT_AVAILABLE_BALANCE,
     RISK_MSG_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
     RISK_MSG_ACCOUNT_DAILY_LOSS_LIMIT,

@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from execution_service.domain.risk_check_builder import build_risk_checks
+from services.execution_service.domain.risk_check_builder import build_risk_checks
 from verification.validators.execution_service.schema_utils import validate_payload_with_local_refs
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict
 
-from agent_server_new.ports.memory.symbol_memory_maintenance import SymbolMemoryMaintenance
+from services.agent_server_new.ports.memory.symbol_memory_maintenance import SymbolMemoryMaintenance
 
 
 async def run_symbol_memory_summary_once(

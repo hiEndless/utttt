@@ -7,7 +7,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.app.context_builder import _signal_context_builder
+from services.agent_server_new.app.context_builder import _signal_context_builder
 
 
 def test_signal_context_builder_normalizes_oi_risk_flags_from_map() -> None:

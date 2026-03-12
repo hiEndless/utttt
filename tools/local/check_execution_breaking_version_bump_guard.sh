@@ -9,7 +9,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from execution_service.version import SCHEMA_MAPPING_VERSION
+from services.execution_service.version import SCHEMA_MAPPING_VERSION
 
 MAPPING_PATH = "services/execution_service/docs/schema_mapping.json"
 version_re = re.compile(r".*-v(\d+)$")

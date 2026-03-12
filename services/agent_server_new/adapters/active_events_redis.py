@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 
 
 @dataclass(frozen=True)

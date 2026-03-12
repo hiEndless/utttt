@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from execution_service.domain.retry_meta import RETRY_META_STATUSES
+from services.execution_service.domain.retry_meta import RETRY_META_STATUSES
 
 
 def _enum_from(schema: dict, path: list[str]) -> tuple[str, ...]:

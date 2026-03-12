@@ -11,12 +11,12 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from execution_service.adapters.redis_state_providers import (
+from services.execution_service.adapters.redis_state_providers import (
     RedisAccountStateProvider,
     RedisPositionStateProvider,
     RedisRiskPolicyProvider,
 )
-from execution_service.app.service import ExecutionService
+from services.execution_service.app.service import ExecutionService
 
 
 @pytest.mark.integration

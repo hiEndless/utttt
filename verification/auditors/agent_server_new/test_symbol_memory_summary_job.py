@@ -6,8 +6,8 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
-from agent_server_new.app.jobs.symbol_memory_summary_job import run_symbol_memory_summary_once
+from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
+from services.agent_server_new.app.jobs.symbol_memory_summary_job import run_symbol_memory_summary_once
 
 
 def test_run_symbol_memory_summary_once():

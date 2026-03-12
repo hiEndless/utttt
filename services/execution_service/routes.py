@@ -5,8 +5,8 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from execution_service.app.service import ExecutionService
-from execution_service.version import (
+from services.execution_service.app.service import ExecutionService
+from services.execution_service.version import (
     CONTRACT_VERSION,
     IDEMPOTENCY_VERSION,
     RULESET_VERSION,

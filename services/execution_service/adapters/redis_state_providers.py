@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from redis.asyncio import Redis
-from execution_service.domain.risk_states import RISK_STATE_NORMAL, RISK_STATES
+from services.execution_service.domain.risk_states import RISK_STATE_NORMAL, RISK_STATES
 
 
 def _to_float(value: Any, default: float) -> float:

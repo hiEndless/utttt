@@ -8,16 +8,16 @@ if str(ROOT_DIR) not in sys.path:
 import asyncio
 from dataclasses import asdict
 
-from agent_server_new.domain.contracts import Confidence, ExecutionPlan, RiskAllowance
-from execution_service.adapters.agent_execution_plan_adapter import (
+from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, RiskAllowance
+from services.execution_service.adapters.agent_execution_plan_adapter import (
     adapt_agent_execution_plan_to_decision_intent,
 )
-from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from execution_service.adapters.stub_state_providers import (
+from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
+from services.execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )
-from execution_service.app.service import ExecutionService
+from services.execution_service.app.service import ExecutionService
 
 
 def test_agent_plan_to_execution_service_smoke() -> None:

@@ -3,12 +3,12 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List
 
-from execution_service.domain.contracts import DecisionIntent
-from execution_service.domain.risk_state_change_reasons import (
+from services.execution_service.domain.contracts import DecisionIntent
+from services.execution_service.domain.risk_state_change_reasons import (
     RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
     RISK_STATE_CHANGE_REASON_ZH,
 )
-from execution_service.domain.risk_states import RISK_STATE_NORMAL
+from services.execution_service.domain.risk_states import RISK_STATE_NORMAL
 
 
 def build_risk_decision_result(

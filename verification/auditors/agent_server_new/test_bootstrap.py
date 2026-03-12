@@ -5,12 +5,12 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
-from agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
-from agent_server_new.adapters.market_state_http import HttpMarketStateProvider
-from agent_server_new.adapters.position_context_stub import StubPositionContextProvider
-from agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
-from agent_server_new.app.bootstrap import create_trade_event_workflow_from_env
+from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
+from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
+from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
+from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
+from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
+from services.agent_server_new.app.bootstrap import create_trade_event_workflow_from_env
 
 
 def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch):
@@ -31,7 +31,7 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
 
 
 def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkeypatch):
-    import agent_server_new.app.bootstrap as mod
+    import services.agent_server_new.app.bootstrap as mod
 
     class _FakeRedisActiveEventsProvider:
         pass
@@ -43,7 +43,7 @@ def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkey
 
 
 def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_events_redis_failed(monkeypatch):
-    import agent_server_new.app.bootstrap as mod
+    import services.agent_server_new.app.bootstrap as mod
 
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
 
@@ -78,7 +78,7 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_inmemory(mon
 
 
 def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkeypatch):
-    import agent_server_new.app.bootstrap as mod
+    import services.agent_server_new.app.bootstrap as mod
 
     class _FakeRedis:
         pass

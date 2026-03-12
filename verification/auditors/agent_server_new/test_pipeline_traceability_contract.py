@@ -9,12 +9,12 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
-from agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from agent_server_new.domain.strategy_gate import StrategyGateResult
-from agent_server_new.ports.market_state import MarketStateSnapshot
+from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
+from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
+from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
+from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
+from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.ports.market_state import MarketStateSnapshot
 from services.market_state_engine.src.service import MarketStateService
 
 
@@ -130,7 +130,7 @@ class _Recorder:
 
 def test_pipeline_traceability_selected_event_to_decision_trace():
     async def _run(monkeypatch):  # noqa: ANN001
-        import agent_server_new.app.workflows.trade_event_workflow as mod
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
         # 中文注释：固定领域输出，避免测试受策略逻辑波动影响。
         monkeypatch.setattr(

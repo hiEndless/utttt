@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
 
-from execution_service.app import create_app
+from services.execution_service.app import create_app
 
 
 def test_healthz() -> None:

@@ -8,7 +8,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from event_center_new.ec.pipeline.replay_cli import validate_selected_contract
+from services.event_center_new.ec.pipeline.replay_cli import validate_selected_contract
 
 
 def _load_schema() -> dict:

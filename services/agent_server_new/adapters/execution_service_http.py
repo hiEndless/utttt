@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import httpx
 
-from agent_server_new.ports.execution import ExecutionDecisionProvider
+from services.agent_server_new.ports.execution import ExecutionDecisionProvider
 
 
 class HttpExecutionDecisionProvider(ExecutionDecisionProvider):

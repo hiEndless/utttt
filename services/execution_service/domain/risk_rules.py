@@ -3,17 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict
 
-from execution_service.domain.contracts import DecisionIntent
-from execution_service.domain.risk_check_builder import build_risk_checks
-from execution_service.domain.risk_result_builder import build_risk_decision_result
-from execution_service.domain.risk_state_change_reasons import (
+from services.execution_service.domain.contracts import DecisionIntent
+from services.execution_service.domain.risk_check_builder import build_risk_checks
+from services.execution_service.domain.risk_result_builder import build_risk_decision_result
+from services.execution_service.domain.risk_state_change_reasons import (
     RISK_STATE_CHANGE_REASON_DEFAULT_NORMAL,
     RISK_STATE_CHANGE_REASON_HYSTERESIS_SOFTEN,
     RISK_STATE_CHANGE_REASON_PRESSURE_WARN,
     RISK_STATE_CHANGE_REASON_REJECT_FROZEN,
     RISK_STATE_CHANGE_REASON_REJECT_REDUCE_ONLY,
 )
-from execution_service.domain.risk_states import (
+from services.execution_service.domain.risk_states import (
     RISK_STATE_FROZEN,
     RISK_STATE_NORMAL,
     RISK_STATE_REDUCE_ONLY,

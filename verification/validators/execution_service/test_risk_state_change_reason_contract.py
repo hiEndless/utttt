@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from execution_service.domain.risk_state_change_reasons import (
+from services.execution_service.domain.risk_state_change_reasons import (
     RISK_STATE_CHANGE_REASONS,
     RISK_STATE_CHANGE_REASON_ZH,
 )

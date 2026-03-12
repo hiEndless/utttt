@@ -7,7 +7,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from event_center_new.ec.storage.redis import RedisLayerStore, RedisLayerStoreConfig
+from services.event_center_new.ec.storage.redis import RedisLayerStore, RedisLayerStoreConfig
 
 
 class _FakeRedis:

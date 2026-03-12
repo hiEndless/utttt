@@ -5,29 +5,29 @@ import asyncio
 import logging
 from typing import Any, Dict, Mapping
 
-from execution_service.domain.contracts import DecisionIntent, ExecutionResult
-from execution_service.domain.decision_engine import ExecutionDecisionEngine
-from execution_service.domain.reconcile_codes import (
+from services.execution_service.domain.contracts import DecisionIntent, ExecutionResult
+from services.execution_service.domain.decision_engine import ExecutionDecisionEngine
+from services.execution_service.domain.reconcile_codes import (
     RECONCILE_REASON_IN_PROGRESS,
     RECONCILE_REASON_NON_RETRYABLE_ERROR,
     RECONCILE_REASON_RETRY_EXHAUSTED,
 )
-from execution_service.domain.reconcile_statuses import (
+from services.execution_service.domain.reconcile_statuses import (
     RECONCILE_STATUS_CANCELED,
     RECONCILE_STATUS_FAILED,
     RECONCILE_STATUS_SUBMITTED,
     RECONCILE_STATUSES,
 )
-from execution_service.domain.retry_meta import RETRY_META_STATUS_FAILED, RETRY_META_STATUS_OK
-from execution_service.version import RULESET_VERSION
-from execution_service.ports.execution_sink import ExecutionSink
-from execution_service.ports.execution_state_store import ExecutionStateStore
-from execution_service.ports.idempotency_store import IdempotencyStore
-from execution_service.ports.account_state_provider import AccountStateProvider
-from execution_service.ports.position_state_provider import PositionStateProvider
-from execution_service.ports.risk_policy_provider import RiskPolicyProvider
-from execution_service.ports.confidence_metrics_store import ConfidenceMetricsStore
-from execution_service.adapters.confidence_metrics_store import InMemoryConfidenceMetricsStore
+from services.execution_service.domain.retry_meta import RETRY_META_STATUS_FAILED, RETRY_META_STATUS_OK
+from services.execution_service.version import RULESET_VERSION
+from services.execution_service.ports.execution_sink import ExecutionSink
+from services.execution_service.ports.execution_state_store import ExecutionStateStore
+from services.execution_service.ports.idempotency_store import IdempotencyStore
+from services.execution_service.ports.account_state_provider import AccountStateProvider
+from services.execution_service.ports.position_state_provider import PositionStateProvider
+from services.execution_service.ports.risk_policy_provider import RiskPolicyProvider
+from services.execution_service.ports.confidence_metrics_store import ConfidenceMetricsStore
+from services.execution_service.adapters.confidence_metrics_store import InMemoryConfidenceMetricsStore
 
 logger = logging.getLogger(__name__)
 

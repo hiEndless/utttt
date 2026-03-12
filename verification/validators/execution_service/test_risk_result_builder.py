@@ -5,8 +5,8 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from execution_service.domain.contracts import DecisionIntent
-from execution_service.domain.risk_result_builder import build_risk_decision_result
+from services.execution_service.domain.contracts import DecisionIntent
+from services.execution_service.domain.risk_result_builder import build_risk_decision_result
 
 
 def _decision(direction: str) -> DecisionIntent:

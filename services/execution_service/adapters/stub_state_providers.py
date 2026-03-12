@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping
 
-from execution_service.domain.risk_states import RISK_STATE_NORMAL, RISK_STATES
+from services.execution_service.domain.risk_states import RISK_STATE_NORMAL, RISK_STATES
 
 
 def _normalize_risk_state(value: Any) -> str:

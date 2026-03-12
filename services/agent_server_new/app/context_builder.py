@@ -4,11 +4,11 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
-from agent_server_new.app.workflows.event_context import EventContext
-from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
-from agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
-from agent_server_new.ports.data.position_context_provider import PositionContextProvider
-from agent_server_new.ports.market_state import MarketStateProvider
+from services.agent_server_new.app.workflows.event_context import EventContext
+from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from services.agent_server_new.ports.memory.symbol_memory_provider import SymbolMemoryProvider
+from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
+from services.agent_server_new.ports.market_state import MarketStateProvider
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:

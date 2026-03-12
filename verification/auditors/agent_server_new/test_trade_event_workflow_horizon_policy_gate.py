@@ -6,11 +6,11 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from agent_server_new.domain.strategy_gate import StrategyGateResult
-from agent_server_new.ports.market_state import MarketStateSnapshot
+from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
+from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
+from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
+from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
 def _sample_msl() -> dict:
@@ -65,7 +65,7 @@ class _Events:
 
 def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
     async def _run(monkeypatch):  # noqa: ANN001
-        import agent_server_new.app.workflows.trade_event_workflow as mod
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
         monkeypatch.setattr(
             mod,
@@ -130,7 +130,7 @@ def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
 
 def test_trade_event_workflow_follow_long_term_allows_pipeline():
     async def _run(monkeypatch):  # noqa: ANN001
-        import agent_server_new.app.workflows.trade_event_workflow as mod
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
         monkeypatch.setattr(
             mod,
@@ -195,7 +195,7 @@ def test_trade_event_workflow_follow_long_term_allows_pipeline():
 
 def test_trade_event_workflow_custom_horizon_policy_config_can_disable_block():
     async def _run(monkeypatch):  # noqa: ANN001
-        import agent_server_new.app.workflows.trade_event_workflow as mod
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
         monkeypatch.setattr(
             mod,
@@ -261,7 +261,7 @@ def test_trade_event_workflow_custom_horizon_policy_config_can_disable_block():
 
 def test_trade_event_workflow_loads_horizon_policy_config_from_env():
     async def _run(monkeypatch):  # noqa: ANN001
-        import agent_server_new.app.workflows.trade_event_workflow as mod
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
         monkeypatch.setenv("AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE", "reduce_risk")
         monkeypatch.setattr(

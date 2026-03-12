@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from execution_service.domain.risk_check_codes import (
+from services.execution_service.domain.risk_check_codes import (
     RISK_CHECK_ACCOUNT_AVAILABLE_BALANCE,
     RISK_CHECK_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
     RISK_CHECK_ACCOUNT_DAILY_LOSS_LIMIT,
@@ -13,7 +13,7 @@ from execution_service.domain.risk_check_codes import (
     RISK_CHECK_SHORT_LEG_POSITION_LIMIT,
     RISK_CHECK_SYMBOL_EXPOSURE_RATIO,
 )
-from execution_service.domain.risk_check_messages import (
+from services.execution_service.domain.risk_check_messages import (
     RISK_MSG_ACCOUNT_AVAILABLE_BALANCE,
     RISK_MSG_ACCOUNT_CONSECUTIVE_LOSS_LIMIT,
     RISK_MSG_ACCOUNT_DAILY_LOSS_LIMIT,
@@ -24,7 +24,7 @@ from execution_service.domain.risk_check_messages import (
     RISK_MSG_SHORT_LEG_POSITION_LIMIT,
     RISK_MSG_SYMBOL_EXPOSURE_RATIO,
 )
-from execution_service.domain.risk_check_meta import (
+from services.execution_service.domain.risk_check_meta import (
     RISK_CHECK_SCOPE_ACCOUNT,
     RISK_CHECK_SCOPE_POSITION,
     RISK_CHECK_SCOPE_SYMBOL,

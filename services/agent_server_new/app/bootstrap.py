@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import os
 
-from agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
-from agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
-from agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
-from agent_server_new.adapters.market_state_http import HttpMarketStateProvider
-from agent_server_new.adapters.position_context_stub import StubPositionContextProvider
-from agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
-from agent_server_new.adapters.symbol_memory_redis import (
+from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
+from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
+from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
+from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
+from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
+from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
+from services.agent_server_new.adapters.symbol_memory_redis import (
     RedisSymbolMemoryAdapter,
     RedisSymbolMemoryConfig,
     create_redis_client_from_env as create_memory_redis_client_from_env,
 )
-from agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
+from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 
 
 def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:

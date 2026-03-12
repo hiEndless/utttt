@@ -7,7 +7,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.symbol_memory_redis import RedisSymbolMemoryAdapter
+from services.agent_server_new.adapters.symbol_memory_redis import RedisSymbolMemoryAdapter
 
 
 class _FakeRedis:

@@ -5,8 +5,8 @@ from typing import Any, Dict
 
 import httpx
 
-from agent_server_new.domain.msl_parser import _build_msl_from_dict
-from agent_server_new.ports.market_state import MarketStateProvider, MarketStateSnapshot
+from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
+from services.agent_server_new.ports.market_state import MarketStateProvider, MarketStateSnapshot
 
 _MSL_REQUIRED_FIELDS = {
     "version",

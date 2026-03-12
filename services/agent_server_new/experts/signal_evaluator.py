@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from agent_server_new.domain.contracts import Confidence, SignalVerdict
+from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
 
 
 @dataclass(frozen=True)

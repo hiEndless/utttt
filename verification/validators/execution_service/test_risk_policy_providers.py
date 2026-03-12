@@ -8,8 +8,8 @@ if str(ROOT_DIR) not in sys.path:
 import asyncio
 import json
 
-from execution_service.adapters.redis_state_providers import RedisRiskPolicyProvider
-from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
+from services.execution_service.adapters.redis_state_providers import RedisRiskPolicyProvider
+from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
 
 
 class _FakeRedis:

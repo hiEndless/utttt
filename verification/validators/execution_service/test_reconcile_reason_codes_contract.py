@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from execution_service.domain.reconcile_codes import RECONCILE_REASON_CODES
+from services.execution_service.domain.reconcile_codes import RECONCILE_REASON_CODES
 
 
 def _enum_from_node(node: dict, *, depth: int = 0) -> tuple[str, ...]:

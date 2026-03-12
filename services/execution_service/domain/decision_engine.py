@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from execution_service.domain.contracts import DecisionIntent, ExecutionResult
-from execution_service.domain.risk_rules import RiskContext, evaluate_risk_rules
+from services.execution_service.domain.contracts import DecisionIntent, ExecutionResult
+from services.execution_service.domain.risk_rules import RiskContext, evaluate_risk_rules
 
 
 class ExecutionDecisionEngine:

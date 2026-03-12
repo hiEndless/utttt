@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
+from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 
 
 class StubActiveEventsProvider(ActiveEventsProvider):

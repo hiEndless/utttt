@@ -5,8 +5,8 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, Mapping
 
-from execution_service.domain.contracts import DecisionIntent
-from execution_service.domain.reconcile_statuses import RECONCILE_STATUS_FILLED
+from services.execution_service.domain.contracts import DecisionIntent
+from services.execution_service.domain.reconcile_statuses import RECONCILE_STATUS_FILLED
 
 
 @dataclass

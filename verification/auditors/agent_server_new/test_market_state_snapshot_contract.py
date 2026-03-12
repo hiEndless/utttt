@@ -6,9 +6,9 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.market_state_http import HttpMarketStateProvider, _build_msl_from_dict
-from agent_server_new.app.context_builder import ContextBuilder
-from agent_server_new.ports.market_state import MarketStateSnapshot
+from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider, _build_msl_from_dict
+from services.agent_server_new.app.context_builder import ContextBuilder
+from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
 def _sample_msl() -> dict:
@@ -64,7 +64,7 @@ def test_http_market_state_provider_parses_cross_horizon(monkeypatch):
             _ = url
             return _Resp()
 
-    import agent_server_new.adapters.market_state_http as mod
+    import services.agent_server_new.adapters.market_state_http as mod
 
     monkeypatch.setattr(mod.httpx, "AsyncClient", _Client)
 
@@ -164,7 +164,7 @@ def test_http_market_state_provider_marks_msl_contract_missing_fields(monkeypatc
             _ = url
             return _Resp()
 
-    import agent_server_new.adapters.market_state_http as mod
+    import services.agent_server_new.adapters.market_state_http as mod
 
     monkeypatch.setattr(mod.httpx, "AsyncClient", _Client)
 
@@ -209,7 +209,7 @@ def test_http_market_state_provider_marks_schema_version_unsupported(monkeypatch
             _ = url
             return _Resp()
 
-    import agent_server_new.adapters.market_state_http as mod
+    import services.agent_server_new.adapters.market_state_http as mod
 
     monkeypatch.setattr(mod.httpx, "AsyncClient", _Client)
 

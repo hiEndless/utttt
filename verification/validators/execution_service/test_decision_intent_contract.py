@@ -5,7 +5,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from execution_service.domain.contracts import DecisionIntent, ExecutionResult
+from services.execution_service.domain.contracts import DecisionIntent, ExecutionResult
 
 
 def test_decision_intent_v1_parse_success() -> None:

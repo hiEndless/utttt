@@ -5,8 +5,8 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from agent_server_new.app.workflows.trade_event_workflow import _msl_from_dict
+from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
+from services.agent_server_new.app.workflows.trade_event_workflow import _msl_from_dict
 
 
 MSL_ALLOWED_KEYS = {

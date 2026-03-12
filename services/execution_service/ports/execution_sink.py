@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Protocol
 
-from execution_service.domain.contracts import DecisionIntent
+from services.execution_service.domain.contracts import DecisionIntent
 
 
 class ExecutionSink(Protocol):

@@ -8,8 +8,8 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new.domain.contracts import ActionIntent, Confidence, RulePlan, SignalVerdict
-from agent_server_new.domain.strategy_gate import _extract_signal_event_ts_ms, strategy_gate_v2
+from services.agent_server_new.domain.contracts import ActionIntent, Confidence, RulePlan, SignalVerdict
+from services.agent_server_new.domain.strategy_gate import _extract_signal_event_ts_ms, strategy_gate_v2
 from services.market_state_engine.src.contracts import (
     KeyLevels,
     LiquidityState,

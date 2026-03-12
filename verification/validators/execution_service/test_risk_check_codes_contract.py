@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from execution_service.domain.risk_check_codes import RISK_CHECK_CODES
+from services.execution_service.domain.risk_check_codes import RISK_CHECK_CODES
 
 
 def test_risk_check_codes_match_signal_result_schema_enum() -> None:

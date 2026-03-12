@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from redis.asyncio import Redis
 
-from agent_server_new.domain.symbol_memory_summary import build_symbol_memory_summary
+from services.agent_server_new.domain.symbol_memory_summary import build_symbol_memory_summary
 
 
 def _safe_dict(value: Any) -> Dict[str, Any]:

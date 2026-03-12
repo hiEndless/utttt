@@ -7,10 +7,10 @@ if str(ROOT_DIR) not in sys.path:
 
 import asyncio
 
-from execution_service.app.service import ExecutionService
-from execution_service.adapters.execution_state_store import InMemoryExecutionStateStore
-from execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from execution_service.adapters.stub_state_providers import (
+from services.execution_service.app.service import ExecutionService
+from services.execution_service.adapters.execution_state_store import InMemoryExecutionStateStore
+from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
+from services.execution_service.adapters.stub_state_providers import (
     StubAccountStateProvider,
     StubPositionStateProvider,
 )
