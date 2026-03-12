@@ -21,6 +21,13 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     3) services/event_center_new/version.py 与 services/event_center_new/docs/runtime.md
     4) 守卫或测试（event_center guard 或 manifest 对齐测试）
   - 对比基线默认使用 HEAD~1，可通过 CONTRACT_BUNDLE_BASE_REF 覆盖。
+
+示例:
+  # 场景1：仅改 event_center runtime 版本常量，会被拦截（四件套不全）
+  #   services/event_center_new/version.py: EVENT_CENTER_RUNTIME_CONFIG_VERSION v1 -> v2
+  # 场景2：runtime 版本升版并同步四件套，可通过
+  #   同步更新 docs/CONTRACT_INDEX.md + contracts/versions/manifest.yaml +
+  #   services/event_center_new/version.py + services/event_center_new/docs/runtime.md
 USAGE
   exit 0
 fi
