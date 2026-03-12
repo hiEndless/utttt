@@ -94,6 +94,7 @@ Usage:
 Description:
   本地 quick 验证入口，代理到：
     bash tools/ci/verify_quick.sh [args...]
+  说明：继承 CI quick 全量门禁，包含 pipeline semantic terms doc guard。
 
 Options:
   --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
