@@ -48,3 +48,4 @@ git checkout refactor-guard-baseline-20260312
 - 已将 baseline tag `refactor-guard-baseline-20260312` 重新对齐到当日 `HEAD`。
 - 已执行：`bash tools/local/verify_quick.sh`，结果通过。
 - 已执行：`bash tools/ci/new_arch_guards_full.sh --quick`，结果通过。
+- 已执行：`bash tools/local/check_release_ready.sh`，结果通过。
