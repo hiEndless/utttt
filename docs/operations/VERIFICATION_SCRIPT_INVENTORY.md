@@ -20,6 +20,12 @@
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
 - event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
 
+### 2.1 调试参数（contract bundle）
+
+- 脚本：`tools/local/check_contract_change_bundle_guard.sh`
+- 参数：`--show-detected-versions`
+- 用途：输出 `BASE_REF` 与 `HEAD` 的版本探测值（`CONTRACT_INDEX` / `manifest` / `services/event_center_new/version.py` / `services/event_center_new/docs/runtime.md`），用于排查 runtime 版本锚点触发原因。
+
 ## 3. CI 入口关键阶段（显式）
 
 ### 3.1 verify_quick
