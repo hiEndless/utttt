@@ -226,9 +226,9 @@ signal_event + active_events + MSL
 
 ## Contract Guards
 
-- `agent_server_new/text/test_active_events_contract_guard.py`
+- `verification/auditors/agent_server_new/test_active_events_contract_guard.py`
   - 守卫 `selected_event -> active_events` 最小字段依赖面
-- `agent_server_new/text/test_pipeline_traceability_contract.py`
+- `verification/auditors/agent_server_new/test_pipeline_traceability_contract.py`
   - 守卫 `event_center_new -> market_state_engine -> agent_server_new` 链路的可追溯性（signal source + evidence 摘要）
 
 ## 必须从 `agent_server_new` 中剥离的能力

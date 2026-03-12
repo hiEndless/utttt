@@ -146,8 +146,8 @@ Markdown 策略：
 
 6. 测试
 - 新增：
-  - `agent_server_new/text/test_symbol_memory_context_injection.py`
-  - `agent_server_new/text/test_symbol_memory_recording_workflow.py`
+  - `verification/auditors/agent_server_new/test_symbol_memory_context_injection.py`
+  - `verification/auditors/agent_server_new/test_symbol_memory_recording_workflow.py`
 - 断言：
   - 注入字段存在且不破坏原有 `ExecutionPlan` 结构。
   - 同 symbol 多事件会累积形成可读取的 recent memory。

@@ -95,7 +95,7 @@
 
 - [x] Task 55: 清理 `market_structure_migrated` 中脚本模式的旧路径探测（不再查找 `agent_server/agent_context`）。
 - [x] Task 56: 统一迁移层中文注释表述，移除“从 agent_server 层获取 Redis 连接”等旧文案。
-- [x] Task 57: 回归 `feature_service/text` 测试并同步 `README.md` / `TASKS.md` 状态。
+- [x] Task 57: 回归 `verification/validators/feature_service` 测试并同步 `README.md` / `TASKS.md` 状态。
 
 ## 契约强约束守卫（第十五阶段）
 
@@ -105,7 +105,7 @@
 
 ## CI 守卫落地（第十六阶段）
 
-- [x] Task 61: 新增 `scripts/check_feature_service_schema_guard.sh`，检查 schema 文件存在并执行契约守卫测试。
+- [x] Task 61: 新增 `tools/local/check_feature_service_schema_guard.sh`，检查 schema 文件存在并执行契约守卫测试。
 - [x] Task 62: 本地执行守卫脚本通过，确认可直接接入 CI。
 - [x] Task 63: 同步更新项目导航文档入口，纳入 schema 守卫脚本。
 

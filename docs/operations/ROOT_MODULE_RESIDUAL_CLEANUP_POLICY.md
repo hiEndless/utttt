@@ -47,13 +47,17 @@
 3. 回放/对比测试：迁入 `verification/replay` 与 `verification/diff`。
 4. 服务级单元测试：迁入 `services/<svc>/tests`（如后续建立该目录）。
 
-## 清理顺序（建议）
+## 清理状态（已完成）
 
-1. `event_center_new/text`（与 replay/selected schema 相关，边界清晰，优先迁）。
-2. `verification/validators/feature_service`（规模小，迁移成本低）。
-3. `verification/auditors/agent_server_new`（与 workflow 绑定较多，中等风险）。
-4. `verification/validators/execution_service`（数量最多、守卫最密集，最后迁）。
+1. `event_center_new/text` -> `verification/replay/event_center_new`
+2. `feature_service/text` -> `verification/validators/feature_service`
+3. `agent_server_new/text` -> `verification/auditors/agent_server_new`
+4. `execution_service/text` -> `verification/validators/execution_service`
+5. `market_state_engine/text` -> `verification/validators/market_state_engine`
 
-## 本次已完成
+## 当前状态
 
-- 清理 `agent_server_new|execution_service|event_center_new|feature_service` 下全部 `__pycache__/` 目录。
+- 根目录服务模块仅保留：
+  - `docs/` 文档与 schema 资产
+  - 必要兼容层（如 `__init__.py`）
+  - 少量服务特有静态配置（如 `market_state_engine/config`）
