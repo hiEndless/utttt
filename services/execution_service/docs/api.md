@@ -87,7 +87,7 @@
 10. `risk_hints`: 对象（可为空对象）
    - 若包含 `alternative_source_summary`，执行层只消费白名单键：
      `available_sources/unavailable_sources/provider_states/data_sources/inference_sources/feature_keys/evidence_counts`
-     （其余键会在 adapter 阶段剔除；结构定义见 `services/execution_service/docs/alternative_source_summary.schema.json`）
+     （其余键会在 adapter 阶段剔除；结构定义见 `contracts/schemas/alternative_source_summary.schema.json`）
 11. `trace_id`: 可选字符串
 12. JSON Schema：`services/execution_service/docs/decision_intent.schema.json`
 

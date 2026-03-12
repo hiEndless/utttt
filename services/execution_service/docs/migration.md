@@ -28,7 +28,7 @@
 8. `schema_mapping_version` 与 `/version`、`CONTRACT_INDEX` 已守卫对齐
 9. `order_result/reconcile_result` 已补充 `*_status` 与 `*_status_source` 语义字段，降低状态语义漂移风险
 10. `decision_state` 已补充 `state_source`（语义来源）字段，保留 `source` 兼容标识
-11. `risk_hints.alternative_source_summary` 已升级为显式子 schema，并在运行时入口做结构校验（防止字段语义静默漂移）
+11. `risk_hints.alternative_source_summary` 已升级为显式子 schema（单源位于 `contracts/schemas/alternative_source_summary.schema.json`），并在运行时入口做结构校验（防止字段语义静默漂移）
 
 ## 文档维护规则
 

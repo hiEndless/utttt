@@ -62,10 +62,10 @@
         {
           "schema": "services/execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.risk_hints.properties.alternative_source_summary.$ref",
-          "expected": "./alternative_source_summary.schema.json"
+          "expected": "../../../contracts/schemas/alternative_source_summary.schema.json"
         },
         {
-          "schema": "services/execution_service/docs/alternative_source_summary.schema.json",
+          "schema": "contracts/schemas/alternative_source_summary.schema.json",
           "json_path": "required",
           "expected": [
             "available_sources",

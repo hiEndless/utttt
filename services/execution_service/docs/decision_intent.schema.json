@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionIntent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id",
+    "exchange",
+    "account_id",
+    "symbol",
+    "direction_intent",
+    "decision_confidence",
+    "cross_horizon_policy",
+    "risk_hints"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exchange": {
+      "type": "string",
+      "minLength": 1
+    },
+    "account_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction_intent": {
+      "$ref": "./execution_enums.schema.json#/properties/direction_intent"
+    },
+    "confidence": {
+      "description": "兼容字段（deprecated）。新 producer SHOULD 仅发送 decision_confidence；若仅提供 confidence，运行时会回填为 decision_confidence（计划退役窗口：2026-06-30 前）。若与 decision_confidence 同时提供，应用层要求两者一致。",
+      "$ref": "./decision_confidence.schema.json"
+    },
+    "decision_confidence": {
+      "description": "语义主字段（canonical）。producer SHOULD 始终提供该字段；若与 confidence 同时出现，应用层要求两者一致（JSON Schema 无法表达跨字段相等约束）。",
+      "$ref": "./decision_confidence.schema.json"
+    },
+    "cross_horizon_policy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "risk_hints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "alternative_source_summary": {
+          "$ref": "../../../contracts/schemas/alternative_source_summary.schema.json"
+        }
+      }
+    },
+    "trace_id": {
+      "type": ["string", "null"]
+    }
+  }
+}

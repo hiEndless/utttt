@@ -1,7 +1,8 @@
 version: 1
-updated_at: '2026-03-12'
+updated_at: '2026-03-13'
 source_of_truth: contracts/registry.yaml
 sources:
+- contracts/schemas/alternative_source_summary.schema.json
 - services/agent_server_new/docs/runner_output.schema.json
 - services/event_center_new/docs/replay_summary.schema.json
 - services/event_center_new/docs/selected_event.schema.json

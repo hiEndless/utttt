@@ -1,8 +1,13 @@
 version: 1
-updated_at: "2026-03-12"
+updated_at: "2026-03-13"
 description: "UTaker cross-service contract registry (phase-1 scaffold; source files remain in original locations)."
 
 entries:
+  - id: contracts.alternative_source_summary
+    source: "contracts/schemas/alternative_source_summary.schema.json"
+    owner: "contracts"
+    kind: "schema"
+
   - id: feature.raw_structure_response
     source: "services/feature_service/docs/schemas/raw_structure_response.schema.json"
     owner: "feature_service"

@@ -75,7 +75,7 @@
 - `services/execution_service/docs/boundaries.md`
 - `services/execution_service/docs/migration.md`
 - `services/execution_service/docs/decision_intent.schema.json`
-- `services/execution_service/docs/alternative_source_summary.schema.json`
+- `contracts/schemas/alternative_source_summary.schema.json`
 - `services/execution_service/docs/decision_confidence.schema.json`
 - `services/execution_service/docs/execution_result.schema.json`
 - `services/execution_service/docs/execution_action.schema.json`
