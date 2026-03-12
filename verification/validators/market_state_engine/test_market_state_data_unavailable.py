@@ -149,6 +149,30 @@ class _SelectedEventProviderMissingTraceVersion:
         ]
 
 
+class _SelectedEventProviderWithAlternativeSummary:
+    async def get_selected_events(self, exchange: str, symbol: str, *, limit: int = 20):
+        return [
+            {
+                "asset": f"{exchange}:{symbol}",
+                "ts_ms": 1234567890,
+                "selected_type": "onchain_alert",
+                "direction_hint": "mixed",
+                "priority": "medium",
+                "context_snapshot": {
+                    "alternative_sources_summary": {
+                        "available_sources": ["onchain"],
+                        "unavailable_sources": ["news", "social"],
+                        "provider_states": {"news": "empty", "social": "empty", "onchain": "event_evidence_present"},
+                        "feature_keys": {"news": [], "social": [], "onchain": ["inflow_usd"]},
+                        "evidence_counts": {"news": 0, "social": 0, "onchain": 2},
+                    }
+                },
+                "trace": {"schema_version": "selected-v2"},
+                "route": {"to": "market_state_engine"},
+            }
+        ]
+
+
 def test_market_state_service_short_circuit_on_data_unavailable():
     async def _run():
         service = MarketStateService(raw_structure_provider=_UnavailableRawProvider())
@@ -293,6 +317,25 @@ def test_market_state_service_keeps_alternative_sources_in_evidence():
         assert alt.get("news", {}).get("provider_state") == "primary"
         assert alt.get("social", {}).get("source_type") == "social"
         assert alt.get("onchain", {}).get("source_type") == "onchain"
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_builds_alternative_sources_fusion():
+    async def _run():
+        service = MarketStateService(
+            raw_structure_provider=_AlternativeSourceRawProvider(),
+            selected_event_provider=_SelectedEventProviderWithAlternativeSummary(),
+        )
+        out = await service.get_market_state("binance", "ETHUSDT")
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        fusion = dict(evidence.get("alternative_sources_fusion") or {})
+        merged = dict((fusion.get("merged") or {}).get("by_source") or {})
+        assert fusion.get("preferred_source") == "feature"
+        assert merged.get("news", {}).get("available") is True
+        assert merged.get("onchain", {}).get("available") is True
+        assert merged.get("onchain", {}).get("event_evidence_count") == 2
+        assert isinstance(fusion.get("conflicts"), list)
 
     asyncio.run(_run())
 

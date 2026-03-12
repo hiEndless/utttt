@@ -56,6 +56,137 @@ def _extract_alternative_sources(raw_market_structure: Dict[str, Any]) -> Dict[s
     }
 
 
+def _empty_event_alt_summary() -> Dict[str, Any]:
+    sources = ("news", "social", "onchain")
+    return {
+        "available_sources": [],
+        "unavailable_sources": list(sources),
+        "provider_states": {x: "empty" for x in sources},
+        "feature_keys": {x: [] for x in sources},
+        "evidence_counts": {x: 0 for x in sources},
+    }
+
+
+def _normalize_event_alt_summary(payload: Any) -> Dict[str, Any]:
+    raw = payload if isinstance(payload, dict) else {}
+    base = _empty_event_alt_summary()
+    available = [str(x) for x in list(raw.get("available_sources") or []) if str(x).strip()]
+    unavailable = [str(x) for x in list(raw.get("unavailable_sources") or []) if str(x).strip()]
+    provider_states = raw.get("provider_states")
+    feature_keys = raw.get("feature_keys")
+    evidence_counts = raw.get("evidence_counts")
+    if isinstance(provider_states, dict):
+        base["provider_states"] = {k: str(v) for k, v in provider_states.items() if str(k).strip()}
+    if isinstance(feature_keys, dict):
+        base["feature_keys"] = {
+            str(k): sorted([str(x) for x in list(v or []) if str(x).strip()])
+            for k, v in feature_keys.items()
+            if str(k).strip()
+        }
+    if isinstance(evidence_counts, dict):
+        out_counts: Dict[str, int] = {}
+        for k, v in evidence_counts.items():
+            key = str(k).strip()
+            if not key:
+                continue
+            try:
+                out_counts[key] = max(0, int(v))
+            except Exception:
+                out_counts[key] = 0
+        base["evidence_counts"] = out_counts
+    base["available_sources"] = sorted(set(available))
+    base["unavailable_sources"] = sorted(set(unavailable))
+    return base
+
+
+def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    sources = ("news", "social", "onchain")
+    counts: Dict[str, int] = {x: 0 for x in sources}
+    provider_states: Dict[str, str] = {x: "empty" for x in sources}
+    feature_keys: Dict[str, set[str]] = {x: set() for x in sources}
+    found = False
+    for item in selected_events:
+        ctx = item.get("context_snapshot")
+        summary = _normalize_event_alt_summary((ctx or {}).get("alternative_sources_summary") if isinstance(ctx, dict) else None)
+        if summary == _empty_event_alt_summary():
+            continue
+        found = True
+        for src in sources:
+            counts[src] += int(dict(summary.get("evidence_counts") or {}).get(src) or 0)
+            state = str(dict(summary.get("provider_states") or {}).get(src) or "")
+            if state and state != "empty":
+                provider_states[src] = state
+            keys = list(dict(summary.get("feature_keys") or {}).get(src) or [])
+            for k in keys:
+                ks = str(k).strip()
+                if ks:
+                    feature_keys[src].add(ks)
+    if not found:
+        return _empty_event_alt_summary()
+    available = [x for x in sources if counts[x] > 0]
+    unavailable = [x for x in sources if counts[x] <= 0]
+    return {
+        "available_sources": available,
+        "unavailable_sources": unavailable,
+        "provider_states": provider_states,
+        "feature_keys": {x: sorted(feature_keys[x]) for x in sources},
+        "evidence_counts": counts,
+    }
+
+
+def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_summary: Dict[str, Any]) -> Dict[str, Any]:
+    sources = ("news", "social", "onchain")
+    merged: Dict[str, Any] = {}
+    conflicts: List[Dict[str, str]] = []
+    event_states = dict(event_alt_summary.get("provider_states") or {})
+    event_keys = dict(event_alt_summary.get("feature_keys") or {})
+    event_counts = dict(event_alt_summary.get("evidence_counts") or {})
+
+    for src in sources:
+        feat = _normalize_alternative_source_entry(src, feature_alt.get(src))
+        feat_available = bool(feat.get("available") is True)
+        feat_state = str(feat.get("provider_state") or "empty")
+        feat_keys = sorted([str(x) for x in dict(feat.get("features") or {}).keys() if str(x).strip()])
+
+        ev_state = str(event_states.get(src) or "empty")
+        ev_keys = sorted([str(x) for x in list(event_keys.get(src) or []) if str(x).strip()])
+        ev_count = int(event_counts.get(src) or 0)
+        ev_available = ev_count > 0
+
+        available = feat_available or ev_available
+        chosen_state = feat_state if feat_available else (ev_state if ev_available else "empty")
+        all_keys = sorted(set([*feat_keys, *ev_keys]))
+        if feat_available and ev_available and feat_state != ev_state:
+            conflicts.append({"source": src, "feature_state": feat_state, "event_state": ev_state})
+
+        merged[src] = {
+            "source_type": src,
+            "available": available,
+            "provider_state": chosen_state,
+            "feature_keys": all_keys,
+            "feature_available": feat_available,
+            "event_available": ev_available,
+            "event_evidence_count": ev_count,
+        }
+
+    available_sources = [x for x in sources if merged[x]["available"]]
+    unavailable_sources = [x for x in sources if not merged[x]["available"]]
+    preferred_source = "feature" if any(bool(_normalize_alternative_source_entry(x, feature_alt.get(x)).get("available")) for x in sources) else (
+        "event_center" if any(int(event_counts.get(x) or 0) > 0 for x in sources) else "none"
+    )
+    return {
+        "preferred_source": preferred_source,
+        "conflicts": conflicts,
+        "feature": dict(feature_alt),
+        "event_center": dict(event_alt_summary),
+        "merged": {
+            "available_sources": available_sources,
+            "unavailable_sources": unavailable_sources,
+            "by_source": merged,
+        },
+    }
+
+
 def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tuple[Dict[str, Any], list[str]]:
     """仅保留结构状态层输入；忽略外部事件域字段。"""
     cleaned = dict(raw_market_structure or {})
@@ -327,6 +458,17 @@ class MarketStateService:
                     "suggested_policy": "no_action",
                     "policy_reason": "insufficient_evidence",
                 }
+
+        sf_evidence = state_features_payload.get("evidence")
+        if not isinstance(sf_evidence, dict):
+            sf_evidence = {}
+        feature_alt = _extract_alternative_sources(sanitized_market_structure)
+        event_alt_summary = _collect_event_alt_summary_from_selected_events(selected_events)
+        sf_evidence["alternative_sources_fusion"] = _build_alternative_sources_fusion(
+            feature_alt=feature_alt,
+            event_alt_summary=event_alt_summary,
+        )
+        state_features_payload["evidence"] = sf_evidence
 
         if selected_events:
             anomaly_flags = sorted(set([*anomaly_flags, _SELECTED_EVENTS_ATTACHED_FLAG]))

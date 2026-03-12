@@ -115,6 +115,10 @@ MSL 契约文件：
     - `selected_event_schema_versions`（trace.schema_version 集合）
     - `selected_events_unversioned_count`（缺失 trace.schema_version 的事件数量）
   - 当上游输入携带 `alternative_sources` 时，`state_features.evidence.alternative_sources` 透传 `news/social/onchain` 的标准化包结构（仅证据透传，不参与当前主状态判定）。
+  - 当同时接入 feature 与 selected_event 侧来源摘要时，`state_features.evidence.alternative_sources_fusion` 输出融合结果：
+    - `preferred_source`（`feature|event_center|none`）
+    - `merged.by_source.{news|social|onchain}`（available/provider_state/feature_available/event_available/event_evidence_count）
+    - `conflicts`（同来源状态冲突清单）
   - 当 `selected_events_unversioned_count > 0` 时，`anomaly_flags` 会包含 `selected_events_unversioned`
 - `msl_meta`
   - `schema_version`：MSL 契约版本（当前主分支为 `2`）
