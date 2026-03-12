@@ -5,6 +5,7 @@ SUMMARY_PATH="verification/reports/summary.latest.json"
 MEMORY_SUMMARY_PATH="verification/reports/memory_summary.latest.json"
 WITH_MEMORY_SUMMARY=0
 SKIP_THRESHOLDS=0
+COMPACT=0
 
 while (($# > 0)); do
   case "$1" in
@@ -24,6 +25,10 @@ while (($# > 0)); do
       SKIP_THRESHOLDS=1
       shift
       ;;
+    --compact)
+      COMPACT=1
+      shift
+      ;;
     *)
       echo "unknown arg: $1" >&2
       exit 2
@@ -35,7 +40,11 @@ if [[ "$WITH_MEMORY_SUMMARY" == "1" ]]; then
   bash tools/local/run_agent_memory_summary_report.sh "$MEMORY_SUMMARY_PATH"
 fi
 
-python3 -m verification.reports.aggregate_reports --glob 'verification/reports/*.json' --output "$SUMMARY_PATH"
+AGGREGATE_ARGS=(--glob 'verification/reports/*.json' --output "$SUMMARY_PATH")
+if [[ "$COMPACT" == "1" ]]; then
+  AGGREGATE_ARGS+=(--compact)
+fi
+python3 -m verification.reports.aggregate_reports "${AGGREGATE_ARGS[@]}"
 if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
   python3 -m verification.reports.check_thresholds \
     --summary "$SUMMARY_PATH" \

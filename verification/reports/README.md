@@ -35,6 +35,11 @@ Generate summary only (skip thresholds):
 bash tools/local/aggregate_and_check.sh --skip-thresholds
 ```
 
+Generate compact summary JSON:
+```bash
+bash tools/local/aggregate_and_check.sh --skip-thresholds --compact
+```
+
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), and symbol memory summary reports (`symbol-memory-summary-run-v1`).
