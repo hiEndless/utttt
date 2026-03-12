@@ -2,14 +2,15 @@
 set -euo pipefail
 
 PRINT_SUMMARY_ONLY=0
+SUMMARY_FORMAT="text"
 
-for arg in "$@"; do
-  case "$arg" in
+while (($# > 0)); do
+  case "$1" in
     --help|-h)
       cat <<'USAGE'
 用法:
   bash tools/local/check_release_ready.sh
-  bash tools/local/check_release_ready.sh --print-summary-only
+  bash tools/local/check_release_ready.sh --print-summary-only [--summary-format text|json]
 
 说明:
   一键执行发布就绪四步检查：
@@ -30,19 +31,30 @@ for arg in "$@"; do
 
 参数:
   --print-summary-only               仅打印门禁阈值摘要并退出（不执行四步检查）
+  --summary-format <text|json>       门禁摘要输出格式（默认 text）
 USAGE
       exit 0
       ;;
     --print-summary-only)
       PRINT_SUMMARY_ONLY=1
+      shift
+      ;;
+    --summary-format)
+      SUMMARY_FORMAT="${2:-$SUMMARY_FORMAT}"
+      shift 2
       ;;
     *)
-      echo "[失败] 不支持的参数: $arg"
+      echo "[失败] 不支持的参数: $1"
       echo "使用 --help 查看可用参数。"
       exit 1
       ;;
   esac
 done
+
+if [[ "$SUMMARY_FORMAT" != "text" && "$SUMMARY_FORMAT" != "json" ]]; then
+  echo "[失败] --summary-format 仅支持 text 或 json，当前: $SUMMARY_FORMAT"
+  exit 1
+fi
 
 MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
 QUICK_WITH_AGENT_READYZ="${WITH_AGENT_READYZ:-0}"
@@ -53,14 +65,39 @@ REGRESSION_REQUIRE_AGENT_READYZ_REPORT="${REGRESSION_REQUIRE_AGENT_READYZ_REPORT
 NIGHTLY_MAX_AGENT_READYZ_LEVEL="${NIGHTLY_MAX_AGENT_READYZ_LEVEL:-yellow}"
 NIGHTLY_REQUIRE_AGENT_READYZ_REPORT="${NIGHTLY_REQUIRE_AGENT_READYZ_REPORT:-1}"
 
-echo "[release-gate] readyz/confidence threshold summary"
-echo "[release-gate] quick: WITH_AGENT_READYZ=$QUICK_WITH_AGENT_READYZ MAX_AGENT_READYZ_LEVEL=$QUICK_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$QUICK_REQUIRE_AGENT_READYZ_REPORT"
-echo "[release-gate] regression(default): MAX_AGENT_READYZ_LEVEL=$REGRESSION_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REGRESSION_REQUIRE_AGENT_READYZ_REPORT"
-echo "[release-gate] nightly(default): MAX_AGENT_READYZ_LEVEL=$NIGHTLY_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$NIGHTLY_REQUIRE_AGENT_READYZ_REPORT MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
-echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
+if [[ "$SUMMARY_FORMAT" == "json" ]]; then
+  cat <<JSON
+{
+  "schema_version": "release-gate-summary-v1",
+  "quick": {
+    "with_agent_readyz": ${QUICK_WITH_AGENT_READYZ},
+    "max_agent_readyz_level": "${QUICK_MAX_AGENT_READYZ_LEVEL}",
+    "require_agent_readyz_report": ${QUICK_REQUIRE_AGENT_READYZ_REPORT}
+  },
+  "regression_default": {
+    "max_agent_readyz_level": "${REGRESSION_MAX_AGENT_READYZ_LEVEL}",
+    "require_agent_readyz_report": ${REGRESSION_REQUIRE_AGENT_READYZ_REPORT}
+  },
+  "nightly_default": {
+    "max_agent_readyz_level": "${NIGHTLY_MAX_AGENT_READYZ_LEVEL}",
+    "require_agent_readyz_report": ${NIGHTLY_REQUIRE_AGENT_READYZ_REPORT},
+    "max_legacy_confidence_ratio": ${MAX_LEGACY_CONFIDENCE_RATIO}
+  },
+  "checklist_template": "docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
+}
+JSON
+else
+  echo "[release-gate] readyz/confidence threshold summary"
+  echo "[release-gate] quick: WITH_AGENT_READYZ=$QUICK_WITH_AGENT_READYZ MAX_AGENT_READYZ_LEVEL=$QUICK_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$QUICK_REQUIRE_AGENT_READYZ_REPORT"
+  echo "[release-gate] regression(default): MAX_AGENT_READYZ_LEVEL=$REGRESSION_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REGRESSION_REQUIRE_AGENT_READYZ_REPORT"
+  echo "[release-gate] nightly(default): MAX_AGENT_READYZ_LEVEL=$NIGHTLY_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$NIGHTLY_REQUIRE_AGENT_READYZ_REPORT MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
+  echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
+fi
 
 if [[ "$PRINT_SUMMARY_ONLY" == "1" ]]; then
-  echo "[通过] summary only 模式完成。"
+  if [[ "$SUMMARY_FORMAT" == "text" ]]; then
+    echo "[通过] summary only 模式完成。"
+  fi
   exit 0
 fi
 
