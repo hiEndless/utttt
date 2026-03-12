@@ -37,3 +37,19 @@ def test_normalize_features_payload_defaults():
     assert out["derived_metrics"]["candidate_horizons"] == ["short_term"]
     assert isinstance(out["derived_metrics"]["indicator_metrics"], dict)
     assert isinstance(out["structure_snapshot"]["pre_decision_structure"], dict)
+
+
+def test_normalize_features_payload_clamps_invalid_alternative_provider_state():
+    out = normalize_features_payload(
+        {
+            "alternative_sources": {
+                "news": {"available": True, "provider_state": "BAD_STATE", "features": {"headline_score": 0.8}},
+                "social": {"available": False, "provider_state": "BAD_STATE", "features": {}},
+            }
+        }
+    )
+    alt = out["alternative_sources"]
+    assert alt["news"]["provider_state"] == "ok"
+    assert alt["news"]["available"] is True
+    assert alt["social"]["provider_state"] == "empty"
+    assert alt["social"]["available"] is False

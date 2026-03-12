@@ -14,6 +14,7 @@
 - 去重并清洗 `degraded_reasons`
 - 统一 `candidate_horizons` 的合法集合和顺序
 - 保证 `raw_market_structure` 与 `features` 的关键字段稳定存在
+- `alternative_sources.provider_state` 按 `contracts/semantic_policies/source_semantics.yaml` 做白名单归一化（非法值回退到 `ok/empty`）
 
 ## 输入输出
 

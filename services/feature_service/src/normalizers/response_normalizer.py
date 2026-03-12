@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from contracts.semantic_policies.source_semantics import (
+    get_alternative_source_allowed_provider_states,
+    get_alternative_source_unavailable_provider_states,
+)
+
 VALID_HORIZONS = ("short_term", "mid_term", "long_term")
+_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = get_alternative_source_allowed_provider_states()
+_UNAVAILABLE_PROVIDER_STATES = get_alternative_source_unavailable_provider_states()
 
 
 def _safe_dict(x: Any) -> Dict[str, Any]:
@@ -56,7 +63,11 @@ def normalize_features_payload(features: Any) -> Dict[str, Any]:
         raw = _safe_dict(payload)
         features = _safe_dict(raw.get("features"))
         available = bool(raw.get("available")) if "available" in raw else bool(features)
-        provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
+        provider_state = str(raw.get("provider_state") or ("ok" if available else "empty")).strip().lower()
+        if provider_state in _UNAVAILABLE_PROVIDER_STATES and not features:
+            available = False
+        if provider_state not in _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES:
+            provider_state = "ok" if (available or bool(features)) else "empty"
         return {
             "source_type": source_type,
             "available": available,
