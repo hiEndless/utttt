@@ -24,7 +24,7 @@ def evaluate_signal(
     ctx: ExpertContext,
     signal_direction: str,
 ) -> SignalVerdict:
-    """示例：用 MSL 做主语境，用关键特征做证据补充（占位实现）。"""
+    """用 MSL 做主语境，用关键特征做证据补充的规则评估。"""
 
     direction = "none"
     if str(signal_direction).lower() in ("long", "buy"):

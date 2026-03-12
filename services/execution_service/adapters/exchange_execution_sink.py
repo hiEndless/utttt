@@ -82,7 +82,7 @@ class ExchangeExecutionSink:
         account_id = str(payload.get("account_id") or "").strip()
         symbol = str(payload.get("symbol") or "").strip().upper()
         if self.dry_run:
-            # 中文注释：dry-run 对账返回占位状态，避免引入真实交易所依赖。
+            # 中文注释：dry-run 对账返回模拟状态，避免引入真实交易所依赖。
             return {
                 "mode": "exchange",
                 "dry_run": True,
@@ -96,7 +96,7 @@ class ExchangeExecutionSink:
                 "filled_qty": 0.0,
                 "avg_price": None,
                 "ts": int(time.time() * 1000),
-                "note": "dry-run 占位回执：未请求真实交易所",
+                "note": "dry-run 模拟回执：未请求真实交易所",
             }
         if self.venue.lower() != "binance":
             raise RuntimeError(f"exchange venue 暂不支持: {self.venue}")

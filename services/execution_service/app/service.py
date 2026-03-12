@@ -555,8 +555,8 @@ def _is_retryable_reconcile_error(exc: Exception) -> bool:
 
 def _infer_sink_mode(execution_sink: Any) -> str:
     if execution_sink is None:
-        return "mock"
+        return "exchange"
     cls_name = str(getattr(execution_sink, "__class__", type(execution_sink)).__name__).lower()
     if "exchange" in cls_name:
         return "exchange"
-    return "mock"
+    return "exchange"

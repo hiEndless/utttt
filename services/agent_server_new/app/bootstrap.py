@@ -55,7 +55,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         except Exception as exc:
             if runtime_profile in {"prod", "production"}:
                 raise RuntimeError("failed to initialize redis active events provider in production") from exc
-            # 中文注释：非生产环境允许降级为 null provider，避免引入 stub 语义污染。
+            # 中文注释：非生产环境允许降级为 null provider，避免上游短时故障阻塞决策链路。
             logger.warning("active_events redis provider init failed, fallback to null provider: %s", exc)
             active_events_provider = NullActiveEventsProvider()
     else:
