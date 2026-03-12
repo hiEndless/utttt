@@ -34,6 +34,7 @@
 - 一键发布就绪检查：`tools/local/check_release_ready.sh`
   - 内含：`verify_quick`、`new_arch_guards_full --quick`、`check_release_triage_block_guard.sh`、`check_release_baseline_alignment.sh --check-origin`
   - 支持：`bash tools/local/check_release_ready.sh --help`
+  - 支持：`bash tools/local/check_release_ready.sh --print-summary-only`（仅输出门禁阈值摘要）
   - 输出会先打印当前 readyz/confidence 门禁阈值摘要（用于发布记录）
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PRINT_SUMMARY_ONLY=0
+
 for arg in "$@"; do
   case "$arg" in
     --help|-h)
       cat <<'USAGE'
 用法:
   bash tools/local/check_release_ready.sh
+  bash tools/local/check_release_ready.sh --print-summary-only
 
 说明:
   一键执行发布就绪四步检查：
@@ -24,8 +27,14 @@ for arg in "$@"; do
   NIGHTLY_MAX_AGENT_READYZ_LEVEL     nightly 默认 readyz 最大级别（默认 yellow）
   NIGHTLY_REQUIRE_AGENT_READYZ_REPORT nightly 默认是否要求 readyz 报告（默认 1）
   MAX_LEGACY_CONFIDENCE_RATIO        nightly confidence 占比阈值（默认 0.05）
+
+参数:
+  --print-summary-only               仅打印门禁阈值摘要并退出（不执行四步检查）
 USAGE
       exit 0
+      ;;
+    --print-summary-only)
+      PRINT_SUMMARY_ONLY=1
       ;;
     *)
       echo "[失败] 不支持的参数: $arg"
@@ -49,6 +58,11 @@ echo "[release-gate] quick: WITH_AGENT_READYZ=$QUICK_WITH_AGENT_READYZ MAX_AGENT
 echo "[release-gate] regression(default): MAX_AGENT_READYZ_LEVEL=$REGRESSION_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REGRESSION_REQUIRE_AGENT_READYZ_REPORT"
 echo "[release-gate] nightly(default): MAX_AGENT_READYZ_LEVEL=$NIGHTLY_MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$NIGHTLY_REQUIRE_AGENT_READYZ_REPORT MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
 echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
+
+if [[ "$PRINT_SUMMARY_ONLY" == "1" ]]; then
+  echo "[通过] summary only 模式完成。"
+  exit 0
+fi
 
 echo "[1/4] verify_quick"
 bash tools/ci/verify_quick.sh
