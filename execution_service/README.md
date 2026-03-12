@@ -184,7 +184,7 @@ execution_service/
 
 ## Redis 集成测试
 
-- 测试文件：`execution_service/text/test_execution_service_redis_ethusdt.py`
+- 测试文件：`verification/validators/execution_service/test_execution_service_redis_ethusdt.py`
 - 说明：使用 `binance/ETHUSDT` 的 execution 键数据做端到端裁决验证（`integration` 标记）
 - Redis 键契约：`execution_service/docs/redis_keys.md`
 - cURL 示例：`execution_service/docs/curl_examples.md`

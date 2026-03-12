@@ -215,7 +215,7 @@ event_center_new(signal_event + active_events)
 - `market_state_engine/text`
 - `event_center/text`
 - `agent_server/text`（旧模块测试，非新架构验收门槛）
-- `execution_service/text`
+- `verification/validators/execution_service`
 
 ## 7. 新架构联调最小路径
 

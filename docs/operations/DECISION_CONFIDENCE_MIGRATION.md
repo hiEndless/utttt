@@ -59,8 +59,8 @@
 - `services/execution_service/domain/contracts.py`
 
 3. 测试
-- `execution_service/text/test_decision_intent_contract.py`
-- `execution_service/text/test_decision_intent_schema.py`
+- `verification/validators/execution_service/test_decision_intent_contract.py`
+- `verification/validators/execution_service/test_decision_intent_schema.py`
 
 4. 观测接口
 - `GET /internal/execution/debug/confidence-metrics`

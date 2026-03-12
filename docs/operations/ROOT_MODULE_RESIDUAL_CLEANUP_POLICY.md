@@ -22,7 +22,7 @@
 
 当前守卫链路仍直接调用：
 - `verification/auditors/agent_server_new/*.py`
-- `execution_service/text/*.py`
+- `verification/validators/execution_service/*.py`
 - `verification/replay/event_center_new/*.py`（已迁移）
 - `verification/validators/feature_service/*.py`
 
@@ -52,7 +52,7 @@
 1. `event_center_new/text`（与 replay/selected schema 相关，边界清晰，优先迁）。
 2. `verification/validators/feature_service`（规模小，迁移成本低）。
 3. `verification/auditors/agent_server_new`（与 workflow 绑定较多，中等风险）。
-4. `execution_service/text`（数量最多、守卫最密集，最后迁）。
+4. `verification/validators/execution_service`（数量最多、守卫最密集，最后迁）。
 
 ## 本次已完成
 

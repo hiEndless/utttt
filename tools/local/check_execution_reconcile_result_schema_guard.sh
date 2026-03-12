@@ -9,6 +9,6 @@ fi
 
 echo "[2/2] 运行 execution reconcile result schema 校验测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
-./venv/bin/pytest -q execution_service/text/test_execution_reconcile_result_schema.py
+./venv/bin/pytest -q verification/validators/execution_service/test_execution_reconcile_result_schema.py
 
 echo "[通过] execution reconcile result schema 守卫检查完成。"

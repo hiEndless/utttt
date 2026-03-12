@@ -14,34 +14,34 @@ fi
 echo "[2/2] 运行 execution 契约与联调测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
-  execution_service/text/test_decision_intent_contract.py \
-  execution_service/text/test_execution_decision_engine.py \
-  execution_service/text/test_execution_api.py \
-  execution_service/text/test_execution_idempotency.py \
-  execution_service/text/test_execution_state_machine.py \
-  execution_service/text/test_execution_submit_flow.py \
-  execution_service/text/test_exchange_execution_sink.py \
-  execution_service/text/test_execution_reconcile_retry.py \
-  execution_service/text/test_execution_reconcile_result_schema.py \
-  execution_service/text/test_retry_meta_schema.py \
-  execution_service/text/test_reconcile_reason_codes_contract.py \
-  execution_service/text/test_reconcile_status_codes_contract.py \
-  execution_service/text/test_retry_meta_contract.py \
-  execution_service/text/test_decision_intent_schema.py \
-  execution_service/text/test_decision_state_schema.py \
-  execution_service/text/test_execution_result_schema.py \
-  execution_service/text/test_execution_signal_result_schema.py \
-  execution_service/text/test_risk_check_codes_contract.py \
-  execution_service/text/test_risk_check_meta_contract.py \
-  execution_service/text/test_risk_check_message_templates.py \
-  execution_service/text/test_risk_check_builder.py \
-  execution_service/text/test_risk_result_builder.py \
-  execution_service/text/test_risk_policy_schema.py \
-  execution_service/text/test_risk_policy_providers.py \
-  execution_service/text/test_schema_mapping.py \
-  execution_service/text/test_stub_state_providers.py \
-  execution_service/text/test_agent_to_execution_smoke.py \
-  execution_service/text/test_redis_state_providers.py \
-  execution_service/text/test_execution_app_provider_mode.py
+  verification/validators/execution_service/test_decision_intent_contract.py \
+  verification/validators/execution_service/test_execution_decision_engine.py \
+  verification/validators/execution_service/test_execution_api.py \
+  verification/validators/execution_service/test_execution_idempotency.py \
+  verification/validators/execution_service/test_execution_state_machine.py \
+  verification/validators/execution_service/test_execution_submit_flow.py \
+  verification/validators/execution_service/test_exchange_execution_sink.py \
+  verification/validators/execution_service/test_execution_reconcile_retry.py \
+  verification/validators/execution_service/test_execution_reconcile_result_schema.py \
+  verification/validators/execution_service/test_retry_meta_schema.py \
+  verification/validators/execution_service/test_reconcile_reason_codes_contract.py \
+  verification/validators/execution_service/test_reconcile_status_codes_contract.py \
+  verification/validators/execution_service/test_retry_meta_contract.py \
+  verification/validators/execution_service/test_decision_intent_schema.py \
+  verification/validators/execution_service/test_decision_state_schema.py \
+  verification/validators/execution_service/test_execution_result_schema.py \
+  verification/validators/execution_service/test_execution_signal_result_schema.py \
+  verification/validators/execution_service/test_risk_check_codes_contract.py \
+  verification/validators/execution_service/test_risk_check_meta_contract.py \
+  verification/validators/execution_service/test_risk_check_message_templates.py \
+  verification/validators/execution_service/test_risk_check_builder.py \
+  verification/validators/execution_service/test_risk_result_builder.py \
+  verification/validators/execution_service/test_risk_policy_schema.py \
+  verification/validators/execution_service/test_risk_policy_providers.py \
+  verification/validators/execution_service/test_schema_mapping.py \
+  verification/validators/execution_service/test_stub_state_providers.py \
+  verification/validators/execution_service/test_agent_to_execution_smoke.py \
+  verification/validators/execution_service/test_redis_state_providers.py \
+  verification/validators/execution_service/test_execution_app_provider_mode.py
 
 echo "[通过] agent->execution 契约守卫检查完成。"
