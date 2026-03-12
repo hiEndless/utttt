@@ -13,6 +13,7 @@
 - `docs/operations/VERIFICATION_SCRIPT_INVENTORY.md`
 - `docs/operations/VERIFY_QUICK_DEDUP_MATRIX.md`
 - `docs/operations/VERIFY_QUICK_TIMING_BASELINE.md`
+- `docs/operations/RELEASE_LATEST.md`
 - `docs/operations/RELEASE_BASELINE_20260312.md`
 - `docs/operations/RELEASE_SUMMARY_20260312.md`
 - `docs/operations/RELEASE_HANDOFF_20260312.md`
