@@ -239,6 +239,14 @@ signal_event + active_events + MSL
   - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
   - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
 
+## HTTP Runtime (Production Probe)
+
+- 启动 HTTP 入口：`python -m services.agent_server_new.runtime.http_main`
+- 健康检查：`GET /internal/agent/healthz`
+- 就绪检查：`GET /internal/agent/readyz`
+  - 当 workflow bootstrap 失败时返回 `503`
+  - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
+
 ## Memory Summary Runner
 
 - 一次执行：`python -m services.agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`

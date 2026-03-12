@@ -7,7 +7,9 @@
 """
 
 from .bootstrap import create_trade_event_workflow_from_env
+from .http_app import create_app as create_http_app
 
 __all__ = [
     "create_trade_event_workflow_from_env",
+    "create_http_app",
 ]
