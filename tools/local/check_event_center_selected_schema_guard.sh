@@ -9,15 +9,15 @@ fi
 
 echo "[2/5] 运行 selected_event schema 契约测试（含缺必填字段行为断言）"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
-./venv/bin/pytest -q event_center_new/text/test_selected_event_schema_contract.py
+./venv/bin/pytest -q verification/replay/event_center_new/test_selected_event_schema_contract.py
 
 echo "[3/5] 运行 selected_event -> agent 下游消费映射守卫测试"
-./venv/bin/pytest -q event_center_new/text/test_selected_event_downstream_consumer_contract.py
+./venv/bin/pytest -q verification/replay/event_center_new/test_selected_event_downstream_consumer_contract.py
 
 echo "[4/5] 运行 selected_event -> market_state 下游消费映射守卫测试"
-./venv/bin/pytest -q event_center_new/text/test_selected_event_state_consumer_contract.py
+./venv/bin/pytest -q verification/replay/event_center_new/test_selected_event_state_consumer_contract.py
 
 echo "[5/5] 运行 selected_event -> market_state 运行时样本守卫测试"
-./venv/bin/pytest -q event_center_new/text/test_selected_event_state_runtime_guard.py
+./venv/bin/pytest -q verification/replay/event_center_new/test_selected_event_state_runtime_guard.py
 
 echo "[通过] event_center selected_event schema 守卫检查完成。"

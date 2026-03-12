@@ -18,11 +18,11 @@ fi
 echo "[2/3] 运行 event_center replay 相关测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
-  event_center_new/text/test_runner.py \
-  event_center_new/text/test_redis_layer_store.py \
-  event_center_new/text/test_replay.py \
-  event_center_new/text/test_replay_cli.py \
-  event_center_new/text/test_replay_main.py
+  verification/replay/event_center_new/test_runner.py \
+  verification/replay/event_center_new/test_redis_layer_store.py \
+  verification/replay/event_center_new/test_replay.py \
+  verification/replay/event_center_new/test_replay_cli.py \
+  verification/replay/event_center_new/test_replay_main.py
 
 echo "[3/3] 校验 replay CLI 参数"
 python3 -m services.event_center_new.replay_main --help >/dev/null

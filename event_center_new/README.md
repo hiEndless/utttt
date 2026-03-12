@@ -190,11 +190,11 @@ event_center_new/
 当前已落地：
 - `event_center_new/docs/selected_event.schema.json`
 - `SelectedEvent` 元字段已冻结：`source`（可选）/`trace`（必填，且 `trace.schema_version` 必填）
-- 下游消费视角守卫：`event_center_new/text/test_selected_event_downstream_consumer_contract.py`
+- 下游消费视角守卫：`verification/replay/event_center_new/test_selected_event_downstream_consumer_contract.py`
   - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
-- 状态层消费视角守卫：`event_center_new/text/test_selected_event_state_consumer_contract.py`
+- 状态层消费视角守卫：`verification/replay/event_center_new/test_selected_event_state_consumer_contract.py`
   - 确保 `selected_event` 与 `market_state_engine` evidence 聚合字段映射稳定
-- 状态层运行时样本守卫：`event_center_new/text/test_selected_event_state_runtime_guard.py`
+- 状态层运行时样本守卫：`verification/replay/event_center_new/test_selected_event_state_runtime_guard.py`
   - 真实调用 `MarketStateService.get_market_state`，验证 selected_event 进入 state evidence 的动态链路
 
 ### 第三阶段：为状态层提供干净输入（进行中）

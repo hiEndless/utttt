@@ -14,10 +14,10 @@ contract_cases:
   - "execution_service/text/test_schema_mapping.py"
 
 replay_cases:
-  - "event_center_new/text/test_replay.py"
-  - "event_center_new/text/test_replay_cli.py"
-  - "event_center_new/text/test_replay_main.py"
-  - "event_center_new/text/test_replay_summary_schema_contract.py"
+  - "verification/replay/event_center_new/test_replay.py"
+  - "verification/replay/event_center_new/test_replay_cli.py"
+  - "verification/replay/event_center_new/test_replay_main.py"
+  - "verification/replay/event_center_new/test_replay_summary_schema_contract.py"
 
 workflow_cases:
   - "agent_server_new/text/test_pipeline_traceability_contract.py"

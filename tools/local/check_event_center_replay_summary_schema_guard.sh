@@ -9,6 +9,6 @@ fi
 
 echo "[2/2] 运行 replay summary schema 契约测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
-./venv/bin/pytest -q event_center_new/text/test_replay_summary_schema_contract.py
+./venv/bin/pytest -q verification/replay/event_center_new/test_replay_summary_schema_contract.py
 
 echo "[通过] event_center replay summary schema 守卫检查完成。"

@@ -23,7 +23,7 @@
 当前守卫链路仍直接调用：
 - `agent_server_new/text/*.py`
 - `execution_service/text/*.py`
-- `event_center_new/text/*.py`
+- `verification/replay/event_center_new/*.py`（已迁移）
 - `feature_service/text/*.py`
 
 若直接删除，会导致：
@@ -57,4 +57,3 @@
 ## 本次已完成
 
 - 清理 `agent_server_new|execution_service|event_center_new|feature_service` 下全部 `__pycache__/` 目录。
-
