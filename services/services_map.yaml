@@ -44,14 +44,20 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "pilot_entrypoint_migrated"
+    status: "src_batch_a_migrated_with_compat_wrappers"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
     pilot_migrated_impl:
       - "services/market_state_engine/runtime/main.py"
+      - "services/market_state_engine/src/app.py"
+      - "services/market_state_engine/src/routes.py"
+      - "services/market_state_engine/src/contracts.py"
     legacy_wrapper:
       - "market_state_engine/main.py"
+      - "market_state_engine/app.py"
+      - "market_state_engine/routes.py"
+      - "market_state_engine/contracts.py"
 
   - name: event_center_new
     current_path: "event_center_new/"

@@ -5,7 +5,7 @@ import os
 
 import uvicorn
 
-from market_state_engine.app import create_app
+from services.market_state_engine.src.app import create_app
 
 
 app = create_app()
