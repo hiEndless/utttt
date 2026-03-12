@@ -4,6 +4,10 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict
 
+from contracts.semantic_policies.source_semantics import (
+    get_market_state_feature_fallback_data_source,
+    get_market_state_feature_fallback_inference_source,
+)
 from services.feature_service.src.ports.news_provider import NewsProvider
 from services.feature_service.src.ports.onchain_provider import OnchainProvider
 from services.feature_service.src.ports.social_provider import SocialProvider
@@ -19,6 +23,8 @@ def _normalize_source_payload(
     provider_state: str,
 ) -> Dict[str, Any]:
     raw = dict(payload or {})
+    default_data_source = get_market_state_feature_fallback_data_source(source_type)
+    default_inference_source = get_market_state_feature_fallback_inference_source()
     has_envelope = any(k in raw for k in ("source_type", "features", "provider_state", "available", "as_of_ms"))
     if has_envelope:
         features = raw.get("features")
@@ -32,10 +38,14 @@ def _normalize_source_payload(
         available = bool(features)
         as_of_ms = None
         state = provider_state if available else "empty"
+    data_source = str(raw.get("data_source") or raw.get("source") or default_data_source).strip() or default_data_source
+    inference_source = str(raw.get("inference_source") or default_inference_source).strip() or default_inference_source
     return {
         "source_type": source_type,
         "available": available,
         "provider_state": state,
+        "data_source": data_source,
+        "inference_source": inference_source,
         "as_of_ms": as_of_ms,
         "features": features,
     }

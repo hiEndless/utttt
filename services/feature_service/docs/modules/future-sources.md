@@ -31,6 +31,8 @@
   "source_type": "news|social|onchain",
   "available": false,
   "provider_state": "primary|fallback|static|noop|unavailable|empty",
+  "data_source": "feature_service.news|feature_service.social|feature_service.onchain",
+  "inference_source": "feature_service.normalizer",
   "as_of_ms": null,
   "features": {}
 }

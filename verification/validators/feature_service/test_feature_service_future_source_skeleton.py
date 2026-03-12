@@ -37,6 +37,8 @@ def test_fallback_news_provider_uses_fallback_and_records_degraded_reason():
         assert out.get("source_type") == "news"
         assert out.get("provider_state") == "fallback"
         assert out.get("available") is True
+        assert out.get("data_source") == "stub"
+        assert out.get("inference_source") == "feature_service.normalizer"
         assert out.get("features", {}).get("headline_score") == 0.7
         assert "news_provider_fallback" in reasons
 
@@ -52,6 +54,8 @@ def test_static_news_provider_returns_deepcopy_payload():
 
         out2 = await provider.get_news_features("binance", "ETHUSDT")
         assert out2.get("provider_state") == "static"
+        assert out2.get("data_source") == "feature_service.news"
+        assert out2.get("inference_source") == "feature_service.normalizer"
         assert out2["features"]["items"][0]["title"] == "a"
 
     asyncio.run(_run())
@@ -67,6 +71,8 @@ def test_unavailable_onchain_provider_marks_degraded():
         assert out.get("source_type") == "onchain"
         assert out.get("provider_state") == "unavailable"
         assert out.get("available") is False
+        assert out.get("data_source") == "feature_service.onchain"
+        assert out.get("inference_source") == "feature_service.normalizer"
         assert out.get("features") == {}
         assert "onchain_provider_unavailable" in reasons
 

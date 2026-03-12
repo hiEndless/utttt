@@ -140,9 +140,9 @@
       "horizons": {}
     },
     "alternative_sources": {
-      "news": {"source_type": "news", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}},
-      "social": {"source_type": "social", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}},
-      "onchain": {"source_type": "onchain", "available": false, "provider_state": "noop", "as_of_ms": null, "features": {}}
+      "news": {"source_type": "news", "available": false, "provider_state": "noop", "data_source": "feature_service.news", "inference_source": "feature_service.normalizer", "as_of_ms": null, "features": {}},
+      "social": {"source_type": "social", "available": false, "provider_state": "noop", "data_source": "feature_service.social", "inference_source": "feature_service.normalizer", "as_of_ms": null, "features": {}},
+      "onchain": {"source_type": "onchain", "available": false, "provider_state": "noop", "data_source": "feature_service.onchain", "inference_source": "feature_service.normalizer", "as_of_ms": null, "features": {}}
     }
   }
 }
