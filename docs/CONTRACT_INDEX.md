@@ -18,7 +18,7 @@
 - `docs/SEMANTIC_GLOSSARY.md`
 - `docs/ALERT_CODES.md`
 - `tools/local/check_contract_docs_canonical_layout_guard.sh`
-- `tools/local/check_contract_change_bundle_guard.sh`
+- `tools/local/check_contract_change_bundle_guard.sh`（强约束触发：schema 文件变更、schema_mapping 变更，或 event_center_runtime_config_version 版本锚点变更）
 
 ## 2. feature_service
 
