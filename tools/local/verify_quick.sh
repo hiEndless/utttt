@@ -2,6 +2,7 @@
 set -euo pipefail
 
 WITH_VERIFICATION_API_SCHEMA_CHECK=0
+SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=0
 SHOW_HELP=0
 PASS_ARGS=()
 
@@ -13,6 +14,10 @@ while (($# > 0)); do
       ;;
     --with-verification-api-schema-check)
       WITH_VERIFICATION_API_SCHEMA_CHECK=1
+      shift
+      ;;
+    --skip-semantic-critical-warning-guard)
+      SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=1
       shift
       ;;
     *)
@@ -33,11 +38,15 @@ Description:
 
 Options:
   --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
+  --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
 USAGE
   exit 0
 fi
 
 CMD=(bash tools/ci/verify_quick.sh)
+if [[ "$SKIP_SEMANTIC_CRITICAL_WARNING_GUARD" == "1" ]]; then
+  CMD=(env VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1 bash tools/ci/verify_quick.sh)
+fi
 if ((${#PASS_ARGS[@]} > 0)); then
   CMD+=("${PASS_ARGS[@]}")
 fi

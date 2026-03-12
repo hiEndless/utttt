@@ -18,4 +18,8 @@ bash tools/local/check_prod_provider_modes_guard.sh
 bash tools/ci/verify_all.sh --quick
 bash tools/local/sync_contract_indexes.sh
 bash tools/local/audit_semantics.sh
-bash tools/local/check_semantic_critical_warning_guard.sh
+if [[ "${VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL:-0}" == "1" ]]; then
+  echo "[warn] skip semantic critical warning guard by VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1"
+else
+  bash tools/local/check_semantic_critical_warning_guard.sh
+fi
