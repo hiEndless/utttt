@@ -36,7 +36,7 @@
 前置门禁：
 
 1. `bash tools/local/check_market_state_legacy_imports.sh --strict` 通过。
-2. `./venv/bin/pytest -q market_state_engine/text` 通过。
+2. `./venv/bin/pytest -q verification/validators/market_state_engine` 通过。
 3. `bash tools/ci/verify_quick.sh` 通过。
 
 执行结果：
@@ -78,7 +78,7 @@
 2. 扫描遗留导入：
    - `bash tools/local/check_market_state_legacy_imports.sh --strict`
 3. 回归：
-   - `./venv/bin/pytest -q market_state_engine/text`
+   - `./venv/bin/pytest -q verification/validators/market_state_engine`
    - `bash tools/ci/verify_quick.sh`
 4. 更新文档：
    - `services/services_map.yaml`

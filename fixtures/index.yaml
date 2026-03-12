@@ -9,7 +9,7 @@ contract_cases:
   - "fixtures/contract_cases/event_selected.sample.json"
   - "fixtures/contract_cases/execution_decision_intent.sample.json"
   - "verification/validators/feature_service/test_feature_service_schema_guard.py"
-  - "market_state_engine/text/test_msl_schema_contract.py"
+  - "verification/validators/market_state_engine/test_msl_schema_contract.py"
   - "verification/auditors/agent_server_new/test_runner_output_schema.py"
   - "verification/validators/execution_service/test_schema_mapping.py"
 

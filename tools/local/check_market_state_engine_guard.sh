@@ -30,9 +30,9 @@ fi
 echo "[2/2] 运行状态层回归测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
-  market_state_engine/text/test_market_state_data_unavailable.py \
-  market_state_engine/text/test_raw_structure_http_provider_contract.py \
-  market_state_engine/text/test_msl_contract_whitelist.py \
-  market_state_engine/text/test_state_inference_pipeline.py
+  verification/validators/market_state_engine/test_market_state_data_unavailable.py \
+  verification/validators/market_state_engine/test_raw_structure_http_provider_contract.py \
+  verification/validators/market_state_engine/test_msl_contract_whitelist.py \
+  verification/validators/market_state_engine/test_state_inference_pipeline.py
 
 echo "[通过] market_state_engine 守卫检查完成。"

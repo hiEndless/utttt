@@ -20,6 +20,6 @@ fi
 
 echo "[2/2] 运行契约守卫测试"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
-./venv/bin/pytest -q market_state_engine/text/test_raw_structure_http_provider_contract.py
+./venv/bin/pytest -q verification/validators/market_state_engine/test_raw_structure_http_provider_contract.py
 
 echo "[通过] feature 契约守卫检查完成。"

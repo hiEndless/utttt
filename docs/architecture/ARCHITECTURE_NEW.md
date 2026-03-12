@@ -212,7 +212,7 @@ event_center_new(signal_event + active_events)
 
 `pytest` 已配置模块级发现路径（`pytest.ini`）：
 - `verification/validators/feature_service`
-- `market_state_engine/text`
+- `verification/validators/market_state_engine`
 - `event_center/text`
 - `agent_server/text`（旧模块测试，非新架构验收门槛）
 - `verification/validators/execution_service`

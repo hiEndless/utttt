@@ -19,7 +19,7 @@ fi
 echo "[2/2] 运行状态层与决策层契约测试（含可追溯守卫）"
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
-  market_state_engine/text \
+  verification/validators/market_state_engine \
   verification/auditors/agent_server_new/test_bootstrap.py \
   verification/auditors/agent_server_new/test_active_events_redis_adapter.py \
   verification/auditors/agent_server_new/test_active_events_contract_guard.py \
