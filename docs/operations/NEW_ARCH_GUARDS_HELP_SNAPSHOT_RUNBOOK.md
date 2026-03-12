@@ -69,6 +69,13 @@ bash tools/ci/verify_quick.sh
   - runtime_doc: base='event-center-runtime-v1' head='event-center-runtime-v2'
 ```
 
+5. contract bundle 提示 `verification/reports/release_gate_summary_v1.schema.json` 触发 schema 变更
+- 这是 release gate 契约变更触发器，按“契约变更四件套”处理：
+  1) 更新 `docs/CONTRACT_INDEX.md`
+  2) 更新相关契约文档（如 `verification/reports/README.md` / `docs/contracts/CONTRACTS_QUICK_REF.md`）
+  3) 更新迁移/运行说明文档（如 `docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md`）
+  4) 更新守卫或测试（如 `verification/text/test_release_gate_summary_schema.py`）
+
 ## 5. 维护约束
 
 - 不要手工“微调”快照内容；始终用 `--help` 输出重定向生成。
