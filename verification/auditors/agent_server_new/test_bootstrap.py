@@ -6,6 +6,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
+from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
@@ -17,6 +18,7 @@ from services.agent_server_new.app.bootstrap import create_trade_event_workflow_
 def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch):
     monkeypatch.setenv("AGENT_MARKET_STATE_BASE_URL", "http://localhost:8300")
     monkeypatch.setenv("AGENT_MARKET_STATE_TIMEOUT_S", "9")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
     monkeypatch.delenv("AGENT_EXECUTION_ENABLED", raising=False)
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._market_state, HttpMarketStateProvider)  # noqa: SLF001
@@ -58,6 +60,12 @@ def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_even
         raise RuntimeError("boom")
 
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_explicit_stub_active_events(monkeypatch):
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
 

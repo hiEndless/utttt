@@ -164,7 +164,8 @@ signal_event + active_events + MSL
 - `AGENT_POSITION_CONTEXT_FAIL_OPEN`
   - HTTP 获取失败是否回落空上下文（dev 默认 `true`，prod 默认 `false`）
 - `AGENT_ACTIVE_EVENTS_PROVIDER_MODE`
-  - active events provider 模式（`stub|redis`，默认：`stub`）
+  - active events provider 模式（`redis|stub`，默认：`redis`）
+  - Redis 初始化失败时（dev）回落到 `null provider`（返回空事件）
 - `AGENT_ACTIVE_EVENTS_REDIS_URL`
   - 当 provider 为 `redis` 时的连接地址（默认：`redis://127.0.0.1:6379/0`）
 - `AGENT_ACTIVE_EVENTS_STREAM`
@@ -204,8 +205,8 @@ signal_event + active_events + MSL
 - 默认接线：
   - `market_state = HttpMarketStateProvider.from_env()`
   - `position_context` 默认 `http` 读取 execution debug state（可显式切 `stub` 仅用于联调）
-  - `active_events = StubActiveEventsProvider()`（默认）
-  - 当 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis` 时启用 `RedisActiveEventsProvider`
+  - `active_events` 默认 `RedisActiveEventsProvider`（dev 异常回退 null provider）
+  - 当 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=stub` 时启用 `StubActiveEventsProvider`（仅联调）
   - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
 
