@@ -2,7 +2,7 @@
 
 项目级新架构总览：`/docs/ARCHITECTURE_NEW.md`
 统一告警码清单（含 owner/introduced_in/lifecycle）：`/docs/ALERT_CODES.md`
-运行时配置总表：`event_center_new/docs/runtime.md`
+运行时配置总表：`services/event_center_new/docs/runtime.md`
 运行时配置版本号与变更日志也在该文档中维护（`runtime_config_version`）。
 版本升级可使用：`bash tools/local/bump_event_center_runtime_version.sh <version> <note>`（支持 `--dry-run` 预览、`--check-clean` 干净工作区保护、`--apply-from-env-table` 环境变量覆盖校验、`--no-duplicate-log` 防重复日志、`--strict` 一键严格模式）。当前版本可用 `--print-current-version` 只读查询。
 
@@ -188,7 +188,7 @@ event_center_new/
 3. 对外只暴露这些 schema，不暴露内部阶段对象
 
 当前已落地：
-- `event_center_new/docs/selected_event.schema.json`
+- `services/event_center_new/docs/selected_event.schema.json`
 - `SelectedEvent` 元字段已冻结：`source`（可选）/`trace`（必填，且 `trace.schema_version` 必填）
 - 下游消费视角守卫：`verification/replay/event_center_new/test_selected_event_downstream_consumer_contract.py`
   - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
@@ -415,11 +415,11 @@ python3 -m services.event_center_new.replay_main \
 回放报告包含 `signatures.replay_selected` 与 `signatures.online_selected`，
 可快速判断两轮 selected 是否一致，再结合 `diffs` 做字段级定位。
 报告同时包含 `selected_contract`（顶层字段白名单/必填校验），可提前发现线上 selected 契约漂移。
-`selected_contract` 校验规则直接复用 `event_center_new/docs/selected_event.schema.json`。
+`selected_contract` 校验规则直接复用 `services/event_center_new/docs/selected_event.schema.json`。
 报告还包含 `stream_presence` 与 `missing_streams`，可用于 CI 在 `ec:raw/ec:selected` 缺失时快速失败。
 `--strict` 等价于同时开启 `--fail-on-contract --fail-on-diff --fail-on-missing-stream`。
 `--summary-only` 仅输出摘要字段，适合守卫/CI 场景降低日志噪音。
-`--summary-only` 输出契约冻结为 `event_center_new/docs/replay_summary.schema.json`。
+`--summary-only` 输出契约冻结为 `services/event_center_new/docs/replay_summary.schema.json`。
 仓库守卫 `tools/local/check_event_center_replay_guard.sh` 已包含该失败路径的行为断言，避免只检查参数存在。
 仓库守卫 `tools/local/check_event_center_replay_strict_ci.sh` 固定 `--strict --summary-only` 调用路径，覆盖严格模式成功/失败分支。
 仓库守卫 `tools/local/check_event_center_selected_schema_guard.sh` 也包含缺必填字段（如 `route`）的行为断言。
@@ -428,7 +428,7 @@ python3 -m services.event_center_new.replay_main \
 仓库守卫 `tools/local/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
 仓库守卫 `tools/local/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
 仓库守卫 `tools/local/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
-仓库守卫 `tools/local/check_event_center_ci_doc_snapshot_guard.sh` 校验 `event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`event_center_new/docs/ci_help_snapshot_lines.txt` 与 `event_center_new/docs/ci_triage_snapshot_lines.txt`）。
+仓库守卫 `tools/local/check_event_center_ci_doc_snapshot_guard.sh` 校验 `services/event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`services/event_center_new/docs/ci_help_snapshot_lines.txt` 与 `services/event_center_new/docs/ci_triage_snapshot_lines.txt`）。
 仓库守卫 `tools/local/check_event_center_help_snapshot_sync_guard.sh` 校验聚合守卫 `--help` 的完整输出块与失败码顺序强一致（快照：`ci_help_block_snapshot.txt`/`ci_help_snapshot_lines.txt`）。
 `tools/local/check_event_center_contract_guards.sh` 在子守卫失败时会统一输出 `FAIL_CODE=...`（schema/runtime/wiring/ci-workflow/ci-doc/help-snapshot-sync），便于日志检索与告警归类；可用 `--help` 查看失败码清单。
 聚合入口：
@@ -455,6 +455,6 @@ CI 便捷入口：
 - `.github/workflows/event-center-quick.yml`（GitHub Actions：并行执行 strict/lenient quick 守卫；失败自动上传 strict/lenient 诊断 artifact）
 - `.github/workflows/event-center-full.yml`（GitHub Actions：每日定时 + 手动触发，全量 strict 守卫；失败自动上传诊断 artifact）
 - `.github/actions/setup-utaker-python/action.yml`（quick/full 复用的 Python+依赖初始化 action）
-- `event_center_new/docs/ci.md`（CI 触发矩阵、失败分类、artifact 日志锚点与标准处置）
+- `services/event_center_new/docs/ci.md`（CI 触发矩阵、失败分类、artifact 日志锚点与标准处置）
 
-CI 失败排障请直接查看 `event_center_new/docs/ci.md`，README 仅保留入口。
+CI 失败排障请直接查看 `services/event_center_new/docs/ci.md`，README 仅保留入口。
