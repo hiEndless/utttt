@@ -125,6 +125,60 @@ def test_redis_active_events_provider_normalizes_source_object():
     assert evidence.get("inference_source") == "event_center_new.selector"
 
 
+def test_redis_active_events_provider_infers_source_category_from_source_name() -> None:
+    rows = [
+        (
+            "13-0",
+            {
+                "payload": json.dumps(
+                    {
+                        "asset": "binance:ETHUSDT",
+                        "selected_type": "event.selected",
+                        "source": "x_twitter_stream",
+                        "context_snapshot": {"reason": "social-event"},
+                    }
+                )
+            },
+        )
+    ]
+    provider = RedisActiveEventsProvider(
+        client=_FakeRedis(rows),
+        cfg=RedisActiveEventsConfig(stream="ec:selected", limit_default=3, scan_factor=2),
+    )
+    out = asyncio.run(provider.get_active_events("binance", "ETHUSDT"))
+    assert len(out) == 1
+    evidence = dict(out[0]["evidence"])
+    assert evidence.get("event_source") == "x_twitter_stream"
+    assert evidence.get("event_source_category") == "social"
+
+
+def test_redis_active_events_provider_prefers_explicit_source_category() -> None:
+    rows = [
+        (
+            "14-0",
+            {
+                "payload": json.dumps(
+                    {
+                        "asset": "binance:ETHUSDT",
+                        "selected_type": "event.selected",
+                        "source": "coindesk_feed",
+                        "source_category": "onchain",
+                    }
+                )
+            },
+        )
+    ]
+    provider = RedisActiveEventsProvider(
+        client=_FakeRedis(rows),
+        cfg=RedisActiveEventsConfig(stream="ec:selected", limit_default=3, scan_factor=2),
+    )
+    out = asyncio.run(provider.get_active_events("binance", "ETHUSDT"))
+    assert len(out) == 1
+    evidence = dict(out[0]["evidence"])
+    assert evidence.get("event_source") == "coindesk_feed"
+    assert evidence.get("event_source_category") == "onchain"
+
+
 def test_redis_active_events_provider_time_semantics_precedence_and_fallback():
     rows = [
         (

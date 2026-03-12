@@ -191,17 +191,44 @@ class RedisActiveEventsProvider(ActiveEventsProvider):
         }
 
     @staticmethod
+    def _infer_source_category(source_name: str, event_type: str = "") -> str | None:
+        name = str(source_name or "").strip().lower()
+        ev_type = str(event_type or "").strip().lower()
+        text = f"{name} {ev_type}".strip()
+        if not text:
+            return None
+        if any(token in text for token in ("onchain", "whale", "glassnode", "nansen", "arkham", "chain")):
+            return "onchain"
+        if any(token in text for token in ("social", "twitter", "x_", "reddit", "discord", "telegram")):
+            return "social"
+        if any(token in text for token in ("news", "macro", "coindesk", "cointelegraph", "bloomberg", "reuters")):
+            return "news"
+        if any(token in text for token in ("orderbook", "depth")):
+            return "orderbook"
+        if any(token in text for token in ("liquidation", "liq")):
+            return "liquidation"
+        if any(token in text for token in ("technical", "indicator", "ta_")):
+            return "technical"
+        return None
+
+    @staticmethod
     def _extract_event_source(payload: Dict[str, Any]) -> tuple[str, str | None]:
         raw = payload.get("source")
+        explicit_category = str(payload.get("source_category") or "").strip() or None
+        event_type = str(payload.get("selected_type") or payload.get("event_type") or payload.get("type") or "").strip()
         if isinstance(raw, dict):
             name = str(raw.get("name") or "").strip()
-            category = str(raw.get("category") or "").strip() or None
+            category = str(raw.get("category") or "").strip() or explicit_category
+            if not category:
+                category = RedisActiveEventsProvider._infer_source_category(name, event_type)  # noqa: SLF001
             if name:
                 return name, category
         source_name = str(raw or "").strip()
         if source_name:
-            return source_name, None
-        return "event_center_new", None
+            inferred = RedisActiveEventsProvider._infer_source_category(source_name, event_type)  # noqa: SLF001
+            return source_name, (explicit_category or inferred)
+        default_name = "event_center_new"
+        return default_name, explicit_category or RedisActiveEventsProvider._infer_source_category(default_name, event_type)  # noqa: SLF001
 
     @staticmethod
     def _extract_inference_source(payload: Dict[str, Any]) -> str:
