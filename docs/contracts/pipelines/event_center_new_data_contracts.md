@@ -2,6 +2,11 @@
 
 本文档面向 `/services/event_center_new` 当前代码实现，按流水线各环节（Raw/Normalized/Evidence/Context/L0/L1/FinalGate/Selected）梳理输入输出字段约定、枚举值与解释，并补充 Redis 分层写入格式与运行期配置。
 
+时间语义说明（重要）：
+- 流水线内部执行字段仍以 `ts_ms` 为主（兼容历史实现）。
+- `SelectedEvent` 对外契约已预留双时间语义：`event_ts_ms`（发生时间）与 `processed_ts_ms`（处理时间）。
+- 过渡期保留 `ts_ms`，仅作为兼容别名，不建议新增下游仅依赖 `ts_ms`。
+
 主要依据：
 - 数据结构定义：[ec/contracts.py](services/event_center_new/ec/contracts.py)
 - 流水线执行顺序：[ec/pipeline/runner.py](services/event_center_new/ec/pipeline/runner.py)
@@ -373,7 +378,9 @@ EventMemory 是“按资产维度维护的 Evidence TTL 滑动窗口”，主要
 | 字段 | 类型 | 必填 | 枚举/范围 | 含义 |
 |---|---|:---:|---|---|
 | asset | str | Y |  | 标的 |
-| ts_ms | int | Y |  | 选出时间（当前用 context.ts_ms） |
+| ts_ms | int | Y |  | 兼容时间别名（当前用 context.ts_ms） |
+| event_ts_ms | int\|None | N |  | 事件发生时间（优先来自 trigger_event.ts_ms） |
+| processed_ts_ms | int\|None | N |  | 系统处理/选出时间（当前等于 context.ts_ms） |
 | selected_type | str | Y | 默认 event.selected | 选出事件类型（下游消费侧的“事件大类”） |
 | direction_hint | Direction | Y | bullish/bearish/neutral/mixed | 方向提示（不等价交易结论） |
 | priority | Priority | Y | low/medium/high | 最终优先级 |
@@ -382,6 +389,10 @@ EventMemory 是“按资产维度维护的 Evidence TTL 滑动窗口”，主要
 | source | EventSource\|None | N |  | 来源摘要（当前透传 trigger_event.source） |
 | trace | EventTrace\|None | N |  | 追踪字段（至少应带 schema_version） |
 | route | dict | N |  | 下游路由控制（见 11.2） |
+
+补充约束（跨服务契约建议）：
+- 下游 freshness/排序语义优先使用 `event_ts_ms`，再回退 `ts_ms`。
+- 审计与处理延迟评估优先使用 `processed_ts_ms`。
 
 ### 11.2 route 字段约定（当前默认实现）
 默认 FinalGate 会生成如下 route（[defaults.py](services/event_center_new/ec/pipeline/defaults.py#L149-L160)）：
@@ -440,4 +451,3 @@ Runner 本身不是“定时拉特征数据”，它是“轮询事件源、处�
 - 下游（market_state_engine / agent_server_new）消费 `ec:selected` 时是从 stream entry 的 `payload` 字段反序列化 JSON，而不是直接拿 stream field 做业务（参考：[ec/storage/redis.py](services/event_center_new/ec/storage/redis.py#L62-L65)）。
 - 下游会基于 `asset` 做精确匹配（通常是 `exchange:symbol` 或 `symbol` 规范），因此 `asset` 必须稳定、不可随意变形。
 - `trace.schema_version` 是兼容升级的关键字段，应尽量保证存在且可审计。
-
