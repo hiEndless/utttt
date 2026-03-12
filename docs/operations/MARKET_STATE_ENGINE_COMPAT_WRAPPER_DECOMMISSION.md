@@ -1,7 +1,7 @@
 # Market State Engine Compat Wrapper Decommission
 
 更新时间：2026-03-12  
-状态：in_progress
+状态：in_progress (batch-a phase-1 completed)
 
 ## 1. 目标
 
@@ -38,6 +38,11 @@
 1. `bash tools/local/check_market_state_legacy_imports.sh --strict` 通过。
 2. `./venv/bin/pytest -q market_state_engine/text` 通过。
 3. `bash tools/ci/verify_quick.sh` 通过。
+
+执行结果：
+
+- 阶段1已完成（2026-03-12）：已删除 `app/routes/contracts/errors/msl`。
+- 阶段2待执行：继续评估 `service.py` / `engine.py` / `main.py` 下线窗口。
 
 ### Batch B（中风险）
 

@@ -19,7 +19,10 @@ fi
 # 2) 状态层关键测试保持通过
 
 echo "[1/2] 检查状态层契约是否回归 sentiment_state"
-if rg -n "sentiment_state|SentimentState" market_state_engine/contracts.py market_state_engine/engine.py market_state_engine/service.py; then
+if rg -n "sentiment_state|SentimentState" \
+  services/market_state_engine/src/contracts.py \
+  services/market_state_engine/src/engine.py \
+  services/market_state_engine/src/service.py; then
   echo "[失败] 检测到 sentiment_state 回归到状态层核心实现。"
   exit 1
 fi

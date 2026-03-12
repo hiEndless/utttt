@@ -41,3 +41,5 @@ Notes:
   - `market_state_engine/adapters/__init__.py` switched to wrapper
 - Decommission plan:
   - `docs/operations/MARKET_STATE_ENGINE_COMPAT_WRAPPER_DECOMMISSION.md`
+- Decommission progress:
+  - Batch A (phase-1) removed `market_state_engine/{app,contracts,routes,errors,msl}.py`

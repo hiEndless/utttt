@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from market_state_engine.adapters.raw_structure_http import HttpRawStructureProvider
-from market_state_engine.errors import FeatureDataUnavailableFromUpstreamError
+from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 
 
 def test_http_provider_reads_new_meta_data_contract(monkeypatch):

@@ -19,7 +19,7 @@
 
 2.1 `market_state_engine/{app,routes,contracts}.py`
 - migrated impl: `services/market_state_engine/src/{app,routes,contracts}.py`
-- legacy wrapper kept: `market_state_engine/{app,routes,contracts}.py`
+- legacy wrapper status: removed in 2.13 (batch-a phase-1)
 
 2.2 `market_state_engine/service.py`
 - migrated impl: `services/market_state_engine/src/service.py`
@@ -27,7 +27,7 @@
 
 2.3 `market_state_engine/errors.py`
 - migrated impl: `services/market_state_engine/src/errors.py`
-- legacy wrapper kept: `market_state_engine/errors.py`
+- legacy wrapper status: removed in 2.13 (batch-a phase-1)
 
 2.4 `market_state_engine/engine.py`
 - migrated impl: `services/market_state_engine/src/engine.py`
@@ -35,7 +35,7 @@
 
 2.5 `market_state_engine/msl.py`
 - migrated impl: `services/market_state_engine/src/msl.py`
-- legacy wrapper kept: `market_state_engine/msl.py`
+- legacy wrapper status: removed in 2.13 (batch-a phase-1)
 
 2.6 `market_state_engine/adapters/{in_memory_feature_store,raw_structure_http}.py`
 - migrated impl: `services/market_state_engine/src/adapters/{in_memory_feature_store,raw_structure_http}.py`
@@ -64,6 +64,10 @@
 2.12 `market_state_engine` decommission batch-0
 - 内部调用方迁移至 `services.market_state_engine.src.*`
 - 新增守卫：`tools/local/check_market_state_legacy_imports.sh`
+
+2.13 `market_state_engine` decommission batch-a (phase-1)
+- removed wrappers: `market_state_engine/{app,contracts,routes,errors,msl}.py`
+- guard/test imports switched to `services.market_state_engine.src.*`
 
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
@@ -168,3 +172,4 @@
 19. 已执行 `market_state_engine` Batch C（阶段2）：`market_state_engine/{factors,state_inference}/**` 已收敛为兼容壳，主实现统一至 `services/market_state_engine/src/`。
 20. 已执行 `market_state_engine` Batch C（阶段3）：包级导出入口 `__init__.py` 与 `adapters/__init__.py` 已收敛为兼容壳。
 21. 已执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移，并新增 `check_market_state_legacy_imports.sh`。
+22. 已执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳，并迁移测试导入。

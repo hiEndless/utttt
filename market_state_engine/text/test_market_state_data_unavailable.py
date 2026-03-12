@@ -8,8 +8,8 @@ PROJECT_ROOT = "/Users/lichaoyuan/Desktop/UTaker"
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from market_state_engine.errors import FeatureDataUnavailableFromUpstreamError
-from market_state_engine.routes import create_router
+from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
+from services.market_state_engine.src.routes import create_router
 from market_state_engine.service import MarketStateService
 
 

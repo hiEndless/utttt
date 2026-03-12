@@ -7,9 +7,9 @@ set -euo pipefail
 
 echo "[1/2] 检查核心实现是否回归 sentiment_state"
 if rg -n "sentiment_state|SentimentState" \
-  market_state_engine/contracts.py \
-  market_state_engine/engine.py \
-  market_state_engine/service.py \
+  services/market_state_engine/src/contracts.py \
+  services/market_state_engine/src/engine.py \
+  services/market_state_engine/src/service.py \
   agent_server_new/adapters/market_state_http.py \
   agent_server_new/app/workflows/trade_event_workflow.py; then
   echo "[失败] 检测到核心实现回归 sentiment_state 依赖。"

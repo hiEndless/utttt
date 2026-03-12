@@ -357,7 +357,7 @@ agent_server_new/
 
 建议拆成：
 
-- `market_state_engine/contracts.py`
+- `services/market_state_engine/src/contracts.py`
 - `agent_server_new/domain/contracts.py`
 
 ## 必须切断的依赖
