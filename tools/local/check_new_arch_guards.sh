@@ -38,25 +38,29 @@ if [[ "$MODE" == "--help" ]]; then
 说明:
   --strict-wiring/--lenient-wiring 仅影响 event_center 守卫接线检查策略。
   --event-center-only/--event-center-quick 都会先执行告警码入口守卫（check_alert_codes_entry_guard.sh）。
+  除 --help 外，所有模式都会先执行跨服务时间语义文档守卫（check_cross_service_time_semantics_doc_guard.sh）。
 EOF
   exit 0
 fi
 
+# 跨服务时间语义文档一致性守卫：三种执行模式统一前置。
+bash tools/local/check_cross_service_time_semantics_doc_guard.sh
+
 if [[ "$MODE" == "--event-center-only" ]]; then
-  echo "[1/2] 告警码入口守卫"
+  echo "[1/3] 告警码入口守卫"
   bash tools/local/check_alert_codes_entry_guard.sh
-  echo "[2/2] event_center 契约聚合守卫（全量）"
+  echo "[2/3] event_center 契约聚合守卫（全量）"
   bash tools/local/check_event_center_contract_guards.sh "$WIRING_MODE"
-  echo "[通过] 新架构守卫检查完成（event_center-only）。"
+  echo "[3/3] 新架构守卫检查完成（event_center-only）。"
   exit 0
 fi
 
 if [[ "$MODE" == "--event-center-quick" ]]; then
-  echo "[1/2] 告警码入口守卫"
+  echo "[1/3] 告警码入口守卫"
   bash tools/local/check_alert_codes_entry_guard.sh
-  echo "[2/2] event_center 契约聚合守卫（quick）"
+  echo "[2/3] event_center 契约聚合守卫（quick）"
   bash tools/local/check_event_center_contract_guards.sh --quick "$WIRING_MODE"
-  echo "[通过] 新架构守卫检查完成（event_center-quick）。"
+  echo "[3/3] 新架构守卫检查完成（event_center-quick）。"
   exit 0
 fi
 
