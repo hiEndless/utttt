@@ -28,6 +28,7 @@ python3 -m verification.reports.aggregate_reports \
 Shortcut wrapper (defaults to `verification/reports/summary.latest.json`):
 ```bash
 bash tools/local/verify_report_aggregate.sh --compact
+bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
 ```
 
 One-shot local pipeline (optional include memory summary):

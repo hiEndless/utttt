@@ -3,7 +3,9 @@ set -euo pipefail
 
 GLOB='verification/reports/*.json'
 OUT='verification/reports/summary.latest.json'
+MEMORY_SUMMARY_PATH='verification/reports/memory_summary.latest.json'
 COMPACT=0
+WITH_MEMORY_SUMMARY=0
 EXTRA_ARGS=()
 
 while (($# > 0)); do
@@ -20,12 +22,24 @@ while (($# > 0)); do
       COMPACT=1
       shift
       ;;
+    --with-memory-summary)
+      WITH_MEMORY_SUMMARY=1
+      shift
+      ;;
+    --memory-summary-path)
+      MEMORY_SUMMARY_PATH="${2:-$MEMORY_SUMMARY_PATH}"
+      shift 2
+      ;;
     *)
       EXTRA_ARGS+=("$1")
       shift
       ;;
   esac
 done
+
+if [[ "$WITH_MEMORY_SUMMARY" == "1" ]]; then
+  bash tools/local/run_agent_memory_summary_report.sh "$MEMORY_SUMMARY_PATH"
+fi
 
 ARGS=(--glob "$GLOB" --output "$OUT")
 if [[ "$COMPACT" == "1" ]]; then
