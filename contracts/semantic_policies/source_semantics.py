@@ -23,6 +23,17 @@ def _safe_dict(value: Any) -> Dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _render_source_template(template: str, *, source: str, fallback: str) -> str:
+    text = str(template or "").strip()
+    if not text:
+        return fallback
+    try:
+        rendered = text.format(source=source)
+    except Exception:
+        return fallback
+    return str(rendered or "").strip() or fallback
+
+
 @lru_cache(maxsize=1)
 def _load_policy() -> Dict[str, Any]:
     path = Path(__file__).resolve().parent / "source_semantics.yaml"
@@ -52,6 +63,11 @@ def get_alternative_source_unavailable_provider_states() -> Set[str]:
     return unavailable or set(_DEFAULT_UNAVAILABLE_PROVIDER_STATES)
 
 
+def _get_default_rules() -> Dict[str, Any]:
+    item = _load_policy()
+    return _safe_dict(item.get("default_rules"))
+
+
 def get_event_center_present_provider_state() -> str:
     item = _load_policy()
     provider_policy = _safe_dict(item.get("provider_state_policy"))
@@ -78,3 +94,18 @@ def get_event_center_empty_provider_state() -> str:
         if value in unavailable:
             return value
     return "empty"
+
+
+def get_event_center_data_source(source: str) -> str:
+    fallback = f"event_center_new.{source}"
+    rules = _get_default_rules()
+    event_center = _safe_dict(rules.get("event_center"))
+    template = str(event_center.get("data_source_template") or "")
+    return _render_source_template(template, source=source, fallback=fallback)
+
+
+def get_event_center_inference_source() -> str:
+    rules = _get_default_rules()
+    event_center = _safe_dict(rules.get("event_center"))
+    value = str(event_center.get("inference_source") or "").strip()
+    return value or "event_center_new.selector"

@@ -13,4 +13,4 @@ Current policy files:
 - `source_semantics.yaml`
 
 Runtime helper:
-- `source_semantics.py`：为业务服务提供统一读取入口（如 alternative source 的 `provider_state` 枚举与 unavailable 状态集合）。
+- `source_semantics.py`：为业务服务提供统一读取入口（如 alternative source 的 `provider_state` 枚举、unavailable 状态集合、event_center 默认 data_source/inference_source 模板）。

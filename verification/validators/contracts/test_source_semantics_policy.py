@@ -11,7 +11,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from contracts.semantic_policies.source_semantics import (
     get_alternative_source_allowed_provider_states,
+    get_event_center_data_source,
     get_event_center_empty_provider_state,
+    get_event_center_inference_source,
     get_event_center_present_provider_state,
 )
 
@@ -66,3 +68,9 @@ def test_source_semantics_runtime_helper_returns_event_center_states_within_allo
     allowed = get_alternative_source_allowed_provider_states()
     assert get_event_center_present_provider_state() in allowed
     assert get_event_center_empty_provider_state() in allowed
+
+
+def test_source_semantics_runtime_helper_returns_event_center_default_rule_templates() -> None:
+    assert get_event_center_data_source("news") == "event_center_new.news"
+    assert get_event_center_data_source("social") == "event_center_new.social"
+    assert get_event_center_inference_source() == "event_center_new.selector"

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from contracts.semantic_policies.source_semantics import (
+    get_event_center_data_source,
+    get_event_center_inference_source,
     get_event_center_empty_provider_state,
     get_event_center_present_provider_state,
 )
@@ -131,8 +133,8 @@ def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, o
     empty_provider_state = get_event_center_empty_provider_state()
     feature_keys: dict[str, set[str]] = {name: set() for name in source_names}
     counts: dict[str, int] = {name: 0 for name in source_names}
-    data_sources: dict[str, str] = {name: f"event_center_new.{name}" for name in source_names}
-    inference_sources: dict[str, str] = {name: "event_center_new.selector" for name in source_names}
+    data_sources: dict[str, str] = {name: get_event_center_data_source(name) for name in source_names}
+    inference_sources: dict[str, str] = {name: get_event_center_inference_source() for name in source_names}
 
     for ev in evidences:
         src = _detect_alternative_source(ev)
