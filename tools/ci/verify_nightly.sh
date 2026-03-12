@@ -20,4 +20,5 @@ bash tools/local/audit_semantics.sh
 echo "[nightly 9/10] semantic warning budget"
 bash tools/local/check_semantic_warning_budget.sh
 echo "[nightly 10/10] aggregate and check"
-bash tools/local/aggregate_and_check.sh
+MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
+bash tools/local/aggregate_and_check.sh --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"

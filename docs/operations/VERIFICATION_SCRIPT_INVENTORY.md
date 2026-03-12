@@ -83,7 +83,7 @@
 - `sync_contract_indexes.sh`
 - `audit_semantics.sh`
 - `check_semantic_warning_budget.sh`
-- `aggregate_and_check.sh`
+- `aggregate_and_check.sh --max-legacy-confidence-ratio ${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}`
 
 ## 4. 历史映射
 
