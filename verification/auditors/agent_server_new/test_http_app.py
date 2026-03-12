@@ -50,6 +50,7 @@ def test_http_readyz_upstream_warning_in_non_strict_mode(monkeypatch) -> None:  
     monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
     monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "true")
     monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "false")
     monkeypatch.setattr(mod, "_check_market_state_healthz", lambda timeout_s: (False, {"error": "down"}))
     monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
     app = create_app()
@@ -68,6 +69,7 @@ def test_http_readyz_upstream_error_in_strict_mode(monkeypatch) -> None:  # noqa
     monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "true")
     monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "true")
     monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "false")
     monkeypatch.setattr(mod, "_check_market_state_healthz", lambda timeout_s: (False, {"error": "down"}))
     monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
     app = create_app()
@@ -77,3 +79,39 @@ def test_http_readyz_upstream_error_in_strict_mode(monkeypatch) -> None:  # noqa
     body = resp.json()
     assert body["ok"] is False
     assert "market_state_unreachable" in list(body.get("errors") or [])
+
+
+def test_http_readyz_recorder_warning_in_non_strict_mode(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "true")
+    monkeypatch.setattr(mod, "_check_event_recorder_writable", lambda: (False, {"error": "permission"}))
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert "event_recorder_unwritable" in list(body.get("warnings") or [])
+
+
+def test_http_readyz_recorder_error_in_strict_mode(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "true")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "true")
+    monkeypatch.setattr(mod, "_check_event_recorder_writable", lambda: (False, {"error": "permission"}))
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["ok"] is False
+    assert "event_recorder_unwritable" in list(body.get("errors") or [])

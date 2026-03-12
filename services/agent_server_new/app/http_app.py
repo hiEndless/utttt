@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 from typing import Any, Dict
+from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, FastAPI, Response
@@ -53,6 +54,25 @@ def _check_active_events_redis_ping() -> tuple[bool, Dict[str, Any]]:
         return False, {"redis_url": redis_url, "error": str(exc)}
 
 
+def _check_event_recorder_writable() -> tuple[bool, Dict[str, Any]]:
+    mode = _env_str("AGENT_EVENT_RECORDER_MODE", "none").lower()
+    if mode != "jsonl":
+        return True, {"skipped": True, "reason": "event_recorder_not_jsonl"}
+    path = _env_str("AGENT_EVENT_RECORDER_JSONL_PATH", "verification/reports/agent_server_new_events.jsonl")
+    target = Path(path)
+    parent = target.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+        if not os.access(parent, os.W_OK):
+            return False, {"path": str(target), "error": "parent_not_writable"}
+        # Try append-open for a real writable check without writing content.
+        with open(target, "a", encoding="utf-8"):
+            pass
+        return True, {"path": str(target)}
+    except Exception as exc:  # pragma: no cover
+        return False, {"path": str(target), "error": str(exc)}
+
+
 def create_router() -> APIRouter:
     router = APIRouter(prefix="/internal/agent", tags=["agent_server_new"])
 
@@ -88,6 +108,7 @@ def create_router() -> APIRouter:
         strict_upstream = _env_bool("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
         check_market_state = _env_bool("AGENT_READY_CHECK_MARKET_STATE", "true")
         check_active_events_redis = _env_bool("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "true")
+        check_event_recorder = _env_bool("AGENT_READY_CHECK_EVENT_RECORDER", "true")
         timeout_s = float(_env_str("AGENT_READY_CHECK_TIMEOUT_S", "1.5") or "1.5")
 
         try:
@@ -118,6 +139,12 @@ def create_router() -> APIRouter:
             _record_check(checks=checks, name="active_events_redis_ping", ok=ok, detail=detail)
             if not ok:
                 (errors if strict_upstream else warnings).append("active_events_redis_unreachable")
+
+        if check_event_recorder:
+            ok, detail = _check_event_recorder_writable()
+            _record_check(checks=checks, name="event_recorder_writable", ok=ok, detail=detail)
+            if not ok:
+                (errors if strict_upstream else warnings).append("event_recorder_unwritable")
 
         runtime_profile = _env_str("AGENT_RUNTIME_PROFILE", "dev").lower()
         execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
