@@ -4,8 +4,8 @@ import time
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
-from market_state_engine.ports.storage.feature_store import FeatureStore
 from services.market_state_engine.src.engine import MarketStateFeatures
+from services.market_state_engine.src.ports.storage.feature_store import FeatureStore
 
 
 @dataclass

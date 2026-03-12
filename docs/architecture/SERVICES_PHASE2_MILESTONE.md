@@ -45,6 +45,10 @@
 - migrated impl: `services/market_state_engine/src/adapters/selected_events_redis.py`
 - legacy wrapper kept: `market_state_engine/adapters/selected_events_redis.py`
 
+2.8 `market_state_engine/ports/**`
+- migrated impl: `services/market_state_engine/src/ports/**`
+- legacy wrapper kept: `market_state_engine/ports/**`
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -143,3 +147,4 @@
 14. 已执行 `market_state_engine` Batch B（阶段4）：`msl.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
 15. 已执行 `market_state_engine` Batch B（阶段5）：`adapters/{in_memory_feature_store,raw_structure_http}.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
 16. 已执行 `market_state_engine` Batch B（阶段6）：`adapters/selected_events_redis.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
+17. 已执行 `market_state_engine` Batch B（阶段7）：`ports/**` 已迁入 `services/market_state_engine/src/ports/`，旧路径保留薄兼容壳。

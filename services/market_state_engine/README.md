@@ -23,3 +23,9 @@ Notes:
   - `services/market_state_engine/src/adapters/raw_structure_http.py`
 - Batch B (phase-6) migrated implementation:
   - `services/market_state_engine/src/adapters/selected_events_redis.py`
+- Batch B (phase-7) migrated implementation:
+  - `services/market_state_engine/src/ports/__init__.py`
+  - `services/market_state_engine/src/ports/raw_structure_provider.py`
+  - `services/market_state_engine/src/ports/selected_event_provider.py`
+  - `services/market_state_engine/src/ports/storage/__init__.py`
+  - `services/market_state_engine/src/ports/storage/feature_store.py`

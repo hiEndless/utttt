@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 import httpx
 
-from market_state_engine.ports.raw_structure_provider import RawStructureProvider
+from services.market_state_engine.src.ports.raw_structure_provider import RawStructureProvider
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 
 

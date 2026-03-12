@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from market_state_engine.ports.selected_event_provider import SelectedEventProvider
+from services.market_state_engine.src.ports.selected_event_provider import SelectedEventProvider
 
 
 @dataclass(frozen=True)
