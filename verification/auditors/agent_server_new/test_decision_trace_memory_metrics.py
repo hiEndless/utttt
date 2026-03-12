@@ -61,6 +61,7 @@ class _MarketState:
             anomaly_flags=[
                 "state_features_semantic_contract_missing",
                 "msl_meta_schema_version_missing",
+                "state_features_alternative_source_provider_state_invalid",
                 "external_event_input_ignored",
             ],
         )
@@ -159,11 +160,12 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         contract_warnings = list(trace_payload.get("contract_warnings") or [])
         assert "state_features_semantic_contract_missing" in contract_warnings
         assert "msl_meta_schema_version_missing" in contract_warnings
+        assert "state_features_alternative_source_provider_state_invalid" in contract_warnings
         assert "alternative_sources_conflict_detected" in contract_warnings
         assert "external_event_input_ignored" not in contract_warnings
         alert_codes = list(trace_payload.get("alert_codes") or [])
         assert "AGENT_ALTERNATIVE_SOURCES_CONFLICT" in alert_codes
-        assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" not in alert_codes
+        assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" in alert_codes
 
     import pytest
 
