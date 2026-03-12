@@ -34,6 +34,7 @@ done
 echo "[1/4] 检查 RELEASE_LATEST 文档存在"
 if [[ ! -f "${LATEST_DOC}" ]]; then
   echo "[失败] 缺少 ${LATEST_DOC}"
+  echo "[hint] 建议先执行：bash tools/local/check_release_ready.sh"
   exit 1
 fi
 
@@ -48,6 +49,7 @@ for pat in \
 do
   if ! rg -q "${pat}" "${LATEST_DOC}"; then
     echo "[失败] RELEASE_LATEST 缺少关键项: ${pat}"
+    echo "[hint] 建议先执行：bash tools/local/check_release_ready.sh"
     exit 1
   fi
 done
@@ -56,11 +58,13 @@ echo "[3/4] 校验 baseline tag 与 HEAD 对齐"
 tag_commit="$(git rev-parse --short "${TAG_NAME}^{}" 2>/dev/null || true)"
 if [[ -z "${tag_commit}" ]]; then
   echo "[失败] baseline tag 不存在: ${TAG_NAME}"
+  echo "[hint] 建议先执行：bash tools/local/check_release_ready.sh"
   exit 1
 fi
 head_commit="$(git rev-parse --short HEAD)"
 if [[ "${tag_commit}" != "${head_commit}" ]]; then
   echo "[失败] baseline tag 未对齐 HEAD: tag=${tag_commit}, head=${head_commit}"
+  echo "[hint] 建议先执行：bash tools/local/check_release_ready.sh"
   exit 1
 fi
 
@@ -70,6 +74,7 @@ if [[ "${CHECK_ORIGIN}" -eq 1 ]]; then
     origin_commit="$(git rev-parse --short origin/master)"
     if [[ "${tag_commit}" != "${origin_commit}" ]]; then
       echo "[失败] baseline tag 未对齐 origin/master: tag=${tag_commit}, origin=${origin_commit}"
+      echo "[hint] 建议先执行：bash tools/local/check_release_ready.sh"
       exit 1
     fi
   else
