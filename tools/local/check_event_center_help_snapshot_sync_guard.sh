@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GUARD_SCRIPT="scripts/check_event_center_contract_guards.sh"
+GUARD_SCRIPT="tools/local/check_event_center_contract_guards.sh"
 SNAPSHOT_LINES="event_center_new/docs/ci_help_snapshot_lines.txt"
 SNAPSHOT_BLOCK="event_center_new/docs/ci_help_block_snapshot.txt"
 
@@ -32,7 +32,7 @@ if ! diff_output="$(diff -u "$SNAPSHOT_BLOCK" <(printf "%s\n" "$help_output") ||
 fi
 if [[ -n "$diff_output" ]]; then
   echo "[失败] --help 完整输出与快照不一致: $SNAPSHOT_BLOCK"
-  echo "可执行：bash scripts/check_event_center_contract_guards.sh --help"
+  echo "可执行：bash tools/local/check_event_center_contract_guards.sh --help"
   echo "--- diff (up to 80 lines) ---"
   printf "%s\n" "$diff_output" | sed -n '1,80p'
   exit 1

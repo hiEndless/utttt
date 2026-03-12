@@ -116,6 +116,7 @@
 - [x] 收敛 contract-docs/state-engine help-snapshot 守卫到 `tools/local/*`（`scripts/*` 保留薄包装兼容）
 - [x] 将 event_center quick/full workflow 执行入口从 `scripts/ci_event_center_*.sh` 切换为 `tools/ci/*`
 - [x] 解除 contract-docs/state-engine 对 `scripts/*` 的 snapshot pinning（切换至 `tools/local/*`）
+- [x] 解除 event_center_contract_guards 对 `scripts/*` 的 snapshot/text-wiring 子依赖（实逻辑切换至 `tools/local/*`）
 - [x] 将脚本兼容白名单检查接入 nightly CI
 - [x] 将脚本兼容白名单检查接入 regression CI（并使用 warning budget 替代 strict 语义检查）
 - [x] 将脚本兼容白名单检查接入 quick CI（统一三条场景入口）

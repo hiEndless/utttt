@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENTRY="scripts/check_event_center_contract_guards.sh"
+ENTRY="tools/local/check_event_center_contract_guards.sh"
 TOP_ENTRY="scripts/check_new_arch_guards.sh"
 SHOW_LINKS="false"
 MATCH_MODE="strict"
