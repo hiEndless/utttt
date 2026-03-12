@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service + market_state_engine fully migrated, no legacy wrappers)
+状态：completed (all five services fully migrated, no legacy wrappers)
 
 ## 1. 目标
 
@@ -159,37 +159,12 @@
 
 ## 4. 当前风险
 
-1. 旧入口兼容壳仍然较多，尚未进入清理窗口。
-2. 部分测试依赖 monkeypatch 旧入口模块符号，迁移需保持桥接兼容。
-3. workflow/snapshot/text-wiring 仍有 `scripts/*` 硬绑定。
+1. 服务入口兼容壳已清理完成，当前风险转向“文档与脚本命令是否完全与 `services.*` 对齐”。
+2. 少量历史文档仍保留迁移过程描述，可能造成“当前状态与历史节点”混淆。
+3. workflow/snapshot/text-wiring 仍有 `scripts/*` 硬绑定，后续建议继续收敛到 `tools/*`。
 
 ## 5. 下一阶段建议
 
-1. 进入 Phase-2.5：补齐其余可迁移入口（非主 main，但常用 CLI）。
-2. 启动 Phase-3 前置：明确 `scripts/*` 兼容下线顺序与每批回滚方案。
-3. 将服务真实业务代码按模块批次迁入 `services/<svc>/src`（非仅入口迁移）。
-4. `feature_service` 已进入“core src migrated + compat wrapper”状态，可开始设计兼容壳下线窗口。
-5. 兼容壳下线草案已落地：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`。
-6. 已完成 Batch A：删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳。
-7. 已完成 Batch B：删除 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/` 目录到 Batch C）。
-8. 已完成 Batch C：删除 `feature_service/providers/market_structure_migrated/` 兼容目录。
-9. 已移除 `feature_service/main.py` 兼容入口，`feature_service` 进入 fully-migrated 状态。
-10. 已启动 `market_state_engine` Batch A：`app/routes/contracts` 已迁入 `services/market_state_engine/src/`。
-11. 已执行 `market_state_engine` Batch B（阶段1）：`service.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。
-12. 已执行 `market_state_engine` Batch B（阶段2）：`errors.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
-13. 已执行 `market_state_engine` Batch B（阶段3）：`engine.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。
-14. 已执行 `market_state_engine` Batch B（阶段4）：`msl.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
-15. 已执行 `market_state_engine` Batch B（阶段5）：`adapters/{in_memory_feature_store,raw_structure_http}.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
-16. 已执行 `market_state_engine` Batch B（阶段6）：`adapters/selected_events_redis.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
-17. 已执行 `market_state_engine` Batch B（阶段7）：`ports/**` 已迁入 `services/market_state_engine/src/ports/`，旧路径保留薄兼容壳。
-18. 已执行 `market_state_engine` Batch C（阶段1）：`factors/**` 与 `state_inference/**` 已迁入 `services/market_state_engine/src/`，旧路径暂保留兼容实现。
-19. 已执行 `market_state_engine` Batch C（阶段2）：`market_state_engine/{factors,state_inference}/**` 已收敛为兼容壳，主实现统一至 `services/market_state_engine/src/`。
-20. 已执行 `market_state_engine` Batch C（阶段3）：包级导出入口 `__init__.py` 与 `adapters/__init__.py` 已收敛为兼容壳。
-21. 已执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移，并新增 `check_market_state_legacy_imports.sh`。
-22. 已执行 `market_state_engine` 下线 Batch A（阶段1）：删除 `market_state_engine/{app,contracts,routes,errors,msl}.py` 兼容壳，并迁移测试导入。
-23. 已执行 `market_state_engine` 下线 Batch B（阶段1）：删除 `market_state_engine/adapters/**/*.py` 与 `market_state_engine/ports/**/*.py` 兼容壳。
-24. 已执行 `market_state_engine` 下线 Batch C（阶段1）：删除 `market_state_engine/factors/**/*.py` 与 `market_state_engine/state_inference/**/*.py` 兼容壳。
-25. 已执行 `market_state_engine` 下线 Batch D（阶段1）：删除 `market_state_engine/{__init__,main,service,engine}.py` 兼容壳，服务进入 fully-migrated 状态。
-26. 已执行 `event_center_new` 下线 Batch A（阶段1）：删除 `event_center_new/{main,replay_main}.py` 兼容壳，并将测试/守卫迁移到 `services.event_center_new.runtime.*`。
-27. 已执行 `agent_server_new` 下线 Batch A（阶段1）：删除 `agent_server_new/{runner,pipeline_smoke,memory_summary_runner}.py` 兼容壳，并迁移测试到 `services.agent_server_new.runtime.*`。
-28. 已执行 `execution_service` 下线 Batch A（阶段1）：删除 `execution_service/main.py` 兼容壳，并将文档命令迁移到 `services.execution_service.main`。
+1. 进入 Phase-3.5：收敛 `scripts/*` 到 `tools/*` 并逐步下线脚本兼容层。
+2. 为 `event_center_new / agent_server_new / execution_service` 增加与 `feature_service`、`market_state_engine` 同等级别的“compat decommission”文档归档。
+3. 在 CI 中新增“命令入口一致性守卫”，防止文档回归到已下线的旧模块入口。
