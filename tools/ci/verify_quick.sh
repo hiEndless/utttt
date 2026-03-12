@@ -13,6 +13,13 @@ Environment Switches (local debug only):
   VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1
   VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1
 
+Optional Observability:
+  WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
+  MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
+  REQUIRE_AGENT_READYZ_REPORT    是否要求 readyz 报告存在（1/0，默认 0）
+  AGENT_READYZ_BASE_URL          agent readyz 地址（默认 http://127.0.0.1:9971）
+  AGENT_READYZ_TIMEOUT_S         agent readyz 拉取超时秒数（默认 2.0）
+
 CI Hard Constraints:
   当 CI=true 或 GITHUB_ACTIONS=true 时，禁止启用上述 skip 开关；若启用会直接失败（exit 2）。
 
@@ -77,4 +84,22 @@ if [[ "${VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL:-0}" == "1" ]]; then
   echo "[warn] skip semantic critical warning guard by VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1"
 else
   bash tools/local/check_semantic_critical_warning_guard.sh
+fi
+
+if [[ "${WITH_AGENT_READYZ:-0}" == "1" ]]; then
+  MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
+  REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-0}"
+  AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
+  AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
+  echo "[quick] WITH_AGENT_READYZ=1 MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+  QUICK_ARGS=(
+    --with-agent-readyz
+    --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
+    --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
+    --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
+  )
+  if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
+    QUICK_ARGS+=(--require-agent-readyz-report)
+  fi
+  bash tools/local/aggregate_and_check.sh "${QUICK_ARGS[@]}"
 fi

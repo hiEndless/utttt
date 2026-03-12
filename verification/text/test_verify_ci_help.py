@@ -32,3 +32,9 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     out = _run_help("tools/ci/verify_nightly.sh")
     assert "Usage:" in out
     assert "MAX_LEGACY_CONFIDENCE_RATIO" in out
+
+
+def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
+    out = _run_help("tools/ci/verify_quick.sh")
+    assert "Usage:" in out
+    assert "WITH_AGENT_READYZ=1" in out
