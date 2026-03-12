@@ -116,3 +116,5 @@
 - [x] Task 66: 将 `providers/market_structure_migrated` 镜像迁入 `services/feature_service/src/providers/market_structure_migrated/`。
 - [x] Task 67: 旧 `feature_service/providers/market_structure_migrated/**/*.py` 基本改为兼容壳；保留 `behavioral/behavior_output.py` 旧路径猴子补丁兼容实现。
 - [x] Task 68: 更新模块文档为 canonical 路径表达，并补充兼容壳路径说明。
+- [x] Task 69: 新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）。
+- [x] Task 70: 新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）。

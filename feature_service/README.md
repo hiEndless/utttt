@@ -326,6 +326,8 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 66：`market_structure_migrated` 已镜像迁入 `services/feature_service/src/providers/market_structure_migrated/`
 - 已完成 Task 67：旧 `feature_service/providers/market_structure_migrated/**/*.py` 基本改为兼容壳（`behavioral/behavior_output.py` 保留猴子补丁兼容实现）
 - 已完成 Task 68：模块文档已补充 canonical 路径与兼容壳路径说明
+- 已完成 Task 69：新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）
+- 已完成 Task 70：新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）
 
 ## 错误码约定（新增）
 

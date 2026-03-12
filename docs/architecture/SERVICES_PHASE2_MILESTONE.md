@@ -103,3 +103,4 @@
 2. 启动 Phase-3 前置：明确 `scripts/*` 兼容下线顺序与每批回滚方案。
 3. 将服务真实业务代码按模块批次迁入 `services/<svc>/src`（非仅入口迁移）。
 4. `feature_service` 已进入“core src migrated + compat wrapper”状态，可开始设计兼容壳下线窗口。
+5. 兼容壳下线草案已落地：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`。

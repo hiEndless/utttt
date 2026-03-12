@@ -73,6 +73,7 @@
 - [x] 完成第十八个物理迁移试点：`feature_service/providers/market_structure_migrated/` 镜像迁入 `services/feature_service/src/providers/market_structure_migrated/`
 - [x] 完成第十九个物理迁移试点：`feature_service/providers/market_structure_migrated/**/*.py` 批量收敛为兼容壳（`behavior_output.py` 保留旧路径猴子补丁兼容实现）
 - [x] `services/services_map.yaml` 中 `feature_service` 状态升级为 `core_src_migrated_with_compat_wrappers`
+- [x] 输出 `feature_service` 兼容壳下线草案：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）
