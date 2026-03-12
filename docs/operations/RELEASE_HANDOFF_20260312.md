@@ -42,6 +42,14 @@ git checkout refactor-guard-baseline-20260312
 - [x] baseline tag 与 `master` 对齐
 - [x] baseline 文档与 tag 指向一致
 - [x] contract/docs 守卫链路通过
+- [x] readyz 门禁阈值已记录：
+  - regression：`MAX_AGENT_READYZ_LEVEL`、`REQUIRE_AGENT_READYZ_REPORT`
+  - nightly：`MAX_AGENT_READYZ_LEVEL`、`REQUIRE_AGENT_READYZ_REPORT`
+- [x] 聚合报告 readyz 字段已核对：
+  - `agent_readyz_status_level`
+  - `agent_readyz_report_count`
+  - `agent_readyz_error_count`
+  - `agent_readyz_errors`
 
 ## 6) 滚动更新记录（2026-03-13）
 
