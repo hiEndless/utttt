@@ -46,9 +46,10 @@ Evidence 是从 EventEnvelope 中提炼出的“可用于决策/聚合”的结�
 | horizon | str | Y | short / mid / long |
 | ttl_ms | int | Y | 证据生命周期，通常小于或等于 event.ttl_ms |
 | importance | float | Y | 0~1 重要性（通常继承自 event.importance） |
-| confidence | float | N | 0~1 置信度（尤其适用于新闻/社媒） |
+| evidence_confidence | float | N | 0~1 证据置信度（canonical） |
+| confidence | float | N | `evidence_confidence` 兼容别名（迁移期保留） |
 | source_refs | list[dict] | N | 证据引用了哪些原始 event（id/来源/片段） |
-| attrs | dict | N | 额外属性（如 zscore、计数、主题、关键词等） |
+| attrs | dict | N | 额外属性（如 zscore、计数、主题、关键词等）；`market_state/risk_bias` 入站会收敛为 `source_market_state/action_risk_bias` |
 
 ### 1.3 EventContextSnapshot（事件上下文快照）
 
@@ -81,6 +82,8 @@ raw 阶段只负责把外部输入统一封装成 EventEnvelope，禁止在 raw 
 标准化阶段把不同来源 payload 对齐为稳定字段集，输出仍是 EventEnvelope，但要求：
 - `asset/type/kind/source_category/importance/ttl_ms` 语义完整
 - `trace.dedup_key` 产出
+- `payload.evidences[].attrs` 歧义字段收敛：`market_state -> source_market_state`、`risk_bias -> action_risk_bias`
+- `payload.evidences[]` 置信度字段收敛：优先 `evidence_confidence`，兼容读取/回填 `confidence`
 
 输出：`EventEnvelope (normalized)`
 

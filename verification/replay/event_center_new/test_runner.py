@@ -228,6 +228,52 @@ def test_extractor_and_l0_expose_explicit_confidence_semantics() -> None:
     assert l1.component_scores["classification_confidence"] == l0.classification_confidence
 
 
+def test_extractor_normalizes_ambiguous_attrs_semantics() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-semantics-1",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="news.macro",
+        source=EventSource(name="news_feed", category="news"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {
+                    "type": "news.macro",
+                    "direction": "mixed",
+                    "strength": 0.6,
+                    "horizon": "mid",
+                    "importance": 0.7,
+                    "attrs": {
+                        "source_category": "news",
+                        "source_name": "coindesk",
+                        "market_state": {"regime": "volatile"},
+                        "risk_bias": "conservative",
+                        "confidence": 0.66,
+                    },
+                }
+            ]
+        },
+    )
+    runner, store = _build_runner([event])
+    selected = runner.run_once()
+    assert selected == []
+    assert len(store.evidence) == 1
+    ev = store.evidence[0]
+    attrs = dict(ev.get("attrs") or {})
+    assert "market_state" not in attrs
+    assert "risk_bias" not in attrs
+    assert "confidence" not in attrs
+    assert attrs.get("source_market_state") == {"regime": "volatile"}
+    assert attrs.get("action_risk_bias") == "conservative"
+    assert attrs.get("semantic_scope", {}).get("confidence") == "evidence_confidence"
+    assert ev.get("evidence_confidence") == 0.66
+    assert ev.get("confidence") == 0.66
+
+
 def test_runner_health_snapshot_updates_after_run() -> None:
     now_ms = int(time.time() * 1000)
     event = EventEnvelope(

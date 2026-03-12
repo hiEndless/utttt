@@ -20,7 +20,47 @@ class PassThroughNormalizer(Normalizer):
     """默认标准化器：当前直接透传。"""
 
     def normalize(self, event: EventEnvelope) -> EventEnvelope:
-        return event
+        payload = dict(event.payload or {})
+        evidences = payload.get("evidences")
+        if not isinstance(evidences, list):
+            return event
+        normalized_evidences: list[dict[str, Any]] = []
+        for raw in evidences:
+            if not isinstance(raw, dict):
+                continue
+            item = dict(raw)
+            raw_attrs = dict(item.get("attrs") or {}) if isinstance(item.get("attrs"), dict) else {}
+            attrs = _normalize_evidence_attrs(item.get("attrs"))
+            if attrs:
+                item["attrs"] = attrs
+            elif "attrs" in item:
+                item.pop("attrs", None)
+            raw_conf = item.get("evidence_confidence")
+            if raw_conf is None:
+                raw_conf = item.get("confidence")
+            if raw_conf is None:
+                raw_conf = raw_attrs.get("confidence")
+            conf = _coerce_float(raw_conf)
+            if conf is not None:
+                item["evidence_confidence"] = conf
+                item["confidence"] = conf
+            normalized_evidences.append(item)
+        payload["evidences"] = normalized_evidences
+        return EventEnvelope(
+            id=event.id,
+            ts_ms=event.ts_ms,
+            asset=event.asset,
+            kind=event.kind,
+            type=event.type,
+            source=event.source,
+            importance=event.importance,
+            ttl_ms=event.ttl_ms,
+            payload=payload,
+            exchange=event.exchange,
+            account_id=event.account_id,
+            meta=dict(event.meta or {}),
+            trace=event.trace,
+        )
 
 
 class PayloadEvidenceExtractor(EvidenceExtractor):
@@ -45,7 +85,9 @@ class PayloadEvidenceExtractor(EvidenceExtractor):
             raw_conf = raw.get("evidence_confidence")
             if raw_conf is None:
                 raw_conf = raw.get("confidence")
-            conf_value = None if raw_conf is None else float(raw_conf)
+            if raw_conf is None:
+                raw_conf = dict(raw.get("attrs") or {}).get("confidence")
+            conf_value = _coerce_float(raw_conf)
             out.append(
                 Evidence(
                     ts_ms=int(raw.get("ts_ms") or event.ts_ms),
@@ -58,10 +100,40 @@ class PayloadEvidenceExtractor(EvidenceExtractor):
                     evidence_confidence=conf_value,
                     confidence=conf_value,
                     source_refs=list(source_refs) if isinstance(source_refs, list) else [],
-                    attrs=dict(raw.get("attrs") or {}),
+                    attrs=_normalize_evidence_attrs(raw.get("attrs")),
                 )
             )
         return out
+
+
+def _coerce_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _normalize_evidence_attrs(payload: Any) -> dict[str, Any]:
+    attrs = dict(payload or {}) if isinstance(payload, dict) else {}
+    # 中文注释：歧义字段在事件层统一收敛，避免下游把 market_state/risk_bias 误读为全局语义对象。
+    if "market_state" in attrs:
+        attrs.setdefault("source_market_state", attrs.get("market_state"))
+        attrs.pop("market_state", None)
+    if "risk_bias" in attrs:
+        attrs.setdefault("action_risk_bias", attrs.get("risk_bias"))
+        attrs.pop("risk_bias", None)
+    semantic_scope = dict(attrs.get("semantic_scope") or {}) if isinstance(attrs.get("semantic_scope"), dict) else {}
+    semantic_scope.setdefault("confidence", "evidence_confidence")
+    if "source_market_state" in attrs:
+        semantic_scope.setdefault("source_market_state", "upstream_local_state")
+    if "action_risk_bias" in attrs:
+        semantic_scope.setdefault("action_risk_bias", "action_level_bias")
+    if semantic_scope:
+        attrs["semantic_scope"] = semantic_scope
+    attrs.pop("confidence", None)
+    return attrs
 
 
 class HeuristicL0Processor(L0Processor):
