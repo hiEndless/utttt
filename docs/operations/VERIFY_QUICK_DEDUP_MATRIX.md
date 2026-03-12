@@ -46,3 +46,8 @@
 - `tools/ci/verify_all.sh`
 - `verification/run_suite.sh`（尤其 `suite=quick` 分支）
 - `tools/local/check_docs_contracts_bundle.sh`
+
+固定排障约定：
+- `verify_quick` 在 `check_docs_contracts_bundle.sh` 失败时，会自动执行
+  `bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`
+  并将探测值写入 CI 日志，便于 artifact 直接定位。
