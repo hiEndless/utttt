@@ -30,6 +30,11 @@ One-shot local pipeline (optional include memory summary):
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 ```
 
+Generate summary only (skip thresholds):
+```bash
+bash tools/local/aggregate_and_check.sh --skip-thresholds
+```
+
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), and symbol memory summary reports (`symbol-memory-summary-run-v1`).
