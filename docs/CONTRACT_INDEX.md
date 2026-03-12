@@ -10,6 +10,7 @@
 - `docs/contract_docs_index_help_snapshot.txt`
 - `docs/new_arch_guards_help_snapshot.txt`
 - `docs/operations/NEW_ARCH_GUARDS_HELP_SNAPSHOT_RUNBOOK.md`
+- `docs/operations/VERIFICATION_SCRIPT_INVENTORY.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
