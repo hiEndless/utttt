@@ -30,6 +30,8 @@
 - 当前 `verify_quick` 与 `verify_all --quick` 无显式重复守卫调用（按脚本入口维度）。
 - 文档契约类守卫由外层 bundle 统一管理；contract index 与链路契约由内层 quick suite 负责。
 - `contract bundle regression tests` 在外层执行，属于 docs bundle 子步骤，不在 quick suite 内重复执行。
+- `verify_quick` 外层在 docs bundle 失败时会直接打印排障提示：
+  `bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`。
 
 ## 4. 调整原则
 
