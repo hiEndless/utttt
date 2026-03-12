@@ -9,6 +9,10 @@ from typing import Any, Dict, List, Optional
 from contracts.semantic_policies.source_semantics import (
     get_alternative_source_allowed_provider_states,
     get_alternative_source_unavailable_provider_states,
+    get_market_state_event_fallback_data_source,
+    get_market_state_event_fallback_inference_source,
+    get_market_state_feature_fallback_data_source,
+    get_market_state_feature_fallback_inference_source,
 )
 from services.market_state_engine.src.engine import MarketStateEngine
 from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
@@ -60,14 +64,16 @@ def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[
     provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
     if str(provider_state).strip().lower() in _UNAVAILABLE_PROVIDER_STATES and not _has_nonempty_features(features):
         available = False
-    data_source = str(raw.get("data_source") or raw.get("source") or f"feature_service.{source_type}").strip()
-    inference_source = str(raw.get("inference_source") or "feature_service.normalizer").strip()
+    default_data_source = get_market_state_feature_fallback_data_source(source_type)
+    default_inference_source = get_market_state_feature_fallback_inference_source()
+    data_source = str(raw.get("data_source") or raw.get("source") or default_data_source).strip()
+    inference_source = str(raw.get("inference_source") or default_inference_source).strip()
     return {
         "source_type": source_type,
         "available": available,
         "provider_state": provider_state,
-        "data_source": data_source or f"feature_service.{source_type}",
-        "inference_source": inference_source or "feature_service.normalizer",
+        "data_source": data_source or default_data_source,
+        "inference_source": inference_source or default_inference_source,
         "as_of_ms": raw.get("as_of_ms"),
         "features": dict(features),
     }
@@ -89,8 +95,8 @@ def _empty_event_alt_summary() -> Dict[str, Any]:
         "available_sources": [],
         "unavailable_sources": list(sources),
         "provider_states": {x: "empty" for x in sources},
-        "data_sources": {x: f"event_center_new.{x}" for x in sources},
-        "inference_sources": {x: "event_center_new.selector" for x in sources},
+        "data_sources": {x: get_market_state_event_fallback_data_source(x) for x in sources},
+        "inference_sources": {x: get_market_state_event_fallback_inference_source() for x in sources},
         "feature_keys": {x: [] for x in sources},
         "evidence_counts": {x: 0 for x in sources},
     }
@@ -140,8 +146,8 @@ def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[s
     sources = ("news", "social", "onchain")
     counts: Dict[str, int] = {x: 0 for x in sources}
     provider_states: Dict[str, str] = {x: "empty" for x in sources}
-    data_sources: Dict[str, str] = {x: f"event_center_new.{x}" for x in sources}
-    inference_sources: Dict[str, str] = {x: "event_center_new.selector" for x in sources}
+    data_sources: Dict[str, str] = {x: get_market_state_event_fallback_data_source(x) for x in sources}
+    inference_sources: Dict[str, str] = {x: get_market_state_event_fallback_inference_source() for x in sources}
     feature_keys: Dict[str, set[str]] = {x: set() for x in sources}
     found = False
     for item in selected_events:
@@ -195,13 +201,13 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
         feat = _normalize_alternative_source_entry(src, feature_alt.get(src))
         feat_available = _is_effective_alternative_source_entry(feat)
         feat_state = str(feat.get("provider_state") or "empty")
-        feat_data_source = str(feat.get("data_source") or f"feature_service.{src}")
-        feat_inference_source = str(feat.get("inference_source") or "feature_service.normalizer")
+        feat_data_source = str(feat.get("data_source") or get_market_state_feature_fallback_data_source(src))
+        feat_inference_source = str(feat.get("inference_source") or get_market_state_feature_fallback_inference_source())
         feat_keys = sorted([str(x) for x in dict(feat.get("features") or {}).keys() if str(x).strip()])
 
         ev_state = str(event_states.get(src) or "empty")
-        ev_data_source = str(event_data_sources.get(src) or f"event_center_new.{src}")
-        ev_inference_source = str(event_inference_sources.get(src) or "event_center_new.selector")
+        ev_data_source = str(event_data_sources.get(src) or get_market_state_event_fallback_data_source(src))
+        ev_inference_source = str(event_inference_sources.get(src) or get_market_state_event_fallback_inference_source())
         ev_keys = sorted([str(x) for x in list(event_keys.get(src) or []) if str(x).strip()])
         ev_count = int(event_counts.get(src) or 0)
         ev_available = ev_count > 0

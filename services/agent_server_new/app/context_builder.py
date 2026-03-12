@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
 from contracts.semantic_policies.source_semantics import (
+    get_agent_fusion_event_data_source,
+    get_agent_fusion_event_inference_source,
+    get_agent_fusion_feature_data_source,
+    get_agent_fusion_feature_inference_source,
     get_alternative_source_allowed_provider_states,
     get_alternative_source_unavailable_provider_states,
 )
@@ -85,8 +89,14 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
             state = str(node.get("provider_state") or "empty")
             provider_states[name] = state
             prefer_event = state.startswith("event_")
-            default_data_source = f"event_center_new.{name}" if prefer_event else f"feature_service.{name}"
-            default_inference_source = "event_center_new.selector" if prefer_event else "feature_service.normalizer"
+            default_data_source = (
+                get_agent_fusion_event_data_source(name) if prefer_event else get_agent_fusion_feature_data_source(name)
+            )
+            default_inference_source = (
+                get_agent_fusion_event_inference_source()
+                if prefer_event
+                else get_agent_fusion_feature_inference_source()
+            )
             data_sources[name] = str(node.get("data_source") or default_data_source)
             inference_sources[name] = str(node.get("inference_source") or default_inference_source)
             feature_keys[name] = sorted([str(x) for x in list(node.get("feature_keys") or []) if str(x).strip()])
@@ -115,8 +125,8 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         node = _safe_dict(alt.get(name))
         state = str(node.get("provider_state") or "empty")
         provider_states[name] = state
-        data_sources[name] = str(node.get("data_source") or f"feature_service.{name}")
-        inference_sources[name] = str(node.get("inference_source") or "feature_service.normalizer")
+        data_sources[name] = str(node.get("data_source") or get_agent_fusion_feature_data_source(name))
+        inference_sources[name] = str(node.get("inference_source") or get_agent_fusion_feature_inference_source())
         available = _is_effective_source_available(
             available=bool(node.get("available") is True),
             provider_state=state,

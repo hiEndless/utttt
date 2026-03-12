@@ -68,6 +68,10 @@ def _get_default_rules() -> Dict[str, Any]:
     return _safe_dict(item.get("default_rules"))
 
 
+def _get_rule(rule_name: str) -> Dict[str, Any]:
+    return _safe_dict(_get_default_rules().get(rule_name))
+
+
 def get_event_center_present_provider_state() -> str:
     item = _load_policy()
     provider_policy = _safe_dict(item.get("provider_state_policy"))
@@ -98,14 +102,64 @@ def get_event_center_empty_provider_state() -> str:
 
 def get_event_center_data_source(source: str) -> str:
     fallback = f"event_center_new.{source}"
-    rules = _get_default_rules()
-    event_center = _safe_dict(rules.get("event_center"))
+    event_center = _get_rule("event_center")
     template = str(event_center.get("data_source_template") or "")
     return _render_source_template(template, source=source, fallback=fallback)
 
 
 def get_event_center_inference_source() -> str:
-    rules = _get_default_rules()
-    event_center = _safe_dict(rules.get("event_center"))
+    event_center = _get_rule("event_center")
     value = str(event_center.get("inference_source") or "").strip()
+    return value or "event_center_new.selector"
+
+
+def get_market_state_feature_fallback_data_source(source: str) -> str:
+    fallback = f"feature_service.{source}"
+    rule = _get_rule("market_state_feature_fallback")
+    template = str(rule.get("data_source_template") or "")
+    return _render_source_template(template, source=source, fallback=fallback)
+
+
+def get_market_state_feature_fallback_inference_source() -> str:
+    rule = _get_rule("market_state_feature_fallback")
+    value = str(rule.get("inference_source") or "").strip()
+    return value or "feature_service.normalizer"
+
+
+def get_market_state_event_fallback_data_source(source: str) -> str:
+    fallback = f"event_center_new.{source}"
+    rule = _get_rule("market_state_event_fallback")
+    template = str(rule.get("data_source_template") or "")
+    return _render_source_template(template, source=source, fallback=fallback)
+
+
+def get_market_state_event_fallback_inference_source() -> str:
+    rule = _get_rule("market_state_event_fallback")
+    value = str(rule.get("inference_source") or "").strip()
+    return value or "event_center_new.selector"
+
+
+def get_agent_fusion_feature_data_source(source: str) -> str:
+    fallback = f"feature_service.{source}"
+    rule = _get_rule("agent_fusion_fallback")
+    template = str(rule.get("feature_data_source_template") or "")
+    return _render_source_template(template, source=source, fallback=fallback)
+
+
+def get_agent_fusion_event_data_source(source: str) -> str:
+    fallback = f"event_center_new.{source}"
+    rule = _get_rule("agent_fusion_fallback")
+    template = str(rule.get("event_data_source_template") or "")
+    return _render_source_template(template, source=source, fallback=fallback)
+
+
+def get_agent_fusion_feature_inference_source() -> str:
+    rule = _get_rule("agent_fusion_fallback")
+    value = str(rule.get("feature_inference_source") or "").strip()
+    return value or "feature_service.normalizer"
+
+
+def get_agent_fusion_event_inference_source() -> str:
+    rule = _get_rule("agent_fusion_fallback")
+    value = str(rule.get("event_inference_source") or "").strip()
     return value or "event_center_new.selector"

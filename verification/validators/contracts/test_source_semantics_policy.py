@@ -10,10 +10,18 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from contracts.semantic_policies.source_semantics import (
+    get_agent_fusion_event_data_source,
+    get_agent_fusion_event_inference_source,
+    get_agent_fusion_feature_data_source,
+    get_agent_fusion_feature_inference_source,
     get_alternative_source_allowed_provider_states,
     get_event_center_data_source,
     get_event_center_empty_provider_state,
     get_event_center_inference_source,
+    get_market_state_event_fallback_data_source,
+    get_market_state_event_fallback_inference_source,
+    get_market_state_feature_fallback_data_source,
+    get_market_state_feature_fallback_inference_source,
     get_event_center_present_provider_state,
 )
 
@@ -74,3 +82,18 @@ def test_source_semantics_runtime_helper_returns_event_center_default_rule_templ
     assert get_event_center_data_source("news") == "event_center_new.news"
     assert get_event_center_data_source("social") == "event_center_new.social"
     assert get_event_center_inference_source() == "event_center_new.selector"
+
+
+def test_source_semantics_runtime_helper_returns_market_state_default_rule_templates() -> None:
+    assert get_market_state_feature_fallback_data_source("news") == "feature_service.news"
+    assert get_market_state_feature_fallback_data_source("onchain") == "feature_service.onchain"
+    assert get_market_state_feature_fallback_inference_source() == "feature_service.normalizer"
+    assert get_market_state_event_fallback_data_source("social") == "event_center_new.social"
+    assert get_market_state_event_fallback_inference_source() == "event_center_new.selector"
+
+
+def test_source_semantics_runtime_helper_returns_agent_fusion_default_rule_templates() -> None:
+    assert get_agent_fusion_feature_data_source("news") == "feature_service.news"
+    assert get_agent_fusion_event_data_source("onchain") == "event_center_new.onchain"
+    assert get_agent_fusion_feature_inference_source() == "feature_service.normalizer"
+    assert get_agent_fusion_event_inference_source() == "event_center_new.selector"
