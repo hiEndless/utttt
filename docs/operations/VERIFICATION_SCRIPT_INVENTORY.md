@@ -18,6 +18,7 @@
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
+- event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
 
 ## 3. CI 入口关键阶段（显式）
 

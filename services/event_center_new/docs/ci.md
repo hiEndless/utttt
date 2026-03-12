@@ -52,6 +52,7 @@
 
 失败码对照（聚合守卫统一输出 `FAIL_CODE=...`）：
 
+- `EC_GUARD_ENTRY_FAILED`：合同入口守卫失败
 - `EC_GUARD_SCHEMA_FAILED`：契约/Schema 子守卫失败
 - `EC_GUARD_RUNTIME_FAILED`：Runtime 子守卫失败
 - `EC_GUARD_WIRING_FAILED`：接线子守卫失败
@@ -69,6 +70,7 @@
   bash scripts/check_event_center_contract_guards.sh [--quick] [--strict-wiring|--lenient-wiring]
 
 失败码（子守卫失败时输出 FAIL_CODE=...）:
+  EC_GUARD_ENTRY_FAILED
   EC_GUARD_SCHEMA_FAILED
   EC_GUARD_RUNTIME_FAILED
   EC_GUARD_WIRING_FAILED

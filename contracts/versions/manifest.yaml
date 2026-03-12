@@ -22,5 +22,9 @@ contract_versions:
     value: "market-state-contract-v1"
     source: "services/market_state_engine/src/version.py"
 
+  - name: event_center_runtime_config_version
+    value: "event-center-runtime-v1"
+    source: "services/event_center_new/version.py"
+
 notes:
   - "This manifest is a control-plane summary; service-local version constants remain runtime authority."
