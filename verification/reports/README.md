@@ -58,6 +58,7 @@ Notes:
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`
   - `memory_summary_run_count/memory_high_risk_symbol_count/memory_top_risk_score/memory_high_risk_symbols`
   - `memory_alert_code_count/memory_top_alert_codes`（告警码维度 TopN 与受影响 symbol 集合）
+  - `execution_confidence_*`（execution 迁移指标快照与 `execution_legacy_confidence_usage_ratio`）
 
 Check thresholds:
 ```bash

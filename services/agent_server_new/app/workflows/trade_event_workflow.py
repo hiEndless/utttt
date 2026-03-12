@@ -393,13 +393,13 @@ def _build_decision_intent_payload(
         "exchange": str(event.exchange),
         "symbol": str(event.symbol),
         "direction_intent": str(plan.direction or "none"),
-        "confidence": dict(decision_confidence),
         "decision_confidence": dict(decision_confidence),
         "cross_horizon_policy": dict(cross_horizon or {}),
         "risk_hints": {
             "agent_action_hint": str(plan.action or "hold"),
             "agent_notes": str(plan.notes or ""),
             "decision_confidence": dict(decision_confidence),
+            "decision_confidence_source": "agent_execution_plan",
         },
     }
     if bool(ai_adaptive_enabled):

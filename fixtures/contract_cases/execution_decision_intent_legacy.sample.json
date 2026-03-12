@@ -1,11 +1,11 @@
 {
-  "decision_id": "dec-fixture-001",
+  "decision_id": "dec-fixture-legacy-001",
   "exchange": "binance",
   "account_id": "main",
   "symbol": "ETHUSDT",
   "direction_intent": "long",
-  "decision_confidence": {"level": "medium", "score": 0.67},
+  "confidence": {"level": "medium", "score": 0.67},
   "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
   "risk_hints": {"market_fragility": "medium"},
-  "trace_id": "trace-fixture-001"
+  "trace_id": "trace-fixture-legacy-001"
 }

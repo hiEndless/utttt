@@ -518,10 +518,13 @@ workflow 会把 agent 的 ExecutionPlan 映射为 execution_service 侧的 Decis
 | exchange | string | Y | 交易所 |
 | symbol | string | Y | 交易对 |
 | direction_intent | string | Y | long/short/none（来自 plan.direction） |
-| confidence | object | Y | {level, score} |
-| decision_confidence | object | Y | 同 confidence（兼容字段） |
+| decision_confidence | object | Y | {level, score}（canonical） |
 | cross_horizon_policy | object | Y | {suggested_policy, policy_reason} |
-| risk_hints | object | Y | {agent_action_hint, agent_notes, decision_confidence} |
+| risk_hints | object | Y | {agent_action_hint, agent_notes, decision_confidence, decision_confidence_source} |
+
+说明：
+- 该链路默认不再发送 `confidence`（deprecated alias）。
+- 若需兼容旧执行层入口，应通过 execution 侧兼容回填处理，而非在新 producer 恢复别名输出。
 
 当启用 `AGENT_AI_ADAPTIVE_ENABLED=true` 时会追加保留字段：
 - execution_hint / adaptive_profile / adaptive_profile_version / adaptive_explain

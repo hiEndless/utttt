@@ -29,7 +29,8 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "verification-report-v2",
                 "semantic-audit-v1",
                 "symbol-memory-summary-run-v1",
-            }:
+                "execution-confidence-metrics-v1",
+            } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
             out.append(data)
@@ -70,6 +71,14 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     ]
     semantic_reports = [x for x in reports if str(x.get("schema_version") or "") == "semantic-audit-v1"]
     memory_summary_reports = [x for x in reports if str(x.get("schema_version") or "") == "symbol-memory-summary-run-v1"]
+    execution_confidence_reports = [
+        x
+        for x in reports
+        if (
+            str(x.get("schema_version") or "") == "execution-confidence-metrics-v1"
+            or isinstance(x.get("confidence_migration_metrics"), dict)
+        )
+    ]
 
     total = len(verification_reports)
     passed = 0
@@ -178,6 +187,33 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             }
         )
 
+    execution_confidence_report_count = len(execution_confidence_reports)
+    latest_execution_confidence_report_path = ""
+    execution_confidence_only_requests = 0
+    execution_decision_confidence_requests = 0
+    execution_confidence_alias_mismatch_rejections = 0
+    execution_legacy_confidence_usage_ratio = 0.0
+    if execution_confidence_reports:
+        latest_execution_confidence = max(
+            execution_confidence_reports,
+            key=lambda x: max(
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+                _to_int(x.get("finished_at_ms"), 0),
+            ),
+        )
+        latest_execution_confidence_report_path = str(latest_execution_confidence.get("_path") or "")
+        metrics = dict(latest_execution_confidence.get("confidence_migration_metrics") or {})
+        execution_confidence_only_requests = _to_int(metrics.get("confidence_only_requests"), 0)
+        execution_decision_confidence_requests = _to_int(metrics.get("decision_confidence_requests"), 0)
+        execution_confidence_alias_mismatch_rejections = _to_int(
+            metrics.get("confidence_alias_mismatch_rejections"), 0
+        )
+        denom = execution_confidence_only_requests + execution_decision_confidence_requests
+        execution_legacy_confidence_usage_ratio = 0.0 if denom <= 0 else round(
+            float(execution_confidence_only_requests) / float(denom), 6
+        )
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -199,6 +235,12 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "memory_high_risk_symbols": memory_high_risk_symbols,
         "memory_alert_code_count": len(memory_top_alert_codes),
         "memory_top_alert_codes": memory_top_alert_codes,
+        "execution_confidence_report_count": execution_confidence_report_count,
+        "latest_execution_confidence_report_path": latest_execution_confidence_report_path,
+        "execution_confidence_only_requests": execution_confidence_only_requests,
+        "execution_decision_confidence_requests": execution_decision_confidence_requests,
+        "execution_confidence_alias_mismatch_rejections": execution_confidence_alias_mismatch_rejections,
+        "execution_legacy_confidence_usage_ratio": execution_legacy_confidence_usage_ratio,
     }
 
 

@@ -155,7 +155,7 @@ Schema：[decision_intent.schema.json](services/execution_service/docs/decision_
 | symbol | string | Y | 非空 | 交易对（如 ETHUSDT） |
 | direction_intent | string | Y | long/short/none | 方向意图（不是最终动作） |
 | decision_confidence | object | Y | 见 3.2 | 语义主字段：置信度 |
-| confidence | object | N | 见 3.2 | 兼容字段（deprecated），若出现必须与 decision_confidence 完全一致 |
+| confidence | object | N | 见 3.2 | 兼容字段（deprecated），仅用于迁移窗口；producer 默认不应发送 |
 | cross_horizon_policy | object | Y | 任意对象 | 跨周期策略摘要（透传，用于风控解释/trace，不做强语义约束） |
 | risk_hints | object | Y | 任意对象 | 风险提示/解释/补充字段（用于下单侧推导，如 position_side/order_qty 等） |
 | trace_id | string\|null | N |  | 追踪 ID（写入 decision_state） |
@@ -704,5 +704,5 @@ agent 侧会向 execution_service 发送 DecisionIntent。execution_service 仓�
 
 其映射要点：
 - direction：从 plan.direction 映射到 direction_intent（long/short/none）
-- confidence：优先使用 plan.decision_confidence，否则 plan.confidence
+- decision_confidence：优先使用 plan.decision_confidence，否则兼容回退 plan.confidence
 - risk_hints：注入 agent_action_hint/agent_notes/decision_confidence（用于执行侧解释与下单推导）

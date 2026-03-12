@@ -44,6 +44,16 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 }
             ],
         },
+        {
+            "schema_version": "execution-confidence-metrics-v1",
+            "ts_ms": 3000,
+            "confidence_migration_metrics": {
+                "decide_requests_total": 10,
+                "confidence_only_requests": 2,
+                "decision_confidence_requests": 8,
+                "confidence_alias_mismatch_rejections": 1,
+            },
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -60,3 +70,8 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert top_codes[0]["count"] == 2
     assert "binance:ETHUSDT" in list(top_codes[0]["symbols"] or [])
     assert "binance:BTCUSDT" in list(top_codes[0]["symbols"] or [])
+    assert out["execution_confidence_report_count"] == 1
+    assert out["execution_confidence_only_requests"] == 2
+    assert out["execution_decision_confidence_requests"] == 8
+    assert out["execution_confidence_alias_mismatch_rejections"] == 1
+    assert float(out["execution_legacy_confidence_usage_ratio"]) == 0.2

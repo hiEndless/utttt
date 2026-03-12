@@ -22,7 +22,13 @@
     "memory_top_risk_score",
     "memory_high_risk_symbols",
     "memory_alert_code_count",
-    "memory_top_alert_codes"
+    "memory_top_alert_codes",
+    "execution_confidence_report_count",
+    "latest_execution_confidence_report_path",
+    "execution_confidence_only_requests",
+    "execution_decision_confidence_requests",
+    "execution_confidence_alias_mismatch_rejections",
+    "execution_legacy_confidence_usage_ratio"
   ],
   "properties": {
     "schema_version": {
@@ -169,6 +175,30 @@
           }
         }
       }
+    },
+    "execution_confidence_report_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_execution_confidence_report_path": {
+      "type": "string"
+    },
+    "execution_confidence_only_requests": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execution_decision_confidence_requests": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execution_confidence_alias_mismatch_rejections": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execution_legacy_confidence_usage_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
     }
   }
 }

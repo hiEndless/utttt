@@ -110,18 +110,7 @@ def create_app(*, report_dir: str = "verification/reports", validate_summary_sch
         all_items = _list_reports(report_root)
         summary_payload: Dict[str, Any]
         if not all_items:
-            summary_payload = {
-                "schema_version": "verification-report-aggregate-v1",
-                "report_count": 0,
-                "passed": 0,
-                "failed": 0,
-                "pass_rate": 0.0,
-                "avg_duration_ms": 0,
-                "latest_finished_at_ms": 0,
-                "suites": [],
-                "memory_alert_code_count": 0,
-                "memory_top_alert_codes": [],
-            }
+            summary_payload = build_summary([])
         else:
             latest_ms = max(_safe_int(x.get("finished_at_ms"), 0) for x in all_items)
             cutoff = latest_ms - int(window_hours) * 3600 * 1000
