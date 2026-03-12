@@ -56,17 +56,23 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
     by_source = _safe_dict(merged.get("by_source"))
     if by_source:
         provider_states: Dict[str, str] = {}
+        data_sources: Dict[str, str] = {}
+        inference_sources: Dict[str, str] = {}
         feature_keys: Dict[str, List[str]] = {}
         available_sources = [str(x) for x in list(merged.get("available_sources") or []) if str(x).strip()]
         unavailable_sources = [str(x) for x in list(merged.get("unavailable_sources") or []) if str(x).strip()]
         for name in ("news", "social", "onchain"):
             node = _safe_dict(by_source.get(name))
             provider_states[name] = str(node.get("provider_state") or "empty")
+            data_sources[name] = str(node.get("data_source") or f"feature_service.{name}")
+            inference_sources[name] = str(node.get("inference_source") or "feature_service.normalizer")
             feature_keys[name] = sorted([str(x) for x in list(node.get("feature_keys") or []) if str(x).strip()])
         out = {
             "available_sources": sorted(set(available_sources)),
             "unavailable_sources": sorted(set(unavailable_sources)),
             "provider_states": provider_states,
+            "data_sources": data_sources,
+            "inference_sources": inference_sources,
             "feature_keys": feature_keys,
             "preferred_source": str(fusion.get("preferred_source") or "none"),
             "conflict_count": len(list(fusion.get("conflicts") or [])),
@@ -76,6 +82,8 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
     alt = _safe_dict(evidence.get("alternative_sources"))
     sources = ("news", "social", "onchain")
     provider_states: Dict[str, str] = {}
+    data_sources: Dict[str, str] = {}
+    inference_sources: Dict[str, str] = {}
     available_sources: List[str] = []
     unavailable_sources: List[str] = []
     feature_keys: Dict[str, List[str]] = {}
@@ -84,6 +92,8 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         node = _safe_dict(alt.get(name))
         state = str(node.get("provider_state") or "empty")
         provider_states[name] = state
+        data_sources[name] = str(node.get("data_source") or f"feature_service.{name}")
+        inference_sources[name] = str(node.get("inference_source") or "feature_service.normalizer")
         available = bool(node.get("available") is True)
         if available:
             available_sources.append(name)
@@ -95,6 +105,8 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         "available_sources": available_sources,
         "unavailable_sources": unavailable_sources,
         "provider_states": provider_states,
+        "data_sources": data_sources,
+        "inference_sources": inference_sources,
         "feature_keys": feature_keys,
     }
 

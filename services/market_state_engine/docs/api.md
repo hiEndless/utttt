@@ -118,6 +118,8 @@ MSL 契约文件：
   - 当同时接入 feature 与 selected_event 侧来源摘要时，`state_features.evidence.alternative_sources_fusion` 输出融合结果：
     - `preferred_source`（`feature|event_center|none`）
     - `merged.by_source.{news|social|onchain}`（available/provider_state/feature_available/event_available/event_evidence_count）
+    - `merged.by_source.{news|social|onchain}.data_source`（当前源数据来源）
+    - `merged.by_source.{news|social|onchain}.inference_source`（当前推断来源）
     - `conflicts`（同来源状态冲突清单）
   - 当 `selected_events_unversioned_count > 0` 时，`anomaly_flags` 会包含 `selected_events_unversioned`
 - `msl_meta`

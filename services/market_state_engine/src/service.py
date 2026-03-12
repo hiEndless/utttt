@@ -37,10 +37,14 @@ def _normalize_alternative_source_entry(source_type: str, payload: Any) -> Dict[
         features = {}
     available = bool(raw.get("available")) if "available" in raw else bool(features)
     provider_state = str(raw.get("provider_state") or ("ok" if available else "empty"))
+    data_source = str(raw.get("data_source") or raw.get("source") or f"feature_service.{source_type}").strip()
+    inference_source = str(raw.get("inference_source") or "feature_service.normalizer").strip()
     return {
         "source_type": source_type,
         "available": available,
         "provider_state": provider_state,
+        "data_source": data_source or f"feature_service.{source_type}",
+        "inference_source": inference_source or "feature_service.normalizer",
         "as_of_ms": raw.get("as_of_ms"),
         "features": dict(features),
     }
@@ -62,6 +66,8 @@ def _empty_event_alt_summary() -> Dict[str, Any]:
         "available_sources": [],
         "unavailable_sources": list(sources),
         "provider_states": {x: "empty" for x in sources},
+        "data_sources": {x: f"event_center_new.{x}" for x in sources},
+        "inference_sources": {x: "event_center_new.selector" for x in sources},
         "feature_keys": {x: [] for x in sources},
         "evidence_counts": {x: 0 for x in sources},
     }
@@ -73,6 +79,8 @@ def _normalize_event_alt_summary(payload: Any) -> Dict[str, Any]:
     available = [str(x) for x in list(raw.get("available_sources") or []) if str(x).strip()]
     unavailable = [str(x) for x in list(raw.get("unavailable_sources") or []) if str(x).strip()]
     provider_states = raw.get("provider_states")
+    data_sources = raw.get("data_sources")
+    inference_sources = raw.get("inference_sources")
     feature_keys = raw.get("feature_keys")
     evidence_counts = raw.get("evidence_counts")
     if isinstance(provider_states, dict):
@@ -82,6 +90,12 @@ def _normalize_event_alt_summary(payload: Any) -> Dict[str, Any]:
             str(k): sorted([str(x) for x in list(v or []) if str(x).strip()])
             for k, v in feature_keys.items()
             if str(k).strip()
+        }
+    if isinstance(data_sources, dict):
+        base["data_sources"] = {str(k): str(v) for k, v in data_sources.items() if str(k).strip() and str(v).strip()}
+    if isinstance(inference_sources, dict):
+        base["inference_sources"] = {
+            str(k): str(v) for k, v in inference_sources.items() if str(k).strip() and str(v).strip()
         }
     if isinstance(evidence_counts, dict):
         out_counts: Dict[str, int] = {}
@@ -103,6 +117,8 @@ def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[s
     sources = ("news", "social", "onchain")
     counts: Dict[str, int] = {x: 0 for x in sources}
     provider_states: Dict[str, str] = {x: "empty" for x in sources}
+    data_sources: Dict[str, str] = {x: f"event_center_new.{x}" for x in sources}
+    inference_sources: Dict[str, str] = {x: "event_center_new.selector" for x in sources}
     feature_keys: Dict[str, set[str]] = {x: set() for x in sources}
     found = False
     for item in selected_events:
@@ -116,6 +132,12 @@ def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[s
             state = str(dict(summary.get("provider_states") or {}).get(src) or "")
             if state and state != "empty":
                 provider_states[src] = state
+            data_source = str(dict(summary.get("data_sources") or {}).get(src) or "").strip()
+            if data_source:
+                data_sources[src] = data_source
+            inference_source = str(dict(summary.get("inference_sources") or {}).get(src) or "").strip()
+            if inference_source:
+                inference_sources[src] = inference_source
             keys = list(dict(summary.get("feature_keys") or {}).get(src) or [])
             for k in keys:
                 ks = str(k).strip()
@@ -129,6 +151,8 @@ def _collect_event_alt_summary_from_selected_events(selected_events: List[Dict[s
         "available_sources": available,
         "unavailable_sources": unavailable,
         "provider_states": provider_states,
+        "data_sources": data_sources,
+        "inference_sources": inference_sources,
         "feature_keys": {x: sorted(feature_keys[x]) for x in sources},
         "evidence_counts": counts,
     }
@@ -139,6 +163,8 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
     merged: Dict[str, Any] = {}
     conflicts: List[Dict[str, str]] = []
     event_states = dict(event_alt_summary.get("provider_states") or {})
+    event_data_sources = dict(event_alt_summary.get("data_sources") or {})
+    event_inference_sources = dict(event_alt_summary.get("inference_sources") or {})
     event_keys = dict(event_alt_summary.get("feature_keys") or {})
     event_counts = dict(event_alt_summary.get("evidence_counts") or {})
 
@@ -146,15 +172,23 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
         feat = _normalize_alternative_source_entry(src, feature_alt.get(src))
         feat_available = bool(feat.get("available") is True)
         feat_state = str(feat.get("provider_state") or "empty")
+        feat_data_source = str(feat.get("data_source") or f"feature_service.{src}")
+        feat_inference_source = str(feat.get("inference_source") or "feature_service.normalizer")
         feat_keys = sorted([str(x) for x in dict(feat.get("features") or {}).keys() if str(x).strip()])
 
         ev_state = str(event_states.get(src) or "empty")
+        ev_data_source = str(event_data_sources.get(src) or f"event_center_new.{src}")
+        ev_inference_source = str(event_inference_sources.get(src) or "event_center_new.selector")
         ev_keys = sorted([str(x) for x in list(event_keys.get(src) or []) if str(x).strip()])
         ev_count = int(event_counts.get(src) or 0)
         ev_available = ev_count > 0
 
         available = feat_available or ev_available
         chosen_state = feat_state if feat_available else (ev_state if ev_available else "empty")
+        chosen_data_source = feat_data_source if feat_available else (ev_data_source if ev_available else "none")
+        chosen_inference_source = (
+            feat_inference_source if feat_available else (ev_inference_source if ev_available else "none")
+        )
         all_keys = sorted(set([*feat_keys, *ev_keys]))
         if feat_available and ev_available and feat_state != ev_state:
             conflicts.append({"source": src, "feature_state": feat_state, "event_state": ev_state})
@@ -163,6 +197,12 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
             "source_type": src,
             "available": available,
             "provider_state": chosen_state,
+            "data_source": chosen_data_source,
+            "inference_source": chosen_inference_source,
+            "feature_data_source": feat_data_source,
+            "event_data_source": ev_data_source,
+            "feature_inference_source": feat_inference_source,
+            "event_inference_source": ev_inference_source,
             "feature_keys": all_keys,
             "feature_available": feat_available,
             "event_available": ev_available,

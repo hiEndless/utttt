@@ -52,6 +52,8 @@ def test_signal_context_builder_includes_alternative_source_summary() -> None:
     value = dict(summary.get("value") or {})
     assert "news" in list(value.get("available_sources") or [])
     assert value.get("provider_states", {}).get("social") == "noop"
+    assert value.get("data_sources", {}).get("news") == "feature_service.news"
+    assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"
 
 
 def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> None:
@@ -68,9 +70,24 @@ def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> N
                         "available_sources": ["news", "onchain"],
                         "unavailable_sources": ["social"],
                         "by_source": {
-                            "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
-                            "social": {"provider_state": "empty", "feature_keys": []},
-                            "onchain": {"provider_state": "event_evidence_present", "feature_keys": ["inflow_usd"]},
+                            "news": {
+                                "provider_state": "primary",
+                                "data_source": "feature_service.news",
+                                "inference_source": "feature_service.normalizer",
+                                "feature_keys": ["headline_score"],
+                            },
+                            "social": {
+                                "provider_state": "empty",
+                                "data_source": "event_center_new.social",
+                                "inference_source": "event_center_new.selector",
+                                "feature_keys": [],
+                            },
+                            "onchain": {
+                                "provider_state": "event_evidence_present",
+                                "data_source": "event_center_new.onchain",
+                                "inference_source": "event_center_new.selector",
+                                "feature_keys": ["inflow_usd"],
+                            },
                         },
                     },
                 },
@@ -87,3 +104,5 @@ def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> N
     assert value.get("preferred_source") == "feature"
     assert value.get("conflict_count") == 1
     assert "onchain" in list(value.get("available_sources") or [])
+    assert value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
+    assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"

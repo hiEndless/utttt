@@ -369,6 +369,14 @@ HTTP 适配器：
 | anomalies | object | 透传状态层 `state_features.anomalies`（完整对象） |
 | memory_observability | object | 记忆注入统计（见 6.5） |
 
+`alternative_source_summary`（当存在）会包含：
+- `available_sources/unavailable_sources`
+- `provider_states`
+- `data_sources`（每类来源对应的数据来源标识）
+- `inference_sources`（每类来源对应的推断来源标识）
+- `feature_keys`
+- `preferred_source/conflict_count`（仅 fusion 可用时）
+
 实现：[context_builder.py](services/agent_server_new/app/context_builder.py#L96-L180) 与 [context_builder.py](services/agent_server_new/app/context_builder.py#L245-L256)
 
 ### 6.4 features 列表：强制注入项 + 动态候选项

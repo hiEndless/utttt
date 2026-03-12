@@ -335,6 +335,10 @@ def test_market_state_service_builds_alternative_sources_fusion():
         assert merged.get("news", {}).get("available") is True
         assert merged.get("onchain", {}).get("available") is True
         assert merged.get("onchain", {}).get("event_evidence_count") == 2
+        assert merged.get("news", {}).get("data_source") == "feature_service.news"
+        assert merged.get("news", {}).get("inference_source") == "feature_service.normalizer"
+        assert merged.get("onchain", {}).get("data_source") == "event_center_new.onchain"
+        assert merged.get("onchain", {}).get("inference_source") == "event_center_new.selector"
         assert isinstance(fusion.get("conflicts"), list)
 
     asyncio.run(_run())

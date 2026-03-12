@@ -42,6 +42,7 @@
 - 本服务返回 `200` + `status=data_unavailable`，避免下游误判
 - 上游若提供 `alternative_sources`（news/social/onchain），状态层会标准化后透传到 `state_features.evidence`，当前阶段不纳入主推断链路。
 - 当 `selected_event.context_snapshot.alternative_sources_summary` 可用时，状态层会与 feature 侧来源做融合，产出 `state_features.evidence.alternative_sources_fusion`（feature 优先，event_center 补充，冲突显式记录）。
+- `alternative_sources_fusion.merged.by_source` 已补充 `data_source/inference_source`，用于显式区分“数据来自哪里”和“由谁推断/选择”。
 
 ## 下一阶段
 
