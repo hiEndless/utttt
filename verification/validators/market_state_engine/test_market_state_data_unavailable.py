@@ -331,6 +331,30 @@ def test_market_state_route_returns_ok_status():
     assert body["ts_ms"] == body["ts"]
 
 
+def test_market_state_route_e2e_includes_alternative_source_fusion_semantics_fields():
+    app = FastAPI()
+    service = MarketStateService(
+        raw_structure_provider=_AlternativeSourceRawProvider(),
+        selected_event_provider=_SelectedEventProviderWithAlternativeSummary(),
+    )
+    app.include_router(create_router(service))
+    client = TestClient(app)
+
+    resp = client.get("/internal/market-state/binance/ETHUSDT")
+    assert resp.status_code == 200
+    body = resp.json()
+    evidence = dict(dict(body.get("state_features") or {}).get("evidence") or {})
+    fusion = dict(evidence.get("alternative_sources_fusion") or {})
+    by_source = dict(dict(fusion.get("merged") or {}).get("by_source") or {})
+    for src in ("news", "social", "onchain"):
+        node = dict(by_source.get(src) or {})
+        assert str(node.get("provider_state") or "").strip()
+        assert str(node.get("data_source") or "").strip()
+        assert str(node.get("inference_source") or "").strip()
+    assert by_source.get("news", {}).get("data_source") == "feature_service.news"
+    assert by_source.get("onchain", {}).get("data_source") == "event_center_new.onchain"
+
+
 def test_market_state_route_healthz_exposes_ts_ms_alias():
     app = FastAPI()
     service = MarketStateService(raw_structure_provider=_OkRawProvider())
