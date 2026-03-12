@@ -7,7 +7,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from market_state_engine.engine import MarketStateEngine
-from market_state_engine.errors import FeatureDataUnavailableFromUpstreamError
+from services.market_state_engine.src.errors import FeatureDataUnavailableFromUpstreamError
 from market_state_engine.ports.raw_structure_provider import RawStructureProvider
 from market_state_engine.ports.selected_event_provider import SelectedEventProvider
 

@@ -80,6 +80,7 @@
 - [x] 删除 `feature_service/main.py` 兼容入口；`feature_service` 达到 fully-migrated（无 legacy wrapper）
 - [x] 启动 `market_state_engine` Batch A：`app/routes/contracts` 实现迁入 `services/market_state_engine/src/`（旧路径保留兼容壳）
 - [x] 执行 `market_state_engine` Batch B（阶段1）：`service.py` 实现迁入 `services/market_state_engine/src/`（旧路径使用模块桥接兼容）
+- [x] 执行 `market_state_engine` Batch B（阶段2）：`errors.py` 实现迁入 `services/market_state_engine/src/`（旧路径保留薄兼容壳）
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

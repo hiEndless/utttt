@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_a_migrated_with_compat_wrappers"
+    status: "src_batch_b2_migrated_with_compat_wrappers"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
@@ -54,12 +54,14 @@ services:
       - "services/market_state_engine/src/routes.py"
       - "services/market_state_engine/src/contracts.py"
       - "services/market_state_engine/src/service.py"
+      - "services/market_state_engine/src/errors.py"
     legacy_wrapper:
       - "market_state_engine/main.py"
       - "market_state_engine/app.py"
       - "market_state_engine/routes.py"
       - "market_state_engine/contracts.py"
       - "market_state_engine/service.py"
+      - "market_state_engine/errors.py"
 
   - name: event_center_new
     current_path: "event_center_new/"
