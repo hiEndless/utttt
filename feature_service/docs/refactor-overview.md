@@ -1,5 +1,10 @@
 # feature_service 重构完成态说明
 
+实现路径说明：
+
+- canonical：`services/feature_service/src/*`
+- 兼容壳：`feature_service/*`（迁移窗口内保留）
+
 ## 1. 重构完成后的主要功能
 
 ### 1.1 结构化特征生产（Feature Layer）

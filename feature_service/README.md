@@ -208,7 +208,7 @@ feature_service/
 当前过渡实现已经改为：
 
 - `feature_service` 自己负责组装 `raw_market_structure`
-- 底层 `orderbook / open_interest / horizons / behavioral` 默认使用 `feature_service/providers/market_structure_migrated` 本地迁移实现
+- 底层 `orderbook / open_interest / horizons / behavioral` 默认使用 `services/feature_service/src/providers/market_structure_migrated` 本地迁移实现（`feature_service/providers/market_structure_migrated` 为兼容副本）
 - 基础 `indicators` 已通过 Redis provider 直接读取 `data_server` 产出
 - `derived_metrics` 已开始在本层汇总为稳定摘要特征
   - `indicator_metrics`
@@ -253,7 +253,7 @@ service = FeatureService.from_bundle(bundle)
 
 说明：
 
-- `build_independent_provider_bundle()` 默认优先使用迁移版结构 provider（已本地化到 `feature_service/providers/market_structure_migrated`）
+- `build_independent_provider_bundle()` 默认优先使用迁移版结构 provider（已本地化到 `services/feature_service/src/providers/market_structure_migrated`）
 - 结构 provider 在运行异常时会自动降级到静态 provider，避免服务不可用
 - 如果指标读取依赖不可用，会自动回退到 Noop 指标 provider，保证服务仍可启动
 - `app.py` 仅使用独立装配路径（`build_independent_provider_bundle`）
@@ -281,7 +281,7 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 17：复制旧 `market_structure` 到 `providers/market_structure_migrated` 并建立本地 redis helper
 - 已完成 Task 18：迁移目录 import 已批量改为 `feature_service` 内部引用
 - 已完成 Task 19：迁移 provider 入口改为本地模块并通过最小功能链路自检
-- 已完成 Task 20：`feature_service/providers` 路径下已无 `agent_server` 运行时 import
+- 已完成 Task 20：provider 实现已去除 `agent_server` 运行时 import（当前主实现路径：`services/feature_service/src/providers`）
 - 已完成 Task 21：为 provider 降级路径增加日志（fallback 触发点与指标 provider 回退）
 - 已完成 Task 22：新增 provider 降级行为测试（primary 异常时 fallback 生效）
 - 已完成 Task 23：新增 `get_raw_structure`/`get_features` 输出契约测试
