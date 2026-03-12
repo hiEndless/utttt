@@ -216,6 +216,45 @@ def test_agent_execution_adapter_marks_legacy_confidence_source() -> None:
     assert payload["risk_hints"]["decision_confidence_source"] == "confidence_legacy"
 
 
+def test_agent_execution_adapter_normalizes_alternative_source_summary_in_risk_hints() -> None:
+    payload = adapt_agent_execution_plan_to_decision_intent(
+        decision_id="dec-agent-004",
+        exchange="binance",
+        symbol="ETHUSDT",
+        plan={
+            "action": "add",
+            "direction": "long",
+            "decision_confidence": {"level": "medium", "score": 0.6},
+            "alternative_source_summary": {
+                "available_sources": ["onchain", "noise", "news"],
+                "provider_states": {"onchain": "event_evidence_present", "news": "primary", "x": "bad"},
+                "data_sources": {"onchain": "event_center_new.onchain", "news": "feature_service.news"},
+                "inference_sources": {"onchain": "event_center_new.selector", "news": "feature_service.normalizer"},
+                "feature_keys": {"onchain": ["inflow_usd", "inflow_usd"], "news": ["headline_score"]},
+                "evidence_counts": {"onchain": 2, "news": "1", "social": -2},
+                "debug_only": {"x": 1},
+            },
+        },
+        cross_horizon_policy={},
+    )
+    hints = dict(payload.get("risk_hints") or {})
+    alt = dict(hints.get("alternative_source_summary") or {})
+    assert set(alt.keys()) >= {
+        "available_sources",
+        "unavailable_sources",
+        "provider_states",
+        "data_sources",
+        "inference_sources",
+        "feature_keys",
+        "evidence_counts",
+    }
+    assert alt.get("available_sources") == ["news", "onchain"]
+    assert dict(alt.get("provider_states") or {}).get("onchain") == "event_evidence_present"
+    assert dict(alt.get("provider_states") or {}).get("social") == ""
+    assert dict(alt.get("evidence_counts") or {}).get("social") == 0
+    assert "debug_only" not in alt
+
+
 def test_semantic_chain_smoke_provider_state_risk_flags_and_decision_confidence() -> None:
     async def _run() -> None:
         state_service = MarketStateService(
