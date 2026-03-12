@@ -337,6 +337,7 @@ class TradeEventWorkflow:
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
 
         if self._symbol_memory_recorder is not None:
+            contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
             await self._symbol_memory_recorder.record_symbol_memory(
                 event.exchange,
                 event.symbol,
@@ -362,6 +363,7 @@ class TradeEventWorkflow:
                         "direction": plan.direction,
                         "notes": plan.notes,
                     },
+                    "contract_warnings": contract_warnings,
                     "execution_result": dict(execution_result or {}),
                 },
             )

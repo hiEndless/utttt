@@ -230,6 +230,7 @@ signal_event + active_events + MSL
 
 - 一次执行：`python -m services.agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
 - 循环执行：`python -m services.agent_server_new.memory_summary_runner --loop --interval-s 60`
+- summary 现包含契约告警聚合：`contract_warning_count`、`contract_warning_event_count`、`contract_warning_type_count`、`recent_contract_warning_types`
 
 ## Memory Observability
 

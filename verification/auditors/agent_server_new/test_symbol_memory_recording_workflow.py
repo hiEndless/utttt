@@ -45,6 +45,11 @@ class _MarketState:
                 "policy_reason": "timeframe_aligned",
             },
             state_features={"evidence": {}, "anomalies": {}},
+            anomaly_flags=[
+                "state_features_semantic_contract_missing",
+                "msl_meta_schema_version_missing",
+                "external_event_input_ignored",
+            ],
         )
 
 
@@ -121,7 +126,13 @@ def test_trade_event_workflow_records_symbol_memory():
         mem = await memory.get_symbol_memory("binance", "ETHUSDT", limit=2)
         assert mem["summary"]["event_count"] == 1
         assert mem["summary"]["last_plan_action"] == "add"
+        assert mem["summary"]["contract_warning_count"] == 2
+        assert "state_features_semantic_contract_missing" in list(mem["summary"]["recent_contract_warning_types"] or [])
         assert mem["recent"][0]["event_id"] == "evt-memory-001"
+        warnings = list(mem["recent"][0].get("contract_warnings") or [])
+        assert "state_features_semantic_contract_missing" in warnings
+        assert "msl_meta_schema_version_missing" in warnings
+        assert "external_event_input_ignored" not in warnings
 
     import pytest
 

@@ -37,10 +37,14 @@ def build_symbol_memory_summary(
     signal_direction_count = {"long": 0, "short": 0, "none": 0}
     signal_verdict_count = {"accept": 0, "reject": 0, "uncertain": 0}
     plan_action_count: Dict[str, int] = {}
+    contract_warning_count = 0
+    contract_warning_event_count = 0
+    contract_warning_type_count: Dict[str, int] = {}
 
     for rec in records:
         signal = _safe_dict(rec.get("signal"))
         plan = _safe_dict(rec.get("plan"))
+        warnings = [str(x) for x in list(rec.get("contract_warnings") or []) if str(x or "").strip()]
         direction = str(signal.get("direction") or "none").strip().lower()
         verdict = str(signal.get("verdict") or "uncertain").strip().lower()
         action = str(plan.get("action") or "hold").strip().lower()
@@ -51,6 +55,11 @@ def build_symbol_memory_summary(
         signal_direction_count[direction] += 1
         signal_verdict_count[verdict] += 1
         plan_action_count[action] = int(plan_action_count.get(action, 0)) + 1
+        if warnings:
+            contract_warning_event_count += 1
+        contract_warning_count += len(warnings)
+        for warn in warnings:
+            contract_warning_type_count[warn] = int(contract_warning_type_count.get(warn, 0)) + 1
 
     trend_bias = "neutral"
     if signal_direction_count["long"] > signal_direction_count["short"]:
@@ -61,6 +70,19 @@ def build_symbol_memory_summary(
     latest = records[-1] if records else {}
     latest_signal = _safe_dict(latest.get("signal"))
     latest_plan = _safe_dict(latest.get("plan"))
+    recent_contract_warning_types: List[str] = []
+    seen = set()
+    for rec in reversed(records):
+        warnings = [str(x) for x in list(rec.get("contract_warnings") or []) if str(x or "").strip()]
+        for warn in warnings:
+            if warn in seen:
+                continue
+            seen.add(warn)
+            recent_contract_warning_types.append(warn)
+            if len(recent_contract_warning_types) >= 5:
+                break
+        if len(recent_contract_warning_types) >= 5:
+            break
 
     return {
         "exchange": ex,
@@ -76,6 +98,10 @@ def build_symbol_memory_summary(
         "signal_direction_count": signal_direction_count,
         "signal_verdict_count": signal_verdict_count,
         "plan_action_count": plan_action_count,
+        "contract_warning_count": int(contract_warning_count),
+        "contract_warning_event_count": int(contract_warning_event_count),
+        "contract_warning_type_count": contract_warning_type_count,
+        "recent_contract_warning_types": recent_contract_warning_types,
         "trend_bias": trend_bias,
         "updated_ts": now,
     }

@@ -66,12 +66,15 @@ def test_redis_symbol_memory_adapter_record_and_read():
                     "event_id": f"evt-{i}",
                     "signal": {"direction": "long", "verdict": "accept"},
                     "plan": {"action": "add", "direction": "long"},
+                    "contract_warnings": ["state_features_semantic_contract_missing"] if i >= 3 else [],
                 },
             )
 
         out = await adapter.get_symbol_memory("binance", "ETHUSDT", limit=2)
         assert out["summary"]["event_count"] == 3
         assert out["summary"]["last_decision_ts"] == 1004
+        assert out["summary"]["contract_warning_count"] == 2
+        assert out["summary"]["contract_warning_event_count"] == 2
         assert len(out["recent"]) == 2
         assert out["recent"][0]["event_id"] == "evt-3"
         assert out["recent"][1]["event_id"] == "evt-4"
