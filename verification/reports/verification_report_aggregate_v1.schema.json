@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VerificationReportAggregateV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "verification_report_count",
+    "report_count",
+    "passed",
+    "failed",
+    "pass_rate",
+    "avg_duration_ms",
+    "latest_finished_at_ms",
+    "suites",
+    "semantic_audit_count",
+    "semantic_error_count",
+    "semantic_warning_count",
+    "latest_semantic_report_path",
+    "memory_summary_run_count",
+    "latest_memory_summary_report_path",
+    "memory_high_risk_symbol_count",
+    "memory_top_risk_score",
+    "memory_high_risk_symbols",
+    "memory_alert_code_count",
+    "memory_top_alert_codes"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "verification-report-aggregate-v1"
+    },
+    "verification_report_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "report_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "passed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pass_rate": {
+      "type": "number",
+      "minimum": 0
+    },
+    "avg_duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_finished_at_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "suite",
+          "count",
+          "passed",
+          "failed",
+          "avg_duration_ms",
+          "latest_finished_at_ms"
+        ],
+        "properties": {
+          "suite": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "passed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "avg_duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "latest_finished_at_ms": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "semantic_audit_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "semantic_error_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "semantic_warning_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_semantic_report_path": {
+      "type": "string"
+    },
+    "memory_summary_run_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_memory_summary_report_path": {
+      "type": "string"
+    },
+    "memory_high_risk_symbol_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "memory_top_risk_score": {
+      "type": "number",
+      "minimum": 0
+    },
+    "memory_high_risk_symbols": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "memory_alert_code_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "memory_top_alert_codes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "alert_code",
+          "count",
+          "symbols",
+          "symbol_count"
+        ],
+        "properties": {
+          "alert_code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "symbols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "symbol_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
