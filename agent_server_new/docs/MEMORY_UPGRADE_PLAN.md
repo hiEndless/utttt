@@ -93,7 +93,7 @@ Markdown 策略：
 2. 上下文注入侧已落地 TTL/去重/Top-K 过滤。
 3. 已新增后台整理骨架：
 - job：`agent_server_new/app/jobs/symbol_memory_summary_job.py`
-- runner：`python -m agent_server_new.memory_summary_runner`
+- runner：`python -m services.agent_server_new.memory_summary_runner`
 
 ## Phase 2（生产增强，2-4 周）
 

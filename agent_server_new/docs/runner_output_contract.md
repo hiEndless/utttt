@@ -5,7 +5,7 @@
 适用命令：
 
 ```bash
-python -m agent_server_new.runner ... --print-json
+python -m services.agent_server_new.main ... --print-json
 ```
 
 Schema 文件：
@@ -64,7 +64,7 @@ Schema 文件：
 ### 4.1 Shell + jq
 
 ```bash
-OUT="$(python -m agent_server_new.runner \
+OUT="$(python -m services.agent_server_new.main \
   --exchange binance \
   --symbol ETHUSDT \
   --signal-direction long \
@@ -84,7 +84,7 @@ proc = subprocess.run(
     [
         "python",
         "-m",
-        "agent_server_new.runner",
+        "services.agent_server_new.main",
         "--exchange",
         "binance",
         "--symbol",

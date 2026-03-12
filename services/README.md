@@ -43,9 +43,5 @@ Pilot migration note:
 - runtime implementation moved to `services/execution_service/runtime/main.py`.
 - `event_center_new` legacy wrappers are fully removed.
 - runtime entrypoints are `services/event_center_new/runtime/main.py` and `services/event_center_new/runtime/replay_main.py`.
-- `agent_server_new/runner.py` is now a legacy wrapper.
-- runtime implementation moved to `services/agent_server_new/runtime/runner.py`.
-- `agent_server_new/pipeline_smoke.py` is now a legacy wrapper.
-- runtime implementation moved to `services/agent_server_new/runtime/pipeline_smoke.py`.
-- `agent_server_new/memory_summary_runner.py` is now a legacy wrapper.
-- runtime implementation moved to `services/agent_server_new/runtime/memory_summary_runner.py`.
+- `agent_server_new` legacy wrappers are fully removed.
+- runtime entrypoints are `services/agent_server_new/runtime/runner.py`, `services/agent_server_new/runtime/pipeline_smoke.py`, and `services/agent_server_new/runtime/memory_summary_runner.py`.

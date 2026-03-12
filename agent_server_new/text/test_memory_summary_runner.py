@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import agent_server_new.memory_summary_runner as runner
+import services.agent_server_new.runtime.memory_summary_runner as runner
 
 
 def test_memory_summary_runner_dry_run(capsys):

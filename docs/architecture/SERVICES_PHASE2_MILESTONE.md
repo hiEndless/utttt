@@ -97,15 +97,15 @@
 
 6. `agent_server_new/runner.py`
 - migrated impl: `services/agent_server_new/runtime/runner.py`
-- legacy wrapper kept: `agent_server_new/runner.py`
+- legacy wrapper status: removed in 27 (decommission batch-a phase-1)
 
 7. `agent_server_new/pipeline_smoke.py`
 - migrated impl: `services/agent_server_new/runtime/pipeline_smoke.py`
-- legacy wrapper kept: `agent_server_new/pipeline_smoke.py`
+- legacy wrapper status: removed in 27 (decommission batch-a phase-1)
 
 8. `agent_server_new/memory_summary_runner.py`
 - migrated impl: `services/agent_server_new/runtime/memory_summary_runner.py`
-- legacy wrapper kept: `agent_server_new/memory_summary_runner.py`
+- legacy wrapper status: removed in 27 (decommission batch-a phase-1)
 
 9. `feature_service/app.py`
 - migrated impl: `services/feature_service/src/app.py`
@@ -191,3 +191,4 @@
 24. 已执行 `market_state_engine` 下线 Batch C（阶段1）：删除 `market_state_engine/factors/**/*.py` 与 `market_state_engine/state_inference/**/*.py` 兼容壳。
 25. 已执行 `market_state_engine` 下线 Batch D（阶段1）：删除 `market_state_engine/{__init__,main,service,engine}.py` 兼容壳，服务进入 fully-migrated 状态。
 26. 已执行 `event_center_new` 下线 Batch A（阶段1）：删除 `event_center_new/{main,replay_main}.py` 兼容壳，并将测试/守卫迁移到 `services.event_center_new.runtime.*`。
+27. 已执行 `agent_server_new` 下线 Batch A（阶段1）：删除 `agent_server_new/{runner,pipeline_smoke,memory_summary_runner}.py` 兼容壳，并迁移测试到 `services.agent_server_new.runtime.*`。

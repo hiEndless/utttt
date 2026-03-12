@@ -195,17 +195,17 @@ signal_event + active_events + MSL
 
 ## CLI Smoke Test
 
-- 最小运行入口：`python -m agent_server_new.runner --dry-run`
+- 最小运行入口：`python -m services.agent_server_new.main --dry-run`
 - 单次执行示例：
-  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --payload-json '{"event_type":"manual_signal"}'`
-  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
-  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
-  - `python -m agent_server_new.runner --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
+  - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --payload-json '{"event_type":"manual_signal"}'`
+  - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
+  - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
+  - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
 
 ## Memory Summary Runner
 
-- 一次执行：`python -m agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
-- 循环执行：`python -m agent_server_new.memory_summary_runner --loop --interval-s 60`
+- 一次执行：`python -m services.agent_server_new.memory_summary_runner --limit-symbols 500 --summary-window 50`
+- 循环执行：`python -m services.agent_server_new.memory_summary_runner --loop --interval-s 60`
 
 ## Memory Observability
 
@@ -220,9 +220,9 @@ signal_event + active_events + MSL
 ## One-shot Pipeline Smoke
 
 - 单进程串联 `market_state_engine -> agent_server_new`：
-  - `python -m agent_server_new.pipeline_smoke --dry-run`
-  - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
-  - `python -m agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
+  - `python -m services.agent_server_new.pipeline_smoke --dry-run`
+  - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
+  - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 
 ## Contract Guards
 

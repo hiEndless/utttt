@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_server_new import pipeline_smoke
+from services.agent_server_new.runtime import pipeline_smoke
 
 
 def test_pipeline_smoke_dry_run(capsys):

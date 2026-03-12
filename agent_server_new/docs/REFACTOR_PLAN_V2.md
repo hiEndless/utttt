@@ -91,10 +91,10 @@ feature_service
 - `agent_server_new.app.create_trade_event_workflow_from_env`
 
 2. CLI：
-- `python -m agent_server_new.runner --dry-run`
+- `python -m services.agent_server_new.main --dry-run`
 
 3. one-shot pipeline smoke：
-- `python -m agent_server_new.pipeline_smoke --dry-run`
+- `python -m services.agent_server_new.pipeline_smoke --dry-run`
 - 单进程串联 `market_state_engine -> agent_server_new`
 
 ## 7. 与 execution_service 的契约方向

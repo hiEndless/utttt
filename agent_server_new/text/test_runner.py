@@ -6,7 +6,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import agent_server_new.runner as runner
+import services.agent_server_new.runtime.runner as runner
 
 
 class _FakeWorkflow:
