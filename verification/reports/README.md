@@ -16,6 +16,7 @@ Symbol memory summary report (optional):
 ```bash
 bash tools/local/run_agent_memory_summary_report.sh \
   verification/reports/memory_summary.latest.json
+bash tools/local/run_agent_memory_summary_report.sh --help
 ```
 
 Aggregate reports:
