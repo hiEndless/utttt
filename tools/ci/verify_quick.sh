@@ -11,6 +11,7 @@ if ! bash tools/local/check_docs_contracts_bundle.sh; then
   exit 1
 fi
 bash tools/local/check_release_baseline_alignment.sh
+bash tools/local/check_prod_provider_modes_guard.sh
 bash tools/ci/verify_all.sh --quick
 bash tools/local/sync_contract_indexes.sh
 bash tools/local/audit_semantics.sh

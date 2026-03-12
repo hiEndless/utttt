@@ -19,6 +19,7 @@
 | `check_script_compat_whitelist.sh` | Y | N | 外层基础守卫 |
 | `check_docs_contracts_bundle.sh` | Y | N | 外层文档契约聚合守卫（含 `test_contract_change_bundle_guard.py`） |
 | `check_release_baseline_alignment.sh` | Y | N | 外层发布基线一致性守卫（RELEASE_LATEST/tag/HEAD） |
+| `check_prod_provider_modes_guard.sh` | Y | N | 外层 prod provider/sink 门禁守卫（agent+execution） |
 | `check_contract_docs_index_guard.sh` | N | Y | 通过 `quick` suite 的 `contract_docs_index` 执行 |
 | `check_contract_docs_index_help_snapshot_guard.sh` | N | Y | 同上 |
 | `check_state_to_agent_contract_guard.sh` | N | Y | 通过 `state_to_agent` 执行 |
