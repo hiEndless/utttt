@@ -7,7 +7,7 @@ set -euo pipefail
 #   STATE_BASE_URL=http://127.0.0.1:8002 \
 #   EXCHANGE=binance \
 #   SYMBOL=ETHUSDT \
-#   bash scripts/integration_smoke_new_arch.sh
+#   bash tools/local/integration_smoke_new_arch.sh
 
 FEATURE_BASE_URL="${FEATURE_BASE_URL:-http://127.0.0.1:8001}"
 STATE_BASE_URL="${STATE_BASE_URL:-http://127.0.0.1:8002}"

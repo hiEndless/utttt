@@ -18,22 +18,22 @@
 
 1. `.github/workflows/*` 已从 `scripts/ci_event_center_*.sh` 切换为 `tools/ci/*`。
 2. workflow 守卫已改为校验 `tools/ci/*` 入口。
-3. 相关 `scripts/ci_event_center_*.sh` 已转为 compatibility wrappers。
+3. 相关 `scripts/ci_event_center_*.sh` 已下线（移除兼容 wrappers）。
 
 ### Batch B: Snapshot/help pinning
 
 状态：已完成（2026-03-12）
 
 1. 已完成：`contract_docs_index`、`market_state_engine`、`event_center` 帮助快照守卫目标切换到 `tools/*`。
-2. 快照守卫已连续通过，相关 `scripts/*` 路径已转为 compatibility wrapper。
+2. 快照守卫已连续通过，相关 `scripts/*` 路径已下线。
 
 ### Batch C: Text wiring pinning
 
 状态：已完成（2026-03-12）
 
 1. `check_event_center_guard_wiring` 已切到扫描 `tools/local/*` 主入口。
-2. `check_new_arch_guards` 已迁移到 `tools/local`，`scripts/*` 仅保留 wrapper。
-3. hard-pinned 清单已清零，后续进入 wrapper 下线窗口。
+2. `check_new_arch_guards` 已迁移到 `tools/local`，legacy wrapper 已下线。
+3. hard-pinned 清单已清零，兼容 wrapper 已清零。
 
 ## 4. 下线门禁
 

@@ -2,8 +2,8 @@
 
 ## Purpose
 
-During directory refactor, some `scripts/*` files cannot be removed or renamed yet,
-because they are still hard-pinned by workflows, snapshot guards, or text-wiring guards.
+This document records the compatibility whitelist lifecycle during directory refactor.
+As of 2026-03-12, legacy `scripts/*` compatibility wrappers have been fully retired.
 
 Canonical machine-readable source:
 - `verification/guards/script_compat_whitelist.yaml`
@@ -17,23 +17,23 @@ Validation command:
 ## Current Boundary
 
 1. Workflow-pinned scripts
-- Trigger path or workflow job hard references require keeping script path stable.
+- None.
 
 2. Snapshot/help-pinned scripts
-- `--help` output snapshots and keyline snapshots bind exact script entrypoint behavior.
+- None.
 
 3. Text-wiring-pinned scripts
-- Some guards parse script source text for specific wiring lines, so pure wrapper replacement may break guards.
+- None.
 
 4. Compatibility wrappers
-- Several scripts are now thin wrappers to `tools/local/*`; they are retained during compatibility window.
+- None.
 
 ## Exit Criteria
 
 1. Replace workflow references with `tools/ci/*` paths and update workflow guards.
 2. Move snapshot guards to inspect `tools/*` entrypoints (then refresh snapshots).
 3. Replace text-scanning guards with semantic checks (AST/command intent) or retarget to `tools/*` files.
-4. After one stable iteration window, remove `scripts/*` compatibility wrappers in batches.
+4. Completed: `scripts/*` compatibility wrappers removed.
 
 Detailed plan:
 - `docs/operations/SCRIPT_HARD_PINNED_DECOMMISSION_PLAN.md`

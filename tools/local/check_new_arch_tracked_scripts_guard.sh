@@ -5,10 +5,10 @@ set -euo pipefail
 # 关键新架构脚本必须纳入版本管理，避免“本地可跑但仓库未纳管”。
 
 REQUIRED_SCRIPTS=(
-  "scripts/check_feature_contract_guard.sh"
-  "scripts/check_feature_service_schema_guard.sh"
-  "scripts/check_runner_output_schema_guard.sh"
-  "scripts/integration_smoke_new_arch.sh"
+  "tools/local/check_feature_contract_guard.sh"
+  "tools/local/check_feature_service_schema_guard.sh"
+  "tools/local/check_runner_output_schema_guard.sh"
+  "tools/local/integration_smoke_new_arch.sh"
 )
 
 echo "[1/2] 检查关键脚本文件存在"

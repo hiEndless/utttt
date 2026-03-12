@@ -17,9 +17,9 @@
 - snapshot/help hard-pinned：0
 - text wiring hard-pinned：0
 - hard-pinned 唯一路径总计：0
-- compatibility wrappers retained：42
+- compatibility wrappers retained：0
 
-结论：脚本层已进入“兼容窗口治理阶段”，不再是“迁移实施阶段”。
+结论：脚本层兼容治理已完成，`scripts/*` 兼容壳已清零。
 
 ## 3. Remaining Hard-Pinned Scripts
 
@@ -31,18 +31,12 @@
 
 ## 4. Gap To Final End-State
 
-距“最终可移除大部分 scripts 兼容壳”的差距主要在三类依赖：
-
-1. Workflow path pinning  
-2. Help/snapshot pinning  
-3. Text source wiring guard pinning
-
-这些是治理问题，不是目录重构本体问题。
+已无脚本兼容壳与 hard-pinned 依赖差距。
 
 ## 5. Next Actions (Recommended)
 
-1. 进入 compatibility wrapper 下线批次（按兼容窗口策略逐批删除 `scripts/*`）。  
-2. 同步更新 workflow/path filter 与守卫文档，确保仅引用 `tools/*` 主入口。
+1. 维持 `tools/*` 主入口稳定，禁止回退新增 `scripts/*` 依赖。  
+2. 继续将历史文档中的 legacy 路径说明收敛为归档信息。
 
 ## 6. Validation Commands
 
