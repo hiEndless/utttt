@@ -51,5 +51,9 @@ def test_normalize_features_payload_clamps_invalid_alternative_provider_state():
     alt = out["alternative_sources"]
     assert alt["news"]["provider_state"] == "ok"
     assert alt["news"]["available"] is True
+    assert alt["news"]["data_source"] == "feature_service.news"
+    assert alt["news"]["inference_source"] == "feature_service.normalizer"
     assert alt["social"]["provider_state"] == "empty"
     assert alt["social"]["available"] is False
+    assert alt["social"]["data_source"] == "feature_service.social"
+    assert alt["social"]["inference_source"] == "feature_service.normalizer"

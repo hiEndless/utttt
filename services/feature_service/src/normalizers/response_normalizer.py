@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from contracts.semantic_policies.source_semantics import (
     get_alternative_source_allowed_provider_states,
     get_alternative_source_unavailable_provider_states,
+    get_market_state_feature_fallback_data_source,
+    get_market_state_feature_fallback_inference_source,
 )
 
 VALID_HORIZONS = ("short_term", "mid_term", "long_term")
@@ -62,6 +64,8 @@ def normalize_features_payload(features: Any) -> Dict[str, Any]:
     def _normalize_alt_entry(source_type: str, payload: Any) -> Dict[str, Any]:
         raw = _safe_dict(payload)
         features = _safe_dict(raw.get("features"))
+        default_data_source = get_market_state_feature_fallback_data_source(source_type)
+        default_inference_source = get_market_state_feature_fallback_inference_source()
         available = bool(raw.get("available")) if "available" in raw else bool(features)
         provider_state = str(raw.get("provider_state") or ("ok" if available else "empty")).strip().lower()
         if provider_state in _UNAVAILABLE_PROVIDER_STATES and not features:
@@ -72,6 +76,8 @@ def normalize_features_payload(features: Any) -> Dict[str, Any]:
             "source_type": source_type,
             "available": available,
             "provider_state": provider_state,
+            "data_source": str(raw.get("data_source") or raw.get("source") or default_data_source).strip() or default_data_source,
+            "inference_source": str(raw.get("inference_source") or default_inference_source).strip() or default_inference_source,
             "as_of_ms": raw.get("as_of_ms"),
             "features": features,
         }
