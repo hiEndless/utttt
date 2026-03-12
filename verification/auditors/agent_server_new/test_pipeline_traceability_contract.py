@@ -17,6 +17,15 @@ from services.agent_server_new.domain.strategy_gate import StrategyGateResult
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 from services.market_state_engine.src.service import MarketStateService
 
+_ALT_SUMMARY_REQUIRED_KEYS = {
+    "available_sources",
+    "unavailable_sources",
+    "provider_states",
+    "data_sources",
+    "inference_sources",
+    "feature_keys",
+}
+
 
 def _sample_raw_market_structure() -> Dict[str, Any]:
     return {
@@ -222,6 +231,7 @@ def test_pipeline_traceability_selected_event_to_decision_trace():
 
         alt_item = next((x for x in features if str((x or {}).get("name") or "") == "alternative_source_summary"), {})
         alt_value = dict((alt_item or {}).get("value") or {})
+        assert _ALT_SUMMARY_REQUIRED_KEYS.issubset(set(alt_value.keys()))
         provider_states = dict(alt_value.get("provider_states") or {})
         data_sources = dict(alt_value.get("data_sources") or {})
         inference_sources = dict(alt_value.get("inference_sources") or {})

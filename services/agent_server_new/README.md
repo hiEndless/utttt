@@ -69,6 +69,7 @@ data_server
    - `anomaly_flags`
    - `state_features.evidence.alternative_sources`（news/social/onchain 标准化证据包，agent 侧汇总为 `alternative_source_summary`）
    - `alternative_source_summary.available_sources` 使用“有效可用”语义：`provider_state=noop/empty/unavailable/none` 且 `features` 为空时视为不可用
+   - `alternative_source_summary` required keys：`available_sources/unavailable_sources/provider_states/data_sources/inference_sources/feature_keys`
    - `alternative_source_summary.provider_states` 允许值（agent 汇总视角）：`primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
    - 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`（`alternative_sources_summary.provider_state_policy`）
 
