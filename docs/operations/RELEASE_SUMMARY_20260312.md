@@ -1,0 +1,57 @@
+# Release Summary 2026-03-12
+
+更新时间：2026-03-12
+
+## 1. 发布标识
+
+- 分支：`master`
+- 基线 tag：`refactor-guard-baseline-20260312`
+- 基线 commit：`c7f562e`
+
+## 2. 本轮核心变更
+
+1. contract/entry guard 对齐
+- 新增并接入 `event_center` 合同入口守卫。
+- feature/state/execution/event_center 四服务入口守卫拓扑对齐。
+
+2. 版本联动与反漂移
+- 引入并强化 `contract_change_bundle_guard`：
+  - 支持 `event_center_runtime_config_version` 版本锚点联动四件套校验。
+  - 新增 `--show-detected-versions` 调试输出。
+- docs bundle 与 verify_quick 失败路径自动给出（并执行）标准排障命令。
+
+3. execution 破坏性变更升版
+- `execution-schema-mapping` 从 `v15` 升至 `v16`。
+- 同步 code/schema/manifest/CONTRACT_INDEX/docs/tests。
+
+4. 文档与运行手册收敛
+- 统一 operations 文档中的标准排障文案。
+- 增加 baseline 记录与索引入口。
+
+## 3. 关键验证结果
+
+- `bash tools/ci/verify_quick.sh` -> pass
+- `bash tools/ci/new_arch_guards_full.sh --quick` -> pass
+- `bash tools/local/check_docs_contracts_bundle.sh` -> pass
+- `bash tools/local/check_contract_docs_index_guard.sh` -> pass
+
+## 4. 标准排障命令
+
+```bash
+bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions
+```
+
+## 5. 回滚建议
+
+如需快速回滚到封板前稳定点，优先基于 tag 检出：
+
+```bash
+git checkout refactor-guard-baseline-20260312
+```
+
+如需回滚单模块，建议按服务维度回滚并重跑以下最小验证：
+
+```bash
+bash tools/local/check_docs_contracts_bundle.sh
+bash tools/local/check_execution_breaking_version_bump_guard.sh
+```

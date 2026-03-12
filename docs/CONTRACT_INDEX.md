@@ -14,6 +14,7 @@
 - `docs/operations/VERIFY_QUICK_DEDUP_MATRIX.md`
 - `docs/operations/VERIFY_QUICK_TIMING_BASELINE.md`
 - `docs/operations/RELEASE_BASELINE_20260312.md`
+- `docs/operations/RELEASE_SUMMARY_20260312.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
