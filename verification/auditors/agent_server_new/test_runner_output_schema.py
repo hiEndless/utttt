@@ -48,7 +48,7 @@ def _validate(schema: Dict[str, Any], payload: Dict[str, Any]) -> bool:
 
 
 def test_runner_output_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "agent_server_new" / "docs" / "runner_output.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "docs" / "runner_output.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     samples = [

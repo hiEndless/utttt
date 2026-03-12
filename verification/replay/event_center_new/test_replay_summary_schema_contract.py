@@ -12,7 +12,7 @@ from services.event_center_new.runtime.replay_main import _to_summary_report
 
 
 def _load_schema() -> dict:
-    path = Path(PROJECT_ROOT) / "services" / "event_center_new" / "docs" / "replay_summary.schema.json"
+    path = Path(PROJECT_ROOT) / "services" /  "event_center_new" / "docs" / "replay_summary.schema.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 

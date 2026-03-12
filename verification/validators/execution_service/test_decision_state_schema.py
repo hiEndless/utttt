@@ -10,7 +10,7 @@ from verification.validators.execution_service.schema_utils import validate_payl
 
 
 def test_decision_state_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "execution_service" / "docs" / "decision_state.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_state.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     good = {
@@ -56,7 +56,7 @@ def test_decision_state_schema_samples() -> None:
         "updated_at_ms": 1760000000001,
     }
     assert validate_payload_with_local_refs(
-        schema, good, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_reconciled = {
@@ -69,7 +69,7 @@ def test_decision_state_schema_samples() -> None:
         "updated_at_ms": 1760000000002,
     }
     assert validate_payload_with_local_refs(
-        schema, good_reconciled, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_reconciled, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     bad = {
@@ -82,5 +82,5 @@ def test_decision_state_schema_samples() -> None:
         "updated_at_ms": 1760000000001,
     }
     assert not validate_payload_with_local_refs(
-        schema, bad, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )

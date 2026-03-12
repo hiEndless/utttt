@@ -10,7 +10,7 @@ from verification.validators.execution_service.schema_utils import validate_payl
 
 
 def test_execution_result_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "execution_service" / "docs" / "execution_result.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "execution_result.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     good = {
@@ -22,7 +22,7 @@ def test_execution_result_schema_samples() -> None:
         "notes": "当前仓位已达上限"
     }
     assert validate_payload_with_local_refs(
-        schema, good, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_submit_fail = {
@@ -93,7 +93,7 @@ def test_execution_result_schema_samples() -> None:
         },
     }
     assert validate_payload_with_local_refs(
-        schema, good_submit_fail, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_submit_fail, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     bad = {
@@ -103,5 +103,5 @@ def test_execution_result_schema_samples() -> None:
         "applied_risk_rules": []
     }
     assert not validate_payload_with_local_refs(
-        schema, bad, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )

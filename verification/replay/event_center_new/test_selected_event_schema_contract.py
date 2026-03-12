@@ -12,7 +12,7 @@ from event_center_new.ec.pipeline.replay_cli import validate_selected_contract
 
 
 def _load_schema() -> dict:
-    path = Path(PROJECT_ROOT) / "event_center_new" / "docs" / "selected_event.schema.json"
+    path = Path(PROJECT_ROOT) / "services" / "event_center_new" / "docs" / "selected_event.schema.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 

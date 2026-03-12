@@ -17,7 +17,7 @@ def _enum_from(schema: dict, path: list[str]) -> tuple[str, ...]:
 
 
 def test_retry_meta_schema_enum_matches_constants() -> None:
-    schema_path = PROJECT_ROOT / "execution_service" / "docs" / "retry_meta.schema.json"
+    schema_path = PROJECT_ROOT / "services" / "execution_service" / "docs" / "retry_meta.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     enum_values = _enum_from(schema, ["properties", "status"])
     assert enum_values
@@ -26,13 +26,13 @@ def test_retry_meta_schema_enum_matches_constants() -> None:
 
 def test_retry_meta_schema_enum_matches_main_schemas() -> None:
     retry_meta_schema = json.loads(
-        (PROJECT_ROOT / "execution_service" / "docs" / "retry_meta.schema.json").read_text(encoding="utf-8")
+        (PROJECT_ROOT / "services" / "execution_service" / "docs" / "retry_meta.schema.json").read_text(encoding="utf-8")
     )
     result_schema = json.loads(
-        (PROJECT_ROOT / "execution_service" / "docs" / "execution_result.schema.json").read_text(encoding="utf-8")
+        (PROJECT_ROOT / "services" / "execution_service" / "docs" / "execution_result.schema.json").read_text(encoding="utf-8")
     )
     reconcile_schema = json.loads(
-        (PROJECT_ROOT / "execution_service" / "docs" / "execution_reconcile_result.schema.json").read_text(
+        (PROJECT_ROOT / "services" / "execution_service" / "docs" / "execution_reconcile_result.schema.json").read_text(
             encoding="utf-8"
         )
     )

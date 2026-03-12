@@ -10,7 +10,7 @@ from execution_service.domain.risk_check_meta import RISK_CHECK_SCOPES, RISK_CHE
 
 
 def test_risk_check_scopes_and_statuses_match_signal_result_schema_enum() -> None:
-    schema_path = PROJECT_ROOT / "execution_service" / "docs" / "risk_checks.schema.json"
+    schema_path = PROJECT_ROOT / "services" / "execution_service" / "docs" / "risk_checks.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item_props = (
         schema.get("properties", {})

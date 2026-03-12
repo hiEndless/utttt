@@ -10,7 +10,7 @@ from verification.validators.execution_service.schema_utils import validate_payl
 
 
 def test_decision_intent_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     good = {
@@ -26,7 +26,7 @@ def test_decision_intent_schema_samples() -> None:
         "trace_id": "trace-001"
     }
     assert validate_payload_with_local_refs(
-        schema, good, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     bad = {
@@ -41,5 +41,5 @@ def test_decision_intent_schema_samples() -> None:
         "risk_hints": {}
     }
     assert not validate_payload_with_local_refs(
-        schema, bad, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )

@@ -12,7 +12,7 @@ from agent_server_new.adapters.active_events_redis import RedisActiveEventsProvi
 
 
 def _load_selected_schema() -> dict:
-    path = Path(PROJECT_ROOT) / "event_center_new" / "docs" / "selected_event.schema.json"
+    path = Path(PROJECT_ROOT) / "services" / "event_center_new" / "docs" / "selected_event.schema.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 

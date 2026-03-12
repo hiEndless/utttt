@@ -73,7 +73,7 @@ def test_build_risk_checks_marks_failure_by_threshold() -> None:
 
 
 def test_build_risk_checks_items_match_signal_result_schema() -> None:
-    schema_path = ROOT_DIR / "execution_service" / "docs" / "risk_checks.schema.json"
+    schema_path = ROOT_DIR / "services" / "execution_service" / "docs" / "risk_checks.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item_schema = (
         schema.get("properties", {})
@@ -101,6 +101,6 @@ def test_build_risk_checks_items_match_signal_result_schema() -> None:
         symbol_exposure_ratio=0.2,
         max_symbol_exposure_ratio=0.5,
     )
-    base_dir = ROOT_DIR / "execution_service" / "docs"
+    base_dir = ROOT_DIR / "services" / "execution_service" / "docs"
     for item in checks:
         assert validate_payload_with_local_refs(item_schema, item, base_dir)

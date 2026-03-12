@@ -15,7 +15,7 @@ from services.market_state_engine.src.service import MarketStateService
 
 
 def _load_schema() -> Dict[str, Any]:
-    path = Path(PROJECT_ROOT) / "market_state_engine" / "docs" / "msl.schema.json"
+    path = Path(PROJECT_ROOT) / "services" / "market_state_engine" / "docs" / "msl.schema.json"
     return json.loads(path.read_text(encoding="utf-8"))
 
 

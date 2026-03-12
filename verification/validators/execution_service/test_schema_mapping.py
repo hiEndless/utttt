@@ -20,7 +20,7 @@ def _read_json_path(doc: dict, path: str):
 
 
 def test_schema_mapping_manifest_is_valid() -> None:
-    mapping_path = PROJECT_ROOT / "execution_service" / "docs" / "schema_mapping.json"
+    mapping_path = PROJECT_ROOT / "services" / "execution_service" / "docs" / "schema_mapping.json"
     data = json.loads(mapping_path.read_text(encoding="utf-8"))
     assert data.get("version") == SCHEMA_MAPPING_VERSION
     last_updated = str(data.get("last_updated") or "").strip()

@@ -18,7 +18,7 @@ def _enum_from_node(node: dict, *, depth: int = 0) -> tuple[str, ...]:
     assert ref, "status 节点缺少 enum/$ref"
     rel, _, path = ref.partition("#")
     assert rel and path, "status.$ref 必须包含相对路径与 JSON Pointer"
-    ref_schema = json.loads((PROJECT_ROOT / "execution_service" / "docs" / rel).read_text(encoding="utf-8"))
+    ref_schema = json.loads((PROJECT_ROOT / "services" / "execution_service" / "docs" / rel).read_text(encoding="utf-8"))
     ref_node = ref_schema
     for part in path.lstrip("/").split("/"):
         ref_node = ref_node[part]
@@ -26,7 +26,7 @@ def _enum_from_node(node: dict, *, depth: int = 0) -> tuple[str, ...]:
 
 
 def test_reconcile_status_codes_match_schema_enum() -> None:
-    schema_path = PROJECT_ROOT / "execution_service" / "docs" / "execution_reconcile_result.schema.json"
+    schema_path = PROJECT_ROOT / "services" / "execution_service" / "docs" / "execution_reconcile_result.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     status_node = dict(schema.get("properties", {}).get("status") or {})
     enum_values = _enum_from_node(status_node)

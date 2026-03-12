@@ -10,7 +10,7 @@ from verification.validators.execution_service.schema_utils import validate_payl
 
 
 def test_execution_reconcile_result_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "execution_service" / "docs" / "execution_reconcile_result.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "execution_reconcile_result.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     good_mock = {
@@ -29,7 +29,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000000,
     }
     assert validate_payload_with_local_refs(
-        schema, good_mock, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_mock, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_exchange = {
@@ -57,7 +57,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000001,
     }
     assert validate_payload_with_local_refs(
-        schema, good_exchange, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_exchange, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_failed = {
@@ -72,7 +72,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000002,
     }
     assert validate_payload_with_local_refs(
-        schema, good_failed, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_failed, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_in_progress = {
@@ -84,7 +84,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000003,
     }
     assert validate_payload_with_local_refs(
-        schema, good_in_progress, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, good_in_progress, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     bad = {
@@ -94,5 +94,5 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000000,
     }
     assert not validate_payload_with_local_refs(
-        schema, bad, Path(PROJECT_ROOT) / "execution_service" / "docs"
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )

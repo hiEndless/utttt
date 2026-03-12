@@ -10,9 +10,9 @@ from verification.validators.execution_service.schema_utils import validate_payl
 
 
 def test_risk_policy_schema_samples() -> None:
-    schema_path = Path(PROJECT_ROOT) / "execution_service" / "docs" / "risk_policy.schema.json"
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "risk_policy.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    base_dir = Path(PROJECT_ROOT) / "execution_service" / "docs"
+    base_dir = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
 
     good = {
         "max_position_size": 1.0,
