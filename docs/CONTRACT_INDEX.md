@@ -8,6 +8,7 @@
 - `docs/ARCHITECTURE_NEW.md`
 - `docs/CONTRACTS_QUICK_REF.md`
 - `docs/contract_docs_index_help_snapshot.txt`
+- `docs/new_arch_guards_help_snapshot.txt`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
