@@ -4,8 +4,8 @@ set -euo pipefail
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'USAGE'
 用法:
-  bash scripts/check_contract_docs_index_guard.sh
-  bash scripts/check_contract_docs_index_guard.sh --help
+  bash tools/local/check_contract_docs_index_guard.sh
+  bash tools/local/check_contract_docs_index_guard.sh --help
 
 受强约束入口（required_entries）:
   - docs/ALERT_CODES.md

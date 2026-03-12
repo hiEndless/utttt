@@ -28,7 +28,7 @@ if [[ "$MODE" != "all" ]]; then
 fi
 
 echo "[1/3] event_center runtime 守卫"
-bash scripts/check_event_center_runtime_guard.sh
+bash tools/local/check_event_center_runtime_guard.sh
 
 echo "[2/3] event_center runtime 文档守卫"
 bash tools/local/check_event_center_runtime_doc_guard.sh

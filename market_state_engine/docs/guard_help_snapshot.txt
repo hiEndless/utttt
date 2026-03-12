@@ -1,6 +1,6 @@
 用法:
-  bash scripts/check_market_state_engine_guard.sh
-  bash scripts/check_market_state_engine_guard.sh --help
+  bash tools/local/check_market_state_engine_guard.sh
+  bash tools/local/check_market_state_engine_guard.sh --help
 
 守卫目标:
   1) market_state_engine 核心实现不得回归 sentiment_state

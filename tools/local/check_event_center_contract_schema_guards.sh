@@ -5,8 +5,8 @@ MODE="${1:-all}"
 if [[ "$MODE" == "--help" || "$MODE" == "-h" ]]; then
   cat <<'EOF'
 用法:
-  bash scripts/check_event_center_contract_schema_guards.sh
-  bash scripts/check_event_center_contract_schema_guards.sh --quick
+  bash tools/local/check_event_center_contract_schema_guards.sh
+  bash tools/local/check_event_center_contract_schema_guards.sh --quick
 EOF
   exit 0
 fi
@@ -32,7 +32,7 @@ fi
 
 if [[ "$MODE" == "--quick" ]]; then
   echo "[2/2] event_center selected_event schema 守卫（quick）"
-  bash scripts/check_event_center_selected_schema_guard.sh
+  bash tools/local/check_event_center_selected_schema_guard.sh
   echo "[通过] event_center 契约/Schema 守卫检查完成（quick）。"
   exit 0
 fi
@@ -44,15 +44,15 @@ if [[ "$MODE" != "all" ]]; then
 fi
 
 echo "[2/5] event_center replay 守卫"
-bash scripts/check_event_center_replay_guard.sh
+bash tools/local/check_event_center_replay_guard.sh
 
 echo "[3/5] event_center replay strict CI 守卫"
-bash scripts/check_event_center_replay_strict_ci.sh
+bash tools/local/check_event_center_replay_strict_ci.sh
 
 echo "[4/5] event_center selected_event schema 守卫"
-bash scripts/check_event_center_selected_schema_guard.sh
+bash tools/local/check_event_center_selected_schema_guard.sh
 
 echo "[5/5] event_center replay summary schema 守卫"
-bash scripts/check_event_center_replay_summary_schema_guard.sh
+bash tools/local/check_event_center_replay_summary_schema_guard.sh
 
 echo "[通过] event_center 契约/Schema 守卫检查完成。"

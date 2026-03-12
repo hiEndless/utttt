@@ -1,7 +1,7 @@
 用法:
-  bash scripts/check_event_center_contract_guards.sh
-  bash scripts/check_event_center_contract_guards.sh --quick
-  bash scripts/check_event_center_contract_guards.sh [--quick] [--strict-wiring|--lenient-wiring]
+  bash tools/local/check_event_center_contract_guards.sh
+  bash tools/local/check_event_center_contract_guards.sh --quick
+  bash tools/local/check_event_center_contract_guards.sh [--quick] [--strict-wiring|--lenient-wiring]
 
 失败码（子守卫失败时输出 FAIL_CODE=...）:
   EC_GUARD_SCHEMA_FAILED
