@@ -10,6 +10,7 @@
 ## 2. 主入口
 
 - 全量守卫：`tools/ci/new_arch_guards_full.sh`
+  - 显式包含来源语义门禁：`check_source_semantics_guard.sh`
 - 快速验证：`tools/ci/verify_quick.sh`
 - 回归验证：`tools/ci/verify_regression.sh`
 - 夜间验证：`tools/ci/verify_nightly.sh`

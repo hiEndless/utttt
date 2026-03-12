@@ -7,6 +7,9 @@ bash tools/local/check_new_arch_tracked_scripts_guard.sh
 echo "[2/27] 契约变更四件套守卫"
 bash tools/local/check_contract_change_bundle_guard.sh
 
+echo "[附加] 来源语义守卫"
+bash tools/local/check_source_semantics_guard.sh
+
 echo "[3/27] 发布基线对齐守卫"
 bash tools/local/check_release_baseline_alignment.sh
 
