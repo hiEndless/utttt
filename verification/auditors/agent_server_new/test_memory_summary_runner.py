@@ -10,10 +10,11 @@ import services.agent_server_new.runtime.memory_summary_runner as runner
 
 
 def test_memory_summary_runner_dry_run(capsys):
-    code = runner.main(["--dry-run", "--limit-symbols", "123", "--summary-window", "77"])
+    code = runner.main(["--dry-run", "--limit-symbols", "123", "--summary-window", "77", "--top-risk-n", "9"])
     assert code == 0
     out = capsys.readouterr().out.strip()
     payload = json.loads(out)
     assert payload["dry_run"] is True
     assert payload["limit_symbols"] == 123
     assert payload["summary_window"] == 77
+    assert payload["top_risk_n"] == 9

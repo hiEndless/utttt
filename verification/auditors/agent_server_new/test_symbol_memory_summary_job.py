@@ -21,6 +21,7 @@ def test_run_symbol_memory_summary_once():
                 "event_id": "evt-1",
                 "signal": {"direction": "long", "verdict": "accept"},
                 "plan": {"action": "add", "direction": "long"},
+                "contract_warnings": ["state_features_semantic_contract_missing"],
             },
         )
         await memory.record_symbol_memory(
@@ -31,6 +32,7 @@ def test_run_symbol_memory_summary_once():
                 "event_id": "evt-2",
                 "signal": {"direction": "short", "verdict": "accept"},
                 "plan": {"action": "add", "direction": "short"},
+                "contract_warnings": [],
             },
         )
 
@@ -38,10 +40,15 @@ def test_run_symbol_memory_summary_once():
             maintenance=memory,
             limit_symbols=10,
             summary_window=20,
+            top_risk_n=2,
         )
         assert result["ok"] is True
         assert result["total_symbols"] == 2
         assert result["success_symbols"] == 2
+        top = list(result.get("high_risk_symbols") or [])
+        assert len(top) == 2
+        assert top[0]["symbol"] == "ETHUSDT"
+        assert top[0]["contract_warning_count"] >= top[1]["contract_warning_count"]
 
         eth = await memory.get_symbol_memory("binance", "ETHUSDT", limit=3)
         btc = await memory.get_symbol_memory("binance", "BTCUSDT", limit=3)
