@@ -28,7 +28,14 @@
     "execution_confidence_only_requests",
     "execution_decision_confidence_requests",
     "execution_confidence_alias_mismatch_rejections",
-    "execution_legacy_confidence_usage_ratio"
+    "execution_legacy_confidence_usage_ratio",
+    "agent_readyz_report_count",
+    "latest_agent_readyz_report_path",
+    "agent_readyz_ok",
+    "agent_readyz_status_level",
+    "agent_readyz_warning_count",
+    "agent_readyz_error_count",
+    "agent_readyz_errors"
   ],
   "properties": {
     "schema_version": {
@@ -199,6 +206,35 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1
+    },
+    "agent_readyz_report_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latest_agent_readyz_report_path": {
+      "type": "string"
+    },
+    "agent_readyz_ok": {
+      "type": "boolean"
+    },
+    "agent_readyz_status_level": {
+      "type": "string",
+      "enum": ["green", "yellow", "red"]
+    },
+    "agent_readyz_warning_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "agent_readyz_error_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "agent_readyz_errors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   }
 }

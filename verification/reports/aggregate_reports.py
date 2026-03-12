@@ -31,6 +31,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "semantic-audit-v1",
                 "symbol-memory-summary-run-v1",
                 "execution-confidence-metrics-v1",
+                "agent-readyz-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -80,6 +81,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             or isinstance(x.get("confidence_migration_metrics"), dict)
         )
     ]
+    agent_readyz_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-readyz-report-v1"]
 
     total = len(verification_reports)
     passed = 0
@@ -215,6 +217,35 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             float(execution_confidence_only_requests) / float(denom), 6
         )
 
+    agent_readyz_report_count = len(agent_readyz_reports)
+    latest_agent_readyz_report_path = ""
+    agent_readyz_ok = False
+    agent_readyz_status_level = "red"
+    agent_readyz_warning_count = 0
+    agent_readyz_error_count = 0
+    agent_readyz_errors: List[str] = []
+    if agent_readyz_reports:
+        latest_agent_readyz = max(
+            agent_readyz_reports,
+            key=lambda x: max(
+                _to_int(x.get("collected_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_agent_readyz_report_path = str(latest_agent_readyz.get("_path") or "")
+        agent_readyz_ok = bool(latest_agent_readyz.get("ok"))
+        level = str(latest_agent_readyz.get("status_level") or "").strip().lower()
+        agent_readyz_status_level = level if level in {"green", "yellow", "red"} else ("green" if agent_readyz_ok else "red")
+        warnings = latest_agent_readyz.get("warnings")
+        errors = latest_agent_readyz.get("errors")
+        if isinstance(warnings, list):
+            agent_readyz_warning_count = len([x for x in warnings if str(x or "").strip()])
+        if isinstance(errors, list):
+            normalized_errors = [str(x or "").strip() for x in errors if str(x or "").strip()]
+            agent_readyz_error_count = len(normalized_errors)
+            agent_readyz_errors = sorted(set(normalized_errors))
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -242,6 +273,13 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "execution_decision_confidence_requests": execution_decision_confidence_requests,
         "execution_confidence_alias_mismatch_rejections": execution_confidence_alias_mismatch_rejections,
         "execution_legacy_confidence_usage_ratio": execution_legacy_confidence_usage_ratio,
+        "agent_readyz_report_count": agent_readyz_report_count,
+        "latest_agent_readyz_report_path": latest_agent_readyz_report_path,
+        "agent_readyz_ok": agent_readyz_ok,
+        "agent_readyz_status_level": agent_readyz_status_level,
+        "agent_readyz_warning_count": agent_readyz_warning_count,
+        "agent_readyz_error_count": agent_readyz_error_count,
+        "agent_readyz_errors": agent_readyz_errors,
     }
 
 

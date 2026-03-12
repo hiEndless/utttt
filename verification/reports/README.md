@@ -6,6 +6,7 @@ Schema:
 - `verification_report.schema.json`
 - `verification_report_v2.schema.json`
 - `verification_report_aggregate_v1.schema.json`
+- `agent_readyz_report_v1.schema.json`
 
 Example:
 ```bash
@@ -18,6 +19,13 @@ Symbol memory summary report (optional):
 bash tools/local/run_agent_memory_summary_report.sh \
   verification/reports/memory_summary.latest.json
 bash tools/local/run_agent_memory_summary_report.sh --help
+```
+
+Agent readyz report (optional):
+```bash
+bash tools/local/run_agent_readyz_report.sh \
+  verification/reports/agent_readyz.latest.json
+bash tools/local/run_agent_readyz_report.sh --help
 ```
 
 Aggregate reports:
@@ -52,13 +60,15 @@ bash tools/local/aggregate_and_check.sh --skip-thresholds --compact
 
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
-  and semantic audit reports (`semantic-audit-v1`), and symbol memory summary reports (`symbol-memory-summary-run-v1`).
+  and semantic audit reports (`semantic-audit-v1`), symbol memory summary reports (`symbol-memory-summary-run-v1`),
+  and agent readyz reports (`agent-readyz-report-v1`).
 - Summary includes:
   - `report_count/passed/failed/pass_rate` (verification suites)
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`
   - `memory_summary_run_count/memory_high_risk_symbol_count/memory_top_risk_score/memory_high_risk_symbols`
   - `memory_alert_code_count/memory_top_alert_codes`（告警码维度 TopN 与受影响 symbol 集合）
   - `execution_confidence_*`（execution 迁移指标快照与 `execution_legacy_confidence_usage_ratio`）
+  - `agent_readyz_*`（agent 可用性分级快照：`green/yellow/red`、warning/error 计数）
 
 Check thresholds:
 ```bash

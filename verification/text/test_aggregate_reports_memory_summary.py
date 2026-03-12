@@ -57,6 +57,16 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 "confidence_alias_mismatch_rejections": 1,
             },
         },
+        {
+            "schema_version": "agent-readyz-report-v1",
+            "collected_at_ms": 3500,
+            "ok": False,
+            "status_level": "red",
+            "runtime_profile": "prod",
+            "warnings": ["market_state_unreachable"],
+            "errors": ["event_recorder_low_disk", "market_state_unreachable"],
+            "checks": {"market_state_healthz": {"ok": False}},
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -82,3 +92,9 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["execution_decision_confidence_requests"] == 8
     assert out["execution_confidence_alias_mismatch_rejections"] == 1
     assert float(out["execution_legacy_confidence_usage_ratio"]) == 0.2
+    assert out["agent_readyz_report_count"] == 1
+    assert out["agent_readyz_ok"] is False
+    assert out["agent_readyz_status_level"] == "red"
+    assert out["agent_readyz_warning_count"] == 1
+    assert out["agent_readyz_error_count"] == 2
+    assert out["agent_readyz_errors"] == ["event_recorder_low_disk", "market_state_unreachable"]
