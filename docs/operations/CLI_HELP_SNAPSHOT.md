@@ -10,6 +10,7 @@
 bash tools/local/run_agent_memory_summary_report.sh --help
 bash tools/local/verify_report_aggregate.sh --help
 bash tools/local/aggregate_and_check.sh --help
+bash tools/local/check_cli_help_snapshot_guard.sh
 ```
 
 ## `tools/local/run_agent_memory_summary_report.sh --help`
@@ -58,4 +59,3 @@ Options:
   --skip-thresholds             仅聚合，不执行阈值检查
   --help, -h                    显示帮助
 ```
-

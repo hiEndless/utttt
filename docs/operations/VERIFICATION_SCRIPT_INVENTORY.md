@@ -30,6 +30,7 @@
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
 - event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
 - event_center runtime mode 门禁守卫：`tools/local/check_event_center_runtime_mode_guard.sh`
+- CLI 帮助快照守卫：`tools/local/check_cli_help_snapshot_guard.sh`
 
 ### 2.1 调试参数（contract bundle）
 
@@ -50,6 +51,7 @@
 - `check_semantic_policy_guard.sh`
 - `check_cross_service_time_semantics_doc_guard.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
+- `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --quick`
 
@@ -58,6 +60,7 @@
 - `check_structure.sh`
 - `check_script_compat_whitelist.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
+- `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --event-center-quick`
 - `sync_contract_indexes.sh`
@@ -69,6 +72,7 @@
 - `check_structure.sh`
 - `check_script_compat_whitelist.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
+- `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --report-json=verification/reports/nightly.latest.json`
 - `sync_contract_indexes.sh`
