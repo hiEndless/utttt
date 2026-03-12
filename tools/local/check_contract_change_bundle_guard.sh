@@ -51,6 +51,12 @@ if [[ "${SHOW_HELP:-0}" -eq 1 ]]; then
 调试:
   --show-detected-versions
     输出 BASE_REF 与 HEAD 的 runtime 版本探测值（index/manifest/version.py/runtime.md）。
+    示例（脱敏）:
+      [debug] detected_versions base_ref=HEAD~1 head=HEAD
+        - contract_index: base='event-center-runtime-v1' head='event-center-runtime-v2'
+        - manifest: base='event-center-runtime-v1' head='event-center-runtime-v2'
+        - version_py: base='event-center-runtime-v1' head='event-center-runtime-v2'
+        - runtime_doc: base='event-center-runtime-v1' head='event-center-runtime-v2'
 USAGE
   exit 0
 fi
