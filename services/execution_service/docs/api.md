@@ -354,14 +354,13 @@
 
 ## 状态提供器模式
 
-`execution_service` 支持两种运行模式：
+`execution_service` 当前状态提供器仅支持 `redis` 模式：
 
-1. `stub`：兼容别名（内部仍使用 redis providers + fail-open 默认值，不再使用 stub adapter 装配）
-2. `redis`（默认）：从 Redis 读取仓位/账户/策略状态（Redis 不可用时 fail-open 返回默认状态）
+1. `redis`（默认）：从 Redis 读取仓位/账户/策略状态（Redis 不可用时 fail-open 返回默认状态）
 
 环境变量：
 
-- `EXECUTION_STATE_PROVIDER_MODE=stub|redis`
+- `EXECUTION_STATE_PROVIDER_MODE=redis`
 - `EXECUTION_RUNTIME_PROFILE=dev|prod`（默认 `dev`）
 - `EXECUTION_REDIS_URL`
 - `EXECUTION_POSITION_KEY_TEMPLATE`

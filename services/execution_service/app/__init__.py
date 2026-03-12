@@ -36,10 +36,8 @@ def create_app() -> FastAPI:
     runtime_profile = str(os.getenv("EXECUTION_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     redis_client = None
     cfg = None
-    if state_provider_mode not in {"redis", "stub"}:
+    if state_provider_mode != "redis":
         raise RuntimeError(f"unsupported EXECUTION_STATE_PROVIDER_MODE={state_provider_mode}")
-    if state_provider_mode == "stub":
-        logger.warning("EXECUTION_STATE_PROVIDER_MODE=stub is deprecated, using redis providers with fail-open defaults")
     cfg = RedisExecutionStateConfig.from_env()
     redis_client = create_redis_client_from_env(cfg.redis_url)
     position_provider = RedisPositionStateProvider(
