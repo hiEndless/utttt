@@ -24,6 +24,20 @@
   - `Fallback*Provider`
   - `Unavailable*Provider`
 
+统一最小返回结构（已落地）：
+
+```json
+{
+  "source_type": "news|social|onchain",
+  "available": false,
+  "provider_state": "primary|fallback|static|noop|unavailable|empty",
+  "as_of_ms": null,
+  "features": {}
+}
+```
+
+- 目的：即使未来数据源暂未接入主链路，也保证 provider 输出字段稳定，避免空字典导致语义漂移。
+
 ## 作用
 
 - 为未来新闻/社交/链上特征接入提供统一接口形态。
