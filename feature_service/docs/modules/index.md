@@ -8,7 +8,7 @@
 
 兼容说明：
 
-- `feature_service/*` 仍保留兼容壳（迁移窗口内可继续导入），但不再作为主实现维护路径。
+- `feature_service/main.py` 仍保留兼容入口；其余模块级兼容壳已完成下线（见 `docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）。
 
 重构完成态总览文档：
 

@@ -1,7 +1,7 @@
 # Feature Service Compat Wrapper Decommission
 
 更新时间：2026-03-12  
-状态：active (batch-b completed)
+状态：completed (batch-c completed)
 
 ## 1. 目标
 
@@ -55,15 +55,15 @@
 
 - `feature_service/providers/market_structure_migrated/**/*.py`
 
-说明：
-
-- `behavioral/behavior_output.py` 当前用于旧路径猴子补丁测试兼容，需先完成测试改造后再删除。
-
 前置门禁：
 
 1. 测试不再 monkeypatch 旧路径模块符号。
 2. `services/feature_service/src/providers/market_structure_migrated/` 全量回归稳定。
 3. quick + regression + nightly 全部通过。
+
+执行结果：
+
+- 已完成（2026-03-12）
 
 ## 4. 执行检查单（每批）
 
@@ -88,7 +88,7 @@
 
 ## 6. 当前建议起步
 
-先执行 Batch A 的 dry-run：
+已完成，进入维护阶段：
 
 1. `bash tools/local/check_feature_legacy_imports.sh --strict`
 2. `./venv/bin/pytest -q feature_service/text`

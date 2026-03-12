@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service batch-b wrappers removed)
+状态：in_progress (feature_service batch-c wrappers removed)
 
 ## 1. 目标
 
@@ -83,7 +83,7 @@
 
 19. `feature_service/providers/market_structure_migrated/`
 - migrated impl: `services/feature_service/src/providers/market_structure_migrated/`
-- compatibility state: `feature_service/providers/market_structure_migrated/` 目录保留，绝大多数文件已改为兼容壳；`behavioral/behavior_output.py` 保留旧路径猴子补丁兼容实现
+- legacy wrapper status: removed in batch C
 
 ## 3. 保障机制
 
@@ -106,3 +106,4 @@
 5. 兼容壳下线草案已落地：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`。
 6. 已完成 Batch A：删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳。
 7. 已完成 Batch B：删除 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/` 目录到 Batch C）。
+8. 已完成 Batch C：删除 `feature_service/providers/market_structure_migrated/` 兼容目录。

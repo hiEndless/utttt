@@ -8,7 +8,7 @@ services:
   - name: feature_service
     current_path: "feature_service/"
     target_path: "services/feature_service/"
-    status: "batch_b_wrappers_removed"
+    status: "batch_c_wrappers_removed"
     scaffold_readme: "services/feature_service/README.md"
     soft_entrypoints:
       - "services/feature_service/main.py"
@@ -41,7 +41,6 @@ services:
       - "services/feature_service/src/ports/social_provider.py"
     legacy_wrapper:
       - "feature_service/main.py"
-      - "feature_service/providers/market_structure_migrated"
 
   - name: market_state_engine
     current_path: "market_state_engine/"

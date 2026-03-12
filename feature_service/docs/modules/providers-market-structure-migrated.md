@@ -3,8 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/src/providers/market_structure_migrated/`
-- 兼容壳：`feature_service/providers/market_structure_migrated/`
-- 说明：兼容目录中绝大多数文件已切为转发壳，`behavioral/behavior_output.py` 保留旧路径猴子补丁兼容实现。
+- 兼容壳：已在 Batch C 下线
 
 
 ## 功能作用
