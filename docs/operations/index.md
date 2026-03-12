@@ -23,3 +23,5 @@ Canonical operations docs:
 使用建议：
 - 本地 quick 入口优先使用 `tools/local/verify_quick.sh`（代理到 `tools/ci/verify_quick.sh`）。
 - 本地 full 入口优先使用 `tools/local/verify_full.sh`（代理到 `tools/ci/new_arch_guards_full.sh`）。
+- `verify_quick` 的 `--skip-semantic-critical-warning-guard` / `--skip-release-baseline-alignment` 仅限本地调试；
+  CI 环境禁止启用对应 skip 变量（启用会直接失败）。
