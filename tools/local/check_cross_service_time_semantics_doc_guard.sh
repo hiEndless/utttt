@@ -63,11 +63,11 @@ for name, text in (
         errors.append(f"{name} missing ts_ms compatibility mention")
 
 if errors:
-    print("[failed] event_center time semantics doc guard")
+    print("[failed] cross-service time semantics doc guard")
     for err in errors:
         print(f"- {err}")
     raise SystemExit(1)
 
-print("[passed] event_center time semantics doc guard")
+print("[passed] cross-service time semantics doc guard")
 print("[info] checked time semantics references across event/state/agent/execution docs")
 PY
