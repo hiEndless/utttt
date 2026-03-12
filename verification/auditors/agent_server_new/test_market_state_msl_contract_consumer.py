@@ -17,7 +17,7 @@ MSL_ALLOWED_KEYS = {
     "liquidity_state",
     "positioning_state",
     "volatility_state",
-    "risk_state",
+    "market_risk_state",
     "market_structure_state",
     "key_levels",
     "anomalies",
@@ -53,7 +53,7 @@ def _sample_msl_payload() -> dict:
             "expansion_risk": "unknown",
             "volatility_direction": "upside",
         },
-        "risk_state": {
+        "market_risk_state": {
             "cascade_risk": "low",
             "squeeze_probability": "low",
             "reversal_risk": "low",

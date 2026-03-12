@@ -37,6 +37,7 @@ REQUIRED_FIELDS = {
     "msl",
     "market_state",
     "risk_bias",
+    "market_risk_state",
 }
 
 

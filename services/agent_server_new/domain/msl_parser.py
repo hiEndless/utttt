@@ -19,7 +19,8 @@ def _build_msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     ls = d.get("liquidity_state") or {}
     ps = d.get("positioning_state") or {}
     vs = d.get("volatility_state") or {}
-    rs = d.get("risk_state") or {}
+    # Prefer canonical market_risk_state; keep legacy risk_state as compatibility fallback.
+    rs = d.get("market_risk_state") or d.get("risk_state") or {}
     st = d.get("market_structure_state") or {}
     kl = d.get("key_levels") or {}
     return MarketStateMSL(

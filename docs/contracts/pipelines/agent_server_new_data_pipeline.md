@@ -596,9 +596,9 @@ ExecutionPlan：
 | liquidity_state.liquidity_risk | short_squeeze / long_squeeze / neutral / unknown |
 | positioning_state.crowding | crowded_long / crowded_short / balanced / unknown |
 | volatility_state.volatility_regime | low / normal / high / unknown |
-| risk_state.cascade_risk | high / medium / low / unknown |
-| risk_state.squeeze_probability | high / medium / low / unknown |
-| risk_state.reversal_risk | high / medium / low / unknown |
+| market_risk_state.cascade_risk | high / medium / low / unknown |
+| market_risk_state.squeeze_probability | high / medium / low / unknown |
+| market_risk_state.reversal_risk | high / medium / low / unknown |
 
 完整字段与枚举定义参考：
 - [msl.schema.json](services/market_state_engine/docs/msl.schema.json)

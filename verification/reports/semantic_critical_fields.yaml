@@ -9,4 +9,5 @@ critical_fields:
   - msl
   - ts_ms
   - market_state
+  - market_risk_state
   - risk_bias

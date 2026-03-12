@@ -120,6 +120,9 @@ def run_audit() -> dict[str, Any]:
                 if expected_shape == "integer" and shape == "integer":
                     ok = True
                     break
+                if expected_shape == "object" and shape == "object":
+                    ok = True
+                    break
             if not ok and occ:
                 warnings.append(f"field {name}: expected_shape={expected_shape} not observed")
 

@@ -8,6 +8,7 @@ sources:
 - services/execution_service/docs/decision_intent.schema.json
 - services/execution_service/docs/decision_state.schema.json
 - services/execution_service/docs/execution_result.schema.json
+- services/execution_service/docs/risk_state.schema.json
 - services/feature_service/docs/schemas/feature_response.schema.json
 - services/feature_service/docs/schemas/raw_structure_response.schema.json
 - services/market_state_engine/docs/msl.schema.json

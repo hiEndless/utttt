@@ -437,9 +437,9 @@ evidence 层为“少字段、稳定摘要”，既用于 LLM 可解释摘要，
 | market_phase | expansion / distribution / contraction / accumulation / unknown | [factors/regime.py](services/market_state_engine/src/factors/regime.py#L52-L66) | 推导 `market_regime.phase` |
 | range_state | breakout / range / breakdown / unknown | [factors/structure.py](services/market_state_engine/src/factors/structure.py#L6-L13) | `market_structure_state.range_state` |
 | trend_structure | hh_hl / lh_ll / mixed / unknown | [factors/structure.py](services/market_state_engine/src/factors/structure.py#L16-L24) | `market_structure_state.trend_structure` |
-| cascade_risk | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L48-L51) | `risk_state.cascade_risk` |
-| squeeze_probability | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L54-L77) | `risk_state.squeeze_probability` |
-| reversal_risk | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L79-L97) | `risk_state.reversal_risk` |
+| cascade_risk | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L48-L51) | `market_risk_state.cascade_risk` |
+| squeeze_probability | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L54-L77) | `market_risk_state.squeeze_probability` |
+| reversal_risk | high / medium / low / unknown | [factors/risk.py](services/market_state_engine/src/factors/risk.py#L79-L97) | `market_risk_state.reversal_risk` |
 
 ---
 
@@ -456,7 +456,7 @@ evidence 层为“少字段、稳定摘要”，既用于 LLM 可解释摘要，
 - liquidity_state（object）
 - positioning_state（object）
 - volatility_state（object）
-- risk_state（object）
+- market_risk_state（object）
 - market_structure_state（object）
 - key_levels（object）
 - anomalies（array[string]）
@@ -508,7 +508,7 @@ MSL 的枚举集合以 JSON Schema 为准：[msl.schema.json](services/market_st
 | expansion_risk | expanding / compressing / unknown |
 | volatility_direction | upside / downside / neutral / unknown |
 
-#### 9.2.5 risk_state
+#### 9.2.5 market_risk_state
 
 | 字段 | 枚举 |
 |---|---|

@@ -245,7 +245,7 @@ def test_state_inference_risk_only_profile_is_minimal_chain():
     assert payload["liquidity_state"]["dominant_pressure"] == "unknown"
     assert payload["market_structure_state"]["range_state"] == "unknown"
     # 风险字段仍应由 risk 插件给出有效等级（至少不是缺失）。
-    assert payload["risk_state"]["cascade_risk"] in {"high", "medium", "low", "unknown"}
+    assert payload["market_risk_state"]["cascade_risk"] in {"high", "medium", "low", "unknown"}
 
 
 def test_state_inference_multi_generator_same_schema():

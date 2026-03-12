@@ -23,7 +23,7 @@ def _sample_msl() -> dict:
         "liquidity_state": {"dominant_pressure": "buyers", "liquidity_risk": "neutral", "orderbook_bias": "neutral", "liquidation_proximity": "none"},
         "positioning_state": {"crowding": "balanced", "whale_bias": "unknown", "retail_bias": "unknown", "oi_trend": "expanding"},
         "volatility_state": {"volatility_regime": "normal", "expansion_risk": "unknown", "volatility_direction": "upside"},
-        "risk_state": {"cascade_risk": "low", "squeeze_probability": "low", "reversal_risk": "low"},
+        "market_risk_state": {"cascade_risk": "low", "squeeze_probability": "low", "reversal_risk": "low"},
         "market_structure_state": {"support_strength": "unknown", "resistance_strength": "unknown", "range_state": "breakout", "trend_structure": "hh_hl"},
         "key_levels": {"major_support": [], "major_resistance": [], "liquidation_clusters": []},
         "anomalies": [],

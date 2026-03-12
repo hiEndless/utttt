@@ -16,7 +16,7 @@ _MSL_REQUIRED_FIELDS = {
     "liquidity_state",
     "positioning_state",
     "volatility_state",
-    "risk_state",
+    "market_risk_state",
     "market_structure_state",
     "key_levels",
     "anomalies",
@@ -30,6 +30,9 @@ def _collect_msl_contract_anomalies(*, data: Dict[str, Any]) -> list[str]:
     msl_meta = dict(data.get("msl_meta") or {})
 
     missing = sorted([k for k in _MSL_REQUIRED_FIELDS if k not in msl_raw])
+    if "market_risk_state" in missing and "risk_state" in msl_raw:
+        missing.remove("market_risk_state")
+        anomalies.append("msl_contract_legacy_risk_state_alias")
     if missing:
         anomalies.append("msl_contract_missing_required_fields")
 

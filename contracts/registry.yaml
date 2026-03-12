@@ -53,6 +53,11 @@ entries:
     owner: "execution_service"
     kind: "schema"
 
+  - id: execution.risk_state
+    source: "services/execution_service/docs/risk_state.schema.json"
+    owner: "execution_service"
+    kind: "schema"
+
 semantic_policies:
   - "contracts/semantic_policies/field_semantics.yaml"
   - "contracts/semantic_policies/deprecation_policy.yaml"

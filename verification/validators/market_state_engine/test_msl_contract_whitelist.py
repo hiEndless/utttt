@@ -18,7 +18,7 @@ MSL_ALLOWED_KEYS = {
     "liquidity_state",
     "positioning_state",
     "volatility_state",
-    "risk_state",
+    "market_risk_state",
     "market_structure_state",
     "key_levels",
     "anomalies",

@@ -122,7 +122,7 @@ class MarketStateService:
                     "expansion_risk": "unknown",
                     "volatility_direction": "unknown",
                 },
-                "risk_state": {
+                "market_risk_state": {
                     "cascade_risk": "unknown",
                     "squeeze_probability": "unknown",
                     "reversal_risk": "unknown",

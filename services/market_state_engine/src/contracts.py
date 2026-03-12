@@ -140,7 +140,7 @@ class MarketStateMSL:
             "liquidity_state": self.liquidity.to_dict(),
             "positioning_state": self.positioning.to_dict(),
             "volatility_state": self.volatility.to_dict(),
-            "risk_state": self.risk.to_dict(),
+            "market_risk_state": self.risk.to_dict(),
             "market_structure_state": self.market_structure.to_dict(),
             "key_levels": self.key_levels.to_dict(),
             "anomalies": [str(x) for x in list(self.anomalies or []) if x],
