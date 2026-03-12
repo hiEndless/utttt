@@ -16,8 +16,6 @@ compatibility_wrappers_retained:
     target: "tools/local/check_contract_docs_index_guard.sh"
   - path: "scripts/check_market_state_engine_guard.sh"
     target: "tools/local/check_market_state_engine_guard.sh"
-  - path: "scripts/bump_event_center_runtime_version.sh"
-    target: "tools/local/bump_event_center_runtime_version.sh"
   - path: "scripts/check_execution_decision_intent_schema_guard.sh"
     target: "tools/local/check_execution_decision_intent_schema_guard.sh"
   - path: "scripts/check_execution_decision_state_schema_guard.sh"
