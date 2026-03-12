@@ -197,20 +197,20 @@
 }
 ```
 
-响应示例（mock）：
+响应示例（exchange dry-run）：
 
 ```json
 {
-  "mode": "mock",
-  "venue": "mock_exchange",
-  "order_id": "mock-order-001",
+  "mode": "exchange",
+  "venue": "binance",
+  "order_id": "binance-ord-001",
   "decision_id": "dec-001",
   "account_id": "main",
   "exchange": "binance",
   "symbol": "ETHUSDT",
-  "status": "filled",
-  "filled_qty": 1.0,
-  "avg_price": 1000.0,
+  "status": "submitted",
+  "filled_qty": 0.0,
+  "avg_price": null,
   "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
   "ts": 1760000000000,
   "ts_ms": 1760000000000
@@ -221,7 +221,7 @@
 
 ```json
 {
-  "mode": "mock",
+  "mode": "exchange",
   "order_id": "mock-order-err-001",
   "status": "failed",
   "reason_code": "reconcile_non_retryable_error",

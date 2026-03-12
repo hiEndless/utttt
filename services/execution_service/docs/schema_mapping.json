@@ -439,7 +439,7 @@
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",
           "json_path": "properties.io_mode.enum",
-          "expected": ["mock", "exchange"]
+          "expected": ["exchange"]
         },
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",

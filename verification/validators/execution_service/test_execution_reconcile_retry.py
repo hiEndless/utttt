@@ -24,7 +24,7 @@ class _RetryThenOkSink:
         if self.count == 1:
             raise RuntimeError("temporarily_unavailable")
         return {
-            "mode": "mock",
+            "mode": "exchange",
             "order_id": order_id,
             "decision_id": payload.get("decision_id"),
             "status": "filled",

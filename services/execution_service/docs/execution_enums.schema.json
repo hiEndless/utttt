@@ -13,7 +13,7 @@
     },
     "io_mode": {
       "type": "string",
-      "enum": ["mock", "exchange"]
+      "enum": ["exchange"]
     },
     "io_status": {
       "type": "string",

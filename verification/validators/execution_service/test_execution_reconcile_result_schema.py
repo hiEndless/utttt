@@ -13,9 +13,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
     schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "execution_reconcile_result.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    good_mock = {
-        "mode": "mock",
-        "venue": "mock_exchange",
+    good_exchange_filled = {
+        "mode": "exchange",
+        "venue": "binance",
         "order_id": "mock-order-001",
         "decision_id": "dec-001",
         "account_id": "main",
@@ -29,7 +29,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "ts": 1760000000000,
     }
     assert validate_payload_with_local_refs(
-        schema, good_mock, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+        schema, good_exchange_filled, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
     good_exchange = {
@@ -61,7 +61,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
     )
 
     good_failed = {
-        "mode": "mock",
+        "mode": "exchange",
         "order_id": "mock-order-err-001",
         "account_id": "main",
         "status": "failed",
@@ -76,7 +76,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
     )
 
     good_in_progress = {
-        "mode": "mock",
+        "mode": "exchange",
         "order_id": "mock-order-inprogress-001",
         "status": "submitted",
         "reason_code": "reconcile_in_progress",
@@ -88,7 +88,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
     )
 
     bad = {
-        "mode": "mock",
+        "mode": "exchange",
         "order_id": "",
         "status": "open",
         "ts": 1760000000000,
