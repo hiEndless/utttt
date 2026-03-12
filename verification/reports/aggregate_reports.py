@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
+_WARNING_TO_ALERT_CODE = {
+    "alternative_sources_conflict_detected": "AGENT_ALTERNATIVE_SOURCES_CONFLICT",
+}
+
+
 def _load_reports(pattern: str) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for path in sorted(glob.glob(pattern)):
@@ -36,6 +41,27 @@ def _to_int(v: Any, default: int = 0) -> int:
         return int(v)
     except Exception:
         return default
+
+
+def _collect_symbol_alert_codes(item: Dict[str, Any]) -> List[str]:
+    codes: List[str] = []
+    for key in ("alert_codes", "recent_alert_codes"):
+        raw = item.get(key)
+        if isinstance(raw, list):
+            for x in raw:
+                code = str(x or "").strip()
+                if code:
+                    codes.append(code)
+    warnings = item.get("recent_contract_warning_types")
+    if isinstance(warnings, list):
+        for x in warnings:
+            warn = str(x or "").strip()
+            if not warn:
+                continue
+            code = _WARNING_TO_ALERT_CODE.get(warn)
+            if code:
+                codes.append(code)
+    return sorted(set(codes))
 
 
 def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -109,6 +135,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     memory_high_risk_symbols: List[Dict[str, Any]] = []
     memory_high_risk_symbol_count = 0
     memory_top_risk_score = 0.0
+    memory_alert_codes: Dict[str, Dict[str, Any]] = {}
     if memory_summary_reports:
         latest_memory_summary = max(memory_summary_reports, key=lambda x: _to_int(x.get("ended_ms"), 0))
         latest_memory_summary_report_path = str(latest_memory_summary.get("_path") or "")
@@ -125,6 +152,31 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
                 ]
                 or [0.0]
             )
+            for row in memory_high_risk_symbols:
+                exchange = str(row.get("exchange") or "").strip().lower()
+                symbol = str(row.get("symbol") or "").strip().upper()
+                symbol_key = f"{exchange}:{symbol}" if exchange and symbol else symbol or exchange
+                if not symbol_key:
+                    continue
+                for code in _collect_symbol_alert_codes(row):
+                    slot = memory_alert_codes.setdefault(code, {"count": 0, "symbols": set()})
+                    slot["count"] = int(slot.get("count") or 0) + 1
+                    slot["symbols"].add(symbol_key)
+
+    memory_top_alert_codes = []
+    for code, payload in sorted(
+        memory_alert_codes.items(),
+        key=lambda kv: (-int(kv[1].get("count") or 0), kv[0]),
+    ):
+        symbols = sorted([str(x) for x in list(payload.get("symbols") or []) if str(x).strip()])
+        memory_top_alert_codes.append(
+            {
+                "alert_code": code,
+                "count": int(payload.get("count") or 0),
+                "symbols": symbols,
+                "symbol_count": len(symbols),
+            }
+        )
 
     return {
         "schema_version": "verification-report-aggregate-v1",
@@ -145,6 +197,8 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "memory_high_risk_symbol_count": memory_high_risk_symbol_count,
         "memory_top_risk_score": round(float(memory_top_risk_score), 6),
         "memory_high_risk_symbols": memory_high_risk_symbols,
+        "memory_alert_code_count": len(memory_top_alert_codes),
+        "memory_top_alert_codes": memory_top_alert_codes,
     }
 
 
