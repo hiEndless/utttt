@@ -8,10 +8,6 @@ hard_pinned_by_snapshot_or_help_guards: []
 hard_pinned_by_text_wiring_guards: []
 
 compatibility_wrappers_retained:
-  - path: "scripts/check_state_to_agent_contract_guard.sh"
-    target: "tools/local/check_state_to_agent_contract_guard.sh"
-  - path: "scripts/check_agent_to_execution_guard.sh"
-    target: "tools/local/check_agent_to_execution_guard.sh"
   - path: "scripts/check_execution_decision_intent_schema_guard.sh"
     target: "tools/local/check_execution_decision_intent_schema_guard.sh"
   - path: "scripts/check_execution_decision_state_schema_guard.sh"
