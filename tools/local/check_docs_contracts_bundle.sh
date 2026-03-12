@@ -8,7 +8,11 @@ echo "[docs 2/6] cross-service time semantics doc guard"
 bash tools/local/check_cross_service_time_semantics_doc_guard.sh
 
 echo "[docs 3/6] contract change bundle guard"
-bash tools/local/check_contract_change_bundle_guard.sh
+if ! bash tools/local/check_contract_change_bundle_guard.sh; then
+  echo "[hint] 可执行以下命令输出版本探测值用于排障："
+  echo "       bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions"
+  exit 1
+fi
 
 echo "[docs 4/6] contract bundle regression tests"
 ./venv/bin/pytest -q verification/validators/contracts/test_contract_change_bundle_guard.py
