@@ -4,18 +4,35 @@ set -euo pipefail
 LATEST_DOC="docs/operations/RELEASE_LATEST.md"
 SUMMARY_DOC="docs/operations/RELEASE_SUMMARY_20260312.md"
 HANDOFF_DOC="docs/operations/RELEASE_HANDOFF_20260312.md"
+SHOW_BLOCKS=0
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+for arg in "$@"; do
+  case "$arg" in
+    --show-blocks)
+      SHOW_BLOCKS=1
+      ;;
+    --help|-h)
+      cat <<'EOF'
 用法:
   bash tools/local/check_release_triage_block_guard.sh
+  bash tools/local/check_release_triage_block_guard.sh --show-blocks
 
 说明:
   校验 RELEASE_LATEST / RELEASE_SUMMARY_20260312 / RELEASE_HANDOFF_20260312
   三份文档中的“标准排障命令”代码块文本保持一致，防止运行手册漂移。
+
+参数:
+  --show-blocks   打印三份文档提取到的排障命令块（用于调试差异）
 EOF
-  exit 0
-fi
+      exit 0
+      ;;
+    *)
+      echo "[失败] 不支持的参数: $arg"
+      echo "使用 --help 查看可用参数。"
+      exit 1
+      ;;
+  esac
+done
 
 for doc in "$LATEST_DOC" "$SUMMARY_DOC" "$HANDOFF_DOC"; do
   if [[ ! -f "$doc" ]]; then
@@ -43,6 +60,15 @@ trap 'rm -f "$tmp_latest" "$tmp_summary" "$tmp_handoff"' EXIT
 extract_standard_triage_block "$LATEST_DOC" > "$tmp_latest"
 extract_standard_triage_block "$SUMMARY_DOC" > "$tmp_summary"
 extract_standard_triage_block "$HANDOFF_DOC" > "$tmp_handoff"
+
+if [[ "${SHOW_BLOCKS}" -eq 1 ]]; then
+  echo "[debug] latest block (${LATEST_DOC})"
+  cat "$tmp_latest"
+  echo "[debug] summary block (${SUMMARY_DOC})"
+  cat "$tmp_summary"
+  echo "[debug] handoff block (${HANDOFF_DOC})"
+  cat "$tmp_handoff"
+fi
 
 for pair in "latest:$tmp_latest" "summary:$tmp_summary" "handoff:$tmp_handoff"; do
   name="${pair%%:*}"
