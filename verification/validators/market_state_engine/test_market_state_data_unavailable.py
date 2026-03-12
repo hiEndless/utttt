@@ -12,6 +12,24 @@ from services.market_state_engine.src.errors import FeatureDataUnavailableFromUp
 from services.market_state_engine.src.routes import create_router
 from services.market_state_engine.src.service import MarketStateService
 
+_FUSION_REQUIRED_TOP_KEYS = {"preferred_source", "conflicts", "feature", "event_center", "merged"}
+_FUSION_REQUIRED_MERGED_KEYS = {"available_sources", "unavailable_sources", "by_source"}
+_FUSION_REQUIRED_BY_SOURCE_KEYS = {
+    "source_type",
+    "available",
+    "provider_state",
+    "data_source",
+    "inference_source",
+    "feature_data_source",
+    "event_data_source",
+    "feature_inference_source",
+    "event_inference_source",
+    "feature_keys",
+    "feature_available",
+    "event_available",
+    "event_evidence_count",
+}
+
 
 class _UnavailableRawProvider:
     async def get_raw_structure(self, exchange: str, symbol: str):
@@ -345,9 +363,13 @@ def test_market_state_route_e2e_includes_alternative_source_fusion_semantics_fie
     body = resp.json()
     evidence = dict(dict(body.get("state_features") or {}).get("evidence") or {})
     fusion = dict(evidence.get("alternative_sources_fusion") or {})
-    by_source = dict(dict(fusion.get("merged") or {}).get("by_source") or {})
+    assert _FUSION_REQUIRED_TOP_KEYS.issubset(set(fusion.keys()))
+    merged_block = dict(fusion.get("merged") or {})
+    assert _FUSION_REQUIRED_MERGED_KEYS.issubset(set(merged_block.keys()))
+    by_source = dict(merged_block.get("by_source") or {})
     for src in ("news", "social", "onchain"):
         node = dict(by_source.get(src) or {})
+        assert _FUSION_REQUIRED_BY_SOURCE_KEYS.issubset(set(node.keys()))
         assert str(node.get("provider_state") or "").strip()
         assert str(node.get("data_source") or "").strip()
         assert str(node.get("inference_source") or "").strip()
@@ -442,11 +464,15 @@ def test_market_state_service_builds_alternative_sources_fusion():
         out = await service.get_market_state("binance", "ETHUSDT")
         evidence = ((out.get("state_features") or {}).get("evidence") or {})
         fusion = dict(evidence.get("alternative_sources_fusion") or {})
+        assert _FUSION_REQUIRED_TOP_KEYS.issubset(set(fusion.keys()))
+        assert _FUSION_REQUIRED_MERGED_KEYS.issubset(set(dict(fusion.get("merged") or {}).keys()))
         merged = dict((fusion.get("merged") or {}).get("by_source") or {})
         assert fusion.get("preferred_source") == "feature"
         assert merged.get("news", {}).get("available") is True
         assert merged.get("onchain", {}).get("available") is True
         assert merged.get("onchain", {}).get("event_evidence_count") == 2
+        assert _FUSION_REQUIRED_BY_SOURCE_KEYS.issubset(set(dict(merged.get("news") or {}).keys()))
+        assert _FUSION_REQUIRED_BY_SOURCE_KEYS.issubset(set(dict(merged.get("onchain") or {}).keys()))
         assert merged.get("news", {}).get("data_source") == "feature_service.news"
         assert merged.get("news", {}).get("inference_source") == "feature_service.normalizer"
         assert merged.get("onchain", {}).get("data_source") == "event_center_new.onchain"

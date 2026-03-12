@@ -117,9 +117,13 @@ MSL 契约文件：
   - 当上游输入携带 `alternative_sources` 时，`state_features.evidence.alternative_sources` 透传 `news/social/onchain` 的标准化包结构（仅证据透传，不参与当前主状态判定）。
   - 当同时接入 feature 与 selected_event 侧来源摘要时，`state_features.evidence.alternative_sources_fusion` 输出融合结果：
     - `preferred_source`（`feature|event_center|none`）
+    - required keys（top-level）：`preferred_source/conflicts/feature/event_center/merged`
+    - required keys（`merged`）：`available_sources/unavailable_sources/by_source`
     - `merged.by_source.{news|social|onchain}`（available/provider_state/feature_available/event_available/event_evidence_count）
     - `merged.by_source.{news|social|onchain}.data_source`（当前源数据来源）
     - `merged.by_source.{news|social|onchain}.inference_source`（当前推断来源）
+    - required keys（`merged.by_source.*`）：
+      `source_type/available/provider_state/data_source/inference_source/feature_data_source/event_data_source/feature_inference_source/event_inference_source/feature_keys/feature_available/event_available/event_evidence_count`
     - `conflicts`（同来源状态冲突清单）
     - `alternative_source_provider_state_invalid_sources`（当出现非法 provider_state 时的来源清单）
   - `alternative_sources_fusion.merged.by_source.*.provider_state` 枚举口径（state 融合结果）：
