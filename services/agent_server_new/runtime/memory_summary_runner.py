@@ -7,13 +7,13 @@ import os
 import sys
 from typing import Any
 
-from agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
-from agent_server_new.adapters.symbol_memory_redis import (
+from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
+from services.agent_server_new.adapters.symbol_memory_redis import (
     RedisSymbolMemoryAdapter,
     RedisSymbolMemoryConfig,
     create_redis_client_from_env,
 )
-from agent_server_new.app.jobs.symbol_memory_summary_job import run_symbol_memory_summary_once
+from services.agent_server_new.app.jobs.symbol_memory_summary_job import run_symbol_memory_summary_once
 
 
 def _build_parser() -> argparse.ArgumentParser:

@@ -51,7 +51,7 @@ event_center_new(signal_event + active_events)
 ### Phase C: agent workflow 收敛（去执行化）
 
 6. 缩减 agent workflow 到“方向裁决核心链”
-- 修改模块：`agent_server_new/app/workflows/trade_event_workflow.py`
+- 修改模块：`services/agent_server_new/app/workflows/trade_event_workflow.py`
 - 目标链路：`SignalEvaluator -> HorizonPolicyGate -> DirectionDecision`
 - 验收：不再在 agent 内做仓位/PnL 风控硬裁决
 

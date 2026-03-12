@@ -4,11 +4,11 @@ import argparse
 import asyncio
 from typing import Any, Dict, Optional, Sequence
 
-from agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
-from agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from agent_server_new.adapters.position_context_stub import StubPositionContextProvider
-from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from agent_server_new.ports.market_state import MarketStateSnapshot
+from services.agent_server_new.adapters.active_events_stub import StubActiveEventsProvider
+from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
+from services.agent_server_new.adapters.position_context_stub import StubPositionContextProvider
+from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
+from services.agent_server_new.ports.market_state import MarketStateSnapshot
 from services.market_state_engine.src.service import MarketStateService
 
 

@@ -5,8 +5,8 @@ import asyncio
 import json
 from typing import Any, Dict, Optional, Sequence
 
-from agent_server_new.app import create_trade_event_workflow_from_env
-from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput
+from services.agent_server_new.app import create_trade_event_workflow_from_env
+from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput
 
 
 def _build_parser() -> argparse.ArgumentParser:

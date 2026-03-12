@@ -16,7 +16,7 @@
 - 禁止子串匹配，避免 `ETH` 命中 `ETHUSDT` 的误判。
 
 3. 增加 MSL 合同门禁（agent 入口）
-- `agent_server_new/adapters/market_state_http.py` 增加轻量校验：
+- `services/agent_server_new/adapters/market_state_http.py` 增加轻量校验：
   - `msl_meta.schema_version` 必须是已支持版本（当前 `1/2`）
   - `msl` 必须包含核心字段（`version/timestamp/symbol/...`）
   - 校验失败不抛错，追加 `anomaly_flags`，便于观测和回放告警。
