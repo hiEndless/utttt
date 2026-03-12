@@ -48,11 +48,11 @@ http POST :9962/internal/execution/reconcile \
 ## 6) 启动示例（stub / redis）
 
 ```bash
-EXECUTION_STATE_PROVIDER_MODE=stub python -m execution_service.main
+EXECUTION_STATE_PROVIDER_MODE=stub python -m services.execution_service.main
 
 EXECUTION_STATE_PROVIDER_MODE=redis \
 EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0 \
-python -m execution_service.main
+python -m services.execution_service.main
 ```
 
 ## 7) 契约入口

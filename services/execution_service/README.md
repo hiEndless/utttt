@@ -1,8 +1,10 @@
-# execution_service (migration placeholder)
+# execution_service (migration summary)
 
 Runtime source path: `execution_service/`
 Target canonical path: `services/execution_service/`
 
 Notes:
-- Keep imports/runtime on legacy path during compatibility window.
-- Move code physically after import path switch plan is ready.
+- Runtime entrypoint: `services/execution_service/runtime/main.py`.
+- Status:
+  - legacy wrapper `execution_service/main.py` removed
+  - runtime layer migrated with no legacy wrappers

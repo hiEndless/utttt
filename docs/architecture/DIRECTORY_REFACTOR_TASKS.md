@@ -56,6 +56,7 @@
 - [x] 完成首个物理迁移试点：`feature_service/main.py` 实现迁入 `services/feature_service/runtime/main.py`
 - [x] 完成第二个物理迁移试点：`market_state_engine/main.py` 实现迁入 `services/market_state_engine/runtime/main.py`
 - [x] 完成第三个物理迁移试点：`execution_service/main.py` 实现迁入 `services/execution_service/runtime/main.py`
+- [x] 执行 `execution_service` 下线 Batch A（阶段1）：删除 `execution_service/main.py` 兼容壳并迁移文档命令
 - [x] 完成第四个物理迁移试点：`event_center_new/main.py` 实现迁入 `services/event_center_new/runtime/main.py`
 - [x] 完成第五个物理迁移试点：`agent_server_new/runner.py` 实现迁入 `services/agent_server_new/runtime/runner.py`
 - [x] 完成第六个物理迁移试点：`agent_server_new/pipeline_smoke.py` 与 `memory_summary_runner.py` 实现迁入 `services/agent_server_new/runtime/`

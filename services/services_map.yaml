@@ -102,11 +102,10 @@ services:
   - name: execution_service
     current_path: "execution_service/"
     target_path: "services/execution_service/"
-    status: "pilot_entrypoint_migrated"
+    status: "fully_migrated_no_legacy_wrappers"
     scaffold_readme: "services/execution_service/README.md"
     soft_entrypoints:
       - "services/execution_service/main.py"
     pilot_migrated_impl:
       - "services/execution_service/runtime/main.py"
-    legacy_wrapper:
-      - "execution_service/main.py"
+    legacy_wrapper: []

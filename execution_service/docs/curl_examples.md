@@ -8,7 +8,7 @@
 EXECUTION_STATE_PROVIDER_MODE=stub \
 EXECUTION_SERVICE_HOST=127.0.0.1 \
 EXECUTION_SERVICE_PORT=9962 \
-python -m execution_service.main
+python -m services.execution_service.main
 ```
 
 ## 2) redis 模式启动
@@ -18,7 +18,7 @@ EXECUTION_STATE_PROVIDER_MODE=redis \
 EXECUTION_REDIS_URL=redis://127.0.0.1:6379/0 \
 EXECUTION_SERVICE_HOST=127.0.0.1 \
 EXECUTION_SERVICE_PORT=9962 \
-python -m execution_service.main
+python -m services.execution_service.main
 ```
 
 ## 3) 健康检查
