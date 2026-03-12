@@ -43,13 +43,23 @@ class StructureSnapshotModel(BaseModel):
     horizons: Dict[str, Any] = Field(default_factory=dict)
 
 
+class AlternativeSourceEntryModel(BaseModel):
+    source_type: str
+    available: bool
+    provider_state: str
+    data_source: str
+    inference_source: str
+    as_of_ms: Any = None
+    features: Dict[str, Any] = Field(default_factory=dict)
+
+
 class FeatureSnapshot(BaseModel):
     exchange: str
     symbol: str
     indicators: Dict[str, Any] = Field(default_factory=dict)
     derived_metrics: DerivedMetricsModel = Field(default_factory=DerivedMetricsModel)
     structure_snapshot: StructureSnapshotModel = Field(default_factory=StructureSnapshotModel)
-    alternative_sources: Dict[str, Any] = Field(default_factory=dict)
+    alternative_sources: Dict[str, AlternativeSourceEntryModel] = Field(default_factory=dict)
 
 
 class RawStructureSnapshot(BaseModel):

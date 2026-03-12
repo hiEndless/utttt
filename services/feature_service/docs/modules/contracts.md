@@ -13,6 +13,7 @@
 - `ResponseMeta`
 - `RawStructureSnapshot` / `RawStructureResponse`
 - `FeatureSnapshot` / `FeatureResponse`
+- `AlternativeSourceEntryModel`（`source_type/available/provider_state/data_source/inference_source/as_of_ms/features`）
 
 并固定 `SCHEMA_VERSION = "1.0"`。
 
