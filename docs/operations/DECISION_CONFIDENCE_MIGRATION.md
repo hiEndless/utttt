@@ -56,7 +56,7 @@
 
 2. 契约
 - `execution_service/docs/decision_intent.schema.json`
-- `execution_service/domain/contracts.py`
+- `services/execution_service/domain/contracts.py`
 
 3. 测试
 - `execution_service/text/test_decision_intent_contract.py`

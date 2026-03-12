@@ -6,12 +6,12 @@ if ! test -f services/event_center_new/runtime/replay_main.py; then
   echo "[失败] 缺少 services/event_center_new/runtime/replay_main.py"
   exit 1
 fi
-if ! test -f event_center_new/ec/pipeline/replay.py; then
-  echo "[失败] 缺少 event_center_new/ec/pipeline/replay.py"
+if ! test -f services/event_center_new/ec/pipeline/replay.py; then
+  echo "[失败] 缺少 services/event_center_new/ec/pipeline/replay.py"
   exit 1
 fi
-if ! test -f event_center_new/ec/pipeline/replay_cli.py; then
-  echo "[失败] 缺少 event_center_new/ec/pipeline/replay_cli.py"
+if ! test -f services/event_center_new/ec/pipeline/replay_cli.py; then
+  echo "[失败] 缺少 services/event_center_new/ec/pipeline/replay_cli.py"
   exit 1
 fi
 
