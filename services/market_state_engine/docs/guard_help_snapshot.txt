@@ -5,3 +5,4 @@
 守卫目标:
   1) market_state_engine 核心实现不得回归 sentiment_state
   2) 状态层关键回归测试必须通过
+  3) 状态层合同入口版本声明必须与代码常量一致

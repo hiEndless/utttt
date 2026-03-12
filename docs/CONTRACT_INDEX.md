@@ -18,6 +18,7 @@
 - `docs/SEMANTIC_GLOSSARY.md`
 - `docs/ALERT_CODES.md`
 - `tools/local/check_contract_docs_canonical_layout_guard.sh`
+- `tools/local/check_contract_change_bundle_guard.sh`
 
 ## 2. feature_service
 
@@ -40,12 +41,14 @@
 
 ## 4. event_center_new
 
+- `event_center_runtime_config_version: event-center-runtime-v1`
 - `services/event_center_new/docs/schema.md`
 - `services/event_center_new/docs/refactor.md`
 - `services/event_center_new/docs/runtime.md`
 - `services/event_center_new/docs/ci_baseline_template.md`
 - `services/event_center_new/docs/selected_event.schema.json`
 - `services/event_center_new/docs/replay_summary.schema.json`
+- `tools/local/check_event_center_contract_entry_guard.sh`
 
 ## 5. agent_server_new
 
