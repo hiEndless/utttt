@@ -56,6 +56,11 @@ bash tools/ci/verify_quick.sh
 3. quick 失败但快照守卫通过
 - 这是其他守卫失败，按 `verify_quick.sh` 输出定位，不应回退快照。
 
+4. docs bundle 中 contract bundle 守卫触发不符合预期
+- 先执行：
+  `bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions`
+- 查看 `BASE_REF/HEAD` 下的四组版本探测值（`CONTRACT_INDEX` / `manifest` / `version.py` / `runtime.md`）是否真实发生变化，再决定是否补齐联动四件套。
+
 ## 5. 维护约束
 
 - 不要手工“微调”快照内容；始终用 `--help` 输出重定向生成。
