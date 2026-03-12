@@ -38,7 +38,24 @@ class _MarketState:
             msl=_build_msl_from_dict(_sample_msl()),
             msl_meta={"schema_version": 2},
             cross_horizon={"suggested_policy": "wait_confirmation"},
-            state_features={"evidence": {}, "anomalies": {}},
+            state_features={
+                "evidence": {
+                    "alternative_sources_fusion": {
+                        "preferred_source": "feature",
+                        "conflicts": [{"source": "news", "feature_state": "primary", "event_state": "event_evidence_present"}],
+                        "merged": {
+                            "available_sources": ["news"],
+                            "unavailable_sources": ["social", "onchain"],
+                            "by_source": {
+                                "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
+                                "social": {"provider_state": "empty", "feature_keys": []},
+                                "onchain": {"provider_state": "empty", "feature_keys": []},
+                            },
+                        },
+                    }
+                },
+                "anomalies": {},
+            },
         )
 
 
@@ -85,5 +102,7 @@ def test_context_builder_injects_symbol_memory_features():
         assert "recent_memory" in by_name
         assert by_name["memory_summary"]["event_count"] == 12
         assert by_name["recent_memory"][0]["event_id"] == "evt-100"
+        warnings = list((built.ctx.key_market_features or {}).get("contract_warnings") or [])
+        assert "alternative_sources_conflict_detected" in warnings
 
     asyncio.run(_run())

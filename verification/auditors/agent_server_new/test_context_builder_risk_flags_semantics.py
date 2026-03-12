@@ -52,3 +52,38 @@ def test_signal_context_builder_includes_alternative_source_summary() -> None:
     value = dict(summary.get("value") or {})
     assert "news" in list(value.get("available_sources") or [])
     assert value.get("provider_states", {}).get("social") == "noop"
+
+
+def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> None:
+    out = _signal_context_builder(
+        features={
+            "evidence": {
+                "alternative_sources": {
+                    "news": {"available": True, "provider_state": "primary", "features": {"headline_score": 0.8}},
+                },
+                "alternative_sources_fusion": {
+                    "preferred_source": "feature",
+                    "conflicts": [{"source": "news", "feature_state": "primary", "event_state": "event_evidence_present"}],
+                    "merged": {
+                        "available_sources": ["news", "onchain"],
+                        "unavailable_sources": ["social"],
+                        "by_source": {
+                            "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
+                            "social": {"provider_state": "empty", "feature_keys": []},
+                            "onchain": {"provider_state": "event_evidence_present", "feature_keys": ["inflow_usd"]},
+                        },
+                    },
+                },
+            }
+        },
+        signal_event={"payload": {"event_type": "macro_news"}},
+        active_events=[],
+        max_features=20,
+    )
+    items = list(out.get("features") or [])
+    summary = next((x for x in items if (x or {}).get("name") == "alternative_source_summary"), {})
+    assert summary
+    value = dict(summary.get("value") or {})
+    assert value.get("preferred_source") == "feature"
+    assert value.get("conflict_count") == 1
+    assert "onchain" in list(value.get("available_sources") or [])

@@ -51,6 +51,28 @@ def _extract_contract_warnings(anomaly_flags: List[Any]) -> List[str]:
 
 
 def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, Any]:
+    fusion = _safe_dict(evidence.get("alternative_sources_fusion"))
+    merged = _safe_dict(fusion.get("merged"))
+    by_source = _safe_dict(merged.get("by_source"))
+    if by_source:
+        provider_states: Dict[str, str] = {}
+        feature_keys: Dict[str, List[str]] = {}
+        available_sources = [str(x) for x in list(merged.get("available_sources") or []) if str(x).strip()]
+        unavailable_sources = [str(x) for x in list(merged.get("unavailable_sources") or []) if str(x).strip()]
+        for name in ("news", "social", "onchain"):
+            node = _safe_dict(by_source.get(name))
+            provider_states[name] = str(node.get("provider_state") or "empty")
+            feature_keys[name] = sorted([str(x) for x in list(node.get("feature_keys") or []) if str(x).strip()])
+        out = {
+            "available_sources": sorted(set(available_sources)),
+            "unavailable_sources": sorted(set(unavailable_sources)),
+            "provider_states": provider_states,
+            "feature_keys": feature_keys,
+            "preferred_source": str(fusion.get("preferred_source") or "none"),
+            "conflict_count": len(list(fusion.get("conflicts") or [])),
+        }
+        return out
+
     alt = _safe_dict(evidence.get("alternative_sources"))
     sources = ("news", "social", "onchain")
     provider_states: Dict[str, str] = {}
@@ -75,6 +97,14 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         "provider_states": provider_states,
         "feature_keys": feature_keys,
     }
+
+
+def _extract_alternative_source_contract_warnings(evidence: Dict[str, Any]) -> List[str]:
+    fusion = _safe_dict(evidence.get("alternative_sources_fusion"))
+    conflicts = list(fusion.get("conflicts") or [])
+    if conflicts:
+        return ["alternative_sources_conflict_detected"]
+    return []
 
 
 def _normalize_recent_memory(
@@ -294,7 +324,15 @@ class ContextBuilder:
             symbol_memory=symbol_memory_filtered,
         )
         key_features["memory_observability"] = memory_observability
-        key_features["contract_warnings"] = _extract_contract_warnings(list(market_state.anomaly_flags or []))
+        state_evidence = _safe_dict(_safe_dict(market_state.state_features).get("evidence"))
+        key_features["contract_warnings"] = sorted(
+            set(
+                [
+                    *_extract_contract_warnings(list(market_state.anomaly_flags or [])),
+                    *_extract_alternative_source_contract_warnings(state_evidence),
+                ]
+            )
+        )
         ctx = EventContext(
             event_id=event_id,
             exchange=exchange,
