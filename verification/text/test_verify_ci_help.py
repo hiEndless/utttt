@@ -38,3 +38,9 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     out = _run_help("tools/ci/verify_quick.sh")
     assert "Usage:" in out
     assert "WITH_AGENT_READYZ=1" in out
+
+
+def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
+    out = _run_help("tools/local/verify_quick.sh")
+    assert "Usage:" in out
+    assert "--with-agent-readyz" in out

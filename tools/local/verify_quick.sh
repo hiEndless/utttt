@@ -4,6 +4,11 @@ set -euo pipefail
 WITH_VERIFICATION_API_SCHEMA_CHECK=0
 SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=0
 SKIP_RELEASE_BASELINE_ALIGNMENT=0
+WITH_AGENT_READYZ=0
+MAX_AGENT_READYZ_LEVEL="red"
+REQUIRE_AGENT_READYZ_REPORT=0
+AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
+AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 SHOW_HELP=0
 PASS_ARGS=()
 
@@ -24,6 +29,26 @@ while (($# > 0)); do
     --skip-release-baseline-alignment)
       SKIP_RELEASE_BASELINE_ALIGNMENT=1
       shift
+      ;;
+    --with-agent-readyz)
+      WITH_AGENT_READYZ=1
+      shift
+      ;;
+    --max-agent-readyz-level)
+      MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
+      shift 2
+      ;;
+    --require-agent-readyz-report)
+      REQUIRE_AGENT_READYZ_REPORT=1
+      shift
+      ;;
+    --agent-readyz-base-url)
+      AGENT_READYZ_BASE_URL="${2:-$AGENT_READYZ_BASE_URL}"
+      shift 2
+      ;;
+    --agent-readyz-timeout-s)
+      AGENT_READYZ_TIMEOUT_S="${2:-$AGENT_READYZ_TIMEOUT_S}"
+      shift 2
       ;;
     *)
       PASS_ARGS+=("$1")
@@ -46,6 +71,11 @@ Options:
   --with-verification-api-schema-check   追加执行 verification API summary schema 开关校验测试
   --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
   --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
+  --with-agent-readyz                    启用 agent readyz 聚合观测（默认关闭）
+  --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
+  --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
+  --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
+  --agent-readyz-timeout-s <sec>         指定 readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
 USAGE
   exit 0
 fi
@@ -57,6 +87,13 @@ fi
 if [[ "$SKIP_RELEASE_BASELINE_ALIGNMENT" == "1" ]]; then
   ENV_PREFIX+=(VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1)
 fi
+if [[ "$WITH_AGENT_READYZ" == "1" ]]; then
+  ENV_PREFIX+=(WITH_AGENT_READYZ=1)
+fi
+ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
+ENV_PREFIX+=(REQUIRE_AGENT_READYZ_REPORT="$REQUIRE_AGENT_READYZ_REPORT")
+ENV_PREFIX+=(AGENT_READYZ_BASE_URL="$AGENT_READYZ_BASE_URL")
+ENV_PREFIX+=(AGENT_READYZ_TIMEOUT_S="$AGENT_READYZ_TIMEOUT_S")
 CMD=(bash tools/ci/verify_quick.sh)
 if ((${#PASS_ARGS[@]} > 0)); then
   CMD+=("${PASS_ARGS[@]}")
