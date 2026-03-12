@@ -23,6 +23,16 @@ from services.event_center_new.ec.pipeline.runner import EventPipelineRunner
 from services.event_center_new.ec.sources.memory import InMemoryEventSource
 from services.event_center_new.ec.storage.memory import InMemoryEventMemory, InMemoryLayerStore
 
+_ALT_SUMMARY_REQUIRED_KEYS = {
+    "available_sources",
+    "unavailable_sources",
+    "provider_states",
+    "data_sources",
+    "inference_sources",
+    "feature_keys",
+    "evidence_counts",
+}
+
 
 class _BoomExtractor(PayloadEvidenceExtractor):
     def extract(self, event: EventEnvelope):  # type: ignore[override]
@@ -75,15 +85,7 @@ def test_runner_end_to_end_bullish_selected() -> None:
     assert "schema_version" in set(dict(out.get("trace") or {}).keys())
     assert isinstance(out["context_snapshot"]["key_evidences"], list)
     alt = dict(out["context_snapshot"].get("alternative_sources_summary") or {})
-    assert set(alt.keys()) >= {
-        "available_sources",
-        "unavailable_sources",
-        "provider_states",
-        "data_sources",
-        "inference_sources",
-        "feature_keys",
-        "evidence_counts",
-    }
+    assert _ALT_SUMMARY_REQUIRED_KEYS.issubset(set(alt.keys()))
     assert len(store.raw) == 1
     assert len(store.normalized) == 1
     assert len(store.evidence) == 2
@@ -113,6 +115,7 @@ def test_runner_builds_alternative_source_summary_from_evidences() -> None:
     runner.run_once()
     assert len(store.context) == 1
     alt = dict(store.context[0].get("alternative_sources_summary") or {})
+    assert _ALT_SUMMARY_REQUIRED_KEYS.issubset(set(alt.keys()))
     assert "news" in list(alt.get("available_sources") or [])
     assert "onchain" in list(alt.get("available_sources") or [])
     assert alt.get("provider_states", {}).get("social") == "empty"
