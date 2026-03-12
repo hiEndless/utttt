@@ -72,6 +72,18 @@ if ! rg -q 'rg -n .*CI_GUARD.*quick_strict\.log quick_lenient\.log' "$QUICK_WF";
   echo "[失败] quick workflow 缺少 CI_GUARD 摘要排障命令"
   exit 1
 fi
+if ! rg -q "guard_summary.quick_strict.log" "$QUICK_WF"; then
+  echo "[失败] quick workflow 缺少 guard_summary.quick_strict.log 产物"
+  exit 1
+fi
+if ! rg -q "guard_summary.quick_lenient.log" "$QUICK_WF"; then
+  echo "[失败] quick workflow 缺少 guard_summary.quick_lenient.log 产物"
+  exit 1
+fi
+if ! rg -q -F "cat guard_summary.quick_strict.log guard_summary.quick_lenient.log" "$QUICK_WF"; then
+  echo "[失败] quick workflow 缺少 guard_summary 快速查看命令"
+  exit 1
+fi
 
 echo "[3/4] 校验 full workflow 失败诊断上传能力与复用 action"
 if ! rg -q "uses: \\.\\/\\.github\\/actions\\/setup-utaker-python" "$FULL_WF"; then
@@ -104,6 +116,14 @@ if ! rg -q -F "full_guard.log" "$FULL_WF"; then
 fi
 if ! rg -q 'rg -n .*CI_GUARD.*full_guard\.log' "$FULL_WF"; then
   echo "[失败] full workflow 缺少 CI_GUARD 摘要排障命令"
+  exit 1
+fi
+if ! rg -q "guard_summary.full.log" "$FULL_WF"; then
+  echo "[失败] full workflow 缺少 guard_summary.full.log 产物"
+  exit 1
+fi
+if ! rg -q -F "cat guard_summary.full.log" "$FULL_WF"; then
+  echo "[失败] full workflow 缺少 guard_summary 快速查看命令"
   exit 1
 fi
 

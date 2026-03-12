@@ -2,3 +2,5 @@ pwd && ls -la . && rg -n "FAIL_CODE=" quick_strict.log quick_lenient.log
 pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 rg -n "^\[CI_GUARD\]" quick_strict.log quick_lenient.log
 rg -n "^\[CI_GUARD\]" full_guard.log
+cat guard_summary.quick_strict.log guard_summary.quick_lenient.log
+cat guard_summary.full.log

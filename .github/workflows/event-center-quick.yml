@@ -38,6 +38,7 @@ jobs:
         run: |
           mkdir -p /tmp/event_center_ci
           bash tools/ci/event_center_quick_strict.sh | tee /tmp/event_center_ci/quick_strict.log
+          rg -n "^\[CI_GUARD\]" /tmp/event_center_ci/quick_strict.log > /tmp/event_center_ci/guard_summary.quick_strict.log || true
       - name: 上传 quick strict 失败诊断日志
         if: ${{ steps.quick_strict_guard.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
@@ -52,6 +53,7 @@ jobs:
           echo "download artifact then run (最短排障命令串):"
           echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
           echo "  rg -n \"^\[CI_GUARD\]\" quick_strict.log quick_lenient.log"
+          echo "  cat guard_summary.quick_strict.log guard_summary.quick_lenient.log"
           exit 1
 
   quick-lenient:
@@ -67,6 +69,7 @@ jobs:
         run: |
           mkdir -p /tmp/event_center_ci
           bash tools/ci/event_center_quick_lenient.sh | tee /tmp/event_center_ci/quick_lenient.log
+          rg -n "^\[CI_GUARD\]" /tmp/event_center_ci/quick_lenient.log > /tmp/event_center_ci/guard_summary.quick_lenient.log || true
       - name: 上传 quick lenient 失败诊断日志
         if: ${{ steps.quick_lenient_guard.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
@@ -81,4 +84,5 @@ jobs:
           echo "download artifact then run (最短排障命令串):"
           echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
           echo "  rg -n \"^\[CI_GUARD\]\" quick_strict.log quick_lenient.log"
+          echo "  cat guard_summary.quick_strict.log guard_summary.quick_lenient.log"
           exit 1

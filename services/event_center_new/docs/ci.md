@@ -13,13 +13,13 @@
   - 工作流：`.github/workflows/event-center-quick.yml`
   - 触发：`pull_request` / `push(main)`（按路径过滤）
 - 失败诊断：
-    - strict job 自动上传 `event-center-quick-strict-diagnostics`（目录 artifact，至少包含 `quick_strict.log`）
-    - lenient job 自动上传 `event-center-quick-lenient-diagnostics`（目录 artifact，至少包含 `quick_lenient.log`）
+    - strict job 自动上传 `event-center-quick-strict-diagnostics`（目录 artifact，至少包含 `quick_strict.log` 与 `guard_summary.quick_strict.log`）
+    - lenient job 自动上传 `event-center-quick-lenient-diagnostics`（目录 artifact，至少包含 `quick_lenient.log` 与 `guard_summary.quick_lenient.log`）
     - 失败收敛步骤会打印“先 `pwd`、`ls -la .`，再 `rg -n "FAIL_CODE=" ...` 与 `rg -n "^\[CI_GUARD\]" ...`”的日志定位提示
 - full（全量严格）：
   - 工作流：`.github/workflows/event-center-full.yml`
   - 触发：`workflow_dispatch` / 每日定时 `cron`
-- 失败诊断：自动上传 artifact `event-center-full-diagnostics`（包含 `full_guard.log`）
+- 失败诊断：自动上传 artifact `event-center-full-diagnostics`（包含 `full_guard.log` 与 `guard_summary.full.log`）
   - 失败收敛步骤会打印“先 `pwd`、`ls -la .`，再 `rg -n "FAIL_CODE=" full_guard.log` 与 `rg -n "^\[CI_GUARD\]" full_guard.log`”的日志定位提示
 
 ## 2. 本地等价命令
@@ -128,6 +128,9 @@
 
 ```text
 ./
+├── guard_summary.quick_strict.log
+├── guard_summary.quick_lenient.log
+├── guard_summary.full.log
 ├── quick_strict.log
 ├── quick_lenient.log
 └── full_guard.log
@@ -137,6 +140,7 @@
 - quick strict 失败时，至少会有 `quick_strict.log`
 - quick lenient 失败时，至少会有 `quick_lenient.log`
 - full strict 失败时，至少会有 `full_guard.log`
+- 同时会生成 `guard_summary.*.log`（仅保留 `[CI_GUARD]` 摘要行，便于首屏排障）
 
 1. quick strict / quick lenient
    - 日志文件：`quick_strict.log` / `quick_lenient.log`
@@ -170,10 +174,12 @@ rg -n "FAIL_CODE=" full_guard.log
 # quick strict / quick lenient
 pwd && ls -la . && rg -n "FAIL_CODE=" quick_strict.log quick_lenient.log
 rg -n "^\[CI_GUARD\]" quick_strict.log quick_lenient.log
+cat guard_summary.quick_strict.log guard_summary.quick_lenient.log
 
 # full strict
 pwd && ls -la . && rg -n "FAIL_CODE=" full_guard.log
 rg -n "^\[CI_GUARD\]" full_guard.log
+cat guard_summary.full.log
 ```
 
 ## 9. 基线通过记录

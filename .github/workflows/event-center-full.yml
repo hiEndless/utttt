@@ -19,6 +19,7 @@ jobs:
         run: |
           mkdir -p /tmp/event_center_ci
           bash tools/ci/event_center_full_strict.sh | tee /tmp/event_center_ci/full_guard.log
+          rg -n "^\[CI_GUARD\]" /tmp/event_center_ci/full_guard.log > /tmp/event_center_ci/guard_summary.full.log || true
       - name: 上传失败诊断日志
         if: ${{ steps.full_guard.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
@@ -33,4 +34,5 @@ jobs:
           echo "download artifact then run (最短排障命令串):"
           echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" full_guard.log"
           echo "  rg -n \"^\[CI_GUARD\]\" full_guard.log"
+          echo "  cat guard_summary.full.log"
           exit 1
