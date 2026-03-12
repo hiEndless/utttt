@@ -60,7 +60,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v15`
+- `execution_schema_mapping_version: execution-schema-mapping-v16`
 - `tools/local/check_execution_contract_entry_guard.sh`
 - `services/execution_service/docs/api.md`
 - `services/execution_service/docs/boundaries.md`
