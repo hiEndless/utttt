@@ -4,6 +4,10 @@
 
 用于冻结本地关键脚本的 `--help` 输出，降低参数语义漂移风险。
 
+入口关系说明：
+- `tools/local/verify_quick.sh` 是 `tools/ci/verify_quick.sh` 的本地代理入口。
+- `tools/local/verify_full.sh` 是 `tools/ci/new_arch_guards_full.sh` 的本地代理入口。
+
 ## 刷新命令
 
 ```bash
