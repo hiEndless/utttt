@@ -6,13 +6,13 @@
 
 新增接口：
 
-- `feature_service/ports/news_provider.py`
-- `feature_service/ports/social_provider.py`
-- `feature_service/ports/onchain_provider.py`
+- `services/feature_service/src/ports/news_provider.py`
+- `services/feature_service/src/ports/social_provider.py`
+- `services/feature_service/src/ports/onchain_provider.py`
 
 新增 provider 占位：
 
-- `feature_service/providers/future_source_providers.py`
+- `services/feature_service/src/providers/future_source_providers.py`
   - `Noop*Provider`
   - `Static*Provider`
   - `Fallback*Provider`

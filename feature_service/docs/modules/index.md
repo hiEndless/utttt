@@ -2,6 +2,14 @@
 
 本文档组面向当前 `feature_service` 代码结构，按模块拆分功能说明和迭代建议。
 
+当前 canonical 源码路径：
+
+- `services/feature_service/src/*`
+
+兼容说明：
+
+- `feature_service/*` 仍保留兼容壳（迁移窗口内可继续导入），但不再作为主实现维护路径。
+
 重构完成态总览文档：
 
 - [feature_service 重构完成态说明](../refactor-overview.md)
