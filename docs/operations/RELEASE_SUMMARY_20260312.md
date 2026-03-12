@@ -34,6 +34,7 @@
 - `bash tools/ci/new_arch_guards_full.sh --quick` -> pass
 - `bash tools/local/check_docs_contracts_bundle.sh` -> pass
 - `bash tools/local/check_contract_docs_index_guard.sh` -> pass
+- `bash tools/local/check_release_ready.sh` -> pass
 
 ## 4. 标准排障命令
 

@@ -17,6 +17,12 @@ bash tools/ci/new_arch_guards_full.sh --quick
 
 期望：全部通过。
 
+或直接使用一键检查：
+
+```bash
+bash tools/local/check_release_ready.sh
+```
+
 ## 3) 标准排障命令
 
 ```bash
