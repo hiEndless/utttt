@@ -222,6 +222,14 @@ def test_pipeline_traceability_selected_event_to_decision_trace():
 
         alt_item = next((x for x in features if str((x or {}).get("name") or "") == "alternative_source_summary"), {})
         alt_value = dict((alt_item or {}).get("value") or {})
+        provider_states = dict(alt_value.get("provider_states") or {})
+        data_sources = dict(alt_value.get("data_sources") or {})
+        inference_sources = dict(alt_value.get("inference_sources") or {})
+        for src in ("news", "social", "onchain"):
+            assert str(provider_states.get(src) or "").strip()
+            assert str(data_sources.get(src) or "").strip()
+            assert str(inference_sources.get(src) or "").strip()
+        assert provider_states.get("onchain") == "event_evidence_present"
         assert alt_value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
         assert alt_value.get("inference_sources", {}).get("onchain") == "event_center_new.selector"
 
