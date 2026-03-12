@@ -137,6 +137,9 @@ signal_event + active_events + MSL
 
 ## 运行配置（建议）
 
+- `AGENT_RUNTIME_PROFILE`
+  - 运行档位（`dev|prod`，默认：`dev`）
+  - `prod` 下门禁：要求 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis`，且 Redis provider 初始化失败时不允许回落到 stub
 - `AGENT_MARKET_STATE_BASE_URL`
   - `market_state_engine` 服务地址（默认：`http://127.0.0.1:8300`）
 - `AGENT_MARKET_STATE_TIMEOUT_S`

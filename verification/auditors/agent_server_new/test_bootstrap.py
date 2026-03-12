@@ -55,6 +55,33 @@ def test_create_trade_event_workflow_from_env_fallbacks_to_stub_when_active_even
     assert isinstance(wf._active_events, StubActiveEventsProvider)  # noqa: SLF001
 
 
+def test_create_trade_event_workflow_from_env_prod_requires_redis_active_events(monkeypatch):
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when prod profile uses stub active events provider"
+    except RuntimeError as exc:
+        assert "AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_prod_forbid_redis_fallback(monkeypatch):
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+
+    def _raise() -> object:
+        raise RuntimeError("redis broken")
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when redis provider init fails in prod profile"
+    except RuntimeError as exc:
+        assert "failed to initialize redis active events provider in production" in str(exc)
+
+
 def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypatch):
     monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
     monkeypatch.setenv("AGENT_EXECUTION_BASE_URL", "http://localhost:9962")

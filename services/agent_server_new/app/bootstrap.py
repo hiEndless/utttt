@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 
 from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
@@ -15,6 +16,8 @@ from services.agent_server_new.adapters.symbol_memory_redis import (
 )
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 
+logger = logging.getLogger(__name__)
+
 
 def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
     raw = str(os.getenv(name, str(default)) or str(default)).strip()
@@ -27,6 +30,10 @@ def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
     return out
 
 
+def _env_bool(name: str, default: str = "false") -> bool:
+    return str(os.getenv(name, default) or default).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     """基于环境变量创建可运行的默认工作流。
 
@@ -36,27 +43,24 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 stub）
     - execution_decider: 按环境变量 AGENT_EXECUTION_ENABLED 决定是否启用
     """
+    runtime_profile = str(os.getenv("AGENT_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     active_events_provider_mode = str(os.getenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub") or "stub").strip().lower()
+    if runtime_profile in {"prod", "production"} and active_events_provider_mode != "redis":
+        raise RuntimeError("production profile requires AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis")
+
     active_events_provider = StubActiveEventsProvider()
     if active_events_provider_mode == "redis":
         try:
             active_events_provider = RedisActiveEventsProvider.from_env()
-        except Exception:
-            # 中文注释：provider 初始化失败时优雅降级，避免影响主决策链路可用性。
+        except Exception as exc:
+            if runtime_profile in {"prod", "production"}:
+                raise RuntimeError("failed to initialize redis active events provider in production") from exc
+            # 中文注释：非生产环境允许降级到 stub，保障本地联调和回放可用。
+            logger.warning("active_events redis provider init failed, fallback to stub: %s", exc)
             active_events_provider = StubActiveEventsProvider()
 
-    execution_enabled = str(os.getenv("AGENT_EXECUTION_ENABLED", "false") or "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
-    symbol_memory_enabled = str(os.getenv("AGENT_SYMBOL_MEMORY_ENABLED", "false") or "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
+    symbol_memory_enabled = _env_bool("AGENT_SYMBOL_MEMORY_ENABLED", "false")
     symbol_memory_backend = str(os.getenv("AGENT_SYMBOL_MEMORY_BACKEND", "inmemory") or "inmemory").strip().lower()
     symbol_memory_adapter = None
     if symbol_memory_enabled:
@@ -76,12 +80,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     memory_recent_topk = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TOPK", 5, min_value=1)
     memory_recent_ttl_ms = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", 86_400_000, min_value=0)
     memory_dedup_key = str(os.getenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id") or "event_id").strip() or "event_id"
-    ai_adaptive_enabled = str(os.getenv("AGENT_AI_ADAPTIVE_ENABLED", "false") or "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
