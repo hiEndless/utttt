@@ -81,6 +81,7 @@ CI 约束：
 - `check_script_compat_whitelist.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`
+- `pytest verification/text/test_verify_ci_help.py`（锁定 regression/nightly --help 关键字段）
 - `check_contract_docs_canonical_layout_guard.sh`
 - `check_pipeline_semantic_terms_doc_guard.sh`
 - `verify_all.sh --event-center-quick`
