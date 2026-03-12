@@ -7,6 +7,7 @@ Schema:
 - `verification_report_v2.schema.json`
 - `verification_report_aggregate_v1.schema.json`
 - `agent_readyz_report_v1.schema.json`
+- `release_gate_summary_v1.schema.json`
 
 Example:
 ```bash
@@ -26,6 +27,11 @@ Agent readyz report (optional):
 bash tools/local/run_agent_readyz_report.sh \
   verification/reports/agent_readyz.latest.json
 bash tools/local/run_agent_readyz_report.sh --help
+```
+
+Release gate summary (optional, for release audit):
+```bash
+bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
 ```
 
 Aggregate reports:
@@ -64,6 +70,8 @@ Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), symbol memory summary reports (`symbol-memory-summary-run-v1`),
   and agent readyz reports (`agent-readyz-report-v1`).
+- Release gate summary (`release-gate-summary-v1`) is generated independently by
+  `tools/local/check_release_ready.sh` and recommended for release check records.
 - Summary includes:
   - `report_count/passed/failed/pass_rate` (verification suites)
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`
