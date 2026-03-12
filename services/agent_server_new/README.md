@@ -156,6 +156,12 @@ signal_event + active_events + MSL
   - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
 - `AGENT_EXECUTION_TIMEOUT_S`
   - execution_service HTTP 请求超时秒数（默认：`10`）
+- `AGENT_EXECUTION_RETRY_MAX`
+  - execution_service HTTP 请求最大重试次数（默认：`0`，即不重试）
+- `AGENT_EXECUTION_RETRY_BACKOFF_S`
+  - execution_service HTTP 重试基础退避秒数（默认：`0.2`，按指数退避）
+- `AGENT_EXECUTION_RETRY_ON_STATUSES`
+  - 触发重试的 HTTP 状态码列表（CSV，默认：`429,500,502,503,504`）
 - `AGENT_POSITION_CONTEXT_PROVIDER_MODE`
   - 仓位上下文 provider 模式（仅支持 `http`）
 - `AGENT_POSITION_CONTEXT_BASE_URL`
