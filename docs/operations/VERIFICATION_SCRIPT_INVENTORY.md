@@ -75,6 +75,7 @@ CI 约束：
 - `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --event-center-quick`
+- `pytest verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code`（锁定非法 provider_state 告警码链路）
 - `sync_contract_indexes.sh`
 - `audit_semantics.sh`
 - `check_semantic_warning_budget.sh`
