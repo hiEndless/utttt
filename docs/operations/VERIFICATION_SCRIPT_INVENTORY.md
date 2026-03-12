@@ -103,7 +103,7 @@ CI 约束：
 - `sync_contract_indexes.sh`
 - `audit_semantics.sh`
 - `check_semantic_warning_budget.sh`
-- `aggregate_and_check.sh --max-legacy-confidence-ratio ${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}`
+- `aggregate_and_check.sh --with-agent-readyz --max-legacy-confidence-ratio ${MAX_LEGACY_CONFIDENCE_RATIO:-0.05} --max-agent-readyz-level ${MAX_AGENT_READYZ_LEVEL:-yellow} --require-agent-readyz-report`
 
 ## 4. 历史映射
 

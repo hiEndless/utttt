@@ -11,6 +11,8 @@ WITH_AGENT_READYZ=0
 SKIP_THRESHOLDS=0
 COMPACT=0
 MAX_LEGACY_CONFIDENCE_RATIO="-1"
+MAX_AGENT_READYZ_LEVEL="red"
+REQUIRE_AGENT_READYZ_REPORT=0
 
 while (($# > 0)); do
   case "$1" in
@@ -31,6 +33,9 @@ Options:
   --skip-thresholds             仅聚合，不执行阈值检查
   --max-legacy-confidence-ratio <float>
                                execution legacy confidence 占比上限（默认 -1 忽略）
+  --max-agent-readyz-level <green|yellow|red>
+                               agent readyz 最大允许状态级别（默认 red）
+  --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 USAGE
       exit 0
@@ -75,6 +80,14 @@ USAGE
       MAX_LEGACY_CONFIDENCE_RATIO="${2:-$MAX_LEGACY_CONFIDENCE_RATIO}"
       shift 2
       ;;
+    --max-agent-readyz-level)
+      MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
+      shift 2
+      ;;
+    --require-agent-readyz-report)
+      REQUIRE_AGENT_READYZ_REPORT=1
+      shift
+      ;;
     *)
       echo "unknown arg: $1" >&2
       exit 2
@@ -99,11 +112,18 @@ if [[ "$COMPACT" == "1" ]]; then
 fi
 bash tools/local/verify_report_aggregate.sh "${AGGREGATE_ARGS[@]}"
 if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
-  python3 -m verification.reports.check_thresholds \
-    --summary "$SUMMARY_PATH" \
-    --min-pass-rate 1.0 \
-    --max-failed 0 \
-    --min-reports 1 \
-    --max-semantic-errors 0 \
+  THRESHOLD_ARGS=(
+    --summary "$SUMMARY_PATH"
+    --min-pass-rate 1.0
+    --max-failed 0
+    --min-reports 1
+    --max-semantic-errors 0
     --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
+    --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
+  )
+  if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
+    THRESHOLD_ARGS+=(--require-agent-readyz-report)
+  fi
+  python3 -m verification.reports.check_thresholds \
+    "${THRESHOLD_ARGS[@]}"
 fi

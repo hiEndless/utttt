@@ -77,6 +77,9 @@ Options:
   --skip-thresholds             仅聚合，不执行阈值检查
   --max-legacy-confidence-ratio <float>
                                execution legacy confidence 占比上限（默认 -1 忽略）
+  --max-agent-readyz-level <green|yellow|red>
+                               agent readyz 最大允许状态级别（默认 red）
+  --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 ```
 
@@ -182,6 +185,10 @@ Description:
 
 Environment:
   MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
+  MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 yellow）
+  REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
+  AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
+  AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
 
 Failure Codes:
   exit 1  任一守卫/测试失败

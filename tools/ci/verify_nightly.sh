@@ -11,6 +11,10 @@ Description:
 
 Environment:
   MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
+  MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 yellow）
+  REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
+  AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
+  AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
 
 Failure Codes:
   exit 1  任一守卫/测试失败
@@ -54,5 +58,20 @@ echo "[nightly 11/12] semantic warning budget"
 bash tools/local/check_semantic_warning_budget.sh
 echo "[nightly 12/12] aggregate and check"
 MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
+MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-yellow}"
+REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-1}"
+AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
+AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 echo "[nightly] MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
-bash tools/local/aggregate_and_check.sh --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
+echo "[nightly] MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+NIGHTLY_ARGS=(
+  --with-agent-readyz
+  --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
+  --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
+  --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
+  --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
+)
+if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
+  NIGHTLY_ARGS+=(--require-agent-readyz-report)
+fi
+bash tools/local/aggregate_and_check.sh "${NIGHTLY_ARGS[@]}"
