@@ -13,7 +13,7 @@
 
 ## 职责
 
-1. 接收 `agent_server_new` 的决策意图（direction + confidence + hints）
+1. 接收 `agent_server_new` 的决策意图（direction + decision_confidence + hints）
 2. 读取仓位与账户状态
 3. 应用硬风控规则（仓位上限、回撤阈值、冷却、频控等）
 4. 生成最终执行动作（add/reduce/hold/exit/skip）

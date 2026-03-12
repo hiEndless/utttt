@@ -65,8 +65,26 @@ def test_agent_execution_adapter_prefers_decision_confidence_and_keeps_risk_hint
         },
         cross_horizon_policy={"suggested_policy": "follow_long_term"},
     )
-    assert payload["confidence"] == {"level": "high", "score": 0.91}
     assert payload["decision_confidence"] == {"level": "high", "score": 0.91}
+    assert "confidence" not in payload
     assert payload["risk_hints"]["decision_confidence"] == {"level": "high", "score": 0.91}
+    assert payload["risk_hints"]["decision_confidence_source"] == "decision_confidence"
     assert payload["risk_hints"]["agent_action_hint"] == "add"
     assert payload["risk_hints"]["agent_notes"] == "prefer trend continuation"
+
+
+def test_agent_execution_adapter_marks_legacy_confidence_source() -> None:
+    payload = adapt_agent_execution_plan_to_decision_intent(
+        decision_id="dec-agent-003",
+        exchange="binance",
+        symbol="ETHUSDT",
+        plan={
+            "action": "hold",
+            "direction": "none",
+            "confidence": {"level": "medium", "score": 0.5},
+        },
+        cross_horizon_policy={},
+    )
+    assert payload["decision_confidence"] == {"level": "medium", "score": 0.5}
+    assert "confidence" not in payload
+    assert payload["risk_hints"]["decision_confidence_source"] == "confidence_legacy"
