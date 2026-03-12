@@ -37,6 +37,7 @@
 6. horizon_policy_gate：读取 `cross_horizon.suggested_policy` 并做保守门控
 7. strategy_gate：策略语义门控（freshness、冲突、脆弱性等）
 8. risk_gate：风险许可（账户级/全局级门控，按 MSL + position_context + active_events 动态推导）
+   - `decision_trace.risk_gate` 额外输出 `global_regime/cooldown_active/regime_sources`，用于解释本次风险门控触发来源
 9. execution_planner：输出 ExecutionPlan（最终 agent 计划）
 10. （可选）execution_decider：HTTP 调用 execution_service 返回最终裁决 dict
 11. （可选）recorder：写出 market_context/agent_output/decision_trace

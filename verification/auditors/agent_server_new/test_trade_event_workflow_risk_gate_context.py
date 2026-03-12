@@ -28,7 +28,7 @@ def _sample_msl() -> dict:
 
 def test_derive_risk_gate_context_uses_position_risk_state_and_cooldown() -> None:
     msl = _build_msl_from_dict(_sample_msl())
-    ctx = _derive_risk_gate_context(
+    ctx, reasons = _derive_risk_gate_context(
         msl=msl,
         position_context={
             "current_position": {"cooldown_seconds_left": 30},
@@ -38,22 +38,26 @@ def test_derive_risk_gate_context_uses_position_risk_state_and_cooldown() -> Non
     )
     assert ctx.global_regime == "critical"
     assert ctx.cooldown_active is True
+    assert "portfolio_risk_state_frozen" in reasons
+    assert "position_cooldown_active" in reasons
 
 
 def test_derive_risk_gate_context_uses_msl_fragility() -> None:
     payload = _sample_msl()
     payload["market_risk_state"] = {"cascade_risk": "medium", "squeeze_probability": "low", "reversal_risk": "low"}
     msl = _build_msl_from_dict(payload)
-    ctx = _derive_risk_gate_context(msl=msl, position_context={}, active_events=[])
+    ctx, reasons = _derive_risk_gate_context(msl=msl, position_context={}, active_events=[])
     assert ctx.global_regime == "elevated"
     assert ctx.cooldown_active is False
+    assert "msl_market_fragility_medium" in reasons
 
 
 def test_derive_risk_gate_context_uses_active_event_pressure() -> None:
     msl = _build_msl_from_dict(_sample_msl())
-    ctx = _derive_risk_gate_context(
+    ctx, reasons = _derive_risk_gate_context(
         msl=msl,
         position_context={},
         active_events=[{"type": "forced_liquidation", "score": 0.91}],
     )
     assert ctx.global_regime == "critical"
+    assert "active_event_forced_liquidation_critical" in reasons

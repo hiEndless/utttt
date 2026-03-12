@@ -75,41 +75,46 @@ def _derive_global_regime(
     msl: MarketStateMSL,
     position_context: Dict[str, Any],
     active_events: list[Dict[str, Any]],
-) -> str:
+) -> tuple[str, list[str]]:
     regime_rank = {"normal": 0, "elevated": 1, "critical": 2}
     regime = "normal"
+    reasons: list[str] = []
 
-    def _raise(next_regime: str) -> None:
+    def _raise(next_regime: str, reason: str) -> None:
         nonlocal regime
+        if reason and reason not in reasons:
+            reasons.append(reason)
         if regime_rank.get(next_regime, 0) > regime_rank.get(regime, 0):
             regime = next_regime
 
     portfolio_risk = dict((position_context or {}).get("portfolio_risk") or {})
     position_risk_state = str(portfolio_risk.get("risk_state") or "normal").strip().lower()
     if position_risk_state == "frozen":
-        _raise("critical")
+        _raise("critical", "portfolio_risk_state_frozen")
     elif position_risk_state in {"reduce_only", "warn"}:
-        _raise("elevated")
+        _raise("elevated", f"portfolio_risk_state_{position_risk_state}")
 
     if msl.market_fragility == "high":
-        _raise("critical")
+        _raise("critical", "msl_market_fragility_high")
     elif msl.market_fragility == "medium":
-        _raise("elevated")
+        _raise("elevated", "msl_market_fragility_medium")
     if str(msl.volatility.volatility_regime or "unknown") == "high":
-        _raise("elevated")
+        _raise("elevated", "msl_volatility_regime_high")
     if msl.horizon_alignment == "conflict":
-        _raise("elevated")
+        _raise("elevated", "msl_horizon_alignment_conflict")
 
     for item in list(active_events or []):
         evt = dict(item or {})
         evt_type = str(evt.get("type") or "").strip().lower()
         score = _to_float(evt.get("score"), 0.0)
         if evt_type in {"liquidation_cluster", "forced_liquidation", "exchange_risk"} and score >= 0.8:
-            _raise("critical")
+            _raise("critical", f"active_event_{evt_type}_critical")
         elif evt_type in {"volatility_spike", "funding_extreme", "basis_dislocation"} and score >= 0.7:
-            _raise("elevated")
+            _raise("elevated", f"active_event_{evt_type}_elevated")
 
-    return regime
+    if not reasons:
+        reasons.append("default_normal")
+    return regime, reasons
 
 
 def _derive_risk_gate_context(
@@ -117,13 +122,20 @@ def _derive_risk_gate_context(
     msl: MarketStateMSL,
     position_context: Dict[str, Any],
     active_events: list[Dict[str, Any]],
-) -> RiskGateContext:
+) -> tuple[RiskGateContext, list[str]]:
     pos = dict((position_context or {}).get("current_position") or {})
     cooldown_seconds_left = int(pos.get("cooldown_seconds_left") or 0)
-    return RiskGateContext(
-        global_regime=_derive_global_regime(msl=msl, position_context=position_context, active_events=active_events),
-        cooldown_active=(cooldown_seconds_left > 0),
+    global_regime, reasons = _derive_global_regime(
+        msl=msl,
+        position_context=position_context,
+        active_events=active_events,
     )
+    if cooldown_seconds_left > 0 and "position_cooldown_active" not in reasons:
+        reasons.append("position_cooldown_active")
+    return RiskGateContext(
+        global_regime=global_regime,
+        cooldown_active=(cooldown_seconds_left > 0),
+    ), reasons
 
 
 class TradeEventWorkflow:
@@ -239,7 +251,7 @@ class TradeEventWorkflow:
             position_context=position_ctx,
             signal_event=dict(ctx.signal_event or {}),
         )
-        risk_ctx = _derive_risk_gate_context(
+        risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
             msl=ctx.msl,
             position_context=position_ctx,
             active_events=list(ctx.active_events),
@@ -390,6 +402,7 @@ class TradeEventWorkflow:
                 risk_gate={
                     "global_regime": risk_ctx.global_regime,
                     "cooldown_active": bool(risk_ctx.cooldown_active),
+                    "regime_sources": list(risk_ctx_reasons),
                     "allow_open": allowance.allow_open,
                     "allow_add": allowance.allow_add,
                     "allow_reduce": allowance.allow_reduce,
