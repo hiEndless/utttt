@@ -18,15 +18,9 @@ from services.execution_service.adapters.confidence_metrics_store import (
     InMemoryConfidenceMetricsStore,
     RedisConfidenceMetricsStore,
 )
-from services.execution_service.adapters.mock_execution_sink import MockExecutionSink
 from services.execution_service.adapters.exchange_execution_sink import ExchangeExecutionSink
 from services.execution_service.adapters.idempotency_store import InMemoryIdempotencyStore, RedisIdempotencyStore
 from services.execution_service.adapters.execution_state_store import InMemoryExecutionStateStore, RedisExecutionStateStore
-from services.execution_service.adapters.stub_risk_policy_provider import StubRiskPolicyProvider
-from services.execution_service.adapters.stub_state_providers import (
-    StubAccountStateProvider,
-    StubPositionStateProvider,
-)
 from services.execution_service.routes import create_router
 from .service import ExecutionService
 
@@ -42,28 +36,25 @@ def create_app() -> FastAPI:
     runtime_profile = str(os.getenv("EXECUTION_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     redis_client = None
     cfg = None
-
-    if state_provider_mode == "redis":
-        cfg = RedisExecutionStateConfig.from_env()
-        redis_client = create_redis_client_from_env(cfg.redis_url)
-        position_provider = RedisPositionStateProvider(
-            redis_client=redis_client,
-            key_template=cfg.position_key_template,
-        )
-        account_provider = RedisAccountStateProvider(
-            redis_client=redis_client,
-            key_template=cfg.account_key_template,
-        )
-        risk_policy_provider = RedisRiskPolicyProvider(
-            redis_client=redis_client,
-            key_template=cfg.risk_policy_key_template,
-        )
-        logger.info("execution_service 使用 Redis 状态提供器，redis_url=%s", cfg.redis_url)
-    else:
-        position_provider = StubPositionStateProvider()
-        account_provider = StubAccountStateProvider()
-        risk_policy_provider = StubRiskPolicyProvider()
-        logger.info("execution_service 使用 Stub 状态提供器")
+    if state_provider_mode not in {"redis", "stub"}:
+        raise RuntimeError(f"unsupported EXECUTION_STATE_PROVIDER_MODE={state_provider_mode}")
+    if state_provider_mode == "stub":
+        logger.warning("EXECUTION_STATE_PROVIDER_MODE=stub is deprecated, using redis providers with fail-open defaults")
+    cfg = RedisExecutionStateConfig.from_env()
+    redis_client = create_redis_client_from_env(cfg.redis_url)
+    position_provider = RedisPositionStateProvider(
+        redis_client=redis_client,
+        key_template=cfg.position_key_template,
+    )
+    account_provider = RedisAccountStateProvider(
+        redis_client=redis_client,
+        key_template=cfg.account_key_template,
+    )
+    risk_policy_provider = RedisRiskPolicyProvider(
+        redis_client=redis_client,
+        key_template=cfg.risk_policy_key_template,
+    )
+    logger.info("execution_service 使用 Redis 状态提供器，redis_url=%s", cfg.redis_url)
 
     submit_enabled = _is_true_env("EXECUTION_SUBMIT_ENABLED", "false")
     sink_mode = str(os.getenv("EXECUTION_SINK_MODE", "exchange") or "exchange").strip().lower()
@@ -80,6 +71,8 @@ def create_app() -> FastAPI:
     execution_sink = None
     if submit_enabled:
         if sink_mode == "mock":
+            from services.execution_service.adapters.mock_execution_sink import MockExecutionSink
+
             execution_sink = MockExecutionSink(
                 venue=str(os.getenv("EXECUTION_SINK_MOCK_VENUE", "mock_exchange") or "mock_exchange").strip()
             )

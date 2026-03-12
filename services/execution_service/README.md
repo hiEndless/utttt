@@ -83,7 +83,7 @@ execution_service/
 - `PositionStateProvider`：仓位侧输入端口
 - `AccountStateProvider`：账户侧输入端口
 - 已提供最小 stub：
-  - `services/execution_service/adapters/stub_state_providers.py`
+  - `services/execution_service/adapters/stub_state_providers.py`（仅测试/联调，不再作为 app 默认装配）
 - 已提供 Redis 实现：
   - `services/execution_service/adapters/redis_state_providers.py`
 
