@@ -10,6 +10,7 @@
 bash tools/local/run_agent_memory_summary_report.sh --help
 bash tools/local/verify_report_aggregate.sh --help
 bash tools/local/aggregate_and_check.sh --help
+bash tools/local/verify_quick.sh --help
 bash tools/local/verify_full.sh --help
 bash tools/local/check_cli_help_snapshot_guard.sh
 ```
@@ -74,4 +75,15 @@ Description:
 Examples:
   bash tools/local/verify_full.sh
   bash tools/local/verify_full.sh --event-center-only
+```
+
+## `tools/local/verify_quick.sh --help`
+
+```text
+Usage:
+  bash tools/local/verify_quick.sh [args...]
+
+Description:
+  本地 quick 验证入口，代理到：
+    bash tools/ci/verify_quick.sh [args...]
 ```
