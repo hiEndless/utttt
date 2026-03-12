@@ -6,7 +6,7 @@ BASELINE_TEMPLATE="services/event_center_new/docs/ci_baseline_template.md"
 HELP_SNAPSHOT_LINES="services/event_center_new/docs/ci_help_snapshot_lines.txt"
 TRIAGE_SNAPSHOT_LINES="services/event_center_new/docs/ci_triage_snapshot_lines.txt"
 
-echo "[1/7] 检查 CI 文档与快照关键行文件存在"
+echo "[1/8] 检查 CI 文档与快照关键行文件存在"
 if ! test -f "$DOC"; then
   echo "[失败] 缺少 $DOC"
   exit 1
@@ -24,7 +24,7 @@ if ! test -f "$TRIAGE_SNAPSHOT_LINES"; then
   exit 1
 fi
 
-echo "[2/7] 校验快照关键行文件非空且无重复行"
+echo "[2/8] 校验快照关键行文件非空且无重复行"
 for snapshot in "$HELP_SNAPSHOT_LINES" "$TRIAGE_SNAPSHOT_LINES"; do
   if [[ ! -s "$snapshot" ]]; then
     echo "[失败] 快照关键行文件为空: $snapshot"
@@ -47,7 +47,7 @@ if rg -n "[^\\x00-\\x7F]" "$TRIAGE_SNAPSHOT_LINES" >/dev/null; then
   exit 1
 fi
 
-echo "[3/7] 校验 CI 文档包含帮助快照关键行"
+echo "[3/8] 校验 CI 文档包含帮助快照关键行"
 while IFS= read -r line; do
   if [[ -z "$line" ]]; then
     continue
@@ -58,7 +58,7 @@ while IFS= read -r line; do
   fi
 done < "$HELP_SNAPSHOT_LINES"
 
-echo "[4/7] 校验 CI 文档包含排障命令快照关键行"
+echo "[4/8] 校验 CI 文档包含排障命令快照关键行"
 while IFS= read -r line; do
   if [[ -z "$line" ]]; then
     continue
@@ -75,7 +75,22 @@ if ! rg -q -F "EC_GUARD_CI_DOC_FAILED" "$HELP_SNAPSHOT_LINES"; then
   exit 1
 fi
 
-echo "[5/7] 校验 CI 文档已引用基线模板文件"
+echo "[5/8] 校验 guard_summary 命名约定"
+for name in \
+  "guard_summary.quick_strict.log" \
+  "guard_summary.quick_lenient.log" \
+  "guard_summary.full.log"; do
+  if ! rg -q -F "$name" "$DOC"; then
+    echo "[失败] CI 文档缺少 guard_summary 命名约定: $name"
+    exit 1
+  fi
+  if ! rg -q -F "$name" "$TRIAGE_SNAPSHOT_LINES"; then
+    echo "[失败] triage 快照缺少 guard_summary 命名约定: $name"
+    exit 1
+  fi
+done
+
+echo "[6/8] 校验 CI 文档已引用基线模板文件"
 if ! rg -q -F "services/event_center_new/docs/ci_baseline_template.md" "$DOC"; then
   echo "[失败] CI 文档未引用基线模板文件: services/event_center_new/docs/ci_baseline_template.md"
   exit 1
@@ -85,7 +100,7 @@ if ! rg -q -F "| date | command | mode | result | commit |" "$DOC"; then
   exit 1
 fi
 
-echo "[6/7] 校验基线模板内容完整"
+echo "[7/8] 校验基线模板内容完整"
 if ! rg -q -F "记录模板（固定）：" "$BASELINE_TEMPLATE"; then
   echo "[失败] 基线模板缺少“记录模板（固定）”标题"
   exit 1
@@ -107,7 +122,7 @@ if ! rg -q -F '同一 `commit` 必须同时记录 `quick` 与 `full` 两条基�
   exit 1
 fi
 
-echo "[7/7] 校验基线记录同一 commit 同时包含 quick/full"
+echo "[8/8] 校验基线记录同一 commit 同时包含 quick/full"
 if ! test -x ./venv/bin/python; then
   PY_BIN=python3
 else
