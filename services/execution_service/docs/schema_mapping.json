@@ -21,6 +21,18 @@
         "risk_hints",
         "trace_id"
       ],
+      "field_semantics": {
+        "decision_confidence": {
+          "role": "canonical",
+          "producer_policy": "SHOULD always provide",
+          "deprecated_alias": "confidence"
+        },
+        "confidence": {
+          "role": "deprecated_alias",
+          "compat_behavior": "autofill_to_decision_confidence_when_missing",
+          "deprecated_window_end": "2026-06-30"
+        }
+      },
       "references": [
         {
           "schema": "services/execution_service/docs/decision_intent.schema.json",

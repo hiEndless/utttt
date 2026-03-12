@@ -40,6 +40,7 @@
 1. 持续将执行层风险规则与状态字段语义收敛到 schema 单一来源
 2. 增加更多跨服务契约联调用例（agent -> execution -> reconcile）
 3. 逐步替换 stub 数据提供器为生产级 provider（按环境开关）
+4. `confidence` deprecated 兼容窗口跟踪：目标在 `2026-06-30` 后进入移除评估（以 `confidence_only_requests=0` 为前置条件）
 
 ## 归档待办（未启用）
 

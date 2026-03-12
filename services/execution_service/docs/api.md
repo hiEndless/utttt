@@ -82,7 +82,7 @@
 5. `direction_intent`: `long | short | none`
 6. `decision_confidence.level`: `low | medium | high`
 7. `decision_confidence.score`: `[0, 1]` 浮点数
-8. `confidence`: 可选兼容字段（deprecated，若仅提供该字段，运行时会回填到 `decision_confidence`）
+8. `confidence`: 可选兼容字段（deprecated，若仅提供该字段，运行时会回填到 `decision_confidence`；兼容窗口目标截止 `2026-06-30`）
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
 11. `trace_id`: 可选字符串
