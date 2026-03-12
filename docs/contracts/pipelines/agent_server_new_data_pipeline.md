@@ -377,6 +377,10 @@ HTTP 适配器：
 - `feature_keys`
 - `preferred_source/conflict_count`（仅 fusion 可用时）
 
+`provider_states` 枚举口径（agent 汇总视角）：
+- `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
+- 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`
+
 实现：[context_builder.py](services/agent_server_new/app/context_builder.py#L96-L180) 与 [context_builder.py](services/agent_server_new/app/context_builder.py#L245-L256)
 
 ### 6.4 features 列表：强制注入项 + 动态候选项

@@ -221,6 +221,27 @@ SelectedEvent 的完整语义契约参考（上游实现对齐版文档）：
 
 实现：[service.py](services/market_state_engine/src/service.py#L272-L296)
 
+### 4.5 alternative_sources 融合语义（feature + selected_event）
+
+当上游包含 `raw_market_structure.alternative_sources` 且 selected_event 带有
+`context_snapshot.alternative_sources_summary` 时，服务会在
+`state_features.evidence.alternative_sources_fusion` 输出融合结果：
+
+- `preferred_source`: `feature|event_center|none`
+- `merged.by_source.{news|social|onchain}` 关键字段：
+  - `available`
+  - `provider_state`
+  - `feature_available`
+  - `event_available`
+  - `event_evidence_count`
+  - `data_source`
+  - `inference_source`
+
+`provider_state` 枚举口径（state 融合结果）：
+- `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
+
+统一策略单源：`contracts/semantic_policies/source_semantics.yaml`
+
 ---
 
 ## 5. 引擎聚合阶段：raw_market_structure -> MarketStateFeatures

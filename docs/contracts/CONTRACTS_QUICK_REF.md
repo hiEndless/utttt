@@ -22,6 +22,15 @@ agent_server_new -> execution_service
 约束：
 - `market_state_engine` 只做市场结构状态分析，不直接处理舆情/链上/新闻事件流。
 
+### 1.1 alternative_sources provider_state（跨服务统一）
+
+- 语义单源：`contracts/semantic_policies/source_semantics.yaml`
+- 枚举口径：
+  - feature: `primary/fallback/static/noop/unavailable/empty/ok`
+  - event_center: `event_evidence_present/empty`
+  - state/agent 融合结果: `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
+- 不可用状态集合：`noop/empty/unavailable/none`
+
 ## 2. feature_service
 
 ### 2.1 健康检查
