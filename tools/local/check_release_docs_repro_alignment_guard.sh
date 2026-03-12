@@ -4,6 +4,32 @@ set -euo pipefail
 LATEST_DOC="docs/operations/RELEASE_LATEST.md"
 SUMMARY_DOC="docs/operations/RELEASE_SUMMARY_20260312.md"
 HANDOFF_DOC="docs/operations/RELEASE_HANDOFF_20260312.md"
+SHOW_MISSING=0
+
+while (($# > 0)); do
+  case "$1" in
+    --help|-h)
+      cat <<'USAGE'
+用法:
+  bash tools/local/check_release_docs_repro_alignment_guard.sh
+  bash tools/local/check_release_docs_repro_alignment_guard.sh --show-missing
+
+参数:
+  --show-missing   失败时打印缺失项明细（标题/关键命令行）
+USAGE
+      exit 0
+      ;;
+    --show-missing)
+      SHOW_MISSING=1
+      shift
+      ;;
+    *)
+      echo "[失败] 不支持的参数: $1"
+      echo "使用 --help 查看可用参数。"
+      exit 1
+      ;;
+  esac
+done
 
 for doc in "$LATEST_DOC" "$SUMMARY_DOC" "$HANDOFF_DOC"; do
   if [[ ! -f "$doc" ]]; then
@@ -16,6 +42,9 @@ echo "[1/2] 检查三份发布文档均包含 release gate schema 最小复现�
 for doc in "$LATEST_DOC" "$SUMMARY_DOC" "$HANDOFF_DOC"; do
   if ! rg -q "release gate schema" "$doc"; then
     echo "[失败] 文档缺少 release gate schema 复现标题: $doc"
+    if [[ "$SHOW_MISSING" == "1" ]]; then
+      echo "[debug] missing_heading=release gate schema file=$doc"
+    fi
     exit 1
   fi
 done
@@ -29,6 +58,9 @@ for doc in "$LATEST_DOC" "$SUMMARY_DOC" "$HANDOFF_DOC"; do
     if ! rg -q -F "$line" "$doc"; then
       echo "[失败] 文档缺少最小复现关键行: $doc"
       echo "  - $line"
+      if [[ "$SHOW_MISSING" == "1" ]]; then
+        echo "[debug] missing_line=$line file=$doc"
+      fi
       exit 1
     fi
   done
