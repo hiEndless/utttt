@@ -36,11 +36,10 @@ while (($# > 0)); do
   esac
 done
 
-if [[ "$WITH_MEMORY_SUMMARY" == "1" ]]; then
-  bash tools/local/run_agent_memory_summary_report.sh "$MEMORY_SUMMARY_PATH"
-fi
-
 AGGREGATE_ARGS=(--glob 'verification/reports/*.json' --output "$SUMMARY_PATH")
+if [[ "$WITH_MEMORY_SUMMARY" == "1" ]]; then
+  AGGREGATE_ARGS+=(--with-memory-summary --memory-summary-path "$MEMORY_SUMMARY_PATH")
+fi
 if [[ "$COMPACT" == "1" ]]; then
   AGGREGATE_ARGS+=(--compact)
 fi
