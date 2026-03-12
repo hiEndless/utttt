@@ -63,6 +63,8 @@ Options:
   --memory-summary-path <path>  memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
   --skip-thresholds             仅聚合，不执行阈值检查
+  --max-legacy-confidence-ratio <float>
+                               execution legacy confidence 占比上限（默认 -1 忽略）
   --help, -h                    显示帮助
 ```
 

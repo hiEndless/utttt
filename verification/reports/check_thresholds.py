@@ -34,6 +34,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-reports", type=int, default=1, help="最小报告数")
     p.add_argument("--max-semantic-errors", type=int, default=0, help="最大语义审计错误数")
     p.add_argument("--max-semantic-warnings", type=int, default=-1, help="最大语义审计告警数，-1 表示忽略")
+    p.add_argument(
+        "--max-legacy-confidence-ratio",
+        type=float,
+        default=-1.0,
+        help="最大 execution legacy confidence 使用占比，-1 表示忽略",
+    )
     return p
 
 
@@ -46,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     pass_rate = _to_float(summary.get("pass_rate"), 0.0)
     semantic_errors = _to_int(summary.get("semantic_error_count"), 0)
     semantic_warnings = _to_int(summary.get("semantic_warning_count"), 0)
+    legacy_confidence_ratio = _to_float(summary.get("execution_legacy_confidence_usage_ratio"), 0.0)
 
     errors = []
     if report_count < int(args.min_reports):
@@ -58,6 +65,11 @@ def main(argv: list[str] | None = None) -> int:
         errors.append(f"semantic_error_count>{int(args.max_semantic_errors)} (actual={semantic_errors})")
     if int(args.max_semantic_warnings) >= 0 and semantic_warnings > int(args.max_semantic_warnings):
         errors.append(f"semantic_warning_count>{int(args.max_semantic_warnings)} (actual={semantic_warnings})")
+    if float(args.max_legacy_confidence_ratio) >= 0 and legacy_confidence_ratio > float(args.max_legacy_confidence_ratio):
+        errors.append(
+            "execution_legacy_confidence_usage_ratio>"
+            f"{float(args.max_legacy_confidence_ratio)} (actual={legacy_confidence_ratio})"
+        )
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -68,7 +80,8 @@ def main(argv: list[str] | None = None) -> int:
     print("[passed] verification thresholds satisfied")
     print(
         f"report_count={report_count} failed={failed} pass_rate={pass_rate} "
-        f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings}"
+        f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings} "
+        f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio}"
     )
     return 0
 

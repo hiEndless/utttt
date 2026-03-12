@@ -6,6 +6,7 @@ MEMORY_SUMMARY_PATH="verification/reports/memory_summary.latest.json"
 WITH_MEMORY_SUMMARY=0
 SKIP_THRESHOLDS=0
 COMPACT=0
+MAX_LEGACY_CONFIDENCE_RATIO="-1"
 
 while (($# > 0)); do
   case "$1" in
@@ -20,6 +21,8 @@ Options:
   --memory-summary-path <path>  memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
   --skip-thresholds             仅聚合，不执行阈值检查
+  --max-legacy-confidence-ratio <float>
+                               execution legacy confidence 占比上限（默认 -1 忽略）
   --help, -h                    显示帮助
 USAGE
       exit 0
@@ -44,6 +47,10 @@ USAGE
       COMPACT=1
       shift
       ;;
+    --max-legacy-confidence-ratio)
+      MAX_LEGACY_CONFIDENCE_RATIO="${2:-$MAX_LEGACY_CONFIDENCE_RATIO}"
+      shift 2
+      ;;
     *)
       echo "unknown arg: $1" >&2
       exit 2
@@ -65,5 +72,6 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --min-pass-rate 1.0 \
     --max-failed 0 \
     --min-reports 1 \
-    --max-semantic-errors 0
+    --max-semantic-errors 0 \
+    --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
 fi
