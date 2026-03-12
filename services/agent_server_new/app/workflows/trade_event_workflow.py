@@ -331,6 +331,7 @@ class TradeEventWorkflow:
                     "notes": plan.notes,
                 },
                 memory_metrics=dict((ctx.key_market_features or {}).get("memory_observability") or {}),
+                contract_warnings=[str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x],
                 tags=["decision_trace"],
             )
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())

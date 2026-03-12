@@ -240,6 +240,7 @@ signal_event + active_events + MSL
 - `memory_dropped_count`
 - `memory_summary_field_count`
 - `memory_summary_event_count`
+- `contract_warnings`（来自 `market_state.anomaly_flags` 的契约/语义告警子集，当前收敛 `state_features_*` 与 `msl_*`）
 
 ## One-shot Pipeline Smoke
 

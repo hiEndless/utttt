@@ -41,6 +41,11 @@ class _MarketState:
             msl_meta={"schema_version": 2},
             cross_horizon={"suggested_policy": "follow_long_term"},
             state_features={"evidence": {}, "anomalies": {}},
+            anomaly_flags=[
+                "state_features_semantic_contract_missing",
+                "msl_meta_schema_version_missing",
+                "external_event_input_ignored",
+            ],
         )
 
 
@@ -134,6 +139,10 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert metrics["memory_hit"] is False
         assert metrics["memory_raw_recent_count"] == 0
         assert metrics["memory_filtered_recent_count"] == 0
+        contract_warnings = list(trace_payload.get("contract_warnings") or [])
+        assert "state_features_semantic_contract_missing" in contract_warnings
+        assert "msl_meta_schema_version_missing" in contract_warnings
+        assert "external_event_input_ignored" not in contract_warnings
 
     import pytest
 

@@ -39,6 +39,17 @@ def _normalize_risk_flags(value: Any) -> List[str]:
     return []
 
 
+def _extract_contract_warnings(anomaly_flags: List[Any]) -> List[str]:
+    out: List[str] = []
+    for item in list(anomaly_flags or []):
+        flag = str(item or "").strip()
+        if not flag:
+            continue
+        if flag.startswith("state_features_") or flag.startswith("msl_"):
+            out.append(flag)
+    return sorted(set(out))
+
+
 def _normalize_recent_memory(
     *,
     recent: List[Dict[str, Any]],
@@ -253,6 +264,7 @@ class ContextBuilder:
             symbol_memory=symbol_memory_filtered,
         )
         key_features["memory_observability"] = memory_observability
+        key_features["contract_warnings"] = _extract_contract_warnings(list(market_state.anomaly_flags or []))
         ctx = EventContext(
             event_id=event_id,
             exchange=exchange,

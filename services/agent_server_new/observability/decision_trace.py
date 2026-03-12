@@ -26,6 +26,7 @@ class DecisionTrace:
     risk_gate: Dict[str, Any]
     execution_plan: Dict[str, Any]
     memory_metrics: Dict[str, Any] = field(default_factory=dict)
+    contract_warnings: List[str] = field(default_factory=list)
 
     tags: List[str] = field(default_factory=list)
 
@@ -47,5 +48,6 @@ class DecisionTrace:
             "risk_gate": dict(self.risk_gate),
             "execution_plan": dict(self.execution_plan),
             "memory_metrics": dict(self.memory_metrics),
+            "contract_warnings": [str(x) for x in list(self.contract_warnings or []) if x],
             "tags": list(self.tags),
         }
