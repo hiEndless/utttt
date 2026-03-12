@@ -6,6 +6,7 @@ set -euo pipefail
 
 REQUIRED_SCRIPTS=(
   "tools/local/check_feature_contract_guard.sh"
+  "tools/local/check_feature_contract_entry_guard.sh"
   "tools/local/check_feature_service_schema_guard.sh"
   "tools/local/check_market_state_contract_entry_guard.sh"
   "tools/local/check_runner_output_schema_guard.sh"
