@@ -109,10 +109,10 @@ def test_runner_builds_alternative_source_summary_from_evidences() -> None:
             ]
         },
     )
-    runner, _store = _build_runner([event])
-    selected = runner.run_once()
-    assert len(selected) == 1
-    alt = dict(selected[0]["context_snapshot"].get("alternative_sources_summary") or {})
+    runner, store = _build_runner([event])
+    runner.run_once()
+    assert len(store.context) == 1
+    alt = dict(store.context[0].get("alternative_sources_summary") or {})
     assert "news" in list(alt.get("available_sources") or [])
     assert "onchain" in list(alt.get("available_sources") or [])
     assert alt.get("provider_states", {}).get("social") == "empty"
@@ -148,12 +148,82 @@ def test_runner_alternative_source_summary_uses_attrs_source_semantics() -> None
             ]
         },
     )
-    runner, _store = _build_runner([event])
-    selected = runner.run_once()
-    assert len(selected) == 1
-    alt = dict(selected[0]["context_snapshot"].get("alternative_sources_summary") or {})
+    runner, store = _build_runner([event])
+    runner.run_once()
+    assert len(store.context) == 1
+    alt = dict(store.context[0].get("alternative_sources_summary") or {})
     assert alt.get("data_sources", {}).get("news") == "coindesk"
     assert alt.get("inference_sources", {}).get("news") == "event_center_new.news_parser"
+
+
+def test_runner_alternative_source_summary_prefers_explicit_source_type() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-alt-3",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="macro.alert",
+        source=EventSource(name="mixed_feed", category="mixed"),
+        importance=0.8,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {
+                    "type": "macro.alert",
+                    "direction": "mixed",
+                    "strength": 0.4,
+                    "horizon": "mid",
+                    "importance": 0.6,
+                    "attrs": {
+                        "source_type": "onchain",
+                        "source_category": "mixed",
+                        "source_name": "coindesk",
+                    },
+                }
+            ]
+        },
+    )
+    runner, store = _build_runner([event])
+    runner.run_once()
+    assert len(store.context) == 1
+    alt = dict(store.context[0].get("alternative_sources_summary") or {})
+    assert "onchain" in list(alt.get("available_sources") or [])
+    assert "news" not in list(alt.get("available_sources") or [])
+
+
+def test_runner_alternative_source_summary_detects_social_by_source_name() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-alt-4",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="macro.alert",
+        source=EventSource(name="mixed_feed", category="mixed"),
+        importance=0.8,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {
+                    "type": "macro.alert",
+                    "direction": "mixed",
+                    "strength": 0.4,
+                    "horizon": "mid",
+                    "importance": 0.6,
+                    "attrs": {
+                        "source_category": "mixed",
+                        "source_name": "x_twitter_stream",
+                    },
+                }
+            ]
+        },
+    )
+    runner, store = _build_runner([event])
+    runner.run_once()
+    assert len(store.context) == 1
+    alt = dict(store.context[0].get("alternative_sources_summary") or {})
+    assert "social" in list(alt.get("available_sources") or [])
 
 
 def test_runner_mixed_noise_can_be_dropped() -> None:

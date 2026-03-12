@@ -89,12 +89,34 @@ def _build_active_triggers(evidences: list[Evidence]) -> list[dict[str, str | in
 
 
 def _detect_alternative_source(ev: Evidence) -> str | None:
-    text = f"{ev.type} {dict(ev.attrs or {}).get('source_category', '')}".lower()
+    attrs = dict(ev.attrs or {})
+    explicit = str(attrs.get("source_type") or "").strip().lower()
+    if explicit in {"news", "social", "onchain"}:
+        return explicit
+
+    category = str(attrs.get("source_category") or "").strip().lower()
+    if category in {"news", "macro_news"}:
+        return "news"
+    if category in {"social", "sentiment_social"}:
+        return "social"
+    if category in {"onchain", "chain"}:
+        return "onchain"
+
+    source_name = str(attrs.get("source_name") or attrs.get("source") or "").strip().lower()
+    if source_name:
+        if any(token in source_name for token in {"twitter", "x_", "reddit", "discord", "telegram"}):
+            return "social"
+        if any(token in source_name for token in {"glassnode", "nansen", "chainalysis", "arkham", "onchain"}):
+            return "onchain"
+        if any(token in source_name for token in {"coindesk", "cointelegraph", "bloomberg", "reuters", "news"}):
+            return "news"
+
+    text = f"{ev.type} {category} {source_name}".lower()
     if "onchain" in text:
         return "onchain"
-    if "social" in text:
+    if "social" in text or "twitter" in text:
         return "social"
-    if "news" in text:
+    if "news" in text or "macro" in text:
         return "news"
     return None
 
