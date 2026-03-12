@@ -8,6 +8,7 @@ on:
       - "tools/local/check_new_arch_guards.sh"
       - "tools/ci/event_center_quick_*.sh"
       - "tools/ci/event_center_emit_meta_header.sh"
+      - "tools/ci/event_center_emit_guard_summary.sh"
       - "docs/ARCHITECTURE_NEW.md"
       - "docs/CONTRACTS_QUICK_REF.md"
   push:
@@ -19,6 +20,7 @@ on:
       - "tools/local/check_new_arch_guards.sh"
       - "tools/ci/event_center_quick_*.sh"
       - "tools/ci/event_center_emit_meta_header.sh"
+      - "tools/ci/event_center_emit_guard_summary.sh"
       - "docs/ARCHITECTURE_NEW.md"
       - "docs/CONTRACTS_QUICK_REF.md"
 
@@ -49,6 +51,7 @@ jobs:
           echo "event_center quick strict guard failed, see artifact: event-center-quick-strict-diagnostics"
           echo "download artifact then run (最短排障命令串):"
           echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
+          echo "  rg -n \"^\[CI_GUARD\]\" quick_strict.log quick_lenient.log"
           exit 1
 
   quick-lenient:
@@ -77,4 +80,5 @@ jobs:
           echo "event_center quick lenient guard failed, see artifact: event-center-quick-lenient-diagnostics"
           echo "download artifact then run (最短排障命令串):"
           echo "  pwd && ls -la . && rg -n \"FAIL_CODE=\" quick_strict.log quick_lenient.log"
+          echo "  rg -n \"^\[CI_GUARD\]\" quick_strict.log quick_lenient.log"
           exit 1
