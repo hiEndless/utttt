@@ -1,6 +1,6 @@
 # Verification API Draft (Read-only)
 
-更新时间：2026-03-12
+更新时间：2026-03-13
 状态：draft-v1（最小文件后端实现已落地）
 
 ## 1. 目标
@@ -70,6 +70,15 @@
   "latest_finished_at_ms": 1773263320787,
   "suites": [
     {"suite": "quick", "count": 8, "passed": 8, "failed": 0, "avg_duration_ms": 3150, "latest_finished_at_ms": 1773263320787}
+  ],
+  "memory_alert_code_count": 1,
+  "memory_top_alert_codes": [
+    {
+      "alert_code": "AGENT_ALTERNATIVE_SOURCES_CONFLICT",
+      "count": 2,
+      "symbols": ["binance:ETHUSDT", "binance:BTCUSDT"],
+      "symbol_count": 2
+    }
   ]
 }
 ```
