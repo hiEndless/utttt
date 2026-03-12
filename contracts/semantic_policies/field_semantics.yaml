@@ -42,3 +42,11 @@ fields:
   - name: ts_ms
     canonical_semantic: "primary millisecond timestamp"
     expected_shape: "integer"
+
+  - name: market_state
+    canonical_semantic: "service-local state object; not equivalent to fused MSL conclusion"
+    owner: "cross_service"
+
+  - name: risk_bias
+    canonical_semantic: "action-level risk preference bias; not market environment bias"
+    owner: "execution_service"
