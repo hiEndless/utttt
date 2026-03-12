@@ -24,6 +24,7 @@ agent_server_new -> execution_service
 
 ### 1.1 alternative_sources provider_state（跨服务统一）
 
+- 结构单源：`contracts/schemas/alternative_source_summary.schema.json`
 - 语义单源：`contracts/semantic_policies/source_semantics.yaml`
 - 枚举口径：
   - feature: `primary/fallback/static/noop/unavailable/empty/ok`

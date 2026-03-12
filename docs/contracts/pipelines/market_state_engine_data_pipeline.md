@@ -240,7 +240,9 @@ SelectedEvent 的完整语义契约参考（上游实现对齐版文档）：
 `provider_state` 枚举口径（state 融合结果）：
 - `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
 
+结构单源：`contracts/schemas/alternative_source_summary.schema.json`
 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`
+运行时读取入口：`contracts/schemas/alternative_source_summary_contract.py`
 
 ---
 

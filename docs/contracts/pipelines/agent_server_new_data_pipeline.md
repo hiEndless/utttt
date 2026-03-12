@@ -377,6 +377,9 @@ HTTP 适配器：
 - `feature_keys`
 - `preferred_source/conflict_count`（仅 fusion 可用时）
 
+结构单源：
+- `contracts/schemas/alternative_source_summary.schema.json`
+
 `provider_states` 枚举口径（agent 汇总视角）：
 - `primary/fallback/static/noop/unavailable/empty/ok/event_evidence_present`
 - 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`

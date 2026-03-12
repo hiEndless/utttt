@@ -295,11 +295,14 @@ EventMemory 是“按资产维度维护的 Evidence TTL 滑动窗口”，主要
 | active_triggers | list[dict] | N | 近期触发摘要（当前取最近 5 条 evidence 的 type/direction/ts_ms） |
 | conflicts | list[dict] | N | 冲突摘要（当前实现：同 type 出现 bullish 与 bearish） |
 | tags | list[str] | N | 标签集合（当前实现：has_conflict/has_{horizon}_horizon） |
-| alternative_sources_summary | dict | N | news/social/onchain 来源摘要（available/provider_states/data_sources/inference_sources/feature_keys/evidence_counts） |
+| alternative_sources_summary | dict | N | news/social/onchain 来源摘要（结构单源见 `contracts/schemas/alternative_source_summary.schema.json`） |
 
 `alternative_sources_summary.provider_states` 枚举口径（event_center）：
 - `event_evidence_present`
 - `empty`
+
+required keys 与 source names 以单源 schema 为准：
+- `contracts/schemas/alternative_source_summary.schema.json`
 
 统一策略单源：`contracts/semantic_policies/source_semantics.yaml`
 

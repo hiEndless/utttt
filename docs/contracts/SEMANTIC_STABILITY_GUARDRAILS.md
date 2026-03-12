@@ -48,6 +48,7 @@
 - `market_state_msl_schema_version` 当前为 `2`。
 
 8. `alternative_sources.provider_state` 枚举冻结（跨服务）
+- 结构单源：`contracts/schemas/alternative_source_summary.schema.json`。
 - 策略单源：`contracts/semantic_policies/source_semantics.yaml`。
 - 枚举范围：
   - feature: `primary/fallback/static/noop/unavailable/empty/ok`
