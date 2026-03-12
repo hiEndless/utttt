@@ -4,6 +4,23 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 
+_CONTRACT_WARNING_TO_ALERT_CODE = {
+    "alternative_sources_conflict_detected": "AGENT_ALTERNATIVE_SOURCES_CONFLICT",
+}
+
+
+def map_alert_codes_from_contract_warnings(contract_warnings: List[str]) -> List[str]:
+    out: List[str] = []
+    for item in list(contract_warnings or []):
+        key = str(item or "").strip()
+        if not key:
+            continue
+        code = _CONTRACT_WARNING_TO_ALERT_CODE.get(key)
+        if code:
+            out.append(code)
+    return sorted(set(out))
+
+
 @dataclass(frozen=True)
 class DecisionTrace:
     """决策追踪：用于调试、回放与 explainable AI 的数据载体。"""
@@ -27,6 +44,7 @@ class DecisionTrace:
     execution_plan: Dict[str, Any]
     memory_metrics: Dict[str, Any] = field(default_factory=dict)
     contract_warnings: List[str] = field(default_factory=list)
+    alert_codes: List[str] = field(default_factory=list)
 
     tags: List[str] = field(default_factory=list)
 
@@ -49,5 +67,6 @@ class DecisionTrace:
             "execution_plan": dict(self.execution_plan),
             "memory_metrics": dict(self.memory_metrics),
             "contract_warnings": [str(x) for x in list(self.contract_warnings or []) if x],
+            "alert_codes": [str(x) for x in list(self.alert_codes or []) if x],
             "tags": list(self.tags),
         }

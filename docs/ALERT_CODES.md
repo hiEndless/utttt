@@ -1,6 +1,6 @@
 # 告警码清单（新架构）
 
-更新时间：2026-03-11
+更新时间：2026-03-13
 
 目标：统一线上日志告警口径，避免同类问题在不同服务中使用不同命名。
 
@@ -15,6 +15,7 @@
 | code | service | owner | introduced_in | lifecycle | trigger | signals |
 |---|---|---|---|---|---|---|
 | `MSE_SELECTED_EVENTS_UNVERSIONED` | `market_state_engine` | `state-layer` | `market_state_engine@c8f322e` | `active` | 接收到 selected_event 但缺失 `trace.schema_version` | `anomaly_flags` 包含 `selected_events_unversioned`；`state_features.evidence.selected_events_unversioned_count > 0` |
+| `AGENT_ALTERNATIVE_SOURCES_CONFLICT` | `agent_server_new` | `agent-layer` | `agent_server_new@8a248c3` | `active` | `alternative_sources_fusion` 检测到跨源状态冲突 | `contract_warnings` 包含 `alternative_sources_conflict_detected`；`decision_trace.alert_codes` 包含该告警码 |
 
 处理建议：
 - 检查 `services/event_center_new/docs/selected_event.schema.json` 是否被破坏

@@ -40,7 +40,24 @@ class _MarketState:
             msl=_build_msl_from_dict(_sample_msl()),
             msl_meta={"schema_version": 2},
             cross_horizon={"suggested_policy": "follow_long_term"},
-            state_features={"evidence": {}, "anomalies": {}},
+            state_features={
+                "evidence": {
+                    "alternative_sources_fusion": {
+                        "preferred_source": "feature",
+                        "conflicts": [{"source": "news", "feature_state": "primary", "event_state": "event_evidence_present"}],
+                        "merged": {
+                            "available_sources": ["news"],
+                            "unavailable_sources": ["social", "onchain"],
+                            "by_source": {
+                                "news": {"provider_state": "primary", "feature_keys": ["headline_score"]},
+                                "social": {"provider_state": "empty", "feature_keys": []},
+                                "onchain": {"provider_state": "empty", "feature_keys": []},
+                            },
+                        },
+                    }
+                },
+                "anomalies": {},
+            },
             anomaly_flags=[
                 "state_features_semantic_contract_missing",
                 "msl_meta_schema_version_missing",
@@ -142,7 +159,10 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         contract_warnings = list(trace_payload.get("contract_warnings") or [])
         assert "state_features_semantic_contract_missing" in contract_warnings
         assert "msl_meta_schema_version_missing" in contract_warnings
+        assert "alternative_sources_conflict_detected" in contract_warnings
         assert "external_event_input_ignored" not in contract_warnings
+        alert_codes = list(trace_payload.get("alert_codes") or [])
+        assert "AGENT_ALTERNATIVE_SOURCES_CONFLICT" in alert_codes
 
     import pytest
 

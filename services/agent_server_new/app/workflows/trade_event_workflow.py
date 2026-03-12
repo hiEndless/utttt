@@ -17,6 +17,7 @@ from services.agent_server_new.domain.rule_planner import build_rule_plan
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
+from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
 from services.agent_server_new.ports.event_recorder import EventRecorder
@@ -282,6 +283,7 @@ class TradeEventWorkflow:
                 },
             )
 
+            contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
             trace = DecisionTrace(
                 event_id=ctx.event_id,
                 exchange=ctx.exchange,
@@ -331,7 +333,8 @@ class TradeEventWorkflow:
                     "notes": plan.notes,
                 },
                 memory_metrics=dict((ctx.key_market_features or {}).get("memory_observability") or {}),
-                contract_warnings=[str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x],
+                contract_warnings=contract_warnings,
+                alert_codes=map_alert_codes_from_contract_warnings(contract_warnings),
                 tags=["decision_trace"],
             )
             await self._recorder.record_agent_output(event.event_id, "decision_trace", trace.to_dict())
