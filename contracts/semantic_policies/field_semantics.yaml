@@ -1,5 +1,5 @@
 version: 1
-updated_at: "2026-03-12"
+updated_at: "2026-03-13"
 
 fields:
   - name: decision_confidence
@@ -76,3 +76,21 @@ fields:
     expected_shape: "object"
     allowed_locations:
       - "services/market_state_engine/docs/msl.schema.json#/properties/market_risk_state"
+
+  - name: llm_observation
+    canonical_semantic: "agent llm sidecar observation summary; not execution decision output"
+    owner: "agent_server_new"
+    expected_shape: "object"
+
+  - name: llm_observation.status
+    canonical_semantic: "llm sidecar execution status enum: disabled|ok|error"
+    owner: "agent_server_new"
+    expected_shape: "enum"
+
+  - name: llm_observation.provider
+    canonical_semantic: "llm sidecar provider identifier (for observability only)"
+    owner: "agent_server_new"
+
+  - name: llm_observation.model
+    canonical_semantic: "llm sidecar model identifier (for observability only)"
+    owner: "agent_server_new"

@@ -57,6 +57,13 @@
 - 不可用状态集合冻结：`noop/empty/unavailable/none`。
 - 已新增跨服务守卫：`verification/validators/contracts/test_alternative_source_provider_state_enum_guard.py`。
 
+9. `decision_trace.llm_observation` 语义冻结（agent sidecar）
+- 字段语义固定为旁路观察，不参与 execution 动作裁决。
+- 关键字段：`status/provider/model/raw_content_hash`。
+- `status` 收敛到 `disabled|ok|error`。
+- `raw_content_hash` 固定为 64 位小写十六进制（原始文本仅保留哈希，避免观测泄漏）。
+- 已新增契约守卫：`verification/auditors/agent_server_new/test_decision_trace_llm_observation_contract.py`。
+
 ## 后续建议
 
 1. 强化 v2 去兼容门槛
