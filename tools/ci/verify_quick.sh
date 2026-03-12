@@ -60,6 +60,15 @@ else
 fi
 bash tools/local/check_prod_provider_modes_guard.sh
 bash tools/ci/verify_all.sh --quick
+# 关键负向链路冒烟：锁定 alternative source 非法 provider_state 的
+# state -> agent warning -> alert_code 三段映射，防止静默语义漂移。
+if test -x ./venv/bin/pytest; then
+  ./venv/bin/pytest -q \
+    verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code
+else
+  python3 -m pytest -q \
+    verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code
+fi
 bash tools/local/sync_contract_indexes.sh
 bash tools/local/audit_semantics.sh
 if [[ "${VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL:-0}" == "1" ]]; then

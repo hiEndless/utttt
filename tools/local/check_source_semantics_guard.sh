@@ -71,17 +71,32 @@ for path in (EVENT_CENTER_BUILDER, MARKET_STATE_SERVICE, AGENT_CONTEXT_BUILDER):
         errors.append(f"missing implementation file: {path.relative_to(ROOT)}")
 
 event_text = EVENT_CENTER_BUILDER.read_text(encoding="utf-8")
-for token in ('"data_sources"', '"inference_sources"', 'event_center_new.selector', 'event_center_new.{name}'):
+for token in ('"data_sources"', '"inference_sources"', "get_event_center_data_source", "get_event_center_inference_source"):
     if token not in event_text:
         errors.append(f"event_center builder missing token: {token}")
 
 state_text = MARKET_STATE_SERVICE.read_text(encoding="utf-8")
-for token in ('"data_source"', '"inference_source"', 'feature_service.{src}', 'event_center_new.{src}'):
+for token in (
+    '"data_source"',
+    '"inference_source"',
+    "get_market_state_feature_fallback_data_source",
+    "get_market_state_event_fallback_data_source",
+    "get_market_state_feature_fallback_inference_source",
+    "get_market_state_event_fallback_inference_source",
+):
     if token not in state_text:
         errors.append(f"market_state service missing token: {token}")
 
 agent_text = AGENT_CONTEXT_BUILDER.read_text(encoding="utf-8")
-for token in ('"data_sources"', '"inference_sources"', 'state.startswith("event_")', 'feature_service.{name}', 'event_center_new.{name}'):
+for token in (
+    '"data_sources"',
+    '"inference_sources"',
+    'state.startswith("event_")',
+    "get_agent_fusion_feature_data_source",
+    "get_agent_fusion_event_data_source",
+    "get_agent_fusion_feature_inference_source",
+    "get_agent_fusion_event_inference_source",
+):
     if token not in agent_text:
         errors.append(f"agent context builder missing token: {token}")
 

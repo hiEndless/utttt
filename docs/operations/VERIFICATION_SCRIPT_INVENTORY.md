@@ -60,6 +60,7 @@
 - `check_cli_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --quick`
+- `pytest verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code`（锁定非法 provider_state 告警码链路）
 
 CI 约束：
 - `VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1` 与 `VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1`
