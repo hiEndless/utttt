@@ -38,7 +38,7 @@ for item in \
   "--event-center-quick" \
   "--strict-wiring/--lenient-wiring" \
   "check_alert_codes_entry_guard.sh" \
-  "check_cross_service_time_semantics_doc_guard.sh"; do
+  "check_docs_contracts_bundle.sh"; do
   if ! rg -q -F -- "$item" "$SNAPSHOT"; then
     echo "[失败] 快照缺少关键项: $item"
     exit 1
@@ -46,4 +46,3 @@ for item in \
 done
 
 echo "[通过] new_arch_guards help 快照守卫检查完成。"
-

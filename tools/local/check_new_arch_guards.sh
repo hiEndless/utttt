@@ -38,16 +38,13 @@ if [[ "$MODE" == "--help" ]]; then
 说明:
   --strict-wiring/--lenient-wiring 仅影响 event_center 守卫接线检查策略。
   --event-center-only/--event-center-quick 都会先执行告警码入口守卫（check_alert_codes_entry_guard.sh）。
-  除 --help 外，所有模式都会先执行跨服务时间语义文档守卫（check_cross_service_time_semantics_doc_guard.sh）。
-  除 --help 外，所有模式都会先执行契约文档 canonical 布局守卫（check_contract_docs_canonical_layout_guard.sh）。
+  除 --help 外，所有模式都会先执行文档契约聚合守卫（check_docs_contracts_bundle.sh）。
 EOF
   exit 0
 fi
 
-# 跨服务时间语义文档一致性守卫：三种执行模式统一前置。
-bash tools/local/check_cross_service_time_semantics_doc_guard.sh
-# 契约文档 canonical 布局守卫：三种执行模式统一前置。
-bash tools/local/check_contract_docs_canonical_layout_guard.sh
+# 文档契约聚合守卫：三种执行模式统一前置。
+bash tools/local/check_docs_contracts_bundle.sh
 
 if [[ "$MODE" == "--event-center-only" ]]; then
   echo "[1/3] 告警码入口守卫"
