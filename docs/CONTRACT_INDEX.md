@@ -5,6 +5,7 @@
 
 ## 1. 架构与总入口
 
+- `README.md`（仓库导航入口）
 - `docs/ARCHITECTURE_NEW.md`
 - `docs/CONTRACTS_QUICK_REF.md`
 - `docs/contract_docs_index_help_snapshot.txt`

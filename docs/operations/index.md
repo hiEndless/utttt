@@ -2,6 +2,8 @@
 
 Canonical operations docs:
 
+- `README.md`（仓库导航入口）
+
 - `ALERT_CODES.md`
 - `DECISION_CONFIDENCE_MIGRATION.md`
 - `VERIFICATION_SCRIPT_INVENTORY.md`
