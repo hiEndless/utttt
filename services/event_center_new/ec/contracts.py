@@ -66,6 +66,7 @@ class EventContextSnapshot:
     active_triggers: list[dict[str, Any]] = field(default_factory=list)
     conflicts: list[dict[str, Any]] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    alternative_sources_summary: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

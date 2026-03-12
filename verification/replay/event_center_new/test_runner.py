@@ -74,11 +74,40 @@ def test_runner_end_to_end_bullish_selected() -> None:
     assert dict(out.get("source") or {}).get("name") == "feature_service"
     assert "schema_version" in set(dict(out.get("trace") or {}).keys())
     assert isinstance(out["context_snapshot"]["key_evidences"], list)
+    alt = dict(out["context_snapshot"].get("alternative_sources_summary") or {})
+    assert set(alt.keys()) >= {"available_sources", "unavailable_sources", "provider_states", "feature_keys", "evidence_counts"}
     assert len(store.raw) == 1
     assert len(store.normalized) == 1
     assert len(store.evidence) == 2
     assert len(store.context) == 1
     assert len(store.selected) == 1
+
+
+def test_runner_builds_alternative_source_summary_from_evidences() -> None:
+    now_ms = int(time.time() * 1000)
+    event = EventEnvelope(
+        id="evt-alt-1",
+        ts_ms=now_ms,
+        asset="ETHUSDT",
+        kind="tactical",
+        type="news.regulatory",
+        source=EventSource(name="news_feed", category="news"),
+        importance=0.9,
+        ttl_ms=600000,
+        payload={
+            "evidences": [
+                {"type": "news.regulatory", "direction": "mixed", "strength": 0.5, "horizon": "mid", "importance": 0.7, "attrs": {"headline_score": 0.8}},
+                {"type": "onchain.exchange_inflow", "direction": "bearish", "strength": 0.6, "horizon": "short", "importance": 0.8, "attrs": {"inflow_usd": 100}},
+            ]
+        },
+    )
+    runner, _store = _build_runner([event])
+    selected = runner.run_once()
+    assert len(selected) == 1
+    alt = dict(selected[0]["context_snapshot"].get("alternative_sources_summary") or {})
+    assert "news" in list(alt.get("available_sources") or [])
+    assert "onchain" in list(alt.get("available_sources") or [])
+    assert alt.get("provider_states", {}).get("social") == "empty"
 
 
 def test_runner_mixed_noise_can_be_dropped() -> None:

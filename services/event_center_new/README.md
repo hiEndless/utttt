@@ -201,6 +201,7 @@ event_center_new/
   - 确保 `selected_event` 与 `agent active_events` 映射最小字段不冲突
 - 状态层消费视角守卫：`verification/replay/event_center_new/test_selected_event_state_consumer_contract.py`
   - 确保 `selected_event` 与 `market_state_engine` evidence 聚合字段映射稳定
+- `context_snapshot.alternative_sources_summary`：统一输出 news/social/onchain 摘要，供状态层与 agent 层做同语义消费
 - 状态层运行时样本守卫：`verification/replay/event_center_new/test_selected_event_state_runtime_guard.py`
   - 真实调用 `MarketStateService.get_market_state`，验证 selected_event 进入 state evidence 的动态链路
 

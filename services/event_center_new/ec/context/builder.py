@@ -41,6 +41,7 @@ class DefaultContextBuilder:
         conflicts = _build_conflicts(evidences)
         tags = _build_tags(evidences=evidences, conflicts=conflicts)
         active_triggers = _build_active_triggers(evidences)
+        alternative_sources_summary = _build_alternative_sources_summary(evidences)
         return EventContextSnapshot(
             ts_ms=inp.ts_ms,
             asset=inp.asset,
@@ -48,6 +49,7 @@ class DefaultContextBuilder:
             active_triggers=active_triggers,
             conflicts=conflicts,
             tags=tags,
+            alternative_sources_summary=alternative_sources_summary,
         )
 
 
@@ -84,3 +86,43 @@ def _build_active_triggers(evidences: list[Evidence]) -> list[dict[str, str | in
     for ev in sorted(evidences, key=lambda x: x.ts_ms, reverse=True)[:5]:
         out.append({"type": ev.type, "direction": ev.direction, "ts_ms": ev.ts_ms})
     return out
+
+
+def _detect_alternative_source(ev: Evidence) -> str | None:
+    text = f"{ev.type} {dict(ev.attrs or {}).get('source_category', '')}".lower()
+    if "onchain" in text:
+        return "onchain"
+    if "social" in text:
+        return "social"
+    if "news" in text:
+        return "news"
+    return None
+
+
+def _build_alternative_sources_summary(evidences: list[Evidence]) -> dict[str, object]:
+    source_names = ("news", "social", "onchain")
+    feature_keys: dict[str, set[str]] = {name: set() for name in source_names}
+    counts: dict[str, int] = {name: 0 for name in source_names}
+
+    for ev in evidences:
+        src = _detect_alternative_source(ev)
+        if src is None:
+            continue
+        counts[src] += 1
+        attrs = dict(ev.attrs or {})
+        for k in attrs.keys():
+            key = str(k or "").strip()
+            if key:
+                feature_keys[src].add(key)
+
+    available_sources = [name for name in source_names if counts[name] > 0]
+    unavailable_sources = [name for name in source_names if counts[name] == 0]
+    provider_states = {name: ("event_evidence_present" if counts[name] > 0 else "empty") for name in source_names}
+
+    return {
+        "available_sources": available_sources,
+        "unavailable_sources": unavailable_sources,
+        "provider_states": provider_states,
+        "feature_keys": {name: sorted(feature_keys[name]) for name in source_names},
+        "evidence_counts": counts,
+    }
