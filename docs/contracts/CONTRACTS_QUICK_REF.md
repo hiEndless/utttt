@@ -233,6 +233,7 @@ agent_server_new -> execution_service
 - Execution RetryMeta Schema：`services/execution_service/docs/retry_meta.schema.json`
 - Execution RiskPolicy Schema：`services/execution_service/docs/risk_policy.schema.json`
 - Execution Schema Mapping：`services/execution_service/docs/schema_mapping.json`
+- Release Gate Summary Schema：`verification/reports/release_gate_summary_v1.schema.json`
 - Execution cURL 示例：`services/execution_service/docs/curl_examples.md`
 - Execution HTTPie 示例：`services/execution_service/docs/httpie_examples.md`
 - Execution Redis 键契约：`services/execution_service/docs/redis_keys.md`
