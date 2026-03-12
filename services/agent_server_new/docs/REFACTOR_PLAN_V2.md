@@ -126,6 +126,7 @@ execution_service 最终输出：
 - `agent -> execution_service` 输出契约冻结
 - 把仓位/风控硬规则下沉到 execution
  - 可选 `execution_decider` 已接入 workflow（`AGENT_EXECUTION_ENABLED=true` 时生效）
+- DecisionTrace schema 冻结：新增 `docs/decision_trace.schema.json`，锁定 `llm_observation.status/provider/model/raw_content_hash`
 
 3. Phase 3（待开始）：
 - agent 内 `RulePlanner/ExecutionPlanner` 改为建议层

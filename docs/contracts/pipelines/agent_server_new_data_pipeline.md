@@ -665,6 +665,7 @@ ExecutionPlan：
 | tags | array[string] | 标签（当前固定含 decision_trace） |
 
 结构定义：[decision_trace.py](services/agent_server_new/observability/decision_trace.py#L7-L51)  
+契约 schema：[decision_trace.schema.json](services/agent_server_new/docs/decision_trace.schema.json)  
 构建与写出：[trade_event_workflow.py](services/agent_server_new/app/workflows/trade_event_workflow.py#L285-L337)
 
 可追溯性示例测试（selected_event -> active_events -> decision_trace）：

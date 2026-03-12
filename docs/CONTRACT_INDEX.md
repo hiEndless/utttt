@@ -64,6 +64,7 @@
 - `services/agent_server_new/docs/REFACTOR_PLAN_V2.md`
 - `services/agent_server_new/docs/runner_output_contract.md`
 - `services/agent_server_new/docs/runner_output.schema.json`
+- `services/agent_server_new/docs/decision_trace.schema.json`
 - `tools/local/check_state_to_agent_contract_guard.sh`（含 active_events 最小契约与 traceability 守卫）
 - `tools/local/check_cross_service_time_semantics_doc_guard.sh`（跨 event/state/agent/execution 的时间语义文档一致性守卫）
 

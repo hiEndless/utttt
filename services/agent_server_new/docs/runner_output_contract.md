@@ -11,6 +11,7 @@ python -m services.agent_server_new.main ... --print-json
 Schema 文件：
 
 - `services/agent_server_new/docs/runner_output.schema.json`
+- `services/agent_server_new/docs/decision_trace.schema.json`（DecisionTrace 记录契约）
 
 ## 1. 输出结构
 
@@ -101,3 +102,15 @@ proc = subprocess.run(
 payload = json.loads(proc.stdout.strip())
 print(payload["source"], payload["action"], payload.get("reason"))
 ```
+
+## 5. DecisionTrace 契约（recorder 输出）
+
+当 workflow 配置了 recorder，会写出 `agent_name="decision_trace"` 的结构化记录。
+
+关键字段：
+- `event_id/exchange/symbol/ts`
+- `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
+- `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）
+
+对应 schema：
+- `services/agent_server_new/docs/decision_trace.schema.json`

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent_server_new/decision_trace.schema.json",
+  "title": "Agent Decision Trace Output",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "exchange": {
+      "type": "string"
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "integer"
+    },
+    "event": {
+      "type": "object"
+    },
+    "msl": {
+      "type": "object"
+    },
+    "key_features": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "anomalies": {
+      "type": "object"
+    },
+    "signal_verdict": {
+      "type": "object"
+    },
+    "intent": {
+      "type": "object"
+    },
+    "rule_plan": {
+      "type": "object"
+    },
+    "strategy_gate_result": {
+      "type": "object"
+    },
+    "risk_gate": {
+      "type": "object"
+    },
+    "execution_plan": {
+      "type": "object"
+    },
+    "llm_observation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "ok",
+            "error"
+          ]
+        },
+        "provider": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "raw_content_hash": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "provider",
+        "model",
+        "raw_content_hash"
+      ],
+      "additionalProperties": true
+    },
+    "memory_metrics": {
+      "type": "object"
+    },
+    "contract_warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "alert_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "event_id",
+    "exchange",
+    "symbol",
+    "ts",
+    "event",
+    "msl",
+    "key_features",
+    "evidence",
+    "anomalies",
+    "signal_verdict",
+    "intent",
+    "rule_plan",
+    "strategy_gate_result",
+    "risk_gate",
+    "execution_plan",
+    "llm_observation",
+    "memory_metrics",
+    "contract_warnings",
+    "alert_codes",
+    "tags"
+  ],
+  "additionalProperties": false
+}
