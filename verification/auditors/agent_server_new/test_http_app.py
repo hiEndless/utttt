@@ -22,6 +22,17 @@ def test_http_healthz_ok() -> None:
     assert body["service"] == "agent_server_new"
 
 
+def test_http_version_ok() -> None:
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/version")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["service"] == "agent_server_new"
+    assert body["contract_version"] == "agent-contract-v1"
+    assert body["runtime_version"] == "agent-runtime-v1"
+
+
 def test_http_readyz_returns_503_when_bootstrap_invalid(monkeypatch) -> None:  # noqa: ANN001
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "stub")
     app = create_app()

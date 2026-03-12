@@ -8,6 +8,7 @@ import httpx
 from fastapi import APIRouter, FastAPI, Response
 
 from services.agent_server_new.app.bootstrap import create_trade_event_workflow_from_env
+from services.agent_server_new.version import AGENT_CONTRACT_VERSION, AGENT_RUNTIME_VERSION
 
 
 def _env_str(name: str, default: str) -> str:
@@ -62,6 +63,18 @@ def create_router() -> APIRouter:
             "ok": True,
             "service": "agent_server_new",
             "runtime_profile": _env_str("AGENT_RUNTIME_PROFILE", "dev"),
+            "ts": now_ms,
+            "ts_ms": now_ms,
+        }
+
+    @router.get("/version")
+    async def version() -> Dict[str, Any]:
+        now_ms = int(time.time() * 1000)
+        return {
+            "service": "agent_server_new",
+            "contract_version": AGENT_CONTRACT_VERSION,
+            "runtime_version": AGENT_RUNTIME_VERSION,
+            "runtime_profile": _env_str("AGENT_RUNTIME_PROFILE", "dev").lower(),
             "ts": now_ms,
             "ts_ms": now_ms,
         }

@@ -243,6 +243,7 @@ signal_event + active_events + MSL
 
 - 启动 HTTP 入口：`python -m services.agent_server_new.runtime.http_main`
 - 健康检查：`GET /internal/agent/healthz`
+- 版本信息：`GET /internal/agent/version`（`contract_version/runtime_version/runtime_profile`）
 - 就绪检查：`GET /internal/agent/readyz`
   - 当 workflow bootstrap 失败时返回 `503`
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
