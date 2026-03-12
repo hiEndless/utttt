@@ -8,6 +8,8 @@
 - `docs/ARCHITECTURE_NEW.md`
 - `docs/CONTRACTS_QUICK_REF.md`
 - `docs/contract_docs_index_help_snapshot.txt`
+- `docs/new_arch_guards_help_snapshot.txt`
+- `docs/operations/NEW_ARCH_GUARDS_HELP_SNAPSHOT_RUNBOOK.md`
 - `docs/REFACTOR_PLAYBOOK_NEW.md`
 - `docs/DECISION_CONFIDENCE_MIGRATION.md`
 - `docs/SEMANTIC_GLOSSARY.md`
@@ -40,6 +42,7 @@
 - `services/agent_server_new/docs/runner_output_contract.md`
 - `services/agent_server_new/docs/runner_output.schema.json`
 - `tools/local/check_state_to_agent_contract_guard.sh`（含 active_events 最小契约与 traceability 守卫）
+- `tools/local/check_cross_service_time_semantics_doc_guard.sh`（跨 event/state/agent/execution 的时间语义文档一致性守卫）
 
 ## 6. execution_service
 
