@@ -169,6 +169,7 @@ event_center_new(signal_event + active_events)
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
 - GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
 - CI 失败排障入口：`services/event_center_new/docs/ci.md`
+- new_arch 帮助快照维护手册：`docs/operations/NEW_ARCH_GUARDS_HELP_SNAPSHOT_RUNBOOK.md`
 - Feature API：`services/feature_service/docs/api.md`
 - Feature 边界：`services/feature_service/docs/boundaries.md`
 - State API：`services/market_state_engine/docs/api.md`
