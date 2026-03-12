@@ -257,7 +257,7 @@ def _collect_invalid_provider_states_from_fusion(fusion: Dict[str, Any]) -> list
     merged = dict((fusion or {}).get("merged") or {})
     by_source = dict(merged.get("by_source") or {})
     invalid: list[str] = []
-    for src in ("news", "social", "onchain"):
+    for src in _ALTERNATIVE_SOURCE_NAMES:
         node = dict(by_source.get(src) or {})
         state = str(node.get("provider_state") or "").strip().lower()
         if not state:

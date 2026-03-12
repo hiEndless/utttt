@@ -10,6 +10,9 @@ bash tools/local/check_contract_change_bundle_guard.sh
 echo "[附加] 来源语义守卫"
 bash tools/local/check_source_semantics_guard.sh
 
+echo "[附加] alternative source 单源契约守卫"
+bash tools/local/check_alternative_source_single_source_guard.sh
+
 echo "[3/27] 发布基线对齐守卫"
 bash tools/local/check_release_baseline_alignment.sh
 

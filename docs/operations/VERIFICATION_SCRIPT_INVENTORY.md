@@ -1,6 +1,6 @@
 # Verification Script Inventory
 
-更新时间：2026-03-12
+更新时间：2026-03-13
 
 ## 1. 当前状态
 
@@ -11,6 +11,7 @@
 
 - 全量守卫：`tools/ci/new_arch_guards_full.sh`
   - 显式包含来源语义门禁：`check_source_semantics_guard.sh`
+  - 显式包含 alternative source 单源契约门禁：`check_alternative_source_single_source_guard.sh`
 - 快速验证：`tools/ci/verify_quick.sh`
   - 帮助：`bash tools/ci/verify_quick.sh --help`
 - 回归验证：`tools/ci/verify_regression.sh`
@@ -26,6 +27,7 @@
   - 支持：`bash tools/local/check_release_triage_block_guard.sh --show-blocks`
 - prod provider 门禁守卫：`tools/local/check_prod_provider_modes_guard.sh`
 - 来源语义守卫：`tools/local/check_source_semantics_guard.sh`
+- alternative source 单源契约守卫：`tools/local/check_alternative_source_single_source_guard.sh`
 - 一键发布就绪检查：`tools/local/check_release_ready.sh`
   - 内含：`verify_quick`、`new_arch_guards_full --quick`、`check_release_triage_block_guard.sh`、`check_release_baseline_alignment.sh --check-origin`
   - 支持：`bash tools/local/check_release_ready.sh --help`
@@ -55,6 +57,7 @@
 - `check_prod_provider_modes_guard.sh`
 - `check_semantic_policy_guard.sh`
 - `check_source_semantics_guard.sh`
+- `check_alternative_source_single_source_guard.sh`
 - `check_cross_service_time_semantics_doc_guard.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`

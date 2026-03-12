@@ -53,6 +53,7 @@ fi
 # 显式执行来源语义守卫，保证 quick 日志可直接展示该门禁状态。
 # 说明：docs/contracts bundle 内也会执行同一守卫，这里属于“可见性优先”的有意重复。
 bash tools/local/check_source_semantics_guard.sh
+bash tools/local/check_alternative_source_single_source_guard.sh
 if [[ "${VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT:-0}" == "1" ]]; then
   echo "[warn] skip release baseline alignment guard by VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT=1"
 else
