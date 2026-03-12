@@ -29,6 +29,7 @@ Shortcut wrapper (defaults to `verification/reports/summary.latest.json`):
 ```bash
 bash tools/local/verify_report_aggregate.sh --compact
 bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
+bash tools/local/verify_report_aggregate.sh --help
 ```
 
 One-shot local pipeline (optional include memory summary):

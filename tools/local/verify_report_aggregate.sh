@@ -10,6 +10,21 @@ EXTRA_ARGS=()
 
 while (($# > 0)); do
   case "$1" in
+    --help|-h)
+      cat <<'USAGE'
+Usage:
+  bash tools/local/verify_report_aggregate.sh [options]
+
+Options:
+  --glob <pattern>             聚合输入 glob（默认 verification/reports/*.json）
+  --output <path>              聚合输出路径（默认 verification/reports/summary.latest.json）
+  --compact                    生成紧凑 JSON
+  --with-memory-summary        聚合前先生成 memory summary 报告
+  --memory-summary-path <path> memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
+  --help, -h                   显示帮助
+USAGE
+      exit 0
+      ;;
     --glob)
       GLOB="${2:-$GLOB}"
       shift 2
