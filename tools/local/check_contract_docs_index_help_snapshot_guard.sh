@@ -33,7 +33,7 @@ if [[ -n "$diff_output" ]]; then
 fi
 
 echo "[4/4] 校验快照包含强约束入口关键项"
-for item in "docs/ALERT_CODES.md" "services/event_center_new/docs/ci_baseline_template.md" "services/event_center_new/docs/selected_event.schema.json"; do
+for item in "docs/ALERT_CODES.md" "verification/reports/release_gate_summary_v1.schema.json" "services/event_center_new/docs/ci_baseline_template.md" "services/event_center_new/docs/selected_event.schema.json"; do
   if ! rg -q -F "$item" "$SNAPSHOT"; then
     echo "[失败] 快照缺少强约束入口: $item"
     exit 1

@@ -10,6 +10,7 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 受强约束入口（required_entries）:
   - docs/ALERT_CODES.md
   - docs/contract_docs_index_help_snapshot.txt
+  - verification/reports/release_gate_summary_v1.schema.json
   - services/event_center_new/docs/ci_baseline_template.md
   - services/event_center_new/docs/selected_event.schema.json
 USAGE
@@ -41,6 +42,8 @@ missing = []
 # - docs
 #   - docs/ALERT_CODES.md
 #   - docs/contract_docs_index_help_snapshot.txt
+# - verification
+#   - verification/reports/release_gate_summary_v1.schema.json
 # - event_center_new
 #   - services/event_center_new/docs/ci_baseline_template.md
 #   - services/event_center_new/docs/selected_event.schema.json
@@ -49,6 +52,7 @@ missing = []
 required_entries = [
     "docs/ALERT_CODES.md",
     "docs/contract_docs_index_help_snapshot.txt",
+    "verification/reports/release_gate_summary_v1.schema.json",
     "services/event_center_new/docs/ci_baseline_template.md",
     "services/event_center_new/docs/selected_event.schema.json",
     "services/market_state_engine/docs/guard_help_snapshot.txt",

@@ -5,5 +5,6 @@
 受强约束入口（required_entries）:
   - docs/ALERT_CODES.md
   - docs/contract_docs_index_help_snapshot.txt
+  - verification/reports/release_gate_summary_v1.schema.json
   - services/event_center_new/docs/ci_baseline_template.md
   - services/event_center_new/docs/selected_event.schema.json
