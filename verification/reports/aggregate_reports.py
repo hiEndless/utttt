@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 
 _WARNING_TO_ALERT_CODE = {
     "alternative_sources_conflict_detected": "AGENT_ALTERNATIVE_SOURCES_CONFLICT",
+    "state_features_alternative_source_provider_state_invalid": "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID",
 }
 
 

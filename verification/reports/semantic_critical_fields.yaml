@@ -1,5 +1,5 @@
-version: 1
-updated_at: "2026-03-12"
+version: 2
+updated_at: "2026-03-13"
 
 # Warnings touching these field names are treated as CI blocking.
 critical_fields:
@@ -12,4 +12,5 @@ critical_fields:
   - processed_ts_ms
   - market_state
   - market_risk_state
+  - provider_state
   - risk_bias

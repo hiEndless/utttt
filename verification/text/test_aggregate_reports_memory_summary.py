@@ -40,7 +40,10 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                     "symbol": "BTCUSDT",
                     "contract_warning_count": 2,
                     "risk_score": 120.0,
-                    "recent_contract_warning_types": ["alternative_sources_conflict_detected"],
+                    "recent_contract_warning_types": [
+                        "alternative_sources_conflict_detected",
+                        "state_features_alternative_source_provider_state_invalid",
+                    ],
                 }
             ],
         },
@@ -63,13 +66,17 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert float(out["memory_top_risk_score"]) == 210.5
     rows = list(out.get("memory_high_risk_symbols") or [])
     assert rows and rows[0]["symbol"] == "ETHUSDT"
-    assert out["memory_alert_code_count"] == 1
+    assert out["memory_alert_code_count"] == 2
     top_codes = list(out.get("memory_top_alert_codes") or [])
-    assert len(top_codes) == 1
-    assert top_codes[0]["alert_code"] == "AGENT_ALTERNATIVE_SOURCES_CONFLICT"
-    assert top_codes[0]["count"] == 2
-    assert "binance:ETHUSDT" in list(top_codes[0]["symbols"] or [])
-    assert "binance:BTCUSDT" in list(top_codes[0]["symbols"] or [])
+    assert len(top_codes) == 2
+    by_code = {str(item.get("alert_code")): item for item in top_codes}
+    conflict = dict(by_code.get("AGENT_ALTERNATIVE_SOURCES_CONFLICT") or {})
+    invalid_state = dict(by_code.get("AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID") or {})
+    assert conflict.get("count") == 2
+    assert "binance:ETHUSDT" in list(conflict.get("symbols") or [])
+    assert "binance:BTCUSDT" in list(conflict.get("symbols") or [])
+    assert invalid_state.get("count") == 1
+    assert "binance:BTCUSDT" in list(invalid_state.get("symbols") or [])
     assert out["execution_confidence_report_count"] == 1
     assert out["execution_confidence_only_requests"] == 2
     assert out["execution_decision_confidence_requests"] == 8
