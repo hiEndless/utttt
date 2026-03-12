@@ -69,3 +69,18 @@ def test_verification_api_read_only_endpoints(tmp_path: Path) -> None:
 
     r_missing = client.get("/internal/verification/reports/missing")
     assert r_missing.status_code == 404
+
+
+def test_verification_api_summary_empty_branch_contains_memory_alert_fields(tmp_path: Path) -> None:
+    reports = tmp_path / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    app = create_app(report_dir=str(reports))
+    client = TestClient(app)
+
+    resp = client.get("/internal/verification/reports/summary", params={"window_hours": 24})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body.get("schema_version") == "verification-report-aggregate-v1"
+    assert int(body.get("report_count") or 0) == 0
+    assert int(body.get("memory_alert_code_count") or 0) == 0
+    assert body.get("memory_top_alert_codes") == []

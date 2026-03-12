@@ -101,6 +101,8 @@ def create_app(*, report_dir: str = "verification/reports") -> FastAPI:
                 "avg_duration_ms": 0,
                 "latest_finished_at_ms": 0,
                 "suites": [],
+                "memory_alert_code_count": 0,
+                "memory_top_alert_codes": [],
             }
 
         latest_ms = max(_safe_int(x.get("finished_at_ms"), 0) for x in all_items)
