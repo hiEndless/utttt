@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from market_state_engine.service import MarketStateService
+from services.market_state_engine.src.service import MarketStateService
 
 
 def create_router(service: MarketStateService) -> APIRouter:

@@ -21,6 +21,10 @@
 - migrated impl: `services/market_state_engine/src/{app,routes,contracts}.py`
 - legacy wrapper kept: `market_state_engine/{app,routes,contracts}.py`
 
+2.2 `market_state_engine/service.py`
+- migrated impl: `services/market_state_engine/src/service.py`
+- legacy wrapper kept: `market_state_engine/service.py`（模块桥接兼容）
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -113,3 +117,4 @@
 8. 已完成 Batch C：删除 `feature_service/providers/market_structure_migrated/` 兼容目录。
 9. 已移除 `feature_service/main.py` 兼容入口，`feature_service` 进入 fully-migrated 状态。
 10. 已启动 `market_state_engine` Batch A：`app/routes/contracts` 已迁入 `services/market_state_engine/src/`。
+11. 已执行 `market_state_engine` Batch B（阶段1）：`service.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。

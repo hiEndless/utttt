@@ -9,8 +9,8 @@ from market_state_engine.adapters.selected_events_redis import (
     RedisSelectedEventProvider,
     RedisSelectedEventProviderConfig,
 )
-from market_state_engine.service import MarketStateService
 from services.market_state_engine.src.routes import create_router
+from services.market_state_engine.src.service import MarketStateService
 
 
 def create_app() -> FastAPI:

@@ -53,11 +53,13 @@ services:
       - "services/market_state_engine/src/app.py"
       - "services/market_state_engine/src/routes.py"
       - "services/market_state_engine/src/contracts.py"
+      - "services/market_state_engine/src/service.py"
     legacy_wrapper:
       - "market_state_engine/main.py"
       - "market_state_engine/app.py"
       - "market_state_engine/routes.py"
       - "market_state_engine/contracts.py"
+      - "market_state_engine/service.py"
 
   - name: event_center_new
     current_path: "event_center_new/"

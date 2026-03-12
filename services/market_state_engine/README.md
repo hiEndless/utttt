@@ -10,3 +10,5 @@ Notes:
   - `services/market_state_engine/src/app.py`
   - `services/market_state_engine/src/routes.py`
   - `services/market_state_engine/src/contracts.py`
+- Batch B (phase-1) migrated implementation:
+  - `services/market_state_engine/src/service.py`
