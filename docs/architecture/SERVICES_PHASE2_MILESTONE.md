@@ -1,7 +1,7 @@
 # Services Phase-2 Milestone
 
 更新时间：2026-03-12
-状态：in_progress (feature_service batch-a wrappers removed)
+状态：in_progress (feature_service batch-b wrappers removed)
 
 ## 1. 目标
 
@@ -59,19 +59,19 @@
 
 13. `feature_service/providers/{bundle,noop,degradation_state}.py`
 - migrated impl: `services/feature_service/src/providers/{bundle,noop,degradation_state}.py`
-- legacy wrapper kept: `feature_service/providers/{bundle,noop,degradation_state}.py`
+- legacy wrapper status: removed in batch B
 
 14. `feature_service/providers/fallback_structure_providers.py`
 - migrated impl: `services/feature_service/src/providers/fallback_structure_providers.py`
-- legacy wrapper kept: `feature_service/providers/fallback_structure_providers.py`
+- legacy wrapper status: removed in batch B
 
 15. `feature_service/providers/{static,migrated}_structure_providers.py`
 - migrated impl: `services/feature_service/src/providers/{static,migrated}_structure_providers.py`
-- legacy wrapper kept: `feature_service/providers/{static,migrated}_structure_providers.py`
+- legacy wrapper status: removed in batch B
 
 16. `feature_service/providers/{indicators_provider,future_source_providers,__init__}.py`
 - migrated impl: `services/feature_service/src/providers/{indicators_provider,future_source_providers,__init__}.py`
-- legacy wrapper kept: `feature_service/providers/{indicators_provider,future_source_providers,__init__}.py`
+- legacy wrapper status: removed in batch B
 
 17. `feature_service/normalizers/{response_normalizer,__init__}.py`
 - migrated impl: `services/feature_service/src/normalizers/{response_normalizer,__init__}.py`
@@ -105,3 +105,4 @@
 4. `feature_service` 已进入“core src migrated + compat wrapper”状态，可开始设计兼容壳下线窗口。
 5. 兼容壳下线草案已落地：`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`。
 6. 已完成 Batch A：删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳。
+7. 已完成 Batch B：删除 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/` 目录到 Batch C）。

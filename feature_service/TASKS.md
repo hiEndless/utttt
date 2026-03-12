@@ -119,3 +119,4 @@
 - [x] Task 69: 新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）。
 - [x] Task 70: 新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）。
 - [x] Task 71: 执行兼容壳下线 Batch A（删除 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳）。
+- [x] Task 72: 执行兼容壳下线 Batch B（删除 `feature_service/providers/*.py` 顶层兼容壳，保留 `market_structure_migrated/`）。

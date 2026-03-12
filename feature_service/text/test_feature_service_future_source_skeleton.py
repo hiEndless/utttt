@@ -6,8 +6,11 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from feature_service.providers.degradation_state import reset_degradation_state, snapshot_degradation_reasons
-from feature_service.providers.future_source_providers import (
+from services.feature_service.src.providers.degradation_state import (
+    reset_degradation_state,
+    snapshot_degradation_reasons,
+)
+from services.feature_service.src.providers.future_source_providers import (
     FallbackNewsProvider,
     StaticNewsProvider,
     UnavailableOnchainProvider,

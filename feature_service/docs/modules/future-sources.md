@@ -3,7 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/src/providers/future_source_providers.py` 与 `services/feature_service/src/ports/{news_provider,social_provider,onchain_provider}.py`
-- 兼容壳：`feature_service/providers/future_source_providers.py`（ports 兼容壳已在 Batch A 下线）
+- 兼容壳：已在 Batch B 下线（providers）与 Batch A 下线（ports）
 
 
 ## 当前状态

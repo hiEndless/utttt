@@ -3,7 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/src/providers/degradation_state.py`
-- 兼容壳：`feature_service/providers/degradation_state.py`
+- 兼容壳：已在 Batch B 下线
 
 
 ## 功能作用

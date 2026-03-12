@@ -1,7 +1,7 @@
 # Feature Service Compat Wrapper Decommission
 
 更新时间：2026-03-12  
-状态：active (batch-a completed)
+状态：active (batch-b completed)
 
 ## 1. 目标
 
@@ -46,6 +46,10 @@
 1. Batch A 已稳定一个迭代周期。
 2. `feature_service` 生产/回放链路无兼容壳相关告警。
 3. `./venv/bin/pytest -q feature_service/text` 与 quick CI 持续通过。
+
+执行结果：
+
+- 已完成（2026-03-12）
 
 ### Batch C（高风险，最后）
 

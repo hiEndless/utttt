@@ -329,6 +329,7 @@ service = FeatureService.from_bundle(bundle)
 - 已完成 Task 69：新增兼容壳下线草案文档（`docs/operations/FEATURE_SERVICE_COMPAT_WRAPPER_DECOMMISSION.md`）
 - 已完成 Task 70：新增旧路径 import 审计脚本（`tools/local/check_feature_legacy_imports.sh`）
 - 已完成 Task 71：执行 Batch A，下线 `app/routes/service/contracts` 与 `ports/normalizers` 兼容壳
+- 已完成 Task 72：执行 Batch B，下线 `feature_service/providers/*.py` 顶层兼容壳（保留 `market_structure_migrated/`）
 
 ## 错误码约定（新增）
 

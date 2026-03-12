@@ -6,16 +6,16 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from feature_service.providers.market_structure_migrated.behavioral import behavior_output
-from feature_service.providers.fallback_structure_providers import FallbackOrderbookProvider
-from feature_service.providers.noop import (
+from services.feature_service.src.providers.market_structure_migrated.behavioral import behavior_output
+from services.feature_service.src.providers.fallback_structure_providers import FallbackOrderbookProvider
+from services.feature_service.src.providers.noop import (
     NoopBehaviorProvider,
     NoopHorizonsProvider,
     NoopIndicatorsProvider,
     NoopOpenInterestProvider,
     NoopOrderbookProvider,
 )
-from feature_service.providers.bundle import ProviderBundle
+from services.feature_service.src.providers.bundle import ProviderBundle
 from services.feature_service.src.service import FeatureDataUnavailableError, FeatureService
 
 

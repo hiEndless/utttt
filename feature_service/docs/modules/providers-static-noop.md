@@ -3,7 +3,7 @@
 ## 路径
 
 - canonical：`services/feature_service/src/providers/static_structure_providers.py` 与 `services/feature_service/src/providers/noop.py`
-- 兼容壳：`feature_service/providers/static_structure_providers.py` 与 `feature_service/providers/noop.py`
+- 兼容壳：已在 Batch B 下线
 
 
 ## 功能作用
