@@ -29,7 +29,12 @@ USAGE
       ;;
     --*)
       EXTRA_ARGS+=("$1")
-      shift
+      if (($# > 1)) && [[ "${2:-}" != --* ]]; then
+        EXTRA_ARGS+=("$2")
+        shift 2
+      else
+        shift
+      fi
       ;;
     *)
       if [[ "$OUT_PATH" == "verification/reports/memory_summary.latest.json" ]]; then
@@ -48,4 +53,9 @@ else
   PY_BIN=python3
 fi
 
-exec "$PY_BIN" -m services.agent_server_new.memory_summary_runner --output "$OUT_PATH" "${EXTRA_ARGS[@]}"
+CMD=("$PY_BIN" -m services.agent_server_new.memory_summary_runner --output "$OUT_PATH")
+if ((${#EXTRA_ARGS[@]} > 0)); then
+  CMD+=("${EXTRA_ARGS[@]}")
+fi
+
+exec "${CMD[@]}"
