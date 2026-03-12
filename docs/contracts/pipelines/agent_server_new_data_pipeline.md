@@ -282,8 +282,8 @@ HTTP 适配器：
 默认接线（重点）：
 
 - market_state：`HttpMarketStateProvider.from_env()`
-- position_context：`StubPositionContextProvider()`
-- active_events：由 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE` 控制（默认 stub；redis 初始化失败会降级为 stub）
+- position_context：`HttpExecutionPositionContextProvider.from_env(...)`
+- active_events：由 `AGENT_ACTIVE_EVENTS_PROVIDER_MODE` 控制（默认 redis；仅在非生产且显式开启 `AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true` 时才降级为 null provider）
 - execution_decider：由 `AGENT_EXECUTION_ENABLED` 控制（默认 false）
 - symbol_memory：由 `AGENT_SYMBOL_MEMORY_ENABLED` 控制（默认 false），backend=redis|inmemory
 
@@ -655,13 +655,14 @@ ExecutionPlan：
 
 | 变量 | 默认值 | 含义 |
 |---|---|---|
-| AGENT_ACTIVE_EVENTS_PROVIDER_MODE | stub | stub/redis |
+| AGENT_ACTIVE_EVENTS_PROVIDER_MODE | redis | 仅支持 redis |
+| AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK | false | 非生产环境是否允许 Redis 初始化失败回退 null provider |
 | AGENT_ACTIVE_EVENTS_REDIS_URL | redis://127.0.0.1:6379/0 | Redis 连接串 |
 | AGENT_ACTIVE_EVENTS_STREAM | ec:selected | Stream key |
 | AGENT_ACTIVE_EVENTS_LIMIT_DEFAULT | 20 | 返回条数 |
 | AGENT_ACTIVE_EVENTS_SCAN_FACTOR | 5 | 扫描倍率（count = limit * factor） |
 
-来源：[bootstrap.py](services/agent_server_new/app/bootstrap.py#L39-L47) 与 [active_events_redis.py](services/agent_server_new/adapters/active_events_redis.py#L19-L36)
+来源：[bootstrap.py](services/agent_server_new/app/bootstrap.py#L40-L75) 与 [active_events_redis.py](services/agent_server_new/adapters/active_events_redis.py#L19-L36)
 
 ### 10.3 execution_decider（execution_service）
 

@@ -41,10 +41,12 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     - market_state: HttpMarketStateProvider.from_env()
     - position_context: 由 AGENT_POSITION_CONTEXT_PROVIDER_MODE 控制（默认 http）
     - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 redis）
+      - Redis 初始化失败默认抛错；仅当 AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true 且非生产环境才回退 null provider
     - execution_decider: 按环境变量 AGENT_EXECUTION_ENABLED 决定是否启用
     """
     runtime_profile = str(os.getenv("AGENT_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     active_events_provider_mode = str(os.getenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis") or "redis").strip().lower()
+    allow_null_fallback = _env_bool("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "false")
     if runtime_profile in {"prod", "production"} and active_events_provider_mode != "redis":
         raise RuntimeError("production profile requires AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis")
 
@@ -55,9 +57,15 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         except Exception as exc:
             if runtime_profile in {"prod", "production"}:
                 raise RuntimeError("failed to initialize redis active events provider in production") from exc
-            # 中文注释：非生产环境允许降级为 null provider，避免上游短时故障阻塞决策链路。
-            logger.warning("active_events redis provider init failed, fallback to null provider: %s", exc)
-            active_events_provider = NullActiveEventsProvider()
+            if allow_null_fallback:
+                # 中文注释：仅在显式允许时，非生产环境才降级为 null provider，避免静默丢失事件背景。
+                logger.warning("active_events redis provider init failed, fallback to null provider: %s", exc)
+                active_events_provider = NullActiveEventsProvider()
+            else:
+                raise RuntimeError(
+                    "failed to initialize redis active events provider; "
+                    "set AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true to allow null fallback in non-production"
+                ) from exc
     else:
         raise RuntimeError(f"unsupported AGENT_ACTIVE_EVENTS_PROVIDER_MODE={active_events_provider_mode}")
 

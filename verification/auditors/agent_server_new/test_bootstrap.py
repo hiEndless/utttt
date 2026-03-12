@@ -60,6 +60,7 @@ def test_create_trade_event_workflow_from_env_fallbacks_to_null_when_active_even
     import services.agent_server_new.app.bootstrap as mod
 
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "true")
 
     def _raise() -> object:
         raise RuntimeError("boom")
@@ -67,6 +68,23 @@ def test_create_trade_event_workflow_from_env_fallbacks_to_null_when_active_even
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_redis_failed_without_fallback_raises(monkeypatch):
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "false")
+
+    def _raise() -> object:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when redis provider init fails and null fallback is disabled"
+    except RuntimeError as exc:
+        assert "AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_forbid_stub_active_events(monkeypatch):
