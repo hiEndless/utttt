@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ENTRY="tools/local/check_event_center_contract_guards.sh"
-TOP_ENTRY="scripts/check_new_arch_guards.sh"
+TOP_ENTRY="tools/local/check_new_arch_guards.sh"
 SHOW_LINKS="false"
 MATCH_MODE="strict"
 
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "[失败] 不支持的参数: $1"
-      echo "用法: bash scripts/check_event_center_guard_wiring.sh [--show-links] [--strict|--lenient]"
+      echo "用法: bash tools/local/check_event_center_guard_wiring.sh [--show-links] [--strict|--lenient]"
       exit 1
       ;;
   esac

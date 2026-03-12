@@ -5,7 +5,7 @@ on:
     paths:
       - "event_center_new/**"
       - "scripts/check_event_center_*"
-      - "scripts/check_new_arch_guards.sh"
+      - "tools/local/check_new_arch_guards.sh"
       - "tools/ci/event_center_quick_*.sh"
       - "tools/ci/event_center_emit_meta_header.sh"
       - "docs/ARCHITECTURE_NEW.md"
@@ -16,7 +16,7 @@ on:
     paths:
       - "event_center_new/**"
       - "scripts/check_event_center_*"
-      - "scripts/check_new_arch_guards.sh"
+      - "tools/local/check_new_arch_guards.sh"
       - "tools/ci/event_center_quick_*.sh"
       - "tools/ci/event_center_emit_meta_header.sh"
       - "docs/ARCHITECTURE_NEW.md"

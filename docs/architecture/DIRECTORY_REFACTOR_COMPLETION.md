@@ -13,11 +13,11 @@
 
 基于 `verification/guards/script_compat_whitelist.yaml`：
 
-- workflow hard-pinned：1
+- workflow hard-pinned：0
 - snapshot/help hard-pinned：0
-- text wiring hard-pinned：1
-- hard-pinned 唯一路径总计：1
-- compatibility wrappers retained：41
+- text wiring hard-pinned：0
+- hard-pinned 唯一路径总计：0
+- compatibility wrappers retained：42
 
 结论：脚本层已进入“兼容窗口治理阶段”，不再是“迁移实施阶段”。
 
@@ -25,7 +25,7 @@
 
 以下脚本暂不建议删除或改名（路径稳定性仍被 CI/workflow/snapshot/wiring 依赖）：
 
-1. `scripts/check_new_arch_guards.sh`
+（无）
 
 说明：完整原因与分类以机器清单为准：`verification/guards/script_compat_whitelist.yaml`。
 
@@ -41,8 +41,8 @@
 
 ## 5. Next Actions (Recommended)
 
-1. 将 `check_new_arch_guards` 的 workflow 触发与 wiring 依赖切到 `tools/*` 入口。  
-2. 完成后删除最后一个 hard-pinned 脚本并进入 wrapper 下线批次。
+1. 进入 compatibility wrapper 下线批次（按兼容窗口策略逐批删除 `scripts/*`）。  
+2. 同步更新 workflow/path filter 与守卫文档，确保仅引用 `tools/*` 主入口。
 
 ## 6. Validation Commands
 

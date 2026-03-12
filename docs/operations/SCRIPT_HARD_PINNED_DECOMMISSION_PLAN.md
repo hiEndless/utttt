@@ -8,9 +8,7 @@
 
 ## 2. 当前 hard-pinned 对象
 
-以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 1 个：
-
-1. `scripts/check_new_arch_guards.sh`
+以 `verification/guards/script_compat_whitelist.yaml` 为唯一准入源，当前唯一路径共 0 个（已清零）。
 
 ## 3. 分批治理
 
@@ -31,11 +29,11 @@
 
 ### Batch C: Text wiring pinning
 
-状态：进行中（2026-03-12）
+状态：已完成（2026-03-12）
 
-1. 将 `check_event_center_guard_wiring` 从脚本文本扫描迁移为“命令意图”检查。
-2. 输入收敛到 `tools/ci/new_arch_guards_full.sh` + `tools/local/*` 后，解除 `check_new_arch_guards.sh` 硬钉。
-3. 验收：无脚本路径文本耦合后，允许删除最后一个 hard-pinned 入口。
+1. `check_event_center_guard_wiring` 已切到扫描 `tools/local/*` 主入口。
+2. `check_new_arch_guards` 已迁移到 `tools/local`，`scripts/*` 仅保留 wrapper。
+3. hard-pinned 清单已清零，后续进入 wrapper 下线窗口。
 
 ## 4. 下线门禁
 

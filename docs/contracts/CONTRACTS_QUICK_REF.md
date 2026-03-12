@@ -180,18 +180,18 @@ agent_server_new -> execution_service
 - Runner 输出 Schema 守卫脚本（CI 可用）：`scripts/check_runner_output_schema_guard.sh`
 - Contract Docs Index 守卫脚本（CI 可用）：`scripts/check_contract_docs_index_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`scripts/check_agent_to_execution_guard.sh`
-- 新架构守卫总入口（CI 可用）：`scripts/check_new_arch_guards.sh`
+- 新架构守卫总入口（CI 可用）：`tools/local/check_new_arch_guards.sh`
 - 告警码入口守卫（CI 可用）：`scripts/check_alert_codes_entry_guard.sh`
-- 仅跑 event_center quick：`scripts/check_new_arch_guards.sh --event-center-quick`
-- 仅跑 event_center 全量：`scripts/check_new_arch_guards.sh --event-center-only`
+- 仅跑 event_center quick：`tools/local/check_new_arch_guards.sh --event-center-quick`
+- 仅跑 event_center 全量：`tools/local/check_new_arch_guards.sh --event-center-only`
 - 顺序提示：`--event-center-quick/--event-center-only` 会先执行告警码入口守卫，再执行 event_center 守卫聚合
 - event_center CI workflow 守卫：`scripts/check_event_center_ci_workflow_guard.sh`
 - event_center CI 文档快照守卫：`scripts/check_event_center_ci_doc_snapshot_guard.sh`
 - event_center 帮助快照同步守卫：`scripts/check_event_center_help_snapshot_sync_guard.sh`
 - 顶层入口接线策略可选：追加 `--lenient-wiring`（默认 `--strict-wiring`）
-- CI 便捷入口：`scripts/ci_event_center_quick_strict.sh` / `scripts/ci_event_center_quick_lenient.sh`
-- event_center full CI 便捷入口：`scripts/ci_event_center_full_strict.sh`
-- event_center CI 元信息头部脚本：`scripts/ci_event_center_emit_meta_header.sh`
+- CI 便捷入口：`tools/ci/event_center_quick_strict.sh` / `tools/ci/event_center_quick_lenient.sh`
+- event_center full CI 便捷入口：`tools/ci/event_center_full_strict.sh`
+- event_center CI 元信息头部脚本：`tools/ci/event_center_emit_meta_header.sh`
 - GitHub Actions 工作流：`.github/workflows/event-center-quick.yml`
 - GitHub Actions 夜间全量工作流：`.github/workflows/event-center-full.yml`（失败自动上传 `event-center-full-diagnostics`）
 - GitHub Actions 复用初始化 action：`.github/actions/setup-utaker-python/action.yml`
