@@ -9,6 +9,20 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.feature_service.src.routes import create_router
+from services.feature_service.src.providers.bundle import ProviderBundle
+from services.feature_service.src.service import FeatureService
+from services.feature_service.src.providers.noop import (
+    NoopBehaviorProvider,
+    NoopHorizonsProvider,
+    NoopIndicatorsProvider,
+    NoopOpenInterestProvider,
+    NoopOrderbookProvider,
+)
+from services.feature_service.src.providers.future_source_providers import (
+    NoopNewsProvider,
+    NoopOnchainProvider,
+    NoopSocialProvider,
+)
 
 
 class _StubFeatureService:
@@ -59,6 +73,12 @@ class _UnavailableFeatureService:
         from services.feature_service.src.service import FeatureDataUnavailableError
 
         raise FeatureDataUnavailableError(exchange=exchange, symbol=symbol, degraded_reasons=["open_interest_provider_fallback"])
+
+
+class _OrderbookProvider:
+    async def get_orderbook(self, exchange: str, symbol: str):
+        _ = (exchange, symbol)
+        return {"orderbook_snapshot": {"spread": 1.0}, "orderbook_structure_short": {"liquidity_stability": "stable"}}
 
 
 def test_raw_structure_route_returns_versioned_contract():
@@ -124,3 +144,31 @@ def test_version_route_exposes_contract_meta():
     assert body["response_schema_version"] == "1.0"
     assert isinstance(body["ts"], int)
     assert body["ts_ms"] == body["ts"]
+
+
+def test_features_route_e2e_includes_alternative_source_semantics_fields():
+    service = FeatureService.from_bundle(
+        ProviderBundle(
+            orderbook_provider=_OrderbookProvider(),
+            open_interest_provider=NoopOpenInterestProvider(),
+            horizons_provider=NoopHorizonsProvider(),
+            behavior_provider=NoopBehaviorProvider(),
+            indicators_provider=NoopIndicatorsProvider(),
+            news_provider=NoopNewsProvider(),
+            social_provider=NoopSocialProvider(),
+            onchain_provider=NoopOnchainProvider(),
+        )
+    )
+    app = FastAPI()
+    app.include_router(create_router(service))
+    client = TestClient(app)
+
+    resp = client.get("/internal/feature-service/features/binance/ETHUSDT")
+    assert resp.status_code == 200
+    body = resp.json()
+    alt = dict(body["data"].get("alternative_sources") or {})
+    for src in ("news", "social", "onchain"):
+        node = dict(alt.get(src) or {})
+        assert node.get("source_type") == src
+        assert node.get("data_source") == f"feature_service.{src}"
+        assert node.get("inference_source") == "feature_service.normalizer"

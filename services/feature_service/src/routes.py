@@ -107,6 +107,7 @@ def create_router(service: FeatureService) -> APIRouter:
                 indicators=dict(payload.get("indicators") or {}),
                 derived_metrics=dict(payload.get("derived_metrics") or {}),
                 structure_snapshot=dict(payload.get("structure_snapshot") or {}),
+                alternative_sources=dict(payload.get("alternative_sources") or {}),
             ),
         )
 
