@@ -22,6 +22,7 @@
 - prod provider 门禁守卫：`tools/local/check_prod_provider_modes_guard.sh`
 - 一键发布就绪检查：`tools/local/check_release_ready.sh`
   - 内含：`verify_quick`、`new_arch_guards_full --quick`、`check_release_triage_block_guard.sh`、`check_release_baseline_alignment.sh --check-origin`
+  - 支持：`bash tools/local/check_release_ready.sh --help`
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
