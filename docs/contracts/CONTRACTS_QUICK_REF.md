@@ -186,6 +186,7 @@ agent_server_new -> execution_service
 - 语义关键字段告警守卫（CI 可用）：`tools/local/check_semantic_critical_warning_guard.sh`
 - Agent->Execution 联动守卫脚本（CI 可用）：`tools/local/check_agent_to_execution_guard.sh`
 - 新架构守卫总入口（CI 可用）：`tools/local/check_new_arch_guards.sh`
+- 说明：`check_new_arch_guards.sh`（除 `--help` 外）已内置执行 `tools/local/check_cross_service_time_semantics_doc_guard.sh`
 - 告警码入口守卫（CI 可用）：`tools/local/check_alert_codes_entry_guard.sh`
 - 仅跑 event_center quick：`tools/local/check_new_arch_guards.sh --event-center-quick`
 - 仅跑 event_center 全量：`tools/local/check_new_arch_guards.sh --event-center-only`
