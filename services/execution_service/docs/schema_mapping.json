@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v18",
+  "version": "execution-schema-mapping-v19",
   "last_updated": "2026-03-13",
   "items": [
     {
@@ -58,6 +58,24 @@
           "schema": "services/execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.account_id.minLength",
           "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.alternative_source_summary.$ref",
+          "expected": "./alternative_source_summary.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/alternative_source_summary.schema.json",
+          "json_path": "required",
+          "expected": [
+            "available_sources",
+            "unavailable_sources",
+            "provider_states",
+            "data_sources",
+            "inference_sources",
+            "feature_keys",
+            "evidence_counts"
+          ]
         },
         {
           "schema": "services/execution_service/docs/decision_confidence.schema.json",

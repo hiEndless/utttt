@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlternativeSourceSummary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "available_sources",
+    "unavailable_sources",
+    "provider_states",
+    "data_sources",
+    "inference_sources",
+    "feature_keys",
+    "evidence_counts"
+  ],
+  "properties": {
+    "available_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["news", "social", "onchain"]
+      },
+      "uniqueItems": true
+    },
+    "unavailable_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["news", "social", "onchain"]
+      },
+      "uniqueItems": true
+    },
+    "provider_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["news", "social", "onchain"],
+      "properties": {
+        "news": {
+          "type": "string",
+          "enum": ["primary", "fallback", "static", "noop", "unavailable", "empty", "ok", "event_evidence_present"]
+        },
+        "social": {
+          "type": "string",
+          "enum": ["primary", "fallback", "static", "noop", "unavailable", "empty", "ok", "event_evidence_present"]
+        },
+        "onchain": {
+          "type": "string",
+          "enum": ["primary", "fallback", "static", "noop", "unavailable", "empty", "ok", "event_evidence_present"]
+        }
+      }
+    },
+    "data_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["news", "social", "onchain"],
+      "properties": {
+        "news": {"type": "string"},
+        "social": {"type": "string"},
+        "onchain": {"type": "string"}
+      }
+    },
+    "inference_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["news", "social", "onchain"],
+      "properties": {
+        "news": {"type": "string"},
+        "social": {"type": "string"},
+        "onchain": {"type": "string"}
+      }
+    },
+    "feature_keys": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["news", "social", "onchain"],
+      "properties": {
+        "news": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
+        "social": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
+        "onchain": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidence_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["news", "social", "onchain"],
+      "properties": {
+        "news": {"type": "integer", "minimum": 0},
+        "social": {"type": "integer", "minimum": 0},
+        "onchain": {"type": "integer", "minimum": 0}
+      }
+    },
+    "preferred_source": {
+      "type": "string"
+    },
+    "conflict_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

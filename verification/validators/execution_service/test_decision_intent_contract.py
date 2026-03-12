@@ -8,6 +8,18 @@ if str(ROOT_DIR) not in sys.path:
 from services.execution_service.domain.contracts import DecisionIntent, ExecutionResult
 
 
+def _alt_summary() -> dict:
+    return {
+        "available_sources": ["news"],
+        "unavailable_sources": ["social", "onchain"],
+        "provider_states": {"news": "primary", "social": "empty", "onchain": "empty"},
+        "data_sources": {"news": "feature_service.news", "social": "", "onchain": ""},
+        "inference_sources": {"news": "feature_service.normalizer", "social": "", "onchain": ""},
+        "feature_keys": {"news": ["headline_score"], "social": [], "onchain": []},
+        "evidence_counts": {"news": 2, "social": 0, "onchain": 0},
+    }
+
+
 def test_decision_intent_v1_parse_success() -> None:
     payload = {
         "decision_id": "dec-001",
@@ -27,6 +39,44 @@ def test_decision_intent_v1_parse_success() -> None:
     assert data["account_id"] == "sub_1"
     assert data["direction_intent"] == "long"
     assert data["confidence"]["score"] == 0.66
+
+
+def test_decision_intent_accepts_valid_alternative_source_summary() -> None:
+    payload = {
+        "decision_id": "dec-alt-001",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"alternative_source_summary": _alt_summary()},
+    }
+    decision = DecisionIntent.from_dict(payload)
+    data = decision.to_dict()
+    assert "alternative_source_summary" in data["risk_hints"]
+
+
+def test_decision_intent_rejects_invalid_alternative_source_summary_provider_state() -> None:
+    bad = _alt_summary()
+    bad["provider_states"]["news"] = "mystery"
+    payload = {
+        "decision_id": "dec-alt-002",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"alternative_source_summary": bad},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "alternative_source_summary.provider_states.news" in str(exc)
 
 
 def test_decision_intent_v1_reject_invalid_direction() -> None:

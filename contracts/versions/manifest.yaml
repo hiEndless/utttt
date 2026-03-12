@@ -3,7 +3,7 @@ updated_at: "2026-03-13"
 
 contract_versions:
   - name: execution_schema_mapping_version
-    value: "execution-schema-mapping-v18"
+    value: "execution-schema-mapping-v19"
     source: "services/execution_service/version.py"
 
   - name: feature_response_schema_version

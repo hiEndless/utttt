@@ -7,6 +7,78 @@ from typing import Any, Dict, List, Literal, Mapping, Optional
 DirectionIntent = Literal["long", "short", "none"]
 ConfidenceLevel = Literal["low", "medium", "high"]
 ExecutionAction = Literal["add", "reduce", "hold", "exit", "skip"]
+_ALT_SOURCES = ("news", "social", "onchain")
+_ALT_PROVIDER_STATES = {
+    "primary",
+    "fallback",
+    "static",
+    "noop",
+    "unavailable",
+    "empty",
+    "ok",
+    "event_evidence_present",
+}
+
+
+def _validate_alternative_source_summary(summary: Mapping[str, Any]) -> None:
+    required_keys = {
+        "available_sources",
+        "unavailable_sources",
+        "provider_states",
+        "data_sources",
+        "inference_sources",
+        "feature_keys",
+        "evidence_counts",
+    }
+    for key in required_keys:
+        if key not in summary:
+            raise ValueError(f"risk_hints.alternative_source_summary 缺少必填键: {key}")
+
+    for field in ("available_sources", "unavailable_sources"):
+        values = summary.get(field)
+        if not isinstance(values, list):
+            raise ValueError(f"risk_hints.alternative_source_summary.{field} 必须是数组")
+        for value in values:
+            if str(value) not in _ALT_SOURCES:
+                raise ValueError(f"risk_hints.alternative_source_summary.{field} 包含非法 source")
+
+    for field in ("provider_states", "data_sources", "inference_sources", "feature_keys", "evidence_counts"):
+        if not isinstance(summary.get(field), Mapping):
+            raise ValueError(f"risk_hints.alternative_source_summary.{field} 必须是对象")
+
+    provider_states = summary.get("provider_states")
+    data_sources = summary.get("data_sources")
+    inference_sources = summary.get("inference_sources")
+    feature_keys = summary.get("feature_keys")
+    evidence_counts = summary.get("evidence_counts")
+    if not isinstance(provider_states, Mapping):
+        raise ValueError("risk_hints.alternative_source_summary.provider_states 必须是对象")
+    if not isinstance(data_sources, Mapping):
+        raise ValueError("risk_hints.alternative_source_summary.data_sources 必须是对象")
+    if not isinstance(inference_sources, Mapping):
+        raise ValueError("risk_hints.alternative_source_summary.inference_sources 必须是对象")
+    if not isinstance(feature_keys, Mapping):
+        raise ValueError("risk_hints.alternative_source_summary.feature_keys 必须是对象")
+    if not isinstance(evidence_counts, Mapping):
+        raise ValueError("risk_hints.alternative_source_summary.evidence_counts 必须是对象")
+
+    for source in _ALT_SOURCES:
+        state = str(provider_states.get(source) or "").strip().lower()
+        if state not in _ALT_PROVIDER_STATES:
+            raise ValueError(
+                f"risk_hints.alternative_source_summary.provider_states.{source} 非法: {state or '<empty>'}"
+            )
+        if not isinstance(data_sources.get(source), str):
+            raise ValueError(f"risk_hints.alternative_source_summary.data_sources.{source} 必须是字符串")
+        if not isinstance(inference_sources.get(source), str):
+            raise ValueError(f"risk_hints.alternative_source_summary.inference_sources.{source} 必须是字符串")
+        if not isinstance(feature_keys.get(source), list):
+            raise ValueError(f"risk_hints.alternative_source_summary.feature_keys.{source} 必须是数组")
+        try:
+            if int(evidence_counts.get(source) or 0) < 0:
+                raise ValueError("negative")
+        except Exception:
+            raise ValueError(f"risk_hints.alternative_source_summary.evidence_counts.{source} 必须是非负整数")
 
 
 @dataclass(frozen=True)
@@ -86,6 +158,11 @@ class DecisionIntent:
         risk_hints = payload.get("risk_hints") or {}
         if not isinstance(risk_hints, dict):
             raise ValueError("risk_hints 必须是对象")
+        alt_summary = risk_hints.get("alternative_source_summary")
+        if alt_summary is not None:
+            if not isinstance(alt_summary, Mapping):
+                raise ValueError("risk_hints.alternative_source_summary 必须是对象")
+            _validate_alternative_source_summary(alt_summary)
 
         trace_id_raw = payload.get("trace_id")
         trace_id = None if trace_id_raw is None else str(trace_id_raw).strip() or None

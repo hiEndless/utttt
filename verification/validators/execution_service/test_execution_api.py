@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v18"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v19"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -86,6 +86,36 @@ def test_decide_bad_request() -> None:
         },
     )
     assert response.status_code == 400
+
+
+def test_decide_rejects_invalid_alternative_source_summary_provider_state() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-001-bad-alt",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {
+                "alternative_source_summary": {
+                    "available_sources": ["news"],
+                    "unavailable_sources": ["social", "onchain"],
+                    "provider_states": {"news": "invalid", "social": "empty", "onchain": "empty"},
+                    "data_sources": {"news": "feature_service.news", "social": "", "onchain": ""},
+                    "inference_sources": {"news": "feature_service.normalizer", "social": "", "onchain": ""},
+                    "feature_keys": {"news": ["headline_score"], "social": [], "onchain": []},
+                    "evidence_counts": {"news": 1, "social": 0, "onchain": 0},
+                }
+            },
+        },
+    )
+    assert response.status_code == 400
+    assert "alternative_source_summary.provider_states.news" in str(response.json().get("detail") or "")
 
 
 def test_decide_rejects_confidence_alias_mismatch() -> None:

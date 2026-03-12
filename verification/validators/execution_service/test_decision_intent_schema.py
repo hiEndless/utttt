@@ -22,7 +22,18 @@ def test_decision_intent_schema_samples() -> None:
         "confidence": {"level": "medium", "score": 0.66},
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
-        "risk_hints": {"market_fragility": "medium"},
+        "risk_hints": {
+            "market_fragility": "medium",
+            "alternative_source_summary": {
+                "available_sources": ["news"],
+                "unavailable_sources": ["social", "onchain"],
+                "provider_states": {"news": "primary", "social": "empty", "onchain": "empty"},
+                "data_sources": {"news": "feature_service.news", "social": "", "onchain": ""},
+                "inference_sources": {"news": "feature_service.normalizer", "social": "", "onchain": ""},
+                "feature_keys": {"news": ["headline_score"], "social": [], "onchain": []},
+                "evidence_counts": {"news": 1, "social": 0, "onchain": 0}
+            }
+        },
         "trace_id": "trace-001"
     }
     assert validate_payload_with_local_refs(
@@ -39,6 +50,35 @@ def test_decision_intent_schema_samples() -> None:
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {}
+    }
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
+
+def test_decision_intent_schema_rejects_invalid_alternative_source_summary() -> None:
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    bad = {
+        "decision_id": "dec-003",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {
+            "alternative_source_summary": {
+                "available_sources": ["news"],
+                "unavailable_sources": ["social", "onchain"],
+                "provider_states": {"news": "unknown", "social": "empty", "onchain": "empty"},
+                "data_sources": {"news": "feature_service.news", "social": "", "onchain": ""},
+                "inference_sources": {"news": "feature_service.normalizer", "social": "", "onchain": ""},
+                "feature_keys": {"news": ["headline_score"], "social": [], "onchain": []},
+                "evidence_counts": {"news": 1, "social": 0, "onchain": 0}
+            }
+        }
     }
     assert not validate_payload_with_local_refs(
         schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
