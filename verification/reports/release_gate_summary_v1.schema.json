@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReleaseGateSummaryV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "quick",
+    "regression_default",
+    "nightly_default",
+    "checklist_template"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "release-gate-summary-v1"
+    },
+    "quick": {
+      "type": "object",
+      "required": [
+        "with_agent_readyz",
+        "max_agent_readyz_level",
+        "require_agent_readyz_report"
+      ],
+      "properties": {
+        "with_agent_readyz": {
+          "type": "integer",
+          "enum": [0, 1]
+        },
+        "max_agent_readyz_level": {
+          "type": "string",
+          "enum": ["green", "yellow", "red"]
+        },
+        "require_agent_readyz_report": {
+          "type": "integer",
+          "enum": [0, 1]
+        }
+      }
+    },
+    "regression_default": {
+      "type": "object",
+      "required": [
+        "max_agent_readyz_level",
+        "require_agent_readyz_report"
+      ],
+      "properties": {
+        "max_agent_readyz_level": {
+          "type": "string",
+          "enum": ["green", "yellow", "red"]
+        },
+        "require_agent_readyz_report": {
+          "type": "integer",
+          "enum": [0, 1]
+        }
+      }
+    },
+    "nightly_default": {
+      "type": "object",
+      "required": [
+        "max_agent_readyz_level",
+        "require_agent_readyz_report",
+        "max_legacy_confidence_ratio"
+      ],
+      "properties": {
+        "max_agent_readyz_level": {
+          "type": "string",
+          "enum": ["green", "yellow", "red"]
+        },
+        "require_agent_readyz_report": {
+          "type": "integer",
+          "enum": [0, 1]
+        },
+        "max_legacy_confidence_ratio": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "checklist_template": {
+      "type": "string",
+      "const": "docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
+    }
+  }
+}

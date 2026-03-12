@@ -37,6 +37,7 @@
   - 支持：`bash tools/local/check_release_ready.sh --print-summary-only`（仅输出门禁阈值摘要）
   - 支持：`bash tools/local/check_release_ready.sh --print-summary-only --summary-format json`（JSON 摘要）
   - 输出会先打印当前 readyz/confidence 门禁阈值摘要（用于发布记录）
+  - JSON 摘要 schema：`verification/reports/release_gate_summary_v1.schema.json`
 - quick 耗时剖析：`tools/local/profile_verify_quick_guards.sh`
 - 脚本白名单检查：`tools/local/check_script_compat_whitelist.sh`
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
