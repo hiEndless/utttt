@@ -208,6 +208,15 @@ signal_event + active_events + MSL
   - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
 
+### MarketState 语义告警（非阻断）
+
+`HttpMarketStateProvider` 会在读取状态层快照时追加语义告警到 `anomaly_flags`，用于提前发现字段语义漂移，不阻断策略执行：
+
+- `state_features_semantic_contract_missing`
+- `state_features_confidence_*`（周期 confidence 主从字段锚点不一致）
+- `state_features_risk_*`（`risk_flags` / `risk_metrics` 边界不一致）
+- `state_features_market_state_*` / `state_features_risk_bias_*`（歧义字段污染）
+
 ## CLI Smoke Test
 
 - 最小运行入口：`python -m services.agent_server_new.main --dry-run`

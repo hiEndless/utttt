@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, Dict
 
@@ -23,6 +24,14 @@ _MSL_REQUIRED_FIELDS = {
     "summary",
 }
 _MSL_SUPPORTED_SCHEMA_VERSIONS = {1, 2}
+_SEMANTIC_CONFIDENCE_CANONICAL = "horizons.{hz}.confidence"
+_SEMANTIC_CONFIDENCE_ALIAS = "horizons.{hz}.horizon_confidence"
+_SEMANTIC_MARKET_STATE_SCOPE = {
+    "state_features": "intermediate_features_for_audit_and_debug",
+    "msl": "final_fused_state_for_agent_consumption",
+}
+_SEMANTIC_RISK_SCOPE = {"orderbook", "open_interest"}
+logger = logging.getLogger(__name__)
 
 def _collect_msl_contract_anomalies(*, data: Dict[str, Any]) -> list[str]:
     anomalies: list[str] = []
@@ -56,6 +65,68 @@ def _collect_msl_contract_anomalies(*, data: Dict[str, Any]) -> list[str]:
     return sorted(set([x for x in anomalies if x]))
 
 
+def _collect_state_feature_semantic_anomalies(*, data: Dict[str, Any]) -> list[str]:
+    anomalies: list[str] = []
+    state_features = dict(data.get("state_features") or {})
+    semantic_contract = dict(state_features.get("semantic_contract") or {})
+
+    if not semantic_contract:
+        anomalies.append("state_features_semantic_contract_missing")
+        return anomalies
+
+    confidence_contract = dict(semantic_contract.get("horizon_confidence") or {})
+    if str(confidence_contract.get("canonical_field") or "") != _SEMANTIC_CONFIDENCE_CANONICAL:
+        anomalies.append("state_features_confidence_canonical_mismatch")
+    if str(confidence_contract.get("compat_alias") or "") != _SEMANTIC_CONFIDENCE_ALIAS:
+        anomalies.append("state_features_confidence_alias_mismatch")
+
+    horizons = dict(state_features.get("horizons") or {})
+    for hz in ("short_term", "mid_term", "long_term"):
+        node = dict(horizons.get(hz) or {})
+        if not node:
+            continue
+        c = node.get("confidence")
+        hc = node.get("horizon_confidence")
+        try:
+            c_v = float(c)
+            hc_v = float(hc)
+        except Exception:
+            anomalies.append("state_features_confidence_non_numeric")
+            continue
+        if c_v != hc_v:
+            anomalies.append("state_features_confidence_alias_value_mismatch")
+        if c_v < 0.0 or c_v > 1.0:
+            anomalies.append("state_features_confidence_out_of_range")
+
+    risk_contract = dict(semantic_contract.get("risk_flags") or {})
+    if str(risk_contract.get("canonical_semantics") or "") != "categorical_flags":
+        anomalies.append("state_features_risk_flags_semantics_mismatch")
+    if str(risk_contract.get("detail_field") or "") != "risk_metrics":
+        anomalies.append("state_features_risk_metrics_alias_mismatch")
+    risk_scope = {str(x) for x in list(risk_contract.get("scope") or []) if str(x).strip()}
+    if risk_scope != _SEMANTIC_RISK_SCOPE:
+        anomalies.append("state_features_risk_scope_mismatch")
+
+    for scope in ("orderbook", "open_interest"):
+        node = dict(state_features.get(scope) or {})
+        if not node:
+            continue
+        if "risk_flags" in node and not isinstance(node.get("risk_flags"), list):
+            anomalies.append("state_features_risk_flags_not_array")
+        if scope == "orderbook" and "risk_metrics" in node and not isinstance(node.get("risk_metrics"), dict):
+            anomalies.append("state_features_risk_metrics_not_object")
+
+    market_state_vs_msl = dict(semantic_contract.get("market_state_vs_msl") or {})
+    if market_state_vs_msl != _SEMANTIC_MARKET_STATE_SCOPE:
+        anomalies.append("state_features_market_state_semantics_mismatch")
+    if "market_state" in state_features:
+        anomalies.append("state_features_market_state_field_ambiguous")
+    if "risk_bias" in state_features:
+        anomalies.append("state_features_risk_bias_field_ambiguous")
+
+    return sorted(set([x for x in anomalies if x]))
+
+
 class HttpMarketStateProvider(MarketStateProvider):
     """通过 HTTP 访问独立的 market_state_engine 服务。"""
 
@@ -83,6 +154,15 @@ class HttpMarketStateProvider(MarketStateProvider):
         data = dict(data or {})
         anomaly_flags = [str(x) for x in list(data.get("anomaly_flags") or []) if x]
         anomaly_flags.extend(_collect_msl_contract_anomalies(data=data))
+        anomaly_flags.extend(_collect_state_feature_semantic_anomalies(data=data))
+        semantic_anomalies = sorted(set([x for x in anomaly_flags if x.startswith("state_features_")]))
+        if semantic_anomalies:
+            logger.warning(
+                "market_state semantic anomalies exchange=%s symbol=%s flags=%s",
+                str(data.get("exchange") or exchange),
+                str(data.get("symbol") or symbol),
+                ",".join(semantic_anomalies),
+            )
 
         return MarketStateSnapshot(
             exchange=str(data.get("exchange") or exchange),
