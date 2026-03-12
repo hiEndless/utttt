@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from market_state_engine.contracts import MarketStateMSL
+from services.market_state_engine.src.contracts import MarketStateMSL
 
 
 @dataclass(frozen=True)

@@ -9,7 +9,7 @@ from agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from agent_server_new.adapters.position_context_stub import StubPositionContextProvider
 from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
 from agent_server_new.ports.market_state import MarketStateSnapshot
-from market_state_engine.service import MarketStateService
+from services.market_state_engine.src.service import MarketStateService
 
 
 def _sample_raw_market_structure() -> Dict[str, Any]:

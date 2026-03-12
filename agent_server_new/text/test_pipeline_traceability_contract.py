@@ -15,7 +15,7 @@ from agent_server_new.app.workflows.trade_event_workflow import TradeEventInput,
 from agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
 from agent_server_new.domain.strategy_gate import StrategyGateResult
 from agent_server_new.ports.market_state import MarketStateSnapshot
-from market_state_engine.service import MarketStateService
+from services.market_state_engine.src.service import MarketStateService
 
 
 def _sample_raw_market_structure() -> Dict[str, Any]:

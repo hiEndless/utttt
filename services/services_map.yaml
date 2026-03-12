@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_c3_migrated_with_compat_wrappers"
+    status: "src_batch_c4_decommission_prep"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"

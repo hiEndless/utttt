@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from market_state_engine.contracts import MarketStateMSL
+from services.market_state_engine.src.contracts import MarketStateMSL
 
 from .contracts import ActionIntent, RulePlan
 

@@ -39,3 +39,5 @@ Notes:
 - Batch C (phase-3) compatibility convergence:
   - `market_state_engine/__init__.py` switched to wrapper
   - `market_state_engine/adapters/__init__.py` switched to wrapper
+- Decommission plan:
+  - `docs/operations/MARKET_STATE_ENGINE_COMPAT_WRAPPER_DECOMMISSION.md`

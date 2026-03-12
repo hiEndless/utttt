@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from market_state_engine.contracts import (
+from services.market_state_engine.src.contracts import (
     KeyLevels,
     LiquidityState,
     MarketRegime,

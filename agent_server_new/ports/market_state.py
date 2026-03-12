@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Protocol
 
-from market_state_engine.contracts import MarketStateMSL
+from services.market_state_engine.src.contracts import MarketStateMSL
 
 
 @dataclass(frozen=True)

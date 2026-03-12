@@ -61,6 +61,10 @@
 - migrated impl: `services/market_state_engine/src/{__init__.py,adapters/__init__.py}`
 - legacy wrapper kept: `market_state_engine/{__init__.py,adapters/__init__.py}`
 
+2.12 `market_state_engine` decommission batch-0
+- 内部调用方迁移至 `services.market_state_engine.src.*`
+- 新增守卫：`tools/local/check_market_state_legacy_imports.sh`
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -163,3 +167,4 @@
 18. 已执行 `market_state_engine` Batch C（阶段1）：`factors/**` 与 `state_inference/**` 已迁入 `services/market_state_engine/src/`，旧路径暂保留兼容实现。
 19. 已执行 `market_state_engine` Batch C（阶段2）：`market_state_engine/{factors,state_inference}/**` 已收敛为兼容壳，主实现统一至 `services/market_state_engine/src/`。
 20. 已执行 `market_state_engine` Batch C（阶段3）：包级导出入口 `__init__.py` 与 `adapters/__init__.py` 已收敛为兼容壳。
+21. 已执行 `market_state_engine` 下线预处理 Batch 0：跨模块旧导入迁移，并新增 `check_market_state_legacy_imports.sh`。

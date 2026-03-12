@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from market_state_engine.contracts import MarketStateMSL
+from services.market_state_engine.src.contracts import MarketStateMSL
 
 from agent_server_new.domain.contracts import Confidence, ExecutionPlan
 from agent_server_new.domain.execution_planner import build_execution_plan
