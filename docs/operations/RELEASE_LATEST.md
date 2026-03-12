@@ -42,3 +42,17 @@ bash tools/local/finalize_release_baseline.sh
 1. 记录当次 CI 生效阈值：`MAX_LEGACY_CONFIDENCE_RATIO`（nightly 默认 `0.05`，可被环境变量覆盖）。
 2. 记录聚合报告实际值：`execution_legacy_confidence_usage_ratio`（来自 `verification/reports/summary.latest.json`）。
 3. 仅当 `execution_legacy_confidence_usage_ratio <= MAX_LEGACY_CONFIDENCE_RATIO` 时允许进入发布基线固化流程。
+
+发布检查补充（agent readyz 门禁）：
+
+1. 记录当次 CI 生效阈值：
+   - regression：`MAX_AGENT_READYZ_LEVEL`（默认 `red`）、`REQUIRE_AGENT_READYZ_REPORT`（默认 `1`）
+   - nightly：`MAX_AGENT_READYZ_LEVEL`（默认 `yellow`）、`REQUIRE_AGENT_READYZ_REPORT`（默认 `1`）
+2. 记录聚合报告实际值（来自 `verification/reports/summary.latest.json`）：
+   - `agent_readyz_status_level`
+   - `agent_readyz_report_count`
+   - `agent_readyz_error_count`
+   - `agent_readyz_errors`
+3. 放行条件：
+   - `agent_readyz_report_count > 0`（当 `REQUIRE_AGENT_READYZ_REPORT=1`）
+   - `agent_readyz_status_level <= MAX_AGENT_READYZ_LEVEL`
