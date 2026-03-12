@@ -16,3 +16,5 @@ Notes:
   - `services/market_state_engine/src/errors.py`
 - Batch B (phase-3) migrated implementation:
   - `services/market_state_engine/src/engine.py`
+- Batch B (phase-4) migrated implementation:
+  - `services/market_state_engine/src/msl.py`

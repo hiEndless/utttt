@@ -33,6 +33,10 @@
 - migrated impl: `services/market_state_engine/src/engine.py`
 - legacy wrapper kept: `market_state_engine/engine.py`（模块桥接兼容）
 
+2.5 `market_state_engine/msl.py`
+- migrated impl: `services/market_state_engine/src/msl.py`
+- legacy wrapper kept: `market_state_engine/msl.py`
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -128,3 +132,4 @@
 11. 已执行 `market_state_engine` Batch B（阶段1）：`service.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。
 12. 已执行 `market_state_engine` Batch B（阶段2）：`errors.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
 13. 已执行 `market_state_engine` Batch B（阶段3）：`engine.py` 已迁入 `services/market_state_engine/src/`，旧路径保留桥接。
+14. 已执行 `market_state_engine` Batch B（阶段4）：`msl.py` 已迁入 `services/market_state_engine/src/`，旧路径保留薄兼容壳。
