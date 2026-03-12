@@ -6,6 +6,7 @@
 - 流水线内部执行字段仍以 `ts_ms` 为主（兼容历史实现）。
 - `SelectedEvent` 对外契约已预留双时间语义：`event_ts_ms`（发生时间）与 `processed_ts_ms`（处理时间）。
 - 过渡期保留 `ts_ms`，仅作为兼容别名，不建议新增下游仅依赖 `ts_ms`。
+时间语义口径（canonical）：`docs/contracts/SEMANTIC_GLOSSARY.md`
 
 主要依据：
 - 数据结构定义：[ec/contracts.py](services/event_center_new/ec/contracts.py)
@@ -231,6 +232,10 @@ Runner 每轮对每个 source 调用：
   - `source_refs`（list，否则空）
   - `attrs`（dict，否则空）
   - `ts_ms`（缺省取 `event.ts_ms`）
+
+attrs 语义去歧义约定（避免静默漂移）：
+- 若上游传入 `attrs.market_state`，标准化后应映射为 `attrs.source_market_state`
+- 若上游传入 `attrs.risk_bias`，标准化后应映射为 `attrs.action_risk_bias`
 
 ---
 

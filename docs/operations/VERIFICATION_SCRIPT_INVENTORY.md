@@ -27,6 +27,7 @@
   - 支持：`bash tools/local/check_release_triage_block_guard.sh --show-blocks`
 - prod provider 门禁守卫：`tools/local/check_prod_provider_modes_guard.sh`
 - 来源语义守卫：`tools/local/check_source_semantics_guard.sh`
+- pipeline 语义字段锚点守卫：`tools/local/check_pipeline_semantic_terms_doc_guard.sh`
 - alternative source 单源契约守卫：`tools/local/check_alternative_source_single_source_guard.sh`
 - 一键发布就绪检查：`tools/local/check_release_ready.sh`
   - 内含：`verify_quick`、`new_arch_guards_full --quick`、`check_release_triage_block_guard.sh`、`check_release_baseline_alignment.sh --check-origin`
@@ -58,6 +59,7 @@
 - `check_prod_provider_modes_guard.sh`
 - `check_semantic_policy_guard.sh`
 - `check_source_semantics_guard.sh`
+- `check_pipeline_semantic_terms_doc_guard.sh`
 - `check_alternative_source_single_source_guard.sh`
 - `check_cross_service_time_semantics_doc_guard.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
