@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 if __package__:
-    from feature_service.providers.market_structure_migrated.utils.redis_client import get_redis_client
-    from feature_service.providers.market_structure_migrated.horizon_schema import HORIZONS
+    from services.feature_service.src.providers.market_structure_migrated.utils.redis_client import get_redis_client
+    from services.feature_service.src.providers.market_structure_migrated.horizon_schema import HORIZONS
     from .behavior_aggregate import build_behavioral_structure_from_aggtrades, parse_window_to_ms
 else:
     # 兼容“直接 python 运行脚本”的场景：向上查找包含 feature_service 的仓库根目录并加入 sys.path
@@ -18,9 +18,9 @@ else:
             break
     if _root and _root not in sys.path:
         sys.path.insert(0, _root)
-    from feature_service.providers.market_structure_migrated.utils.redis_client import get_redis_client
-    from feature_service.providers.market_structure_migrated.horizon_schema import HORIZONS
-    from feature_service.providers.market_structure_migrated.behavioral.behavior_aggregate import (
+    from services.feature_service.src.providers.market_structure_migrated.utils.redis_client import get_redis_client
+    from services.feature_service.src.providers.market_structure_migrated.horizon_schema import HORIZONS
+    from services.feature_service.src.providers.market_structure_migrated.behavioral.behavior_aggregate import (
         build_behavioral_structure_from_aggtrades,
         parse_window_to_ms,
     )

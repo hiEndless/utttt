@@ -1,4 +1,4 @@
-from .raw_reader import PERIODS, TYPES, read_market_raw
+from __future__ import annotations
 
-__all__ = ["PERIODS", "TYPES", "read_market_raw"]
-
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.providers.market_structure_migrated.io import *  # noqa: F401,F403

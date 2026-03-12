@@ -83,7 +83,7 @@
 
 19. `feature_service/providers/market_structure_migrated/`
 - migrated impl: `services/feature_service/src/providers/market_structure_migrated/`
-- compatibility state: `feature_service/providers/market_structure_migrated/` 暂保留（未删，作为回滚副本）
+- compatibility state: `feature_service/providers/market_structure_migrated/` 目录保留，绝大多数文件已改为兼容壳；`behavioral/behavior_output.py` 保留旧路径猴子补丁兼容实现
 
 ## 3. 保障机制
 

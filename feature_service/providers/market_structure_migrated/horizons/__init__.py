@@ -1,4 +1,4 @@
-from .build_context import build_fused_horizons, build_horizon_context
+from __future__ import annotations
 
-__all__ = ["build_fused_horizons", "build_horizon_context"]
-
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.providers.market_structure_migrated.horizons import *  # noqa: F401,F403

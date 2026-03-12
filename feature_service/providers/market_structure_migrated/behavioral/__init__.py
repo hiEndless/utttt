@@ -1,5 +1,4 @@
-from .behavior_aggregate import build_behavioral_structure_from_aggtrades
-from .behavior_output import build_behavior_output
+from __future__ import annotations
 
-__all__ = ["build_behavior_output", "build_behavioral_structure_from_aggtrades"]
-
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.providers.market_structure_migrated.behavioral import *  # noqa: F401,F403

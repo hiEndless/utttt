@@ -1,6 +1,4 @@
-"""orderbook: 结构化 orderbook 特征（快照 + 短周期滚动 + 风险旗标）。"""
+from __future__ import annotations
 
-from .service import build_orderbook_structure
-from .output import build_output
-
-__all__ = ["build_orderbook_structure", "build_output"]
+# Legacy module kept for compatibility during migration window.
+from services.feature_service.src.providers.market_structure_migrated.orderbook import *  # noqa: F401,F403
