@@ -136,6 +136,24 @@ def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypa
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
 
 
+def test_create_trade_event_workflow_from_env_execution_retry_config(monkeypatch):
+    monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
+    monkeypatch.setenv("AGENT_EXECUTION_BASE_URL", "http://localhost:9962")
+    monkeypatch.setenv("AGENT_EXECUTION_TIMEOUT_S", "8")
+    monkeypatch.setenv("AGENT_EXECUTION_RETRY_MAX", "2")
+    monkeypatch.setenv("AGENT_EXECUTION_RETRY_BACKOFF_S", "0.4")
+    monkeypatch.setenv("AGENT_EXECUTION_RETRY_ON_STATUSES", "429,503")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
+    assert wf._execution_decider._retry_max == 2  # noqa: SLF001
+    assert wf._execution_decider._retry_backoff_s == 0.4  # noqa: SLF001
+    assert wf._execution_decider._retry_on_statuses == (429, 503)  # noqa: SLF001
+
+
 def test_create_trade_event_workflow_from_env_enables_jsonl_event_recorder(monkeypatch, tmp_path):
     monkeypatch.setenv("AGENT_EVENT_RECORDER_MODE", "jsonl")
     monkeypatch.setenv("AGENT_EVENT_RECORDER_JSONL_PATH", str(tmp_path / "agent_events.jsonl"))
