@@ -88,6 +88,7 @@
 - [x] 执行 `market_state_engine` Batch B（阶段7）：迁移 `ports/**` 到 `services/market_state_engine/src/ports/`（旧路径保留薄兼容壳）
 - [x] 执行 `market_state_engine` Batch C（阶段1）：迁移 `factors/**` 与 `state_inference/**` 到 `services/market_state_engine/src/`（旧路径暂保留兼容实现）
 - [x] 执行 `market_state_engine` Batch C（阶段2）：`market_state_engine/{factors,state_inference}/**` 收敛为兼容壳（统一指向 `services/market_state_engine/src/`）
+- [x] 执行 `market_state_engine` Batch C（阶段3）：收敛包级导出兼容层（`market_state_engine/__init__.py` 与 `adapters/__init__.py`）
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

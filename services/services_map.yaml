@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_c2_migrated_with_compat_wrappers"
+    status: "src_batch_c3_migrated_with_compat_wrappers"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
@@ -70,6 +70,7 @@ services:
       - "services/market_state_engine/src/state_inference"
       - "services/market_state_engine/src/config/state_inference_profiles.json"
     legacy_wrapper:
+      - "market_state_engine/__init__.py"
       - "market_state_engine/main.py"
       - "market_state_engine/app.py"
       - "market_state_engine/routes.py"
@@ -78,6 +79,7 @@ services:
       - "market_state_engine/errors.py"
       - "market_state_engine/engine.py"
       - "market_state_engine/msl.py"
+      - "market_state_engine/adapters/__init__.py"
       - "market_state_engine/adapters/in_memory_feature_store.py"
       - "market_state_engine/adapters/raw_structure_http.py"
       - "market_state_engine/adapters/selected_events_redis.py"

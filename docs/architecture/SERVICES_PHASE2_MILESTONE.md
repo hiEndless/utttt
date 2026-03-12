@@ -57,6 +57,10 @@
 - migrated impl: `services/market_state_engine/src/{factors,state_inference}/**`
 - legacy wrapper kept: `market_state_engine/{factors,state_inference}/**`
 
+2.11 `market_state_engine/{__init__.py,adapters/__init__.py}`
+- migrated impl: `services/market_state_engine/src/{__init__.py,adapters/__init__.py}`
+- legacy wrapper kept: `market_state_engine/{__init__.py,adapters/__init__.py}`
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -158,3 +162,4 @@
 17. 已执行 `market_state_engine` Batch B（阶段7）：`ports/**` 已迁入 `services/market_state_engine/src/ports/`，旧路径保留薄兼容壳。
 18. 已执行 `market_state_engine` Batch C（阶段1）：`factors/**` 与 `state_inference/**` 已迁入 `services/market_state_engine/src/`，旧路径暂保留兼容实现。
 19. 已执行 `market_state_engine` Batch C（阶段2）：`market_state_engine/{factors,state_inference}/**` 已收敛为兼容壳，主实现统一至 `services/market_state_engine/src/`。
+20. 已执行 `market_state_engine` Batch C（阶段3）：包级导出入口 `__init__.py` 与 `adapters/__init__.py` 已收敛为兼容壳。

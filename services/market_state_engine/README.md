@@ -36,3 +36,6 @@ Notes:
 - Batch C (phase-2) compatibility convergence:
   - `market_state_engine/factors/` switched to wrappers
   - `market_state_engine/state_inference/` switched to wrappers
+- Batch C (phase-3) compatibility convergence:
+  - `market_state_engine/__init__.py` switched to wrapper
+  - `market_state_engine/adapters/__init__.py` switched to wrapper
