@@ -90,6 +90,17 @@ class _Recorder:
         self.outputs.append((event_id, agent_name, dict(payload or {})))
 
 
+class _LLMObserver:
+    async def observe(self, payload):  # noqa: ANN001
+        _ = payload
+        return {
+            "status": "ok",
+            "provider": "openai_compatible",
+            "model": "gpt-4o-mini",
+            "raw_content": "{\"trend\":\"up\"}",
+        }
+
+
 def test_trade_event_workflow_records_decision_trace_memory_metrics():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
@@ -157,6 +168,9 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert metrics["memory_hit"] is False
         assert metrics["memory_raw_recent_count"] == 0
         assert metrics["memory_filtered_recent_count"] == 0
+        llm_obs = dict(trace_payload.get("llm_observation") or {})
+        assert llm_obs.get("status") == "disabled"
+        assert llm_obs.get("raw_content_hash") == ""
         contract_warnings = list(trace_payload.get("contract_warnings") or [])
         assert "state_features_semantic_contract_missing" in contract_warnings
         assert "msl_meta_schema_version_missing" in contract_warnings
@@ -166,6 +180,82 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         alert_codes = list(trace_payload.get("alert_codes") or [])
         assert "AGENT_ALTERNATIVE_SOURCES_CONFLICT" in alert_codes
         assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" in alert_codes
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
+        )
+        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
+        monkeypatch.setattr(
+            mod,
+            "risk_gate",
+            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_execution_plan",
+            lambda **kwargs: ExecutionPlan(
+                action="add",
+                direction="long",
+                allowance=kwargs["allowance"],
+                confidence=Confidence(level="medium", score=0.7),
+                sizing={"mode": "ratio", "order_size_ratio": 0.1},
+                notes="ok",
+            ),
+        )
+
+        recorder = _Recorder()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            recorder=recorder,
+            llm_observer=_LLMObserver(),
+        )
+        await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-trace-llm-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        trace_payload = {}
+        for _, name, payload in recorder.outputs:
+            if name == "decision_trace":
+                trace_payload = payload
+                break
+        assert trace_payload
+        llm_obs = dict(trace_payload.get("llm_observation") or {})
+        assert llm_obs.get("status") == "ok"
+        assert llm_obs.get("provider") == "openai_compatible"
+        assert llm_obs.get("model") == "gpt-4o-mini"
+        assert llm_obs.get("raw_content_hash") == "079427752e7cf6fb3996ff1a8fce9e916cf5d8357a793e422bef87f0921a1101"
 
     import pytest
 

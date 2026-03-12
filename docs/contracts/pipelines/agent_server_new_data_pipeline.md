@@ -660,6 +660,7 @@ ExecutionPlan：
 | evidence/anomalies | object | 从 key_market_features 拿的 evidence/anomalies（通常来自 state_features） |
 | signal_verdict/intent/rule_plan | object | 各阶段关键输出摘要 |
 | strategy_gate_result/risk_gate/execution_plan | object | 门控与计划摘要（其中 strategy_gate_result 包含 `horizon_reasons/strategy_reasons/reasons`） |
+| llm_observation | object | LLM 旁路观察摘要（`status/provider/model/raw_content_hash`，失败或禁用也会输出固定语义） |
 | memory_metrics | object | memory_observability |
 | tags | array[string] | 标签（当前固定含 decision_trace） |
 

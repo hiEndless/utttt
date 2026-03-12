@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import logging
+import hashlib
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -79,6 +80,13 @@ def _to_float(value: Any, default: float = 0.0) -> float:
         return float(value)
     except Exception:
         return float(default)
+
+
+def _sha256_text(value: Any) -> str:
+    text = str(value or "")
+    if not text:
+        return ""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _derive_global_regime(
@@ -232,6 +240,12 @@ class TradeEventWorkflow:
             ),
             signal_direction=event.signal_direction,
         )
+        llm_observation = {
+            "status": "disabled",
+            "provider": "",
+            "model": "",
+            "raw_content_hash": "",
+        }
         if self._llm_observer is not None:
             llm_payload = {
                 "event_id": event.event_id,
@@ -245,6 +259,12 @@ class TradeEventWorkflow:
             }
             try:
                 llm_result = await self._llm_observer.observe(llm_payload)
+                llm_observation = {
+                    "status": str((llm_result or {}).get("status") or "ok"),
+                    "provider": str((llm_result or {}).get("provider") or ""),
+                    "model": str((llm_result or {}).get("model") or ""),
+                    "raw_content_hash": _sha256_text((llm_result or {}).get("raw_content")),
+                }
                 if self._recorder:
                     await self._recorder.record_agent_output(
                         event.event_id,
@@ -253,6 +273,14 @@ class TradeEventWorkflow:
                     )
             except Exception as exc:
                 logger.warning("llm observer failed, fallback to rule engine event_id=%s err=%s", event.event_id, exc)
+                llm_observation = {
+                    "status": "error",
+                    "provider": "",
+                    "model": "",
+                    "raw_content_hash": "",
+                    "fallback": "rule_engine",
+                    "error_type": exc.__class__.__name__,
+                }
                 if self._recorder:
                     await self._recorder.record_agent_output(
                         event.event_id,
@@ -457,6 +485,7 @@ class TradeEventWorkflow:
                     "sizing": dict(plan.sizing or {}),
                     "notes": plan.notes,
                 },
+                llm_observation=dict(llm_observation),
                 memory_metrics=dict((ctx.key_market_features or {}).get("memory_observability") or {}),
                 contract_warnings=contract_warnings,
                 alert_codes=map_alert_codes_from_contract_warnings(contract_warnings),
