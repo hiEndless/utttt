@@ -13,7 +13,7 @@ from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRe
 
 def test_jsonl_event_recorder_writes_market_context_and_agent_output(tmp_path) -> None:
     file_path = tmp_path / "agent_events.jsonl"
-    recorder = JsonlEventRecorder(file_path=str(file_path))
+    recorder = JsonlEventRecorder(file_path=str(file_path), rotate_daily=False, max_bytes=0)
 
     import asyncio
 
@@ -31,3 +31,17 @@ def test_jsonl_event_recorder_writes_market_context_and_agent_output(tmp_path) -
     assert second["record_type"] == "agent_output"
     assert second["agent_name"] == "signal_evaluator"
 
+
+def test_jsonl_event_recorder_rotates_by_size(tmp_path) -> None:
+    file_path = tmp_path / "agent_events.jsonl"
+    recorder = JsonlEventRecorder(file_path=str(file_path), rotate_daily=False, max_bytes=64)
+
+    import asyncio
+
+    async def _run() -> None:
+        await recorder.record_agent_output("evt-1", "a", {"p": "x" * 120})
+        await recorder.record_agent_output("evt-2", "b", {"p": "y" * 120})
+
+    asyncio.run(_run())
+    files = sorted(tmp_path.glob("agent_events*.jsonl"))
+    assert len(files) >= 2

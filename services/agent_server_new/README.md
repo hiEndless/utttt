@@ -184,6 +184,10 @@ signal_event + active_events + MSL
   - 决策记录器模式（`none|jsonl`，默认：`none`）
 - `AGENT_EVENT_RECORDER_JSONL_PATH`
   - 当记录器模式为 `jsonl` 时的输出路径（默认：`verification/reports/agent_server_new_events.jsonl`）
+- `AGENT_EVENT_RECORDER_ROTATE_DAILY`
+  - JSONL 是否按 UTC 日期滚动（默认：`true`）
+- `AGENT_EVENT_RECORDER_MAX_BYTES`
+  - 单文件最大字节数（默认：`10485760`，即 10MB；超过后追加 `.1/.2...` 分片）
 - `AGENT_SYMBOL_MEMORY_ENABLED`
   - 是否启用 symbol 级记忆注入（默认：`false`）
 - `AGENT_SYMBOL_MEMORY_BACKEND`
@@ -268,6 +272,11 @@ signal_event + active_events + MSL
 - runner 支持 `--top-risk-n`，输出按 `contract_warning_count` 排序的 `high_risk_symbols`（观测用途）
 - 默认仅输出有告警 symbol；可用 `--risk-warning-min` 提高阈值，或用 `--include-no-warning` 包含 0 告警 symbol
 - `high_risk_symbols` 新增 `risk_score`（`warning_count * recency_weight`）用于更稳定排序
+
+## Recorder Tail
+
+- 本地追踪最新决策日志：`bash tools/local/tail_agent_events.sh`
+- 指定路径：`bash tools/local/tail_agent_events.sh verification/reports/agent_server_new_events.jsonl`
 
 ## Memory Observability
 
