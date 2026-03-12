@@ -82,6 +82,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         data_sources: Dict[str, str] = {}
         inference_sources: Dict[str, str] = {}
         feature_keys: Dict[str, List[str]] = {}
+        evidence_counts: Dict[str, int] = {}
         available_sources = [str(x) for x in list(merged.get("available_sources") or []) if str(x).strip()]
         unavailable_sources = [str(x) for x in list(merged.get("unavailable_sources") or []) if str(x).strip()]
         for name in ("news", "social", "onchain"):
@@ -100,6 +101,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
             data_sources[name] = str(node.get("data_source") or default_data_source)
             inference_sources[name] = str(node.get("inference_source") or default_inference_source)
             feature_keys[name] = sorted([str(x) for x in list(node.get("feature_keys") or []) if str(x).strip()])
+            evidence_counts[name] = max(0, _to_int(node.get("event_evidence_count"), 0))
         out = {
             "available_sources": sorted(set(available_sources)),
             "unavailable_sources": sorted(set(unavailable_sources)),
@@ -107,6 +109,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
             "data_sources": data_sources,
             "inference_sources": inference_sources,
             "feature_keys": feature_keys,
+            "evidence_counts": evidence_counts,
             "preferred_source": str(fusion.get("preferred_source") or "none"),
             "conflict_count": len(list(fusion.get("conflicts") or [])),
         }
@@ -120,6 +123,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
     available_sources: List[str] = []
     unavailable_sources: List[str] = []
     feature_keys: Dict[str, List[str]] = {}
+    evidence_counts: Dict[str, int] = {}
 
     for name in sources:
         node = _safe_dict(alt.get(name))
@@ -137,6 +141,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         else:
             unavailable_sources.append(name)
         feature_keys[name] = sorted([str(k) for k in _safe_dict(node.get("features")).keys() if str(k).strip()])
+        evidence_counts[name] = 0
 
     return {
         "available_sources": available_sources,
@@ -145,6 +150,7 @@ def _extract_alternative_source_summary(evidence: Dict[str, Any]) -> Dict[str, A
         "data_sources": data_sources,
         "inference_sources": inference_sources,
         "feature_keys": feature_keys,
+        "evidence_counts": evidence_counts,
     }
 
 

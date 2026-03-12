@@ -24,6 +24,7 @@ _ALT_SUMMARY_REQUIRED_KEYS = {
     "data_sources",
     "inference_sources",
     "feature_keys",
+    "evidence_counts",
 }
 
 
@@ -235,10 +236,12 @@ def test_pipeline_traceability_selected_event_to_decision_trace():
         provider_states = dict(alt_value.get("provider_states") or {})
         data_sources = dict(alt_value.get("data_sources") or {})
         inference_sources = dict(alt_value.get("inference_sources") or {})
+        evidence_counts = dict(alt_value.get("evidence_counts") or {})
         for src in ("news", "social", "onchain"):
             assert str(provider_states.get(src) or "").strip()
             assert str(data_sources.get(src) or "").strip()
             assert str(inference_sources.get(src) or "").strip()
+            assert isinstance(evidence_counts.get(src), int)
         assert provider_states.get("onchain") == "event_evidence_present"
         assert alt_value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
         assert alt_value.get("inference_sources", {}).get("onchain") == "event_center_new.selector"

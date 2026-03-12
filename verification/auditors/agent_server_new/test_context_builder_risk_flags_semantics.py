@@ -54,6 +54,7 @@ def test_signal_context_builder_includes_alternative_source_summary() -> None:
     assert value.get("provider_states", {}).get("social") == "noop"
     assert value.get("data_sources", {}).get("news") == "feature_service.news"
     assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"
+    assert set(dict(value.get("evidence_counts") or {}).keys()) == {"news", "social", "onchain"}
 
 
 def test_signal_context_builder_treats_noop_empty_source_as_unavailable() -> None:
@@ -130,6 +131,7 @@ def test_signal_context_builder_prefers_fusion_alternative_source_summary() -> N
     assert "onchain" in list(value.get("available_sources") or [])
     assert value.get("data_sources", {}).get("onchain") == "event_center_new.onchain"
     assert value.get("inference_sources", {}).get("news") == "feature_service.normalizer"
+    assert value.get("evidence_counts", {}).get("onchain") == 0
 
 
 def test_signal_context_builder_fusion_summary_fills_default_source_semantics_when_missing() -> None:
