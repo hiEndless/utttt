@@ -26,6 +26,7 @@
 
 - `check_structure.sh`
 - `check_script_compat_whitelist.sh`
+- `check_docs_contracts_bundle.sh`（包含 `test_contract_change_bundle_guard.py` 回归用例）
 - `check_semantic_policy_guard.sh`
 - `check_cross_service_time_semantics_doc_guard.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
