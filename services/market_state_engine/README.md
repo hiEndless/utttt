@@ -29,3 +29,7 @@ Notes:
   - `services/market_state_engine/src/ports/selected_event_provider.py`
   - `services/market_state_engine/src/ports/storage/__init__.py`
   - `services/market_state_engine/src/ports/storage/feature_store.py`
+- Batch C (phase-1) migrated implementation:
+  - `services/market_state_engine/src/factors/`
+  - `services/market_state_engine/src/state_inference/`
+  - `services/market_state_engine/src/config/state_inference_profiles.json`

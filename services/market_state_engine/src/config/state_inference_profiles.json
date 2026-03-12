@@ -1,0 +1,21 @@
+{
+  "default": [
+    "regime_inference",
+    "positioning_inference",
+    "volatility_inference",
+    "liquidity_inference",
+    "risk_inference",
+    "structure_inference"
+  ],
+  "fast_mode": [
+    "regime_inference",
+    "positioning_inference",
+    "volatility_inference",
+    "liquidity_inference",
+    "risk_inference"
+  ],
+  "risk_only": [
+    "regime_inference",
+    "risk_inference"
+  ]
+}

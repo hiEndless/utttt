@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from services.market_state_engine.src.ports.storage.feature_store import FeatureStore
-from market_state_engine.state_inference import infer_msl_with_meta
+from services.market_state_engine.src.state_inference import infer_msl_with_meta
 from services.market_state_engine.src.contracts import MarketStateMSL
 
 

@@ -86,6 +86,7 @@
 - [x] 执行 `market_state_engine` Batch B（阶段5）：迁移 `adapters/{in_memory_feature_store,raw_structure_http}.py` 到 `services/market_state_engine/src/adapters/`（旧路径保留薄兼容壳）
 - [x] 执行 `market_state_engine` Batch B（阶段6）：迁移 `adapters/selected_events_redis.py` 到 `services/market_state_engine/src/adapters/`（旧路径保留薄兼容壳）
 - [x] 执行 `market_state_engine` Batch B（阶段7）：迁移 `ports/**` 到 `services/market_state_engine/src/ports/`（旧路径保留薄兼容壳）
+- [x] 执行 `market_state_engine` Batch C（阶段1）：迁移 `factors/**` 与 `state_inference/**` 到 `services/market_state_engine/src/`（旧路径暂保留兼容实现）
 - [x] 增加 `services/services_map.yaml` 一致性检查并接入 `check_structure.sh`
 - [x] 固化 services Phase-2 试点里程碑文档（`SERVICES_PHASE2_MILESTONE.md`）
 - [x] 增加 registry 驱动的 contract 聚合索引同步（schemas/mappings）

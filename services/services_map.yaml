@@ -44,7 +44,7 @@ services:
   - name: market_state_engine
     current_path: "market_state_engine/"
     target_path: "services/market_state_engine/"
-    status: "src_batch_b7_migrated_with_compat_wrappers"
+    status: "src_batch_c1_migrated_with_compat_wrappers"
     scaffold_readme: "services/market_state_engine/README.md"
     soft_entrypoints:
       - "services/market_state_engine/main.py"
@@ -66,6 +66,9 @@ services:
       - "services/market_state_engine/src/ports/selected_event_provider.py"
       - "services/market_state_engine/src/ports/storage/__init__.py"
       - "services/market_state_engine/src/ports/storage/feature_store.py"
+      - "services/market_state_engine/src/factors"
+      - "services/market_state_engine/src/state_inference"
+      - "services/market_state_engine/src/config/state_inference_profiles.json"
     legacy_wrapper:
       - "market_state_engine/main.py"
       - "market_state_engine/app.py"

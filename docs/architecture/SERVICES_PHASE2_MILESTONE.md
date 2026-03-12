@@ -49,6 +49,10 @@
 - migrated impl: `services/market_state_engine/src/ports/**`
 - legacy wrapper kept: `market_state_engine/ports/**`
 
+2.9 `market_state_engine/{factors,state_inference}/**`
+- migrated impl: `services/market_state_engine/src/{factors,state_inference}/**`
+- legacy implementation kept: `market_state_engine/{factors,state_inference}/**`（兼容窗口暂不收壳）
+
 3. `execution_service/main.py`
 - migrated impl: `services/execution_service/runtime/main.py`
 - legacy wrapper kept: `execution_service/main.py`
@@ -148,3 +152,4 @@
 15. 已执行 `market_state_engine` Batch B（阶段5）：`adapters/{in_memory_feature_store,raw_structure_http}.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
 16. 已执行 `market_state_engine` Batch B（阶段6）：`adapters/selected_events_redis.py` 已迁入 `services/market_state_engine/src/adapters/`，旧路径保留薄兼容壳。
 17. 已执行 `market_state_engine` Batch B（阶段7）：`ports/**` 已迁入 `services/market_state_engine/src/ports/`，旧路径保留薄兼容壳。
+18. 已执行 `market_state_engine` Batch C（阶段1）：`factors/**` 与 `state_inference/**` 已迁入 `services/market_state_engine/src/`，旧路径暂保留兼容实现。
