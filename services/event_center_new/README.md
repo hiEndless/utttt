@@ -433,6 +433,7 @@ python3 -m services.event_center_new.replay_main \
 仓库守卫 `tools/local/check_event_center_runtime_guard.sh` 覆盖 `stop_on_error` 与 `self_check_only` 的运行时分支。
 仓库守卫 `tools/local/check_event_center_runtime_doc_guard.sh` 校验 runtime 文档与 main.py 的环境变量集合强一致（双向）及版本日志一致性；可加 `--show-sets` 输出集合明细用于排障。
 仓库守卫 `tools/local/check_event_center_runtime_bump_tool_guard.sh` 校验 runtime 版本升级工具关键参数行为。
+仓库守卫 `tools/local/check_event_center_runtime_mode_guard.sh` 聚合校验 runtime/replay 的模式门禁语义（含 `self_check_only` 优先级与 `replay --strict` 组合语义）。
 仓库守卫 `tools/local/check_event_center_guard_wiring.sh` 校验 event_center 聚合守卫与顶层入口接线未失效；默认 `--strict`，可改 `--lenient` 过渡；可加 `--show-links` 输出接线引用行号。
 仓库守卫 `tools/local/check_event_center_ci_workflow_guard.sh` 校验 quick/full workflow 的失败诊断 artifact 与显式失败收敛步骤未丢失。
 仓库守卫 `tools/local/check_event_center_ci_doc_snapshot_guard.sh` 校验 `services/event_center_new/docs/ci.md` 的帮助快照与最短排障命令关键行未漂移（关键行来源：`services/event_center_new/docs/ci_help_snapshot_lines.txt` 与 `services/event_center_new/docs/ci_triage_snapshot_lines.txt`）。
@@ -446,7 +447,7 @@ python3 -m services.event_center_new.replay_main \
 
 可通过聚合入口 `tools/local/check_event_center_contract_guards.sh` 一次执行上述两类契约守卫。
 该聚合守卫还会对 replay CLI 做参数快照校验（`--strict/--summary-only/--ignore-field/--output`）。
-可用 `bash tools/local/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫 + 接线检查）。
+可用 `bash tools/local/check_event_center_contract_guards.sh --quick` 执行快速模式（参数快照 + runtime 文档守卫 + bump tool 守卫 + runtime mode 守卫 + 接线检查）。
 接线检查策略可选：`--strict-wiring`（默认）或 `--lenient-wiring`。
 全仓库守卫支持 event_center 快速模式：`bash tools/local/check_new_arch_guards.sh --event-center-quick`（仅跑 event_center quick 子集）。
 如需跑 event_center 全量子守卫，可用：`bash tools/local/check_new_arch_guards.sh --event-center-only`。

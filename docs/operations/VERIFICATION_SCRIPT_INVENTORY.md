@@ -24,6 +24,7 @@
 - feature 合同入口守卫：`tools/local/check_feature_contract_entry_guard.sh`
 - state 合同入口守卫：`tools/local/check_market_state_contract_entry_guard.sh`
 - event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
+- event_center runtime mode 门禁守卫：`tools/local/check_event_center_runtime_mode_guard.sh`
 
 ### 2.1 调试参数（contract bundle）
 

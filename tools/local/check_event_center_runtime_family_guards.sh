@@ -12,11 +12,14 @@ EOF
 fi
 
 if [[ "$MODE" == "--quick" ]]; then
-  echo "[1/2] event_center runtime 文档守卫（quick）"
+  echo "[1/3] event_center runtime 文档守卫（quick）"
   bash tools/local/check_event_center_runtime_doc_guard.sh
 
-  echo "[2/2] event_center runtime bump tool 守卫（quick）"
+  echo "[2/3] event_center runtime bump tool 守卫（quick）"
   bash tools/local/check_event_center_runtime_bump_tool_guard.sh
+
+  echo "[3/3] event_center runtime mode 守卫（quick）"
+  bash tools/local/check_event_center_runtime_mode_guard.sh
   echo "[通过] event_center Runtime 守卫检查完成（quick）。"
   exit 0
 fi
@@ -27,13 +30,16 @@ if [[ "$MODE" != "all" ]]; then
   exit 1
 fi
 
-echo "[1/3] event_center runtime 守卫"
+echo "[1/4] event_center runtime 守卫"
 bash tools/local/check_event_center_runtime_guard.sh
 
-echo "[2/3] event_center runtime 文档守卫"
+echo "[2/4] event_center runtime 文档守卫"
 bash tools/local/check_event_center_runtime_doc_guard.sh
 
-echo "[3/3] event_center runtime bump tool 守卫"
+echo "[3/4] event_center runtime bump tool 守卫"
 bash tools/local/check_event_center_runtime_bump_tool_guard.sh
+
+echo "[4/4] event_center runtime mode 守卫"
+bash tools/local/check_event_center_runtime_mode_guard.sh
 
 echo "[通过] event_center Runtime 守卫检查完成。"
