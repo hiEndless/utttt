@@ -24,6 +24,7 @@
 - `feature_response_schema_version: 1.0`
 - `services/feature_service/docs/api.md`
 - `services/feature_service/docs/boundaries.md`
+- `tools/local/check_feature_contract_guard.sh`
 
 ## 3. market_state_engine
 
