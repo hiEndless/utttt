@@ -246,6 +246,11 @@ signal_event + active_events + MSL
 - 就绪检查：`GET /internal/agent/readyz`
   - 当 workflow bootstrap 失败时返回 `503`
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
+  - 可选上游检查（默认开启 market_state / redis）：
+    - `AGENT_READY_CHECK_MARKET_STATE=true|false`
+    - `AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS=true|false`
+    - `AGENT_READY_CHECK_TIMEOUT_S=1.5`
+    - `AGENT_READY_CHECK_UPSTREAM_STRICT=true|false`（`false` 时记 warning，不阻断 ready；`true` 时转为 error 并返回 `503`）
 
 ## Memory Summary Runner
 
