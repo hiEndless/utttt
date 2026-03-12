@@ -25,7 +25,18 @@ _EXTERNAL_INPUT_IGNORED_FLAG = "external_event_input_ignored"
 _SELECTED_EVENTS_ATTACHED_FLAG = "selected_event_context_attached"
 _SELECTED_EVENTS_UNAVAILABLE_FLAG = "selected_events_unavailable"
 _SELECTED_EVENTS_UNVERSIONED_FLAG = "selected_events_unversioned"
+_ALTERNATIVE_SOURCE_PROVIDER_STATE_INVALID_FLAG = "state_features_alternative_source_provider_state_invalid"
 _ALERT_CODE_SELECTED_UNVERSIONED = "MSE_SELECTED_EVENTS_UNVERSIONED"
+_ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES = {
+    "primary",
+    "fallback",
+    "static",
+    "noop",
+    "unavailable",
+    "empty",
+    "ok",
+    "event_evidence_present",
+}
 
 logger = logging.getLogger("market_state_engine")
 _UNAVAILABLE_PROVIDER_STATES = {"noop", "empty", "unavailable", "none"}
@@ -241,6 +252,20 @@ def _build_alternative_sources_fusion(*, feature_alt: Dict[str, Any], event_alt_
             "by_source": merged,
         },
     }
+
+
+def _collect_invalid_provider_states_from_fusion(fusion: Dict[str, Any]) -> list[str]:
+    merged = dict((fusion or {}).get("merged") or {})
+    by_source = dict(merged.get("by_source") or {})
+    invalid: list[str] = []
+    for src in ("news", "social", "onchain"):
+        node = dict(by_source.get(src) or {})
+        state = str(node.get("provider_state") or "").strip().lower()
+        if not state:
+            continue
+        if state not in _ALTERNATIVE_SOURCE_ALLOWED_PROVIDER_STATES:
+            invalid.append(src)
+    return sorted(set(invalid))
 
 
 def _sanitize_market_structure_input(raw_market_structure: Dict[str, Any]) -> tuple[Dict[str, Any], list[str]]:
@@ -520,10 +545,15 @@ class MarketStateService:
             sf_evidence = {}
         feature_alt = _extract_alternative_sources(sanitized_market_structure)
         event_alt_summary = _collect_event_alt_summary_from_selected_events(selected_events)
-        sf_evidence["alternative_sources_fusion"] = _build_alternative_sources_fusion(
+        fusion = _build_alternative_sources_fusion(
             feature_alt=feature_alt,
             event_alt_summary=event_alt_summary,
         )
+        sf_evidence["alternative_sources_fusion"] = fusion
+        invalid_provider_state_sources = _collect_invalid_provider_states_from_fusion(fusion)
+        if invalid_provider_state_sources:
+            anomaly_flags = sorted(set([*anomaly_flags, _ALTERNATIVE_SOURCE_PROVIDER_STATE_INVALID_FLAG]))
+            sf_evidence["alternative_source_provider_state_invalid_sources"] = list(invalid_provider_state_sources)
         state_features_payload["evidence"] = sf_evidence
 
         if selected_events:

@@ -108,6 +108,26 @@ class _AlternativeSourceRawProviderNoopAvailable:
         }
 
 
+class _AlternativeSourceRawProviderInvalidProviderState:
+    async def get_raw_structure(self, exchange: str, symbol: str):
+        return {
+            "symbol": symbol,
+            "horizons": {},
+            "orderbook": {},
+            "open_interest": {},
+            "behavioral": {},
+            "alternative_sources": {
+                "onchain": {
+                    "source_type": "onchain",
+                    "available": True,
+                    "provider_state": "mystery_state",
+                    "as_of_ms": 1700000000000,
+                    "features": {"inflow_usd": 12345},
+                }
+            },
+        }
+
+
 class _CapturingEngine:
     def __init__(self) -> None:
         self.last_market_structure = None
@@ -446,6 +466,18 @@ def test_market_state_service_treats_noop_feature_source_as_unavailable_in_fusio
         assert news.get("data_source") == "event_center_new.news"
         assert news.get("inference_source") == "event_center_new.selector"
         assert fusion.get("preferred_source") == "event_center"
+
+    asyncio.run(_run())
+
+
+def test_market_state_service_marks_invalid_alternative_source_provider_state():
+    async def _run():
+        service = MarketStateService(raw_structure_provider=_AlternativeSourceRawProviderInvalidProviderState())
+        out = await service.get_market_state("binance", "ETHUSDT")
+        assert "state_features_alternative_source_provider_state_invalid" in list(out.get("anomaly_flags") or [])
+        evidence = ((out.get("state_features") or {}).get("evidence") or {})
+        invalid_sources = list(evidence.get("alternative_source_provider_state_invalid_sources") or [])
+        assert "onchain" in invalid_sources
 
     asyncio.run(_run())
 
