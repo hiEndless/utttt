@@ -50,10 +50,9 @@
 - `check_event_center_runtime_*`
 - `check_event_center_ci_*`
 
-## 4. 非验证类脚本（兼容层）
+## 4. 非验证类脚本
 
 - `integration_smoke_new_arch.sh`（联调冒烟）
-- `ci_event_center_*.sh`（兼容入口；实现已迁到 `tools/ci/event_center_*.sh`）
 - `bump_event_center_runtime_version.sh`（版本号维护工具）
 
 ## 5. 下一阶段动作
