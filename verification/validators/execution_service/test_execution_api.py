@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v16"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v17"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -354,6 +354,10 @@ def test_reconcile_exchange_dry_run_success(monkeypatch: pytest.MonkeyPatch) -> 
     assert data["mode"] == "exchange"
     assert data["order_id"] == "mock-order-001"
     assert data["status"] == "submitted"
+    assert data["status_source"] == "execution_sink"
+    assert data["reconcile_status"] == "submitted"
+    assert data["reconcile_status_source"] == "execution_sink"
+    assert data["sink_mode"] == "exchange"
     assert data["retry_meta"]["attempts"] == 1
 
 
@@ -398,6 +402,8 @@ def test_reconcile_writes_back_decision_state(monkeypatch: pytest.MonkeyPatch) -
     assert reconcile_resp.status_code == 200
     reconcile_data = reconcile_resp.json()
     assert reconcile_data["status"] == "submitted"
+    assert reconcile_data["status_source"] == "execution_sink"
+    assert reconcile_data["reconcile_status"] == "submitted"
     assert reconcile_data["account_id"] == "main"
 
     debug_resp = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-reconcile-001")

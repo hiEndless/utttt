@@ -1,6 +1,6 @@
 # execution_service Migration
 
-更新时间：2026-03-11
+更新时间：2026-03-13
 
 ## 目标
 
@@ -9,7 +9,7 @@
 ## 当前基线（Latest Only）
 
 1. API 入口：`services/execution_service/docs/api.md`
-2. 契约映射版本：`execution-schema-mapping-v16`
+2. 契约映射版本：`execution-schema-mapping-v17`
 3. 核心输入契约：`decision_intent.schema.json`
 4. 核心输出契约：`execution_result.schema.json`
 5. 对账输出契约：`execution_reconcile_result.schema.json`
@@ -24,6 +24,7 @@
 4. `order_result`/`reconcile_result` 已收敛为白名单结构
 5. 共享 schema 已拆分并通过 `$ref` 复用（confidence/enums/io payload 等）
 6. `schema_mapping_version` 与 `/version`、`CONTRACT_INDEX` 已守卫对齐
+7. `order_result/reconcile_result` 已补充 `*_status` 与 `*_status_source` 语义字段，降低状态语义漂移风险
 
 ## 文档维护规则
 

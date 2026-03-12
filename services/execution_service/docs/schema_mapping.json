@@ -1,6 +1,6 @@
 {
-  "version": "execution-schema-mapping-v16",
-  "last_updated": "2026-03-12",
+  "version": "execution-schema-mapping-v17",
+  "last_updated": "2026-03-13",
   "items": [
     {
       "name": "DecisionIntent",
@@ -106,6 +106,16 @@
           "schema": "services/execution_service/docs/execution_result.schema.json",
           "json_path": "properties.order_result.properties.mode.$ref",
           "expected": "./execution_io_payload.schema.json#/properties/mode"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.order_status.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/order_status"
+        },
+        {
+          "schema": "services/execution_service/docs/execution_result.schema.json",
+          "json_path": "properties.order_result.properties.order_status_source.$ref",
+          "expected": "./execution_io_payload.schema.json#/properties/order_status_source"
         },
         {
           "schema": "services/execution_service/docs/execution_result.schema.json",

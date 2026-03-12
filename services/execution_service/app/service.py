@@ -235,6 +235,10 @@ class ExecutionService:
                     "order_id": order_id,
                     "account_id": account_id,
                     "status": RECONCILE_STATUS_SUBMITTED,
+                    "status_source": "execution_service",
+                    "reconcile_status": RECONCILE_STATUS_SUBMITTED,
+                    "reconcile_status_source": "execution_service",
+                    "sink_mode": _infer_sink_mode(self._execution_sink),
                     "idempotency_hit": False,
                     "reason_code": RECONCILE_REASON_IN_PROGRESS,
                     "note": "相同 order_id 的回执对账正在处理中，请稍后重试",
@@ -252,6 +256,7 @@ class ExecutionService:
                 order_id=order_id,
                 payload=payload,
             )
+            out = _normalize_reconcile_output(out, default_status_source="execution_sink")
             out.setdefault("mode", _infer_sink_mode(self._execution_sink))
             out.setdefault("order_id", order_id)
             out.setdefault("account_id", account_id)
@@ -365,6 +370,7 @@ class ExecutionService:
             try:
                 order_result = await self._execution_sink.submit(decision, result.execution_action)  # type: ignore[union-attr]
                 payload = dict(order_result or {})
+                payload = _normalize_order_result_payload(payload, execution_sink=self._execution_sink)
                 payload["submitted_at_ms"] = int(time.time() * 1000)
                 payload["retry_meta"] = {
                     "attempts": attempts,
@@ -397,6 +403,12 @@ class ExecutionService:
                 "reject_reason": "execution_submit_failed",
                 "applied_risk_rules": [*list(result.applied_risk_rules), "execution_submit_fallback"],
                 "order_result": {
+                    "mode": _infer_sink_mode(self._execution_sink),
+                    "sink_mode": _infer_sink_mode(self._execution_sink),
+                    "status": RECONCILE_STATUS_FAILED,
+                    "status_source": "execution_service",
+                    "order_status": RECONCILE_STATUS_FAILED,
+                    "order_status_source": "execution_service",
                     "retry_meta": {
                         "attempts": max_attempts,
                         "max_retries": self._submit_max_retries,
@@ -560,3 +572,33 @@ def _infer_sink_mode(execution_sink: Any) -> str:
     if "exchange" in cls_name:
         return "exchange"
     return "exchange"
+
+
+def _normalize_order_result_payload(payload: Dict[str, Any], *, execution_sink: Any) -> Dict[str, Any]:
+    out = dict(payload or {})
+    sink_mode = str(out.get("mode") or "").strip().lower() or _infer_sink_mode(execution_sink)
+    out["mode"] = sink_mode
+    out["sink_mode"] = sink_mode
+    status = str(out.get("status") or "").strip().lower()
+    if status not in set(RECONCILE_STATUSES):
+        status = RECONCILE_STATUS_SUBMITTED if bool(out.get("submitted")) else RECONCILE_STATUS_FAILED
+    out["status"] = status
+    out["status_source"] = str(out.get("status_source") or "execution_sink").strip() or "execution_sink"
+    out["order_status"] = str(out.get("order_status") or status).strip().lower() or status
+    out["order_status_source"] = str(out.get("order_status_source") or out["status_source"]).strip() or out["status_source"]
+    return out
+
+
+def _normalize_reconcile_output(out: Mapping[str, Any], *, default_status_source: str) -> Dict[str, Any]:
+    payload = dict(out or {})
+    status = str(payload.get("status") or "").strip().lower()
+    if status not in set(RECONCILE_STATUSES):
+        status = RECONCILE_STATUS_FAILED
+    payload["status"] = status
+    payload["status_source"] = str(payload.get("status_source") or default_status_source).strip() or default_status_source
+    payload["reconcile_status"] = str(payload.get("reconcile_status") or status).strip().lower() or status
+    payload["reconcile_status_source"] = (
+        str(payload.get("reconcile_status_source") or payload["status_source"]).strip() or payload["status_source"]
+    )
+    payload["sink_mode"] = str(payload.get("sink_mode") or payload.get("mode") or "exchange").strip().lower() or "exchange"
+    return payload

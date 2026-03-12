@@ -129,6 +129,11 @@ execution_service/
 - Redis 账户 provider 已对 `risk_state` 做枚举归一化，非法值自动回退 `normal`，避免异常配置污染风控态势。
 - Stub 账户 provider 已采用同样的 `risk_state` 归一化策略，确保本地联调与 Redis 线上行为一致。
 - `decision_state` 已回写 `rule_debug`，可通过 debug 接口按 `decision_id` 回看最近命中规则链路。
+- `order_result/reconcile_result` 已增加语义拆分字段：
+  - `order_status/reconcile_status`（状态本体）
+  - `status_source/order_status_source/reconcile_status_source`（状态来源）
+  - `sink_mode`（执行通道）
+  - 兼容字段 `status` 保留，但等价于对应 `*_status`
 
 ## 最小接口（当前）
 

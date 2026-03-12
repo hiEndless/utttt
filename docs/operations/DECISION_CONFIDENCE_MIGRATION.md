@@ -20,7 +20,7 @@
 ## 2. 当前版本状态
 
 1. 契约版本
-- `execution_schema_mapping_version = execution-schema-mapping-v15`
+- `execution_schema_mapping_version = execution-schema-mapping-v17`
 - `DecisionIntent` 已要求 `decision_confidence` 必填。
 
 2. 契约复用

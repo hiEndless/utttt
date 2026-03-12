@@ -32,7 +32,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v16",
+  "schema_mapping_version": "execution-schema-mapping-v17",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -105,6 +105,11 @@
 
 说明：
 - 当 `EXECUTION_SUBMIT_ENABLED=true` 且动作为 `add/reduce/exit` 时，服务会尝试调用 `ExecutionSink.submit(...)` 回填 `order_result`。
+- `order_result` 语义字段（防止 `status/source` 混用）：
+  - `status`：兼容字段，等价于 `order_status`
+  - `order_status`：订单执行状态（`submitted|filled|canceled|rejected|failed`）
+  - `status_source/order_status_source`：状态来源（`execution_sink|execution_service`）
+  - `mode/sink_mode`：执行通道（当前固定 `exchange`）
 - submit 支持重试（指数退避）：
   - 最大尝试次数：`1 + EXECUTION_SUBMIT_MAX_RETRIES`
   - 退避基数秒：`EXECUTION_SUBMIT_BACKOFF_BASE_S`
@@ -243,6 +248,11 @@
 - `reconcile` 已接入 `order_id` 幂等：相同 `order_id` 二次调用优先返回缓存结果，并标记 `idempotency_hit=true`。
 - `reconcile` 支持错误分级重试：可重试错误会按指数退避重试，并在响应 `retry_meta` 中记录尝试轨迹。
 - 对账失败场景返回业务响应 `status=failed`（HTTP 200），减少下游对 502 的分支处理。
+- 对账结果语义字段（防止 `status/source` 混用）：
+  - `status`：兼容字段，等价于 `reconcile_status`
+  - `reconcile_status`：回执对账状态（`submitted|filled|canceled|rejected|failed`）
+  - `status_source/reconcile_status_source`：状态来源（`execution_sink|execution_service`）
+  - `mode/sink_mode`：执行通道（当前固定 `exchange`）
 - `reason_code` 枚举由 `execution_service/domain/reconcile_codes.py` 单点定义，并由测试校验与 schema 一致。
 - `status` 枚举由 `execution_service/domain/reconcile_statuses.py` 单点定义，并由测试校验与 schema 一致。
 - `retry_meta.status` 枚举由 `execution_service/domain/retry_meta.py` 单点定义，并由测试校验两份 schema 一致。

@@ -96,6 +96,29 @@ def test_execution_result_schema_samples() -> None:
         schema, good_submit_fail, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
     )
 
+    good_submit_success = {
+        "decision_id": "dec-004",
+        "execution_action": "add",
+        "reject_reason": None,
+        "applied_risk_rules": [],
+        "order_result": {
+            "submitted": True,
+            "mode": "exchange",
+            "sink_mode": "exchange",
+            "order_id": "ord-004",
+            "status": "submitted",
+            "status_source": "execution_sink",
+            "order_status": "submitted",
+            "order_status_source": "execution_sink",
+            "retry_meta": {"attempts": 1, "max_retries": 0, "status": "ok"},
+            "ts": 1760000000003,
+            "submitted_at_ms": 1760000000004,
+        },
+    }
+    assert validate_payload_with_local_refs(
+        schema, good_submit_success, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
     bad = {
         "decision_id": "dec-003",
         "execution_action": "open",

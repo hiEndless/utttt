@@ -15,6 +15,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
 
     good_exchange_filled = {
         "mode": "exchange",
+        "sink_mode": "exchange",
         "venue": "binance",
         "order_id": "mock-order-001",
         "decision_id": "dec-001",
@@ -22,6 +23,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "exchange": "binance",
         "symbol": "ETHUSDT",
         "status": "filled",
+        "status_source": "execution_sink",
+        "reconcile_status": "filled",
+        "reconcile_status_source": "execution_sink",
         "filled_qty": 1.0,
         "avg_price": 1000.0,
         "idempotency_hit": False,
@@ -34,6 +38,7 @@ def test_execution_reconcile_result_schema_samples() -> None:
 
     good_exchange = {
         "mode": "exchange",
+        "sink_mode": "exchange",
         "venue": "binance",
         "order_id": "binance-ord-001",
         "decision_id": "dec-002",
@@ -41,6 +46,9 @@ def test_execution_reconcile_result_schema_samples() -> None:
         "exchange": "binance",
         "symbol": "ETHUSDT",
         "status": "submitted",
+        "status_source": "execution_sink",
+        "reconcile_status": "submitted",
+        "reconcile_status_source": "execution_sink",
         "filled_qty": 0.0,
         "avg_price": None,
         "note": "占位",
@@ -62,9 +70,13 @@ def test_execution_reconcile_result_schema_samples() -> None:
 
     good_failed = {
         "mode": "exchange",
+        "sink_mode": "exchange",
         "order_id": "mock-order-err-001",
         "account_id": "main",
         "status": "failed",
+        "status_source": "execution_service",
+        "reconcile_status": "failed",
+        "reconcile_status_source": "execution_service",
         "reason_code": "reconcile_non_retryable_error",
         "error_message": "invalid_order_id",
         "idempotency_hit": False,
@@ -77,8 +89,12 @@ def test_execution_reconcile_result_schema_samples() -> None:
 
     good_in_progress = {
         "mode": "exchange",
+        "sink_mode": "exchange",
         "order_id": "mock-order-inprogress-001",
         "status": "submitted",
+        "status_source": "execution_service",
+        "reconcile_status": "submitted",
+        "reconcile_status_source": "execution_service",
         "reason_code": "reconcile_in_progress",
         "idempotency_hit": False,
         "ts": 1760000000003,

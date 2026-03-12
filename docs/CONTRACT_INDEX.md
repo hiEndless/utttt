@@ -1,6 +1,6 @@
 # UTaker 契约索引
 
-更新时间：2026-03-12
+更新时间：2026-03-13
 说明：部分核心入口受守卫脚本强约束（`tools/local/check_contract_docs_index_guard.sh`），请勿随意移除或改名。
 
 ## 1. 架构与总入口
@@ -68,7 +68,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v16`
+- `execution_schema_mapping_version: execution-schema-mapping-v17`
 - `tools/local/check_execution_contract_entry_guard.sh`
 - `services/execution_service/docs/api.md`
 - `services/execution_service/docs/boundaries.md`

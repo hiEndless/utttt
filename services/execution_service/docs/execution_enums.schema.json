@@ -19,6 +19,10 @@
       "type": "string",
       "enum": ["submitted", "filled", "canceled", "rejected", "failed"]
     },
+    "io_status_source": {
+      "type": "string",
+      "enum": ["execution_sink", "execution_service"]
+    },
     "request_side": {
       "type": "string",
       "enum": ["BUY", "SELL"]
