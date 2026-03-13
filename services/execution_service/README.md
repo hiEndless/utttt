@@ -144,6 +144,14 @@ execution_service/
 - `POST /internal/execution/reconcile`
 - `GET /internal/execution/debug/state/{exchange}/{symbol}`（联调只读）
 - `GET /internal/execution/debug/state/{exchange}/{symbol}?redact=true`（脱敏视图）
+- `GET /internal/execution/debug/confidence-metrics`（含 confidence 迁移计数与 prompt 版本计数）
+
+## 本地观测报表
+
+- prompt 版本计数报表（实时拉取 debug 指标）：
+  - `bash tools/local/run_execution_prompt_version_report.sh`
+- 指定输入文件（离线重跑）：
+  - `bash tools/local/run_execution_prompt_version_report.sh --input /tmp/confidence_metrics.json`
 
 ## 运行模式
 
