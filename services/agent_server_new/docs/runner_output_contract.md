@@ -2,6 +2,8 @@
 
 更新时间：2026-03-13
 
+语义说明：`ExecutionPlan` 属于 agent 语义输出，不等价于 execution 最终动作；最终风控与动作以 execution 返回为准。
+
 适用命令：
 
 ```bash

@@ -87,6 +87,7 @@ data_server
 输出给 `execution_service`：
 
 - `ExecutionPlan`
+  - 该对象是 agent 语义输出，不等价于 execution 最终动作。
 
 输出给观测与复盘系统：
 

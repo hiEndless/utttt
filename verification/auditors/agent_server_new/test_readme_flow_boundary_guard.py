@@ -15,5 +15,6 @@ def test_readme_freezes_minimal_main_flow_and_historical_flow_label() -> None:
     assert "IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner" in text
     assert "### 当前实现（过渡态）" not in text
     assert "做 signal semantic decision（accept/reject/uncertain）" in text
+    assert "该对象是 agent 语义输出，不等价于 execution 最终动作" in text
     assert "做 intent resolve / rule planning" not in text
     assert "做 strategy gating / risk gating" not in text
