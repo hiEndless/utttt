@@ -182,6 +182,8 @@ Options:
                                           指定 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
   --agent-decision-agent-key-report-path <path>
                                           指定 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
+  --agent-route-replay-report-path <path>
+                                          指定 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --max-decision-agent-key-unknown-count <int>
                                           设置 decision_agent_key unknown 计数上限（默认 -1 忽略）

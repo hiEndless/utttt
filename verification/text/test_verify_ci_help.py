@@ -87,6 +87,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in regression_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
+    assert "tools/local/print_route_replay_summary.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
     assert "--status missing" in regression_text
@@ -125,5 +126,6 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--agent-action-hint-cases-report-path <path>" in out
     assert "--agent-action-hint-missing-cases-report-path <path>" in out
     assert "--agent-decision-agent-key-report-path <path>" in out
+    assert "--agent-route-replay-report-path <path>" in out
     assert "--max-decision-agent-key-unknown-count <int>" in out
     assert "--max-route-replay-mismatch-count <int>" in out

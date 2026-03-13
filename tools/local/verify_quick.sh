@@ -14,6 +14,7 @@ WITH_AGENT_ROUTE_REPLAY_REPORT=0
 AGENT_ACTION_HINT_CASES_REPORT_PATH="verification/reports/agent_action_hint_cases.latest.json"
 AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="verification/reports/agent_action_hint_missing_cases.latest.json"
 AGENT_DECISION_AGENT_KEY_REPORT_PATH="verification/reports/agent_decision_agent_key.latest.json"
+AGENT_ROUTE_REPLAY_REPORT_PATH="verification/reports/agent_signal_source_route_replay.latest.json"
 MAX_AGENT_READYZ_LEVEL="red"
 MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="-1"
 MAX_ROUTE_REPLAY_MISMATCH_COUNT="-1"
@@ -81,6 +82,10 @@ while (($# > 0)); do
       AGENT_DECISION_AGENT_KEY_REPORT_PATH="${2:-$AGENT_DECISION_AGENT_KEY_REPORT_PATH}"
       shift 2
       ;;
+    --agent-route-replay-report-path)
+      AGENT_ROUTE_REPLAY_REPORT_PATH="${2:-$AGENT_ROUTE_REPLAY_REPORT_PATH}"
+      shift 2
+      ;;
     --max-agent-readyz-level)
       MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
       shift 2
@@ -140,6 +145,8 @@ Options:
                                           指定 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
   --agent-decision-agent-key-report-path <path>
                                           指定 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
+  --agent-route-replay-report-path <path>
+                                          指定 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --max-decision-agent-key-unknown-count <int>
                                           设置 decision_agent_key unknown 计数上限（默认 -1 忽略）
@@ -182,6 +189,7 @@ if [[ "$WITH_AGENT_DECISION_AGENT_KEY_REPORT" == "1" ]]; then
 fi
 if [[ "$WITH_AGENT_ROUTE_REPLAY_REPORT" == "1" ]]; then
   ENV_PREFIX+=(WITH_AGENT_ROUTE_REPLAY_REPORT=1)
+  ENV_PREFIX+=(AGENT_ROUTE_REPLAY_REPORT_PATH="$AGENT_ROUTE_REPLAY_REPORT_PATH")
 fi
 ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
 ENV_PREFIX+=(MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT")

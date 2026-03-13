@@ -192,4 +192,7 @@ if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "
   if [[ "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" ]]; then
     bash tools/local/print_action_hint_semantics_summary.sh --summary "$SUMMARY_PATH" --prefix quick
   fi
+  if [[ "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
+    bash tools/local/print_route_replay_summary.sh --summary "$SUMMARY_PATH" --prefix quick
+  fi
 fi
