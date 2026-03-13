@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""Decision plan adapter: map signal decision to execution plan and assemble trace/memory payloads.
+
+This module is part of the minimal decision chain and must not reintroduce
+legacy intent/rule/gate/planner domain logic.
+"""
+
 from dataclasses import dataclass
 from typing import Any, Dict
 
