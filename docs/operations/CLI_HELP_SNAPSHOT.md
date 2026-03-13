@@ -386,6 +386,7 @@ Environment:
   AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMEND_RATIO  趋势建议触发阈值（默认 0.70）
   AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMEND_MIN_DAYS  趋势建议连续天数下限（默认 3）
   AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMEND_MIN_TOTAL  趋势建议总样本数下限（默认 20）
+  AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH  趋势建议输出路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）

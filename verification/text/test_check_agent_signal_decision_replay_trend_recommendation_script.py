@@ -91,3 +91,33 @@ def test_check_agent_signal_decision_replay_trend_recommendation_hold(tmp_path: 
     )
     assert proc.returncode == 0
     assert "[hold] trend_recommendation" in str(proc.stdout or "")
+
+
+def test_check_agent_signal_decision_replay_trend_recommendation_output_file(tmp_path: Path) -> None:
+    trend_path = tmp_path / "trend.json"
+    out_path = tmp_path / "recommendation.latest.json"
+    _write_trend(
+        trend_path,
+        ratio=0.65,
+        latest_ratio=0.60,
+        total=40,
+        days=7,
+        daily_rows=[
+            {"day": "2026-03-12", "total": 10, "fallback": 6, "ratio": 0.60},
+            {"day": "2026-03-13", "total": 10, "fallback": 6, "ratio": 0.60},
+            {"day": "2026-03-14", "total": 20, "fallback": 12, "ratio": 0.60},
+        ],
+    )
+    proc = subprocess.run(
+        ["bash", str(SCRIPT_PATH), str(trend_path), "0.70", "3", "20", str(out_path)],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert "[ok] wrote " in str(proc.stdout or "")
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["schema_version"] == "agent-signal-decision-replay-trend-recommendation-v1"
+    assert payload["status"] == "recommend"
+    assert payload["recommend_action"] == "tighten_social_news_fallback_ratio_to_0_80"
