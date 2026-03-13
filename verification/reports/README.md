@@ -120,6 +120,7 @@ WITH_AGENT_ACTION_HINT_CASES_REPORT=1 bash tools/ci/verify_quick.sh
 WITH_AGENT_DECISION_AGENT_KEY_REPORT=1 MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT=0 bash tools/ci/verify_quick.sh
 WITH_AGENT_ROUTE_REPLAY_REPORT=1 MAX_ROUTE_REPLAY_MISMATCH_COUNT=0 bash tools/ci/verify_quick.sh
 WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 bash tools/ci/verify_quick.sh
+WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85 bash tools/ci/verify_quick.sh
 WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.80 bash tools/ci/verify_regression.sh
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
@@ -297,3 +298,6 @@ Guard signal decision replay fallback ratio by source:
 bash tools/local/check_agent_signal_decision_replay_guard.sh
 bash tools/local/check_agent_signal_decision_replay_guard.sh verification/reports/agent_signal_decision_replay.latest.json 10 -1 -1 -1 0.80
 ```
+
+说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
+其余来源默认仍为 `-1`（忽略）。
