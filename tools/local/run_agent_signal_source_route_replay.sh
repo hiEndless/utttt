@@ -5,6 +5,7 @@ EXCHANGE="binance"
 SYMBOL="ETHUSDT"
 FORMAT="table"
 OUTPUT_PATH=""
+STRICT="1"
 
 print_help() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Options:
   --symbol <name>    交易对（默认 ETHUSDT）
   --format <type>    输出格式（table|json，默认 table）
   --output <path>    输出文件路径（仅 format=json 时生效）
+  --strict <0|1>     是否在路由不匹配时返回失败（默认 1）
   --help, -h         显示帮助
 
 Description:
@@ -48,6 +50,10 @@ while (($# > 0)); do
       OUTPUT_PATH="${2:-$OUTPUT_PATH}"
       shift 2
       ;;
+    --strict)
+      STRICT="${2:-$STRICT}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1" >&2
       print_help
@@ -62,7 +68,7 @@ else
   PY_BIN=python3
 fi
 
-"$PY_BIN" - "$EXCHANGE" "$SYMBOL" "$FORMAT" "$OUTPUT_PATH" <<'PY'
+"$PY_BIN" - "$EXCHANGE" "$SYMBOL" "$FORMAT" "$OUTPUT_PATH" "$STRICT" <<'PY'
 from __future__ import annotations
 
 import asyncio
@@ -74,17 +80,21 @@ from services.agent_server_new.adapters.market_state_http import _build_msl_from
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
-if len(sys.argv) != 5:
-    raise SystemExit("usage: <exchange> <symbol> <format> <output_path>")
+if len(sys.argv) != 6:
+    raise SystemExit("usage: <exchange> <symbol> <format> <output_path> <strict>")
 
 exchange = str(sys.argv[1] or "binance").strip() or "binance"
 symbol = str(sys.argv[2] or "ETHUSDT").strip() or "ETHUSDT"
 output_format = str(sys.argv[3] or "table").strip().lower()
 output_path = str(sys.argv[4] or "").strip()
+strict_raw = str(sys.argv[5] or "1").strip()
 if output_format not in {"table", "json"}:
     raise SystemExit("[failed] --format must be one of: table|json")
 if output_path and output_format != "json":
     raise SystemExit("[failed] --output requires --format json")
+if strict_raw not in {"0", "1"}:
+    raise SystemExit("[failed] --strict must be 0 or 1")
+strict_mode = strict_raw == "1"
 
 
 def _sample_msl(sym: str) -> dict:
@@ -192,6 +202,7 @@ result = {
     "exchange": exchange,
     "symbol": symbol,
     "count": len(rows),
+    "strict_mode": strict_mode,
     "ok": bool(ok),
     "rows": rows,
 }
@@ -220,6 +231,6 @@ else:
             f"{str(row.get('execution_action') or '')}\t"
             f"{str(row.get('route_match') or False)}"
         )
-if not ok:
+if strict_mode and not ok:
     raise SystemExit(1)
 PY

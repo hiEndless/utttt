@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 import sys
@@ -26,6 +27,7 @@ def test_run_agent_signal_source_route_replay_help() -> None:
     assert "--symbol <name>" in out
     assert "--format <type>" in out
     assert "--output <path>" in out
+    assert "--strict <0|1>" in out
     assert "signal_source_type -> decision_agent_key -> execution_action" in out
 
 
@@ -68,6 +70,7 @@ def test_run_agent_signal_source_route_replay_output_json_and_output_file(tmp_pa
     assert lines[0].startswith("[ok] wrote ")
     payload = json.loads(lines[-1])
     assert payload["schema_version"] == "agent-signal-source-route-replay-v1"
+    assert payload["strict_mode"] is True
     assert payload["ok"] is True
     rows = list(payload.get("rows") or [])
     assert len(rows) == 4
@@ -78,3 +81,36 @@ def test_run_agent_signal_source_route_replay_output_json_and_output_file(tmp_pa
     assert by_source["social_news"]["decision_agent_key"] == "social_news"
     assert all(bool(x.get("route_match")) for x in rows)
     assert out_path.exists()
+
+
+def test_run_agent_signal_source_route_replay_non_strict_can_observe_mismatch(tmp_path: Path) -> None:
+    bad_router = tmp_path / "bad_router.json"
+    bad_router.write_text(
+        json.dumps(
+            {
+                "default_agent_key": "generic",
+                "source_category_routes": {},
+                "rules": [
+                    {"agent_key": "technical", "keywords": ["indicator"]},
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    env = dict(os.environ)
+    env["AGENT_SIGNAL_ROUTER_CONFIG_FILE"] = str(bad_router)
+    proc = subprocess.run(
+        ["bash", str(SCRIPT_PATH), "--format", "json", "--strict", "0"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert proc.returncode == 0
+    payload = json.loads(str(proc.stdout or "").strip().splitlines()[-1])
+    assert payload["strict_mode"] is False
+    rows = list(payload.get("rows") or [])
+    assert rows
+    assert any(not bool(x.get("route_match")) for x in rows)
