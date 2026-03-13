@@ -306,6 +306,11 @@ bash tools/local/print_agent_signal_decision_replay_trend.sh --source social_new
 bash tools/local/print_agent_signal_decision_replay_trend.sh --source social_news --days 7 --output verification/reports/agent_signal_decision_replay_trend.latest.json
 ```
 
+Print recommendation marker from trend report (non-blocking):
+```bash
+bash tools/local/check_agent_signal_decision_replay_trend_recommendation.sh verification/reports/agent_signal_decision_replay_trend.latest.json 0.70 3 20
+```
+
 说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
 `tools/ci/verify_nightly.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.90`；
 其余来源默认仍为 `-1`（忽略）。

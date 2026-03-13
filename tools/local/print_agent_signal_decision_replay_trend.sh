@@ -134,6 +134,7 @@ if loaded_reports <= 0:
         "ratio": 0.0,
         "latest_day": "",
         "latest_ratio": 0.0,
+        "daily_rows": [],
     }
     print(f"[{prefix}] signal_decision_replay_trend source={source_type} window_days={days} reports=0 total=0 fallback=0 ratio=0.000000")
     if output_path_raw:
@@ -163,6 +164,20 @@ payload = {
     "ratio": round(float(ratio), 6),
     "latest_day": latest_day,
     "latest_ratio": round(float(latest_ratio), 6),
+    "daily_rows": [
+        {
+            "day": day,
+            "reports": int(by_day[day]["reports"]),
+            "total": int(by_day[day]["total"]),
+            "fallback": int(by_day[day]["fallback"]),
+            "ratio": (
+                0.0
+                if int(by_day[day]["total"]) <= 0
+                else round(float(by_day[day]["fallback"]) / float(by_day[day]["total"]), 6)
+            ),
+        }
+        for day in days_sorted
+    ],
 }
 print(
     f"[{prefix}] signal_decision_replay_trend "
