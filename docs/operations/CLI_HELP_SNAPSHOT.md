@@ -11,6 +11,11 @@
 文档守卫契约版本：
 - `README_CONTRACTS_VERSION=readme-contracts-v2`
 
+README 契约版本升级提示：
+1. 先更新 `verification/text/readme_contracts.py` 中的 `README_CONTRACTS_VERSION`
+2. 再同步 `verification/text/readme_contracts_version.baseline`
+3. 最后同步本文件中的版本锚点
+
 ## 刷新命令
 
 ```bash
