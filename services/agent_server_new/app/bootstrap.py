@@ -151,9 +151,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     legacy_pipeline_enabled = _env_bool("AGENT_LEGACY_PIPELINE_ENABLED", "true")
     if (not legacy_pipeline_enabled) and (not execution_enabled):
         msg = "minimal pipeline requires AGENT_EXECUTION_ENABLED=true to keep decision->execution closed loop"
-        if runtime_profile in {"prod", "production"}:
-            raise RuntimeError(msg)
-        logger.warning("%s (non-production)", msg)
+        raise RuntimeError(msg)
     signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
     signal_router_config = load_signal_router_config_from_env()
     try:

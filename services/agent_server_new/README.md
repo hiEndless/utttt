@@ -235,7 +235,7 @@ signal_event + active_events + MSL
 - `AGENT_LEGACY_PIPELINE_ENABLED`
   - 是否启用 legacy planner/gate 链路（默认：`true`）
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
-  - 生产环境下若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环）
+  - 若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环，所有环境一致）
 - `AGENT_SIGNAL_ROUTER_CONFIG_FILE`
   - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
   - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`

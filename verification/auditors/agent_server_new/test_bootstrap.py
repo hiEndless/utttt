@@ -274,6 +274,7 @@ def test_create_trade_event_workflow_from_env_disable_decision_trace_schema_vali
 
 def test_create_trade_event_workflow_from_env_can_disable_legacy_pipeline(monkeypatch):
     monkeypatch.setenv("AGENT_LEGACY_PIPELINE_ENABLED", "false")
+    monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
 
     import services.agent_server_new.app.bootstrap as mod
 
@@ -282,8 +283,8 @@ def test_create_trade_event_workflow_from_env_can_disable_legacy_pipeline(monkey
     assert wf._legacy_pipeline_enabled is False  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_prod_minimal_requires_execution_enabled(monkeypatch):
-    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+def test_create_trade_event_workflow_from_env_minimal_requires_execution_enabled(monkeypatch):
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "dev")
     monkeypatch.setenv("AGENT_LEGACY_PIPELINE_ENABLED", "false")
     monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "false")
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
@@ -293,7 +294,7 @@ def test_create_trade_event_workflow_from_env_prod_minimal_requires_execution_en
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
-        assert False, "expected RuntimeError when prod minimal mode disables execution"
+        assert False, "expected RuntimeError when minimal mode disables execution"
     except RuntimeError as exc:
         assert "minimal pipeline requires AGENT_EXECUTION_ENABLED=true" in str(exc)
 
