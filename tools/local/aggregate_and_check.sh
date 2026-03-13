@@ -30,6 +30,7 @@ MAX_EVENT_TYPE_MATCH_MISSING_COUNT="-1"
 MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT="-1"
 MIN_EVENT_TYPE_MATCH_ALIAS_RATIO="-1"
 MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="-1"
+MAX_ROUTE_REPLAY_MISMATCH_COUNT="-1"
 MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT="-1"
 MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT="-1"
 MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO="-1"
@@ -84,6 +85,8 @@ Options:
                                event_type_match alias 占比下限（默认 -1 忽略）
   --max-decision-agent-key-unknown-count <int>
                                decision_agent_key unknown 计数上限（默认 -1 忽略）
+  --max-route-replay-mismatch-count <int>
+                               route_replay mismatch 计数上限（默认 -1 忽略）
   --max-action-hint-semantics-mismatch-count <int>
                                action_hint_semantics mismatch 计数上限（默认 -1 忽略）
   --max-action-hint-semantics-missing-actual-hint-count <int>
@@ -207,6 +210,10 @@ USAGE
       MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="${2:-$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT}"
       shift 2
       ;;
+    --max-route-replay-mismatch-count)
+      MAX_ROUTE_REPLAY_MISMATCH_COUNT="${2:-$MAX_ROUTE_REPLAY_MISMATCH_COUNT}"
+      shift 2
+      ;;
     --max-action-hint-semantics-mismatch-count)
       MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT="${2:-$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT}"
       shift 2
@@ -292,6 +299,7 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-event-type-match-unknown-count "$MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT"
     --min-event-type-match-alias-ratio "$MIN_EVENT_TYPE_MATCH_ALIAS_RATIO"
     --max-decision-agent-key-unknown-count "$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT"
+    --max-route-replay-mismatch-count "$MAX_ROUTE_REPLAY_MISMATCH_COUNT"
     --max-action-hint-semantics-mismatch-count "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT"
     --max-action-hint-semantics-missing-actual-hint-count "$MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT"
     --min-action-hint-semantics-match-ratio "$MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO"

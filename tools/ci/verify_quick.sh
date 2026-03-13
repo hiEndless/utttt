@@ -23,12 +23,16 @@ Optional Observability:
                                 生成 action_hint mismatch 回放 artifact（默认关闭）
   WITH_AGENT_DECISION_AGENT_KEY_REPORT=1
                                 启用 decision_agent_key 路由分布观测（默认关闭）
+  WITH_AGENT_ROUTE_REPLAY_REPORT=1
+                                启用四类来源业务路由回放观测（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
                                 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
   AGENT_DECISION_AGENT_KEY_REPORT_PATH
                                 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
+  AGENT_ROUTE_REPLAY_REPORT_PATH
+                                route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -38,6 +42,8 @@ Optional Observability:
                                 pipeline_mode 缺失计数上限（默认 -1 忽略）
   MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT
                                 decision_agent_key unknown 计数上限（默认 -1 忽略）
+  MAX_ROUTE_REPLAY_MISMATCH_COUNT
+                                route_replay mismatch 计数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT    是否要求 readyz 报告存在（1/0，默认 0）
   AGENT_READYZ_BASE_URL          agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S         agent readyz 拉取超时秒数（默认 2.0）
@@ -132,25 +138,34 @@ if [[ "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" ]]; then
     --output "$AGENT_DECISION_AGENT_KEY_REPORT_PATH" >/dev/null
   echo "[quick] decision_agent_key_report_path=$AGENT_DECISION_AGENT_KEY_REPORT_PATH"
 fi
+if [[ "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
+  AGENT_ROUTE_REPLAY_REPORT_PATH="${AGENT_ROUTE_REPLAY_REPORT_PATH:-verification/reports/agent_signal_source_route_replay.latest.json}"
+  bash tools/local/run_agent_signal_source_route_replay.sh \
+    --format json \
+    --output "$AGENT_ROUTE_REPLAY_REPORT_PATH" >/dev/null
+  echo "[quick] route_replay_report_path=$AGENT_ROUTE_REPLAY_REPORT_PATH"
+fi
 
-if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" ]]; then
+if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
   MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:--1}"
   MAX_PIPELINE_MODE_UNKNOWN_COUNT="${MAX_PIPELINE_MODE_UNKNOWN_COUNT:--1}"
   MAX_PIPELINE_MODE_MISSING_COUNT="${MAX_PIPELINE_MODE_MISSING_COUNT:--1}"
   MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="${MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT:--1}"
+  MAX_ROUTE_REPLAY_MISMATCH_COUNT="${MAX_ROUTE_REPLAY_MISMATCH_COUNT:--1}"
   REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-0}"
   AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
   AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
-  echo "[quick] WITH_AGENT_READYZ=${WITH_AGENT_READYZ:-0} WITH_PIPELINE_MODE_REPORT=${WITH_PIPELINE_MODE_REPORT:-0} WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0} WITH_AGENT_DECISION_AGENT_KEY_REPORT=${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0} MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+  echo "[quick] WITH_AGENT_READYZ=${WITH_AGENT_READYZ:-0} WITH_PIPELINE_MODE_REPORT=${WITH_PIPELINE_MODE_REPORT:-0} WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0} WITH_AGENT_DECISION_AGENT_KEY_REPORT=${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0} WITH_AGENT_ROUTE_REPLAY_REPORT=${WITH_AGENT_ROUTE_REPLAY_REPORT:-0} MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
   echo "[quick] MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
-  echo "[quick] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_COUNT MAX_PIPELINE_MODE_MISSING_COUNT=$MAX_PIPELINE_MODE_MISSING_COUNT MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT=$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT"
+  echo "[quick] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_COUNT MAX_PIPELINE_MODE_MISSING_COUNT=$MAX_PIPELINE_MODE_MISSING_COUNT MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT=$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT MAX_ROUTE_REPLAY_MISMATCH_COUNT=$MAX_ROUTE_REPLAY_MISMATCH_COUNT"
   QUICK_ARGS=(
     --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
     --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
     --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"
     --max-pipeline-mode-missing-count "$MAX_PIPELINE_MODE_MISSING_COUNT"
     --max-decision-agent-key-unknown-count "$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT"
+    --max-route-replay-mismatch-count "$MAX_ROUTE_REPLAY_MISMATCH_COUNT"
   )
   if [[ "${WITH_AGENT_READYZ:-0}" == "1" ]]; then
     QUICK_ARGS+=(
