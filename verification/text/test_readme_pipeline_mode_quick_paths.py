@@ -38,6 +38,12 @@ def test_readme_contracts_doc_list_is_sorted() -> None:
     assert doc_list == sorted(doc_list), f"README_CONTRACTS_SNIPPETS_DOCS not sorted: {doc_list}"
 
 
+def test_readme_contracts_docs_exist() -> None:
+    for relpath in README_CONTRACTS_SNIPPETS_DOCS:
+        full_path = PROJECT_ROOT / relpath
+        assert full_path.is_file(), f"missing readme file: {relpath}"
+
+
 def test_readme_snippet_overrides_are_sorted() -> None:
     override_list = [str(p) for p in README_SNIPPET_OVERRIDES.keys()]
     assert override_list == sorted(override_list), f"README_SNIPPET_OVERRIDES not sorted: {override_list}"
