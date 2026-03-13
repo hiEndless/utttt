@@ -271,6 +271,7 @@ def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
         assert routing.get("llm_contract_error_code") == "llm_schema_validation_failed"
         assert isinstance(routing.get("llm_contract_errors"), list)
         assert len(list(routing.get("llm_contract_errors") or [])) >= 1
+        assert len(list(routing.get("llm_contract_errors") or [])) <= 8
         assert routing.get("router_config_source") == "runtime"
         assert isinstance(routing.get("router_config_version"), str)
 

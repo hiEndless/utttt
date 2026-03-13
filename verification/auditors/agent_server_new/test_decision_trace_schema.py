@@ -39,6 +39,9 @@ def _validate(schema: Dict[str, Any], payload: Dict[str, Any]) -> bool:
 
         if isinstance(value, list):
             item_schema = dict(node.get("items") or {})
+            max_items = node.get("maxItems")
+            if isinstance(max_items, int) and len(value) > max_items:
+                return False
             if item_schema:
                 for item in value:
                     if not check(item_schema, item):
@@ -109,3 +112,11 @@ def test_decision_trace_schema_samples() -> None:
     bad_status = _sample_decision_trace()
     bad_status["llm_observation"]["status"] = "unknown"
     assert not _validate(schema, bad_status)
+
+    bad_error_code = _sample_decision_trace()
+    bad_error_code["routing"]["llm_contract_error_code"] = "unknown_error"
+    assert not _validate(schema, bad_error_code)
+
+    bad_error_count = _sample_decision_trace()
+    bad_error_count["routing"]["llm_contract_errors"] = [str(i) for i in range(9)]
+    assert not _validate(schema, bad_error_count)

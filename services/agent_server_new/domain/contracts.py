@@ -8,6 +8,14 @@ Direction = Literal["long", "short", "none"]
 RiskAction = Literal["add", "reduce", "hold", "exit", "skip"]
 ActionIntentType = Literal["increase", "decrease", "close", "hold", "skip"]
 LLMParseStatus = Literal["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
+LLMContractErrorCode = Literal[
+    "",
+    "llm_raw_content_missing",
+    "llm_json_parse_error",
+    "llm_json_not_object",
+    "llm_schema_validation_failed",
+    "llm_confidence_parse_error",
+]
 
 
 @dataclass(frozen=True)

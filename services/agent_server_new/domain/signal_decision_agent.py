@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Literal, Protocol
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import Confidence, LLMParseStatus, SignalVerdict
+from services.agent_server_new.domain.contracts import Confidence, LLMContractErrorCode, LLMParseStatus, SignalVerdict
 from services.agent_server_new.domain.llm_signal_decision_schema_guard import validate_llm_signal_decision_payload
 from services.agent_server_new.domain.signal_router import route_signal_agent_key
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
@@ -20,7 +20,7 @@ class SignalDecisionEvalResult:
     decision_agent_key: str
     decision_mode: Literal["llm", "rule_fallback", "rule"] = "rule"
     llm_parse_status: LLMParseStatus = "rule_only"
-    llm_contract_error_code: str = ""
+    llm_contract_error_code: LLMContractErrorCode = ""
     llm_contract_errors: List[str] = field(default_factory=list)
 
 

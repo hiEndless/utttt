@@ -49,11 +49,20 @@
           "enum": ["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
         },
         "llm_contract_error_code": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "",
+            "llm_raw_content_missing",
+            "llm_json_parse_error",
+            "llm_json_not_object",
+            "llm_schema_validation_failed",
+            "llm_confidence_parse_error"
+          ]
         },
         "llm_contract_errors": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": {"type": "string"},
+          "maxItems": 8
         },
         "router_config_source": {
           "type": "string"

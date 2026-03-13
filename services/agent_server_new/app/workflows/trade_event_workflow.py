@@ -107,6 +107,31 @@ def _signal_router_config_version(cfg: Dict[str, Any]) -> str:
     return _sha256_text(stable)[:16]
 
 
+def _sanitize_llm_contract_error_code(value: Any) -> str:
+    code = str(value or "").strip()
+    allowed = {
+        "",
+        "llm_raw_content_missing",
+        "llm_json_parse_error",
+        "llm_json_not_object",
+        "llm_schema_validation_failed",
+        "llm_confidence_parse_error",
+    }
+    return code if code in allowed else "llm_schema_validation_failed"
+
+
+def _sanitize_llm_contract_errors(values: Any, *, limit: int = 8) -> list[str]:
+    out: list[str] = []
+    for item in list(values or []):
+        text = str(item or "").strip()
+        if not text:
+            continue
+        out.append(text)
+        if len(out) >= max(1, int(limit)):
+            break
+    return out
+
+
 def _derive_global_regime(
     *,
     msl: MarketStateMSL,
@@ -347,8 +372,8 @@ class TradeEventWorkflow:
                     "decision_agent_key": eval_result.decision_agent_key,
                     "decision_mode": eval_result.decision_mode,
                     "llm_parse_status": eval_result.llm_parse_status,
-                    "llm_contract_error_code": eval_result.llm_contract_error_code,
-                    "llm_contract_errors": list(eval_result.llm_contract_errors or []),
+                    "llm_contract_error_code": _sanitize_llm_contract_error_code(eval_result.llm_contract_error_code),
+                    "llm_contract_errors": _sanitize_llm_contract_errors(eval_result.llm_contract_errors),
                     "direction": signal.direction,
                     "verdict": signal.verdict,
                     "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
@@ -509,8 +534,8 @@ class TradeEventWorkflow:
                     "decision_agent_key": signal_decision.decision_agent_key,
                     "decision_mode": signal_decision.decision_mode,
                     "llm_parse_status": signal_decision.llm_parse_status,
-                    "llm_contract_error_code": eval_result.llm_contract_error_code,
-                    "llm_contract_errors": list(eval_result.llm_contract_errors or []),
+                    "llm_contract_error_code": _sanitize_llm_contract_error_code(eval_result.llm_contract_error_code),
+                    "llm_contract_errors": _sanitize_llm_contract_errors(eval_result.llm_contract_errors),
                     "router_config_source": self._signal_router_config_source,
                     "router_config_version": self._signal_router_config_version,
                 },
