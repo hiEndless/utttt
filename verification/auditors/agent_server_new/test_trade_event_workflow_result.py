@@ -484,7 +484,7 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
             position_context=_Position(),
             active_events=_Events(),
             execution_decider=None,
-            recorder=None,
+            recorder=_Recorder(),
             legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
@@ -498,6 +498,14 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         )
         assert out.agent_plan.action == "hold"
         assert out.agent_plan.notes == "legacy_pipeline_disabled"
+        trace_payload = {}
+        for _, name, payload in wf._recorder.outputs:  # noqa: SLF001
+            if name == "decision_trace":
+                trace_payload = payload
+                break
+        assert trace_payload
+        routing = dict(trace_payload.get("routing") or {})
+        assert routing.get("pipeline_mode") == "minimal"
 
     import pytest
 

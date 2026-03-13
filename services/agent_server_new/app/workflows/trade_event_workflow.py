@@ -132,6 +132,10 @@ def _sanitize_llm_contract_errors(values: Any, *, limit: int = 8) -> list[str]:
     return out
 
 
+def _pipeline_mode(legacy_pipeline_enabled: bool) -> str:
+    return "legacy" if bool(legacy_pipeline_enabled) else "minimal"
+
+
 def _derive_global_regime(
     *,
     msl: MarketStateMSL,
@@ -371,6 +375,7 @@ class TradeEventWorkflow:
                 event.event_id,
                 "signal_evaluator",
                 {
+                    "pipeline_mode": _pipeline_mode(self._legacy_pipeline_enabled),
                     "decision_agent_key": eval_result.decision_agent_key,
                     "decision_mode": eval_result.decision_mode,
                     "llm_parse_status": eval_result.llm_parse_status,
@@ -573,6 +578,7 @@ class TradeEventWorkflow:
                     "invalidation_reasons": list(signal.invalidation_reasons),
                 },
                 routing={
+                    "pipeline_mode": _pipeline_mode(self._legacy_pipeline_enabled),
                     "decision_agent_key": signal_decision.decision_agent_key,
                     "decision_mode": signal_decision.decision_mode,
                     "llm_parse_status": signal_decision.llm_parse_status,

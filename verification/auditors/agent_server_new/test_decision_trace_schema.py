@@ -72,6 +72,7 @@ def _sample_decision_trace() -> Dict[str, Any]:
         "anomalies": {},
         "signal_verdict": {"verdict": "accept"},
         "routing": {
+            "pipeline_mode": "legacy",
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",

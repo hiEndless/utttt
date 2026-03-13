@@ -61,7 +61,7 @@
 
 ## 5. agent_server_new
 
-- `decision_trace_routing_contract_version: agent-decision-trace-routing-v5`
+- `decision_trace_routing_contract_version: agent-decision-trace-routing-v6`
 - `services/agent_server_new/docs/REFACTOR_PLAN_V2.md`
 - `services/agent_server_new/docs/runner_output_contract.md`
 - `services/agent_server_new/docs/runner_output.schema.json`

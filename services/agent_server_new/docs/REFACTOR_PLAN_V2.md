@@ -144,6 +144,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - 已新增兼容开关：`AGENT_LEGACY_PIPELINE_ENABLED`（默认 `true`）。
   - `true`：维持旧 planner/gate 链路行为。
   - `false`：跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner` 主链路，使用最小 `ExecutionPlan(hold)`，由 execution 侧做最终裁决。
+  - `DecisionTrace.routing.pipeline_mode`：`legacy|minimal`，用于灰度对比统计。
 
 4. Phase D（收口阶段）
 - 删除 agent 内风控/动作阻断遗留逻辑。
