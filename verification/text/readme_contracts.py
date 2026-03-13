@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 # 版本升级注意：
 # 升级 README_CONTRACTS_VERSION 时，必须同步更新：
 # 1) verification/text/readme_contracts_version.baseline
@@ -8,6 +10,7 @@ from __future__ import annotations
 # - readme-contracts-v1：初始引入，约束 pipeline_mode quick 单命令与联合观测命令。
 # - readme-contracts-v2：增加 CLI_HELP_SNAPSHOT 版本锚点与 docs_bundle 日志版本输出联动。
 README_CONTRACTS_VERSION = "readme-contracts-v2"
+README_CONTRACTS_BASELINE_PATH = Path("verification/text/readme_contracts_version.baseline")
 
 PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = (
     "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
