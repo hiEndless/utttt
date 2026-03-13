@@ -259,6 +259,13 @@ signal_event + active_events + MSL
 2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 模式差异。
 3. 生产灰度按 symbol 白名单逐步扩大，确认无回归后再考虑默认切换。
 
+### 本地灰度观测最短命令
+
+- 最短链路：`bash tools/local/verify_quick.sh --with-pipeline-mode-report`
+- 若需同时观测可用性：`bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz`
+- 关键日志行：`[quick] pipeline_mode_summary legacy=... minimal=... unknown=... missing=... legacy_ratio=... minimal_ratio=...`
+- 判读建议：`unknown` 与 `missing` 应长期收敛到 `0`；灰度推进阶段 `minimal_ratio` 应随范围扩大而稳定上升。
+
 ### MarketState 语义告警（非阻断）
 
 `HttpMarketStateProvider` 会在读取状态层快照时追加语义告警到 `anomaly_flags`，用于提前发现字段语义漂移，不阻断策略执行：
