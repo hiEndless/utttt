@@ -98,12 +98,8 @@ data_server
 ```text
 signal_event + active_events + MSL
   -> SignalEvaluator
-  -> IntentResolver
-  -> RulePlanner
-  -> HorizonPolicyGate（消费 `cross_horizon.suggested_policy`）
-  -> StrategyGate
-  -> RiskGate
-  -> ExecutionPlanner
+  -> SignalRouter
+  -> SignalDecisionAgent
   -> ExecutionPlan
   -> DecisionTrace
 ```
@@ -112,23 +108,23 @@ signal_event + active_events + MSL
 - `TradeEventWorkflow.run()` 继续返回 `ExecutionPlan`（兼容）
 - `TradeEventWorkflow.run_with_result()` 返回 `WorkflowResult(agent_plan, execution_result)`，用于消费 execution 最终动作
 
-## 当前与目标链路
+## 当前与历史链路
 
-### 当前实现（过渡态）
+### 当前主链路（冻结）
 
-- `SignalEvaluator -> IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner`
-- 说明：部分 `Rule/Risk/Execution` 逻辑仍在 agent 内，便于当前链路可运行。
-
-### 目标收敛（冻结方向）
-
-- `SignalEvaluator -> HorizonPolicyGate -> DirectionDecision`
+- `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`
 - `execution_service` 接管仓位/账户/PnL 风控与最终动作裁决。
 - `Position Context` 不再作为 agent 裁决输入。
+
+### 历史链路（已下线）
+
+- `SignalEvaluator -> IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner`
+- 该链路仅用于历史域模块回放说明，不参与 workflow 主链路执行。
 
 其中：
 
 - LLM 只负责语义判断、解释、冲突权衡
-- 硬约束必须在确定性 gate 中生效
+- 硬约束由 execution_service 统一生效
 - `ExecutionPlan` 是决策层终点，不是执行层入口代码
 - `HorizonPolicyGate` 在策略门控前执行，用于把跨周期冲突建议快速转为保守动作（例如 `wait_confirmation -> skip/watch`）
 - `HorizonPolicyGate` 已降级为历史域模块：`services/agent_server_new/domain/horizon_policy_gate.py`
