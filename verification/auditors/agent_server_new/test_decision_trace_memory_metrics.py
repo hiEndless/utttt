@@ -173,6 +173,8 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert llm_obs.get("raw_content_hash") == ""
         routing = dict(trace_payload.get("routing") or {})
         assert routing.get("decision_agent_key") == "technical"
+        assert routing.get("decision_mode") == "rule"
+        assert routing.get("llm_parse_status") == "rule_only"
         assert routing.get("router_config_source") == "runtime"
         assert isinstance(routing.get("router_config_version"), str)
         contract_warnings = list(trace_payload.get("contract_warnings") or [])
@@ -262,6 +264,8 @@ def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
         assert llm_obs.get("raw_content_hash") == "079427752e7cf6fb3996ff1a8fce9e916cf5d8357a793e422bef87f0921a1101"
         routing = dict(trace_payload.get("routing") or {})
         assert routing.get("decision_agent_key") == "technical"
+        assert routing.get("decision_mode") == "rule_fallback"
+        assert routing.get("llm_parse_status") == "llm_invalid_payload"
         assert routing.get("router_config_source") == "runtime"
         assert isinstance(routing.get("router_config_version"), str)
 

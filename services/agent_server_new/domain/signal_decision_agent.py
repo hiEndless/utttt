@@ -18,6 +18,7 @@ class SignalDecisionEvalResult:
     signal: SignalVerdict
     decision_agent_key: str
     decision_mode: Literal["llm", "rule_fallback", "rule"] = "rule"
+    llm_parse_status: str = "rule_only"
 
 
 class SignalDecisionAgent(Protocol):
@@ -79,6 +80,7 @@ class RoutedRuleBasedSignalDecisionAgent:
             signal=signal,
             decision_agent_key=decision_agent_key,
             decision_mode="rule",
+            llm_parse_status="rule_only",
         )
 
 
@@ -155,6 +157,7 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
                     signal=llm_signal,
                     decision_agent_key=decision_agent_key,
                     decision_mode="llm",
+                    llm_parse_status="llm_ok",
                 )
             fallback = super().decide(
                 signal_direction=signal_direction,
@@ -168,6 +171,7 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
                 signal=fallback.signal,
                 decision_agent_key=decision_agent_key,
                 decision_mode="rule_fallback",
+                llm_parse_status="llm_invalid_payload",
             )
         fallback = super().decide(
             signal_direction=signal_direction,
@@ -181,4 +185,5 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
             signal=fallback.signal,
             decision_agent_key=decision_agent_key,
             decision_mode="rule",
+            llm_parse_status="llm_status_not_ok" if llm else "llm_not_provided",
         )

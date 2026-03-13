@@ -57,6 +57,10 @@
           "type": "string",
           "enum": ["llm", "rule_fallback", "rule"]
         },
+        "llm_parse_status": {
+          "type": "string",
+          "minLength": 1
+        },
         "signal_verdict": {
           "type": "string",
           "enum": ["accept", "reject", "uncertain"]

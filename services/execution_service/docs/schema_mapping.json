@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v20",
+  "version": "execution-schema-mapping-v21",
   "last_updated": "2026-03-13",
   "items": [
     {
@@ -82,6 +82,16 @@
         {
           "schema": "services/execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.risk_hints.properties.signal_reliability_score.maximum",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.decision_mode.enum",
+          "expected": ["llm", "rule_fallback", "rule"]
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.llm_parse_status.minLength",
           "expected": 1
         },
         {

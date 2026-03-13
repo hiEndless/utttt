@@ -40,6 +40,13 @@
         "decision_agent_key": {
           "type": "string"
         },
+        "decision_mode": {
+          "type": "string",
+          "enum": ["llm", "rule_fallback", "rule"]
+        },
+        "llm_parse_status": {
+          "type": "string"
+        },
         "router_config_source": {
           "type": "string"
         },
@@ -49,6 +56,8 @@
       },
       "required": [
         "decision_agent_key",
+        "decision_mode",
+        "llm_parse_status",
         "router_config_source",
         "router_config_version"
       ],

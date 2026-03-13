@@ -450,6 +450,7 @@ def test_trade_event_workflow_hybrid_signal_decision_agent_prefers_llm():
             )
         )
         assert out.signal_decision.decision_mode == "llm"
+        assert out.signal_decision.llm_parse_status == "llm_ok"
         assert out.signal_decision.signal_direction == "short"
         assert out.signal_decision.signal_verdict == "accept"
         assert out.signal_decision.reliability_score == 0.83

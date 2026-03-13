@@ -32,7 +32,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v20",
+  "schema_mapping_version": "execution-schema-mapping-v21",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -87,6 +87,7 @@
 10. `risk_hints`: 对象（可为空对象）
    - `decision_agent_key`: 可选，非空字符串（agent 路由键）
    - `decision_mode`: 可选，`llm | rule_fallback | rule`（信号判定来源）
+   - `llm_parse_status`: 可选，非空字符串（LLM 判定解析状态）
    - `signal_verdict`: 可选，`accept | reject | uncertain`
    - `signal_reliability_score`: 可选，`[0,1]` 浮点数
    - 若包含 `alternative_source_summary`，执行层只消费白名单键：

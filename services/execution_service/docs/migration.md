@@ -9,7 +9,7 @@
 ## 当前基线（Latest Only）
 
 1. API 入口：`services/execution_service/docs/api.md`
-2. 契约映射版本：`execution-schema-mapping-v20`
+2. 契约映射版本：`execution-schema-mapping-v21`
 3. 核心输入契约：`decision_intent.schema.json`
 4. 核心输出契约：`execution_result.schema.json`
 5. 对账输出契约：`execution_reconcile_result.schema.json`
@@ -31,6 +31,7 @@
 11. `risk_hints.alternative_source_summary` 已升级为显式子 schema（单源位于 `contracts/schemas/alternative_source_summary.schema.json`），并在运行时入口做结构校验（防止字段语义静默漂移）
 12. `risk_hints.decision_agent_key/signal_verdict/signal_reliability_score` 已显式入 `DecisionIntent` schema，并在运行时做类型与范围校验（用于承接 agent 语义裁决信号）
 13. `risk_hints.decision_mode` 新增可选字段（`llm|rule_fallback|rule`），用于标记信号判定来源，便于 execution 侧做质量回溯统计（非 breaking，历史 producer 无需改造）
+14. `risk_hints.llm_parse_status` 新增可选字段（非空字符串），用于记录 LLM 判定解析状态，辅助 fallback 根因分析（非 breaking）
 
 ## 文档维护规则
 

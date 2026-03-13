@@ -26,6 +26,7 @@ def test_decision_intent_schema_samples() -> None:
             "market_fragility": "medium",
             "decision_agent_key": "technical",
             "decision_mode": "rule",
+            "llm_parse_status": "rule_only",
             "signal_verdict": "accept",
             "signal_reliability_score": 0.83,
             "alternative_source_summary": {
@@ -108,6 +109,24 @@ def test_decision_intent_schema_rejects_invalid_decision_mode() -> None:
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {"decision_mode": "hybrid"},
+    }
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
+
+def test_decision_intent_schema_rejects_empty_llm_parse_status() -> None:
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    bad = {
+        "decision_id": "dec-005c",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"llm_parse_status": ""},
     }
     assert not validate_payload_with_local_refs(
         schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"

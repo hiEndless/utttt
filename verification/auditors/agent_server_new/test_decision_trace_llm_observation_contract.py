@@ -23,6 +23,8 @@ def _build_trace(*, llm_observation):  # noqa: ANN001
         signal_verdict={},
         routing={
             "decision_agent_key": "technical",
+            "decision_mode": "rule",
+            "llm_parse_status": "rule_only",
             "router_config_source": "runtime",
             "router_config_version": "",
         },

@@ -110,7 +110,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 关键字段：
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
-- `routing`（`decision_agent_key/router_config_source/router_config_version`）
+- `routing`（`decision_agent_key/decision_mode/llm_parse_status/router_config_source/router_config_version`）
 - `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）
 
 对应 schema：

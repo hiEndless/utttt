@@ -34,6 +34,7 @@ def test_decision_intent_v1_parse_success() -> None:
             "market_fragility": "medium",
             "decision_agent_key": "technical",
             "decision_mode": "rule",
+            "llm_parse_status": "rule_only",
             "signal_verdict": "accept",
             "signal_reliability_score": 0.81,
         },
@@ -47,6 +48,7 @@ def test_decision_intent_v1_parse_success() -> None:
     assert data["confidence"]["score"] == 0.66
     assert data["risk_hints"]["decision_agent_key"] == "technical"
     assert data["risk_hints"]["decision_mode"] == "rule"
+    assert data["risk_hints"]["llm_parse_status"] == "rule_only"
     assert data["risk_hints"]["signal_verdict"] == "accept"
     assert data["risk_hints"]["signal_reliability_score"] == 0.81
 
@@ -228,6 +230,24 @@ def test_decision_intent_rejects_invalid_decision_mode() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "decision_mode" in str(exc)
+
+
+def test_decision_intent_rejects_empty_llm_parse_status() -> None:
+    payload = {
+        "decision_id": "dec-007c",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"llm_parse_status": ""},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "llm_parse_status" in str(exc)
 
 
 def test_execution_result_v1_parse_success() -> None:

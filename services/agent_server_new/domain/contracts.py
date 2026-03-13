@@ -37,6 +37,7 @@ class SignalDecision:
     symbol: str
     decision_agent_key: str
     decision_mode: Literal["llm", "rule_fallback", "rule"]
+    llm_parse_status: str
     signal_direction: Direction
     signal_verdict: Literal["accept", "reject", "uncertain"]
     confidence: Confidence

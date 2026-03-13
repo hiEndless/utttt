@@ -336,6 +336,7 @@ class TradeEventWorkflow:
             llm_observation=llm_observation,
             decision_agent_key=eval_result.decision_agent_key,
             decision_mode=eval_result.decision_mode,
+            llm_parse_status=eval_result.llm_parse_status,
         )
 
         if self._recorder:
@@ -345,6 +346,7 @@ class TradeEventWorkflow:
                 {
                     "decision_agent_key": eval_result.decision_agent_key,
                     "decision_mode": eval_result.decision_mode,
+                    "llm_parse_status": eval_result.llm_parse_status,
                     "direction": signal.direction,
                     "verdict": signal.verdict,
                     "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
@@ -503,6 +505,8 @@ class TradeEventWorkflow:
                 },
                 routing={
                     "decision_agent_key": signal_decision.decision_agent_key,
+                    "decision_mode": signal_decision.decision_mode,
+                    "llm_parse_status": signal_decision.llm_parse_status,
                     "router_config_source": self._signal_router_config_source,
                     "router_config_version": self._signal_router_config_version,
                 },
@@ -633,6 +637,7 @@ def _build_decision_intent_payload(
             "decision_confidence_source": "agent_execution_plan",
             "decision_agent_key": str(signal_decision.decision_agent_key or ""),
             "decision_mode": str(signal_decision.decision_mode or "rule"),
+            "llm_parse_status": str(signal_decision.llm_parse_status or ""),
             "signal_verdict": str(signal_decision.signal_verdict or ""),
             "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
             "signal_reasons": list(signal_decision.reasons or []),
@@ -657,6 +662,7 @@ def _build_signal_decision(
     llm_observation: Dict[str, Any],
     decision_agent_key: str,
     decision_mode: str,
+    llm_parse_status: str,
 ) -> SignalDecision:
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
@@ -677,6 +683,7 @@ def _build_signal_decision(
         symbol=str(event.symbol),
         decision_agent_key=str(decision_agent_key or "generic"),
         decision_mode=mode,  # type: ignore[arg-type]
+        llm_parse_status=str(llm_parse_status or "rule_only"),
         signal_direction=direction,  # type: ignore[arg-type]
         signal_verdict=verdict,  # type: ignore[arg-type]
         confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]
