@@ -35,6 +35,7 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
+    assert "MAX_DECISION_AGENT_KEY_GENERIC_RATIO" in out
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
@@ -69,6 +70,7 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
+    assert "MAX_DECISION_AGENT_KEY_GENERIC_RATIO" in out
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
@@ -175,6 +177,7 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
+    assert "MAX_DECISION_AGENT_KEY_GENERIC_RATIO" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
 
 

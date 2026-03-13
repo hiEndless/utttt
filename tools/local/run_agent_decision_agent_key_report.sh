@@ -16,7 +16,7 @@ Options:
 
 Description:
   聚合 agent recorder 中 agent_name=decision_trace 的 routing.decision_agent_key 字段，
-  输出 technical/onchain/liquidation/social_news 四类业务路由命中分布、generic 占位计数、unknown 占比。
+  输出 technical/onchain/liquidation/social_news 四类业务路由命中分布、generic 占位计数/占比、unknown 占比。
 USAGE
 }
 
@@ -112,6 +112,7 @@ summary = {
     "liquidation_count": int(agent_key_counter.get("liquidation", 0)),
     "social_news_count": int(agent_key_counter.get("social_news", 0)),
     "generic_count": int(agent_key_counter.get("generic", 0)),
+    "generic_ratio": round(float(agent_key_counter.get("generic", 0)) / float(report_denom), 6),
     "unknown_count": int(unknown_count),
     "unknown_ratio": round(float(unknown_count) / float(report_denom), 6),
     "core_four_coverage_ratio": round(float(core_four_count) / float(report_denom), 6),
@@ -145,6 +146,7 @@ print(
     f"liquidation={summary['liquidation_count']} "
     f"social_news={summary['social_news_count']} "
     f"generic={summary['generic_count']} "
+    f"generic_ratio={summary['generic_ratio']} "
     f"unknown_ratio={summary['unknown_ratio']}"
 )
 PY

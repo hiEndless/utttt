@@ -302,6 +302,8 @@ Optional Observability:
                                 pipeline_mode 缺失计数上限（默认 -1 忽略）
   MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT
                                 decision_agent_key unknown 计数上限（默认 -1 忽略）
+  MAX_DECISION_AGENT_KEY_GENERIC_RATIO
+                                decision_agent_key generic 占比上限（默认 -1 忽略）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT
                                 route_replay mismatch 计数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT    是否要求 readyz 报告存在（1/0，默认 0）
@@ -336,6 +338,7 @@ Environment:
   WITH_AGENT_DECISION_AGENT_KEY_REPORT  是否生成 decision_agent_key 路由分布 artifact（1/0，默认 1）
   AGENT_DECISION_AGENT_KEY_REPORT_PATH  decision_agent_key 报告路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT  decision_agent_key unknown 计数上限（默认 -1 忽略）
+  MAX_DECISION_AGENT_KEY_GENERIC_RATIO  decision_agent_key generic 占比上限（默认 -1 忽略）
   WITH_AGENT_ROUTE_REPLAY_REPORT  是否生成四类来源业务路由回放 artifact（1/0，默认 1）
   AGENT_ROUTE_REPLAY_REPORT_PATH  route replay 报告路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT  route_replay mismatch 计数上限（默认 -1 忽略）
@@ -383,6 +386,7 @@ Environment:
   WITH_AGENT_DECISION_AGENT_KEY_REPORT  是否生成 decision_agent_key 路由分布 artifact（1/0，默认 1）
   AGENT_DECISION_AGENT_KEY_REPORT_PATH  decision_agent_key 报告路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT  decision_agent_key unknown 计数上限（默认 0）
+  MAX_DECISION_AGENT_KEY_GENERIC_RATIO  decision_agent_key generic 占比上限（默认 0.40）
   WITH_AGENT_ROUTE_REPLAY_REPORT  是否生成四类来源业务路由回放 artifact（1/0，默认 1）
   AGENT_ROUTE_REPLAY_REPORT_PATH  route replay 报告路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT  route_replay mismatch 计数上限（默认 0）

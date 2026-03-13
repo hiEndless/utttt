@@ -110,6 +110,7 @@ def test_run_agent_decision_agent_key_report_aggregate(tmp_path: Path) -> None:
     assert summary["liquidation_count"] == 1
     assert summary["social_news_count"] == 1
     assert summary["generic_count"] == 1
+    assert summary["generic_ratio"] == 0.142857
     assert summary["unknown_count"] == 2
     assert summary["unknown_ratio"] == 0.285714
     assert summary["core_four_coverage_ratio"] == 0.571429
