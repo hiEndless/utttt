@@ -7,6 +7,24 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
+_SOURCE_CATEGORY_ALIASES = {
+    "market_indicator": "technical",
+    "market_indicator_signal": "technical",
+    "technical_indicator": "technical",
+    "indicator": "technical",
+    "ta": "technical",
+    "on_chain": "onchain",
+    "onchain_wallet": "onchain",
+    "wallet": "onchain",
+    "chain": "onchain",
+    "large_liquidation": "liquidation",
+    "forced_liquidation": "liquidation",
+    "social_media": "social",
+    "social_news": "social",
+    "headline_news": "news",
+}
+
+
 _DEFAULT_ROUTER_CONFIG = {
     "default_agent_key": "generic",
     "event_type_aliases": {
@@ -230,7 +248,14 @@ def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[
     ).strip().lower()
     if event_type:
         event_type = str(event_type_aliases.get(event_type) or event_type).strip().lower()
-    source_category = str(payload.get("source_category") or payload.get("event_source_category") or "").strip().lower()
+    source_category = str(
+        payload.get("source_category")
+        or payload.get("event_source_category")
+        or payload.get("signal_source_type")
+        or payload.get("source_type")
+        or payload.get("source_signal_type")
+        or ""
+    ).strip().lower()
     source_obj = payload.get("source")
     source_name = ""
     if isinstance(source_obj, dict):
@@ -239,6 +264,7 @@ def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[
             source_category = str(source_obj.get("category") or "").strip().lower()
     elif source_obj:
         source_name = str(source_obj).strip().lower()
+    source_category = str(_SOURCE_CATEGORY_ALIASES.get(source_category) or source_category).strip().lower()
 
     text = " ".join([event_type, source_category, source_name]).strip()
     event_type_routes = dict(cfg.get("event_type_routes") or {})

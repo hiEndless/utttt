@@ -240,6 +240,7 @@ signal_event + active_events + MSL
 - `AGENT_SIGNAL_ROUTER_CONFIG_FILE`
   - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
   - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`
+  - 来源类型提取优先级：`source_category` > `event_source_category` > `signal_source_type` > `source_type` > `source_signal_type` > `source.category`
   - 路由优先级：`event_type_aliases` 归一化后再走 `event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - 默认已内置四类业务事件别名基线：`market_indicator/onchain_wallet/liquidation/social_news`
   - 边界守卫：`verification/auditors/agent_server_new/test_signal_router_event_type_boundary_guard.py` 会校验 event_center 常见事件命名是否命中路由基线

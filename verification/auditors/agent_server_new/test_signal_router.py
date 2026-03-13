@@ -89,6 +89,34 @@ def test_signal_router_routes_by_event_source_category_alias() -> None:
     assert key == "social_news"
 
 
+@pytest.mark.parametrize(
+    ("field_name", "field_value", "expected"),
+    [
+        ("signal_source_type", "market_indicator", "technical"),
+        ("signal_source_type", "onchain_wallet", "onchain"),
+        ("source_type", "large_liquidation", "liquidation"),
+        ("source_signal_type", "social_news", "social_news"),
+    ],
+)
+def test_signal_router_routes_by_signal_source_type_aliases(field_name: str, field_value: str, expected: str) -> None:
+    key = route_signal_agent_key(
+        signal_event={"payload": {"event_type": "custom_unknown_type", field_name: field_value}}
+    )
+    assert key == expected
+
+
+def test_signal_router_event_type_route_still_overrides_signal_source_type() -> None:
+    key = route_signal_agent_key(
+        signal_event={
+            "payload": {
+                "event_type": "onchain_wallet_anomaly",
+                "signal_source_type": "social_news",
+            }
+        }
+    )
+    assert key == "onchain"
+
+
 def test_signal_router_supports_custom_config(tmp_path) -> None:  # noqa: ANN001
     custom = tmp_path / "router.json"
     custom.write_text(
