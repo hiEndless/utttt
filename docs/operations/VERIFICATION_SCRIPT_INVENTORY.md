@@ -53,6 +53,8 @@
 - event_center 合同入口守卫：`tools/local/check_event_center_contract_entry_guard.sh`
 - event_center runtime mode 门禁守卫：`tools/local/check_event_center_runtime_mode_guard.sh`
 - CLI 帮助快照守卫：`tools/local/check_cli_help_snapshot_guard.sh`
+- release ready 帮助快照守卫：`tools/local/check_release_ready_help_snapshot_guard.sh`
+  - 快照文档：`docs/operations/RELEASE_READY_HELP_SNAPSHOT.md`
 
 ### 2.1 调试参数（contract bundle）
 
@@ -77,6 +79,7 @@
 - `check_cross_service_time_semantics_doc_guard.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`
+- `check_release_ready_help_snapshot_guard.sh`
 - `check_contract_docs_canonical_layout_guard.sh`
 - `verify_all.sh --quick`
 - `pytest verification/validators/execution_service/test_agent_to_execution_smoke.py::test_semantic_chain_smoke_invalid_provider_state_warning_and_alert_code`（锁定非法 provider_state 告警码链路）
@@ -93,6 +96,7 @@ CI 约束：
 - `check_script_compat_whitelist.sh`
 - `check_new_arch_guards_help_snapshot_guard.sh`
 - `check_cli_help_snapshot_guard.sh`
+- `check_release_ready_help_snapshot_guard.sh`
 - `pytest verification/text/test_verify_ci_help.py`（锁定 regression/nightly --help 关键字段）
 - `check_contract_docs_canonical_layout_guard.sh`
 - `check_pipeline_semantic_terms_doc_guard.sh`
