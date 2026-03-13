@@ -9,10 +9,7 @@ from services.agent_server_new.observability.decision_trace import DecisionTrace
 
 @dataclass(frozen=True)
 class PipelineCompatState:
-    semantic_intent: Dict[str, Any]
-    semantic_rule_plan: Dict[str, Any]
-    semantic_strategy_gate_result: Dict[str, Any]
-    semantic_risk_gate: Dict[str, Any]
+    semantic_snapshots: Dict[str, Dict[str, Any]]
     allowance: RiskAllowance
     plan: ExecutionPlan
 
@@ -60,16 +57,16 @@ def build_pipeline_compat_state(
         sizing=None,
         notes="minimal_pipeline_semantic_plan",
     )
-    return PipelineCompatState(
-        semantic_intent=semantic_intent,
-        semantic_rule_plan=semantic_rule_plan,
-        semantic_strategy_gate_result={
+    semantic_snapshots = {
+        "intent": semantic_intent,
+        "rule_plan": semantic_rule_plan,
+        "strategy_gate_result": {
             "allowed": True,
             "horizon_reasons": ["legacy_removed"],
             "strategy_reasons": ["legacy_removed"],
             "reasons": ["legacy_removed", "legacy_removed"],
         },
-        semantic_risk_gate={
+        "risk_gate": {
             "global_regime": "normal",
             "cooldown_active": False,
             "regime_sources": ["execution_service_final_authority"],
@@ -79,6 +76,9 @@ def build_pipeline_compat_state(
             "allow_exit": allowance.allow_exit,
             "reasons": list(allowance.reasons),
         },
+    }
+    return PipelineCompatState(
+        semantic_snapshots=semantic_snapshots,
         allowance=allowance,
         plan=plan,
     )
@@ -96,11 +96,12 @@ def build_decision_trace_semantic_sections(
             "strategy_gate_result": {},
             "risk_gate": {},
         }
+    snapshots = dict(state.semantic_snapshots or {})
     return {
-        "intent": dict(state.semantic_intent or {}),
-        "rule_plan": dict(state.semantic_rule_plan or {}),
-        "strategy_gate_result": dict(state.semantic_strategy_gate_result or {}),
-        "risk_gate": dict(state.semantic_risk_gate or {}),
+        "intent": dict(snapshots.get("intent") or {}),
+        "rule_plan": dict(snapshots.get("rule_plan") or {}),
+        "strategy_gate_result": dict(snapshots.get("strategy_gate_result") or {}),
+        "risk_gate": dict(snapshots.get("risk_gate") or {}),
     }
 
 
@@ -109,9 +110,10 @@ def build_symbol_memory_semantic_sections(
     state: PipelineCompatState,
     cross_horizon: Dict[str, str],
 ) -> Dict[str, Dict[str, Any]]:
+    snapshots = dict(state.semantic_snapshots or {})
     return {
         "cross_horizon_policy": dict(cross_horizon or {}),
-        "intent": dict(state.semantic_intent or {}),
+        "intent": dict(snapshots.get("intent") or {}),
         "plan": {
             "action": state.plan.action,
             "direction": state.plan.direction,
