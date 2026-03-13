@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List
 
+from services.agent_server_new.domain.signal_agent_registry import resolve_signal_agent_key
 from services.agent_server_new.domain.signal_decision_prompt_profiles import load_signal_decision_prompt_profiles_from_env
-
-_ALLOWED_AGENT_KEYS = {"technical", "liquidation", "onchain", "social_news", "generic"}
 
 _AGENT_EVENT_KEYWORDS = {
     "technical": {"technical", "indicator", "orderbook", "funding", "basis", "signal", "strategy"},
@@ -24,8 +23,7 @@ _AGENT_FEATURE_KEYWORDS = {
 
 
 def normalize_decision_agent_key(value: Any) -> str:
-    key = str(value or "").strip().lower()
-    return key if key in _ALLOWED_AGENT_KEYS else "generic"
+    return resolve_signal_agent_key(str(value or ""))
 
 
 def _score_of_event(event: Dict[str, Any]) -> float:

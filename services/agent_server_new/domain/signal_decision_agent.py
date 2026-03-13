@@ -8,6 +8,7 @@ from services.market_state_engine.src.contracts import MarketStateMSL
 
 from services.agent_server_new.domain.contracts import Confidence, LLMContractErrorCode, LLMParseStatus, SignalVerdict
 from services.agent_server_new.domain.llm_signal_decision_schema_guard import validate_llm_signal_decision_payload
+from services.agent_server_new.domain.signal_agent_registry import resolve_signal_agent_key
 from services.agent_server_new.domain.signal_router import route_signal_agent_key
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
 
@@ -71,6 +72,7 @@ class RoutedRuleBasedSignalDecisionAgent:
             signal_event={"payload": signal_payload},
             router_config=self._router_config,
         )
+        routed_agent_key = resolve_signal_agent_key(routed_agent_key)
         signal = self._signal_evaluator(
             ctx=ExpertContext(
                 msl=msl,
@@ -157,6 +159,7 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
         llm_result: Dict[str, Any] | None = None,
     ) -> SignalDecisionEvalResult:
         routed_agent_key = str(decision_agent_key or "").strip().lower() or self._route_agent_key(signal_event=signal_event)
+        routed_agent_key = resolve_signal_agent_key(routed_agent_key)
         llm = dict(llm_result or {})
         if str(llm.get("status") or "").strip().lower() == "ok":
             llm_signal, err_code, err_list = self._parse_llm_signal(llm)

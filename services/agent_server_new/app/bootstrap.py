@@ -30,11 +30,12 @@ from services.agent_server_new.domain.signal_decision_agent import (
     RoutedHybridSignalDecisionAgent,
     RoutedRuleBasedSignalDecisionAgent,
 )
+from services.agent_server_new.domain.signal_agent_registry import signal_agent_key_set
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_env
 
 logger = logging.getLogger(__name__)
-_ALLOWED_SIGNAL_AGENT_KEYS = {"technical", "liquidation", "onchain", "social_news", "generic"}
+_ALLOWED_SIGNAL_AGENT_KEYS = signal_agent_key_set()
 _ERR_MINIMAL_EXECUTION_REQUIRED = "AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED"
 
 
