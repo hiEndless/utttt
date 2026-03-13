@@ -73,3 +73,23 @@ def test_build_llm_observation_context_supports_custom_prompt_profiles() -> None
     )
     prompt = dict(out.get("decision_prompt") or {})
     assert prompt.get("focus") == "onchain_v2"
+
+
+def test_build_llm_observation_context_propagates_prompt_model_id() -> None:
+    out = build_llm_observation_context(
+        decision_agent_key="social_news",
+        prompt_profiles={
+            "generic": {"focus": "generic_v2", "checklist": ["a"], "avoid": ["b"]},
+            "social_news": {
+                "focus": "social_v2",
+                "checklist": ["credibility"],
+                "avoid": ["single_post_overweight"],
+                "model_id": "gpt-social-mini",
+            },
+        },
+        key_market_features={"features": [{"name": "alternative_source_summary", "value": {}}]},
+        active_events=[{"type": "macro_news", "score": 0.7}],
+    )
+    prompt = dict(out.get("decision_prompt") or {})
+    assert prompt.get("focus") == "social_v2"
+    assert prompt.get("model_id") == "gpt-social-mini"

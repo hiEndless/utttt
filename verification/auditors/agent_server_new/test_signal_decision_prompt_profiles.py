@@ -19,7 +19,12 @@ def test_signal_decision_prompt_profiles_load_from_env(monkeypatch, tmp_path) ->
         json.dumps(
             {
                 "generic": {"focus": "generic_v2", "checklist": ["a"], "avoid": ["b"]},
-                "onchain": {"focus": "onchain_v2", "checklist": ["wallet"], "avoid": ["noise"]},
+                "onchain": {
+                    "focus": "onchain_v2",
+                    "checklist": ["wallet"],
+                    "avoid": ["noise"],
+                    "model_id": "gpt-onchain-mini",
+                },
             },
             ensure_ascii=False,
         ),
@@ -29,6 +34,7 @@ def test_signal_decision_prompt_profiles_load_from_env(monkeypatch, tmp_path) ->
     reset_signal_decision_prompt_profiles_cache()
     out = load_signal_decision_prompt_profiles_from_env()
     assert str((out.get("onchain") or {}).get("focus") or "") == "onchain_v2"
+    assert str((out.get("onchain") or {}).get("model_id") or "") == "gpt-onchain-mini"
     assert str((out.get("technical") or {}).get("focus") or "") == "technical_signal_validation"
 
 
@@ -45,3 +51,17 @@ def test_signal_decision_prompt_profiles_validate_rejects_unknown_key() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "非法 agent_key" in str(exc)
+
+
+def test_signal_decision_prompt_profiles_validate_rejects_empty_model_id() -> None:
+    cfg = {
+        "generic": {"focus": "generic", "checklist": [], "avoid": [], "model_id": " "},
+    }
+    try:
+        validate_signal_decision_prompt_profiles(
+            cfg,
+            allowed_agent_keys={"technical", "liquidation", "onchain", "social_news", "generic"},
+        )
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "model_id" in str(exc)

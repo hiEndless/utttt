@@ -109,6 +109,36 @@ def test_openai_compatible_llm_observer_uses_decision_prompt(monkeypatch):
     assert "checklist=wallet_flow_direction" in text
 
 
+def test_openai_compatible_llm_observer_uses_prompt_model_override(monkeypatch):
+    import services.agent_server_new.adapters.llm_openai_compatible as mod
+
+    counter = {"calls": 0}
+    scripted = [
+        _FakeResponse(
+            200,
+            {
+                "choices": [{"message": {"content": "{\"signal_verdict\":\"accept\"}"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            },
+        )
+    ]
+    monkeypatch.setattr(mod.httpx, "AsyncClient", lambda timeout: _FakeAsyncClient(scripted, counter))
+    obs = OpenAICompatibleLLMObserver(model_id="gpt-default", api_key="sk-test", base_url="http://unit.test", retry_max=0)
+    out = asyncio.run(
+        obs.observe(
+            {
+                "symbol": "ETHUSDT",
+                "decision_prompt": {
+                    "focus": "social_news_event_validation",
+                    "model_id": "gpt-social-mini",
+                },
+            }
+        )
+    )
+    assert str(counter.get("last_json", {}).get("model") or "") == "gpt-social-mini"
+    assert out["model"] == "gpt-social-mini"
+
+
 def test_openai_compatible_llm_observer_retries_then_success(monkeypatch):
     import services.agent_server_new.adapters.llm_openai_compatible as mod
 

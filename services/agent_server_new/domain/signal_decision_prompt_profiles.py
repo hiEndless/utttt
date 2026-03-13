@@ -44,7 +44,11 @@ def _normalize_prompt(item: Dict[str, Any], *, fallback: Dict[str, Any]) -> Dict
     focus = str(item.get("focus") or fallback.get("focus") or "").strip() or str(fallback.get("focus") or "")
     checklist = [str(x).strip() for x in list(item.get("checklist") or fallback.get("checklist") or []) if str(x).strip()]
     avoid = [str(x).strip() for x in list(item.get("avoid") or fallback.get("avoid") or []) if str(x).strip()]
-    return {"focus": focus, "checklist": checklist, "avoid": avoid}
+    model_id = str(item.get("model_id") or fallback.get("model_id") or "").strip()
+    out = {"focus": focus, "checklist": checklist, "avoid": avoid}
+    if model_id:
+        out["model_id"] = model_id
+    return out
 
 
 @lru_cache(maxsize=8)
@@ -113,3 +117,6 @@ def validate_signal_decision_prompt_profiles(
             for i, item in enumerate(list(arr)):
                 if not str(item or "").strip():
                     raise ValueError(f"signal_decision_prompt_profiles.{key}.{field_name}[{i}] 不能为空")
+        model_id = node.get("model_id")
+        if model_id is not None and not str(model_id or "").strip():
+            raise ValueError(f"signal_decision_prompt_profiles.{key}.model_id 不能为空字符串")

@@ -32,6 +32,10 @@ class OpenAICompatibleLLMObserver:
         self._retry_max = max(0, int(retry_max))
         self._retry_backoff_s = max(0.0, float(retry_backoff_s))
 
+    def _resolve_model_id(self, *, prompt_cfg: Dict[str, Any]) -> str:
+        candidate = str(prompt_cfg.get("model_id") or "").strip()
+        return candidate or self._model_id
+
     @classmethod
     def from_env(cls, *, config: LLMRuntimeConfig) -> "OpenAICompatibleLLMObserver":
         timeout_raw = str(os.getenv("AGENT_LLM_TIMEOUT_S", "8") or "8").strip()
@@ -67,6 +71,9 @@ class OpenAICompatibleLLMObserver:
         chat_url = f"{self._base_url}/chat/completions"
         user_payload = dict(payload or {})
         prompt_cfg = dict(user_payload.get("decision_prompt") or {})
+        model_id = self._resolve_model_id(prompt_cfg=prompt_cfg)
+        if not model_id:
+            raise RuntimeError("llm observer requires model_id")
         focus = str(prompt_cfg.get("focus") or "generic_signal_validation").strip()
         checklist = [str(x).strip() for x in list(prompt_cfg.get("checklist") or []) if str(x).strip()]
         avoid = [str(x).strip() for x in list(prompt_cfg.get("avoid") or []) if str(x).strip()]
@@ -78,7 +85,7 @@ class OpenAICompatibleLLMObserver:
             f"avoid={','.join(avoid) if avoid else 'none'}."
         )
         body = {
-            "model": self._model_id,
+            "model": model_id,
             "temperature": 0.1,
             "messages": [
                 {
@@ -104,7 +111,7 @@ class OpenAICompatibleLLMObserver:
                 msg = dict(first.get("message") or {})
                 return {
                     "provider": "openai_compatible",
-                    "model": self._model_id,
+                    "model": model_id,
                     "raw_content": str(msg.get("content") or ""),
                     "usage": dict(data.get("usage") or {}),
                     "status": "ok",

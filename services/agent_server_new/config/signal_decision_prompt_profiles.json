@@ -7,7 +7,8 @@
   "technical": {
     "focus": "technical_signal_validation",
     "checklist": ["trend_structure", "orderbook_liquidity", "oi_change_consistency"],
-    "avoid": ["news_sentiment_overweight", "execution_action", "risk_gate_decision"]
+    "avoid": ["news_sentiment_overweight", "execution_action", "risk_gate_decision"],
+    "model_id": "gpt-4o-mini"
   },
   "liquidation": {
     "focus": "liquidation_shock_validation",
@@ -22,6 +23,7 @@
   "social_news": {
     "focus": "social_news_event_validation",
     "checklist": ["source_credibility", "cross_source_consistency", "timeliness_and_decay"],
-    "avoid": ["single_post_overweight", "execution_action", "risk_gate_decision"]
+    "avoid": ["single_post_overweight", "execution_action", "risk_gate_decision"],
+    "model_id": "gpt-4.1-mini"
   }
 }
