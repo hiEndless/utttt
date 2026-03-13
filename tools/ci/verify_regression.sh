@@ -30,6 +30,8 @@ if (($# > 0)); then
   exit 1
 fi
 
+SUMMARY_PATH="verification/reports/summary.latest.json"
+
 echo "[regression 1/13] structure guard"
 bash tools/local/check_structure.sh
 echo "[regression 2/13] script whitelist guard"
@@ -78,6 +80,7 @@ echo "[regression] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_CO
 REGRESSION_ARGS=(
   --with-pipeline-mode-report
   --with-agent-readyz
+  --summary-path "$SUMMARY_PATH"
   --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
   --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
   --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
@@ -89,3 +92,28 @@ if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
   REGRESSION_ARGS+=(--require-agent-readyz-report)
 fi
 bash tools/local/aggregate_and_check.sh "${REGRESSION_ARGS[@]}"
+if [[ -f "$SUMMARY_PATH" ]]; then
+  python3 - "$SUMMARY_PATH" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+legacy = int(payload.get("pipeline_mode_legacy_count") or 0)
+minimal = int(payload.get("pipeline_mode_minimal_count") or 0)
+unknown = int(payload.get("pipeline_mode_unknown_count") or 0)
+missing = int(payload.get("pipeline_mode_missing_count") or 0)
+legacy_ratio = float(payload.get("pipeline_mode_legacy_ratio") or 0.0)
+minimal_ratio = float(payload.get("pipeline_mode_minimal_ratio") or 0.0)
+print(
+    "[regression] pipeline_mode_summary "
+    f"legacy={legacy} minimal={minimal} unknown={unknown} missing={missing} "
+    f"legacy_ratio={legacy_ratio:.6f} minimal_ratio={minimal_ratio:.6f}"
+)
+PY
+fi
