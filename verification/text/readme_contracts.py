@@ -44,3 +44,7 @@ README_CONTRACTS_DOCS_REQUIRED_SNIPPETS: dict[Path, tuple[str, ...]] = dict(
         key=lambda kv: str(kv[0]),
     )
 )
+
+
+def get_required_snippets_for_doc(path: Path) -> tuple[str, ...]:
+    return tuple(README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.get(Path(path), ()))

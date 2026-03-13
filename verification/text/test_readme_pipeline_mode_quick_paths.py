@@ -10,6 +10,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from verification.text.readme_contracts import (
+    get_required_snippets_for_doc,
     README_CONTRACTS_DOCS_REQUIRED_SNIPPETS,
     README_CONTRACTS_DOC_LABELS,
     README_CONTRACTS_SNIPPETS_DOCS,
@@ -21,7 +22,7 @@ from verification.text.readme_contracts import (
 def test_readme_contains_pipeline_mode_quick_paths(readme_relpath: str) -> None:
     readme_path = PROJECT_ROOT / readme_relpath
     text = readme_path.read_text(encoding="utf-8")
-    required_snippets = README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.get(Path(readme_relpath), ())
+    required_snippets = get_required_snippets_for_doc(Path(readme_relpath))
     for snippet in required_snippets:
         label = README_CONTRACTS_DOC_LABELS.get(Path(readme_relpath), readme_relpath)
         assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {label}: {snippet}"
