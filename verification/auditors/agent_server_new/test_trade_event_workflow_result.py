@@ -1060,3 +1060,72 @@ def test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_source_object_category_fallback_route_closed_loop():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.8)),
+        )
+        observer = _RouteCaptureLLMObserver()
+        execution_decider = _CaptureExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=execution_decider,
+            recorder=None,
+            llm_observer=observer,
+            legacy_pipeline_enabled=False,
+            signal_decision_prompt_profiles={
+                "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
+                "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
+                "social_news": {"focus": "social_news_event_validation", "checklist": [], "avoid": []},
+                "onchain": {
+                    "focus": "onchain_flow_validation",
+                    "checklist": ["wallet_flow_direction"],
+                    "avoid": ["execution_action"],
+                    "model_id": "gpt-onchain-mini",
+                },
+                "liquidation": {"focus": "liquidation_shock_validation", "checklist": [], "avoid": []},
+            },
+        )
+
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-source-obj-category-onchain-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={
+                    "event_type": "xfeed_unknown_obj",
+                    "source": {"category": "onchain", "name": "glassnode"},
+                },
+            )
+        )
+
+        assert out.signal_decision.decision_agent_key == "onchain"
+        assert out.execution_result is not None
+        assert out.execution_result.get("execution_action") == "add"
+
+        assert len(observer.calls) == 1
+        llm_payload = dict(observer.calls[0] or {})
+        assert llm_payload.get("decision_agent_key") == "onchain"
+        prompt = dict(llm_payload.get("decision_prompt") or {})
+        assert prompt.get("model_id") == "gpt-onchain-mini"
+
+        assert len(execution_decider.payloads) == 1
+        risk_hints = dict((execution_decider.payloads[0] or {}).get("risk_hints") or {})
+        assert risk_hints.get("decision_agent_key") == "onchain"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
