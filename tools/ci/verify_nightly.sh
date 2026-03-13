@@ -90,28 +90,4 @@ if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
   NIGHTLY_ARGS+=(--require-agent-readyz-report)
 fi
 bash tools/local/aggregate_and_check.sh "${NIGHTLY_ARGS[@]}"
-if [[ -f "$SUMMARY_PATH" ]]; then
-  python3 - "$SUMMARY_PATH" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-try:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-except Exception:
-    raise SystemExit(0)
-
-legacy = int(payload.get("pipeline_mode_legacy_count") or 0)
-minimal = int(payload.get("pipeline_mode_minimal_count") or 0)
-unknown = int(payload.get("pipeline_mode_unknown_count") or 0)
-missing = int(payload.get("pipeline_mode_missing_count") or 0)
-legacy_ratio = float(payload.get("pipeline_mode_legacy_ratio") or 0.0)
-minimal_ratio = float(payload.get("pipeline_mode_minimal_ratio") or 0.0)
-print(
-    "[nightly] pipeline_mode_summary "
-    f"legacy={legacy} minimal={minimal} unknown={unknown} missing={missing} "
-    f"legacy_ratio={legacy_ratio:.6f} minimal_ratio={minimal_ratio:.6f}"
-)
-PY
-fi
+bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
