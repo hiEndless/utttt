@@ -33,6 +33,16 @@ def test_signal_router_routes_social_news() -> None:
     assert key == "social_news"
 
 
+def test_signal_router_routes_selected_type_from_event_center() -> None:
+    key = route_signal_agent_key(signal_event={"payload": {"selected_type": "market_indicator_signal"}})
+    assert key == "technical"
+
+
+def test_signal_router_normalizes_event_type_aliases() -> None:
+    key = route_signal_agent_key(signal_event={"payload": {"event_type": "forced_liquidation_cluster"}})
+    assert key == "liquidation"
+
+
 def test_signal_router_routes_generic_when_unknown() -> None:
     key = route_signal_agent_key(signal_event={"payload": {"event_type": "custom_unknown_type"}})
     assert key == "generic"
@@ -151,6 +161,21 @@ def test_signal_router_validate_rejects_unknown_agent_key_in_event_type_routes()
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "event_type_routes[macro_news] 非法" in str(exc)
+
+
+def test_signal_router_validate_rejects_invalid_event_type_aliases_shape() -> None:
+    cfg = {
+        "default_agent_key": "generic",
+        "event_type_aliases": ["indicator_signal"],
+        "rules": [
+            {"agent_key": "technical", "keywords": ["indicator"]},
+        ],
+    }
+    try:
+        validate_signal_router_config(cfg)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "event_type_aliases 必须是对象" in str(exc)
 
 
 def test_signal_router_validate_rejects_empty_rules() -> None:

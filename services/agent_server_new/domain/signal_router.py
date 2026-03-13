@@ -9,12 +9,19 @@ from typing import Any, Dict, List
 
 _DEFAULT_ROUTER_CONFIG = {
     "default_agent_key": "generic",
+    "event_type_aliases": {
+        "indicator_signal": "market_indicator_signal",
+        "signal_indicator": "market_indicator_signal",
+        "wallet_alert": "onchain_wallet_anomaly",
+        "wallet_anomaly": "onchain_wallet_anomaly",
+        "forced_liquidation_cluster": "large_liquidation",
+        "liquidation_cluster": "large_liquidation",
+        "social_media_news": "social_news",
+        "social_signal": "social_news",
+    },
     "event_type_routes": {
-        "indicator_signal": "technical",
         "market_indicator_signal": "technical",
-        "wallet_alert": "onchain",
         "onchain_wallet_anomaly": "onchain",
-        "forced_liquidation_cluster": "liquidation",
         "large_liquidation": "liquidation",
         "macro_news": "social_news",
         "social_news": "social_news",
@@ -57,10 +64,12 @@ def _load_router_config(path: str) -> Dict[str, Any]:
     rules = parsed.get("rules")
     default_agent_key = str(parsed.get("default_agent_key") or "generic").strip().lower() or "generic"
     raw_event_type_routes = parsed.get("event_type_routes")
+    raw_event_type_aliases = parsed.get("event_type_aliases")
     raw_source_category_routes = parsed.get("source_category_routes")
     if not isinstance(rules, list):
         return {
             "default_agent_key": default_agent_key,
+            "event_type_aliases": dict(_DEFAULT_ROUTER_CONFIG["event_type_aliases"]),
             "event_type_routes": dict(_DEFAULT_ROUTER_CONFIG["event_type_routes"]),
             "source_category_routes": dict(_DEFAULT_ROUTER_CONFIG["source_category_routes"]),
             "rules": list(_DEFAULT_ROUTER_CONFIG["rules"]),
@@ -74,6 +83,15 @@ def _load_router_config(path: str) -> Dict[str, Any]:
                 event_type_routes[key] = value
     if not event_type_routes:
         event_type_routes = {}
+    event_type_aliases: Dict[str, str] = {}
+    if isinstance(raw_event_type_aliases, dict):
+        for k, v in raw_event_type_aliases.items():
+            key = str(k or "").strip().lower()
+            value = str(v or "").strip().lower()
+            if key and value:
+                event_type_aliases[key] = value
+    if not event_type_aliases:
+        event_type_aliases = dict(_DEFAULT_ROUTER_CONFIG["event_type_aliases"])
     source_category_routes: Dict[str, str] = {}
     if isinstance(raw_source_category_routes, dict):
         for k, v in raw_source_category_routes.items():
@@ -98,6 +116,7 @@ def _load_router_config(path: str) -> Dict[str, Any]:
         normalized_rules = list(_DEFAULT_ROUTER_CONFIG["rules"])
     return {
         "default_agent_key": default_agent_key,
+        "event_type_aliases": event_type_aliases,
         "event_type_routes": event_type_routes,
         "source_category_routes": source_category_routes,
         "rules": normalized_rules,
@@ -131,6 +150,9 @@ def validate_signal_router_config(
     event_type_routes = cfg.get("event_type_routes")
     if event_type_routes is not None and not isinstance(event_type_routes, dict):
         raise ValueError("signal_router.event_type_routes 必须是对象")
+    event_type_aliases = cfg.get("event_type_aliases")
+    if event_type_aliases is not None and not isinstance(event_type_aliases, dict):
+        raise ValueError("signal_router.event_type_aliases 必须是对象")
     source_category_routes = cfg.get("source_category_routes")
     if source_category_routes is not None and not isinstance(source_category_routes, dict):
         raise ValueError("signal_router.source_category_routes 必须是对象")
@@ -138,6 +160,7 @@ def validate_signal_router_config(
     if allowed and default_agent_key not in allowed:
         raise ValueError(f"signal_router.default_agent_key 非法: {default_agent_key}")
     for field_name, mapping in (
+        ("event_type_aliases", event_type_aliases),
         ("event_type_routes", event_type_routes),
         ("source_category_routes", source_category_routes),
     ):
@@ -150,6 +173,8 @@ def validate_signal_router_config(
                 raise ValueError(f"signal_router.{field_name} 不能包含空键")
             if not value:
                 raise ValueError(f"signal_router.{field_name}[{key}] 不能为空")
+            if field_name == "event_type_aliases":
+                continue
             if allowed and value not in allowed:
                 raise ValueError(f"signal_router.{field_name}[{key}] 非法: {value}")
     keyword_owner: Dict[str, str] = {}
@@ -176,13 +201,19 @@ def validate_signal_router_config(
 def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[str, Any] | None = None) -> str:
     """按事件类型/来源类别路由信号决策 agent（显式映射优先，关键词兜底）。"""
     payload = dict((signal_event or {}).get("payload") or {})
+    cfg = dict(router_config or load_signal_router_config_from_env())
+    event_type_aliases = dict(cfg.get("event_type_aliases") or {})
     event_type = str(
-        payload.get("event_type")
+        payload.get("selected_type")
+        or payload.get("selected_event_type")
+        or payload.get("event_type")
         or payload.get("type")
         or payload.get("kind")
         or payload.get("signal_type")
         or ""
     ).strip().lower()
+    if event_type:
+        event_type = str(event_type_aliases.get(event_type) or event_type).strip().lower()
     source_category = str(payload.get("source_category") or payload.get("event_source_category") or "").strip().lower()
     source_obj = payload.get("source")
     source_name = ""
@@ -194,7 +225,6 @@ def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[
         source_name = str(source_obj).strip().lower()
 
     text = " ".join([event_type, source_category, source_name]).strip()
-    cfg = dict(router_config or load_signal_router_config_from_env())
     event_type_routes = dict(cfg.get("event_type_routes") or {})
     source_category_routes = dict(cfg.get("source_category_routes") or {})
     event_route = str(event_type_routes.get(event_type) or "").strip().lower()

@@ -237,7 +237,8 @@ signal_event + active_events + MSL
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
 - `AGENT_SIGNAL_ROUTER_CONFIG_FILE`
   - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
-  - 路由优先级：`event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
+  - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`
+  - 路由优先级：`event_type_aliases` 归一化后再走 `event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - LLM 输入裁剪会使用路由结果 `decision_agent_key` 选择对应证据视角（`technical/liquidation/onchain/social_news/generic`）
   - 同时输出 `decision_prompt(focus/checklist/avoid)`，用于按事件类型定制 LLM 判定指令
 - `AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE`

@@ -1,11 +1,18 @@
 {
   "default_agent_key": "generic",
+  "event_type_aliases": {
+    "indicator_signal": "market_indicator_signal",
+    "signal_indicator": "market_indicator_signal",
+    "wallet_alert": "onchain_wallet_anomaly",
+    "wallet_anomaly": "onchain_wallet_anomaly",
+    "forced_liquidation_cluster": "large_liquidation",
+    "liquidation_cluster": "large_liquidation",
+    "social_media_news": "social_news",
+    "social_signal": "social_news"
+  },
   "event_type_routes": {
-    "indicator_signal": "technical",
     "market_indicator_signal": "technical",
-    "wallet_alert": "onchain",
     "onchain_wallet_anomaly": "onchain",
-    "forced_liquidation_cluster": "liquidation",
     "large_liquidation": "liquidation",
     "macro_news": "social_news",
     "social_news": "social_news"
