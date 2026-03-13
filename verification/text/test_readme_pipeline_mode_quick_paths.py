@@ -25,3 +25,9 @@ def test_readme_contains_pipeline_mode_quick_paths(readme_relpath: str) -> None:
     required_snippets = PIPELINE_MODE_QUICK_SNIPPETS + (override or ())
     for snippet in required_snippets:
         assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {readme_relpath}: {snippet}"
+
+
+def test_readme_snippet_overrides_reference_known_docs() -> None:
+    allowed = {Path(p) for p in README_CONTRACTS_SNIPPETS_DOCS}
+    override_paths = set(README_SNIPPET_OVERRIDES.keys())
+    assert override_paths.issubset(allowed), f"override paths not registered: {override_paths - allowed}"
