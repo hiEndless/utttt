@@ -50,6 +50,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="允许的最大 agent readyz 状态级别（green<yellow<red，默认 red）",
     )
     p.add_argument(
+        "--max-decision-trace-schema-guard-invalid-records",
+        type=int,
+        default=-1,
+        help="最大 decision_trace schema guard invalid 记录数，-1 表示忽略",
+    )
+    p.add_argument(
         "--require-agent-readyz-report",
         action="store_true",
         help="要求 summary 中存在 agent readyz 报告（agent_readyz_report_count > 0）",
@@ -69,6 +75,9 @@ def main(argv: list[str] | None = None) -> int:
     legacy_confidence_ratio = _to_float(summary.get("execution_legacy_confidence_usage_ratio"), 0.0)
     agent_readyz_report_count = _to_int(summary.get("agent_readyz_report_count"), 0)
     agent_readyz_level = str(summary.get("agent_readyz_status_level") or "red").strip().lower()
+    decision_trace_schema_guard_invalid_records = _to_int(
+        summary.get("decision_trace_schema_guard_invalid_records"), 0
+    )
     if agent_readyz_level not in _LEVEL_ORDER:
         agent_readyz_level = "red"
 
@@ -94,6 +103,15 @@ def main(argv: list[str] | None = None) -> int:
         max_level = str(args.max_agent_readyz_level).strip().lower()
         if _LEVEL_ORDER.get(agent_readyz_level, 2) > _LEVEL_ORDER.get(max_level, 2):
             errors.append(f"agent_readyz_status_level>{max_level} (actual={agent_readyz_level})")
+    if (
+        int(args.max_decision_trace_schema_guard_invalid_records) >= 0
+        and decision_trace_schema_guard_invalid_records > int(args.max_decision_trace_schema_guard_invalid_records)
+    ):
+        errors.append(
+            "decision_trace_schema_guard_invalid_records>"
+            f"{int(args.max_decision_trace_schema_guard_invalid_records)} "
+            f"(actual={decision_trace_schema_guard_invalid_records})"
+        )
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -107,7 +125,8 @@ def main(argv: list[str] | None = None) -> int:
         f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings} "
         f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio} "
         f"agent_readyz_report_count={agent_readyz_report_count} "
-        f"agent_readyz_status_level={agent_readyz_level}"
+        f"agent_readyz_status_level={agent_readyz_level} "
+        f"decision_trace_schema_guard_invalid_records={decision_trace_schema_guard_invalid_records}"
     )
     return 0
 

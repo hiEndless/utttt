@@ -84,6 +84,8 @@ Options:
                                execution legacy confidence 占比上限（默认 -1 忽略）
   --max-agent-readyz-level <green|yellow|red>
                                agent readyz 最大允许状态级别（默认 red）
+  --max-decision-trace-schema-guard-invalid-records <int>
+                               decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 ```

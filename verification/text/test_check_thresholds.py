@@ -115,3 +115,49 @@ def test_check_thresholds_fails_when_require_agent_readyz_report_but_missing(tmp
         ]
     )
     assert code == 1
+
+
+def test_check_thresholds_passes_when_decision_trace_schema_guard_within_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "decision_trace_schema_guard_invalid_records": 1,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-decision-trace-schema-guard-invalid-records",
+            "1",
+        ]
+    )
+    assert code == 0
+
+
+def test_check_thresholds_fails_when_decision_trace_schema_guard_exceeds_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "decision_trace_schema_guard_invalid_records": 2,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-decision-trace-schema-guard-invalid-records",
+            "1",
+        ]
+    )
+    assert code == 1

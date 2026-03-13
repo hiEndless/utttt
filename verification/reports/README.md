@@ -98,6 +98,7 @@ python3 -m verification.reports.check_thresholds \
   --max-failed 0 \
   --min-reports 1 \
   --max-semantic-errors 0 \
+  --max-decision-trace-schema-guard-invalid-records 0 \
   --max-agent-readyz-level yellow \
   --require-agent-readyz-report
 ```
