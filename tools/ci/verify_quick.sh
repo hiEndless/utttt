@@ -37,6 +37,16 @@ Optional Observability:
                                 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
                                 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT
+                                signal decision replay 每来源最小样本数（默认 10）
+  MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO
+                                market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO
+                                onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO
+                                large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO
+                                social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -151,9 +161,21 @@ if [[ "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
 fi
 if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH="${AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH:-verification/reports/agent_signal_decision_replay.latest.json}"
+  AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT="${AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT:-10}"
+  MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO="${MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO:--1}"
+  MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO="${MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO:--1}"
+  MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO="${MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO:--1}"
+  MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO="${MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO:--1}"
   bash tools/local/run_agent_signal_decision_replay_report.sh \
     --output "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" >/dev/null
   echo "[quick] signal_decision_replay_report_path=$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH"
+  bash tools/local/check_agent_signal_decision_replay_guard.sh \
+    "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" \
+    "$AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" \
+    "$MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" \
+    "$MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" \
+    "$MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" \
+    "$MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" || "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then

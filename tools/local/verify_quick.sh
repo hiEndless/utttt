@@ -17,6 +17,11 @@ AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="verification/reports/agent_action_h
 AGENT_DECISION_AGENT_KEY_REPORT_PATH="verification/reports/agent_decision_agent_key.latest.json"
 AGENT_ROUTE_REPLAY_REPORT_PATH="verification/reports/agent_signal_source_route_replay.latest.json"
 AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH="verification/reports/agent_signal_decision_replay.latest.json"
+AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT="10"
+MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO="-1"
+MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO="-1"
+MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO="-1"
+MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO="-1"
 MAX_AGENT_READYZ_LEVEL="red"
 MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="-1"
 MAX_ROUTE_REPLAY_MISMATCH_COUNT="-1"
@@ -96,6 +101,26 @@ while (($# > 0)); do
       AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH="${2:-$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH}"
       shift 2
       ;;
+    --agent-signal-decision-replay-min-source-count)
+      AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT="${2:-$AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT}"
+      shift 2
+      ;;
+    --max-market-indicator-rule-fallback-ratio)
+      MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO="${2:-$MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO}"
+      shift 2
+      ;;
+    --max-onchain-wallet-rule-fallback-ratio)
+      MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO="${2:-$MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO}"
+      shift 2
+      ;;
+    --max-large-liquidation-rule-fallback-ratio)
+      MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO="${2:-$MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO}"
+      shift 2
+      ;;
+    --max-social-news-rule-fallback-ratio)
+      MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO="${2:-$MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO}"
+      shift 2
+      ;;
     --max-agent-readyz-level)
       MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
       shift 2
@@ -161,6 +186,16 @@ Options:
                                           指定 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   --agent-signal-decision-replay-report-path <path>
                                           指定 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  --agent-signal-decision-replay-min-source-count <int>
+                                          指定 signal decision replay 每来源最小样本数（默认 10）
+  --max-market-indicator-rule-fallback-ratio <float>
+                                          指定 market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-onchain-wallet-rule-fallback-ratio <float>
+                                          指定 onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-large-liquidation-rule-fallback-ratio <float>
+                                          指定 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-social-news-rule-fallback-ratio <float>
+                                          指定 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --max-decision-agent-key-unknown-count <int>
                                           设置 decision_agent_key unknown 计数上限（默认 -1 忽略）
@@ -208,6 +243,11 @@ fi
 if [[ "$WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" == "1" ]]; then
   ENV_PREFIX+=(WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1)
   ENV_PREFIX+=(AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH="$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH")
+  ENV_PREFIX+=(AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT="$AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT")
+  ENV_PREFIX+=(MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO="$MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO")
+  ENV_PREFIX+=(MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO="$MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO")
+  ENV_PREFIX+=(MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO="$MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO")
+  ENV_PREFIX+=(MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO="$MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO")
 fi
 ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
 ENV_PREFIX+=(MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT="$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT")

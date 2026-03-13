@@ -108,6 +108,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_route_replay_summary.sh" in quick_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in quick_text
     assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
+    assert "tools/local/check_agent_signal_decision_replay_guard.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
     assert "--status missing" in regression_text
@@ -130,6 +131,11 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
+    assert "MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" in out
+    assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
+    assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
+    assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
@@ -151,5 +157,10 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--agent-decision-agent-key-report-path <path>" in out
     assert "--agent-route-replay-report-path <path>" in out
     assert "--agent-signal-decision-replay-report-path <path>" in out
+    assert "--agent-signal-decision-replay-min-source-count <int>" in out
+    assert "--max-market-indicator-rule-fallback-ratio <float>" in out
+    assert "--max-onchain-wallet-rule-fallback-ratio <float>" in out
+    assert "--max-large-liquidation-rule-fallback-ratio <float>" in out
+    assert "--max-social-news-rule-fallback-ratio <float>" in out
     assert "--max-decision-agent-key-unknown-count <int>" in out
     assert "--max-route-replay-mismatch-count <int>" in out

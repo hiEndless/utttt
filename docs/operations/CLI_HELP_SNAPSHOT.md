@@ -188,6 +188,16 @@ Options:
                                           指定 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   --agent-signal-decision-replay-report-path <path>
                                           指定 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  --agent-signal-decision-replay-min-source-count <int>
+                                          指定 signal decision replay 每来源最小样本数（默认 10）
+  --max-market-indicator-rule-fallback-ratio <float>
+                                          指定 market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-onchain-wallet-rule-fallback-ratio <float>
+                                          指定 onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-large-liquidation-rule-fallback-ratio <float>
+                                          指定 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-social-news-rule-fallback-ratio <float>
+                                          指定 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --max-decision-agent-key-unknown-count <int>
                                           设置 decision_agent_key unknown 计数上限（默认 -1 忽略）
@@ -260,6 +270,16 @@ Optional Observability:
                                 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
                                 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT
+                                signal decision replay 每来源最小样本数（默认 10）
+  MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO
+                                market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO
+                                onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO
+                                large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO
+                                social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
