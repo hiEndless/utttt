@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent_server_new/llm_signal_decision.schema.json",
+  "title": "Agent LLM Signal Decision",
+  "type": "object",
+  "required": [
+    "signal_verdict",
+    "signal_direction",
+    "confidence_score"
+  ],
+  "properties": {
+    "signal_verdict": {
+      "type": "string",
+      "enum": ["accept", "reject", "uncertain"]
+    },
+    "signal_direction": {
+      "type": "string",
+      "enum": ["long", "short", "none"]
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "reasons": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

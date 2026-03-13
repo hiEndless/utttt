@@ -12,6 +12,7 @@ Schema 文件：
 
 - `services/agent_server_new/docs/runner_output.schema.json`
 - `services/agent_server_new/docs/decision_trace.schema.json`（DecisionTrace 记录契约）
+- `services/agent_server_new/docs/llm_signal_decision.schema.json`（LLM 信号判定输出契约）
 
 ## 1. 输出结构
 
