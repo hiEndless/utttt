@@ -32,6 +32,7 @@ PY
 )"
 echo "[info] README_CONTRACTS_VERSION=$README_CONTRACTS_VERSION"
 ./venv/bin/pytest -q \
+  verification/text/test_readme_contracts_version_format.py \
   verification/text/test_readme_pipeline_mode_quick_paths.py \
   verification/text/test_cli_help_snapshot_readme_contract_version.py
 
