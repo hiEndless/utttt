@@ -576,8 +576,8 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         )
         assert out.agent_plan.action == "hold"
         assert out.agent_plan.direction == "none"
-        assert out.agent_plan.confidence.level == "low"
-        assert out.agent_plan.confidence.score == 0.0
+        assert out.agent_plan.confidence.level == out.signal_decision.confidence.level
+        assert out.agent_plan.confidence.score == out.signal_decision.confidence.score
         assert out.agent_plan.notes == "legacy_pipeline_disabled"
         trace_payload = {}
         for _, name, payload in wf._recorder.outputs:  # noqa: SLF001
@@ -592,6 +592,15 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         assert routing.get("event_type_match_mode") == "alias"
         names = [name for _, name, _ in wf._recorder.outputs]  # noqa: SLF001
         assert "workflow_bridge" in names
+        bridge_payload = {}
+        for _, name, payload in wf._recorder.outputs:  # noqa: SLF001
+            if name == "workflow_bridge":
+                bridge_payload = dict(payload or {})
+                break
+        execution_plan_payload = dict(bridge_payload.get("execution_plan") or {})
+        confidence_payload = dict(execution_plan_payload.get("confidence") or {})
+        assert confidence_payload.get("level") == out.signal_decision.confidence.level
+        assert confidence_payload.get("score") == out.signal_decision.confidence.score
         assert "intent_resolver" not in names
         assert "rule_planner" not in names
         assert "horizon_policy_gate" not in names

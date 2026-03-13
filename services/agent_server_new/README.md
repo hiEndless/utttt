@@ -235,6 +235,7 @@ signal_event + active_events + MSL
 - `AGENT_LEGACY_PIPELINE_ENABLED`
   - 是否启用 legacy planner/gate 链路（默认：`false`）
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
+  - minimal 链路下 `ExecutionPlan.confidence` 与 `SignalDecision.confidence` 保持一致，便于执行层与回放统一判读
   - 若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环，所有环境一致）
   - 未满足时启动报错码：`AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED`
 - `AGENT_SIGNAL_ROUTER_CONFIG_FILE`

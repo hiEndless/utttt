@@ -511,7 +511,7 @@ class TradeEventWorkflow:
                 action="hold",
                 direction="none",
                 allowance=allowance,
-                confidence=Confidence(level="low", score=0.0),
+                confidence=signal.confidence,
                 sizing=None,
                 notes="legacy_pipeline_disabled",
             )
@@ -633,6 +633,7 @@ class TradeEventWorkflow:
                         "execution_plan": {
                             "action": plan.action,
                             "direction": plan.direction,
+                            "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
                             "notes": plan.notes,
                         },
                     },
