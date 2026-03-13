@@ -1,44 +1,47 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[docs 1/12] semantic policy guard"
+echo "[docs 1/13] semantic policy guard"
 bash tools/local/check_semantic_policy_guard.sh
 
-echo "[docs 2/12] source semantics guard"
+echo "[docs 2/13] source semantics guard"
 bash tools/local/check_source_semantics_guard.sh
 
-echo "[docs 3/12] cross-service time semantics doc guard"
+echo "[docs 3/13] cross-service time semantics doc guard"
 bash tools/local/check_cross_service_time_semantics_doc_guard.sh
 
-echo "[docs 4/12] pipeline semantic terms doc guard"
+echo "[docs 4/13] pipeline semantic terms doc guard"
 bash tools/local/check_pipeline_semantic_terms_doc_guard.sh
 
-echo "[docs 5/12] contract change bundle guard"
+echo "[docs 5/13] contract change bundle guard"
 if ! bash tools/local/check_contract_change_bundle_guard.sh; then
   echo "[hint] 可执行以下命令输出版本探测值用于排障："
   echo "       bash tools/local/check_contract_change_bundle_guard.sh --show-detected-versions"
   exit 1
 fi
 
-echo "[docs 6/12] contract bundle regression tests"
+echo "[docs 6/13] contract bundle regression tests"
 ./venv/bin/pytest -q verification/validators/contracts/test_contract_change_bundle_guard.py
 
-echo "[docs 7/12] new_arch guards help snapshot guard"
+echo "[docs 7/13] agent readme pipeline_mode quick path doc guard"
+./venv/bin/pytest -q verification/text/test_agent_readme_pipeline_mode_quick_path.py
+
+echo "[docs 8/13] new_arch guards help snapshot guard"
 bash tools/local/check_new_arch_guards_help_snapshot_guard.sh
 
-echo "[docs 8/12] cli help snapshot guard"
+echo "[docs 9/13] cli help snapshot guard"
 bash tools/local/check_cli_help_snapshot_guard.sh
 
-echo "[docs 9/12] release ready help snapshot guard"
+echo "[docs 10/13] release ready help snapshot guard"
 bash tools/local/check_release_ready_help_snapshot_guard.sh
 
-echo "[docs 10/12] contract docs canonical layout guard"
+echo "[docs 11/13] contract docs canonical layout guard"
 bash tools/local/check_contract_docs_canonical_layout_guard.sh
 
-echo "[docs 11/12] release triage block guard"
+echo "[docs 12/13] release triage block guard"
 bash tools/local/check_release_triage_block_guard.sh
 
-echo "[docs 12/12] release docs repro alignment guard"
+echo "[docs 13/13] release docs repro alignment guard"
 bash tools/local/check_release_docs_repro_alignment_guard.sh
 
 echo "[passed] docs/contracts bundle guard check"
