@@ -31,3 +31,13 @@ def test_readme_snippet_overrides_reference_known_docs() -> None:
     allowed = {Path(p) for p in README_CONTRACTS_SNIPPETS_DOCS}
     override_paths = set(README_SNIPPET_OVERRIDES.keys())
     assert override_paths.issubset(allowed), f"override paths not registered: {override_paths - allowed}"
+
+
+def test_readme_contracts_doc_list_is_sorted() -> None:
+    doc_list = [str(p) for p in README_CONTRACTS_SNIPPETS_DOCS]
+    assert doc_list == sorted(doc_list), f"README_CONTRACTS_SNIPPETS_DOCS not sorted: {doc_list}"
+
+
+def test_readme_snippet_overrides_are_sorted() -> None:
+    override_list = [str(p) for p in README_SNIPPET_OVERRIDES.keys()]
+    assert override_list == sorted(override_list), f"README_SNIPPET_OVERRIDES not sorted: {override_list}"
