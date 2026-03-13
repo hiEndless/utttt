@@ -76,6 +76,12 @@ class _FailingExecutionDecider:
         raise RuntimeError("execution unavailable")
 
 
+class _RejectingExecutionDecider:
+    async def decide(self, payload):  # noqa: ANN001
+        _ = payload
+        return {"execution_action": "hold", "reject_reason": "risk_limit_blocked"}
+
+
 class _Recorder:
     def __init__(self) -> None:
         self.outputs = []
@@ -332,6 +338,52 @@ def test_trade_event_workflow_records_execution_decider_error_when_unavailable()
         payload = rows[-1][2]
         assert payload.get("status") == "error"
         assert payload.get("error_type") == "RuntimeError"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_records_execution_reject_result_as_business_outcome():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        recorder = _Recorder()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=_RejectingExecutionDecider(),
+            recorder=recorder,
+            legacy_pipeline_enabled=False,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-exec-reject-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.execution_result is not None
+        assert out.execution_result.get("execution_action") == "hold"
+        assert out.execution_result.get("reject_reason") == "risk_limit_blocked"
+        rows = [x for x in recorder.outputs if x[1] == "execution_decider"]
+        assert rows
+        payload = rows[-1][2]
+        assert payload.get("execution_action") == "hold"
+        assert payload.get("reject_reason") == "risk_limit_blocked"
+        assert payload.get("status") is None
 
     import pytest
 
