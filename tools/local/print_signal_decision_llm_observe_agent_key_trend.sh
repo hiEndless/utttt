@@ -7,6 +7,7 @@ MIN_RATIO=0.15
 MIN_CONSECUTIVE_DAYS=3
 AGENT_KEYS="social_news,onchain,technical,liquidation"
 OUTPUT_PATH=""
+RECOMMENDATION_OUTPUT_PATH=""
 PREFIX="nightly"
 
 print_help() {
@@ -21,6 +22,8 @@ Options:
   --min-consecutive-days <n>  连续低于阈值天数（默认 3）
   --agent-keys <csv>          关注 agent_key（默认 social_news,onchain,technical,liquidation）
   --output <path>             趋势 JSON 输出路径（默认不落盘）
+  --recommendation-output <path>
+                              recommendation JSON 输出路径（默认不落盘）
   --prefix <name>             输出前缀（默认 nightly）
   --help, -h                  显示帮助
 
@@ -60,6 +63,10 @@ while (($# > 0)); do
       OUTPUT_PATH="${2:-$OUTPUT_PATH}"
       shift 2
       ;;
+    --recommendation-output)
+      RECOMMENDATION_OUTPUT_PATH="${2:-$RECOMMENDATION_OUTPUT_PATH}"
+      shift 2
+      ;;
     --prefix)
       PREFIX="${2:-$PREFIX}"
       shift 2
@@ -72,7 +79,7 @@ while (($# > 0)); do
   esac
 done
 
-python3 - "$GLOB_PATTERN" "$DAYS" "$MIN_RATIO" "$MIN_CONSECUTIVE_DAYS" "$AGENT_KEYS" "$OUTPUT_PATH" "$PREFIX" <<'PY'
+python3 - "$GLOB_PATTERN" "$DAYS" "$MIN_RATIO" "$MIN_CONSECUTIVE_DAYS" "$AGENT_KEYS" "$OUTPUT_PATH" "$RECOMMENDATION_OUTPUT_PATH" "$PREFIX" <<'PY'
 from __future__ import annotations
 
 import glob
@@ -82,12 +89,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-if len(sys.argv) != 8:
-    raise SystemExit("usage: <glob> <days> <min_ratio> <min_consecutive_days> <agent_keys> <output> <prefix>")
+if len(sys.argv) != 9:
+    raise SystemExit("usage: <glob> <days> <min_ratio> <min_consecutive_days> <agent_keys> <output> <recommendation_output> <prefix>")
 
 glob_pattern = str(sys.argv[1] or "").strip() or "verification/reports/agent_signal_decision_llm_observe*.json"
-prefix = str(sys.argv[7] or "nightly").strip() or "nightly"
+prefix = str(sys.argv[8] or "nightly").strip() or "nightly"
 output_path = str(sys.argv[6] or "").strip()
+recommendation_output_path = str(sys.argv[7] or "").strip()
 agent_keys_raw = str(sys.argv[5] or "").strip()
 agent_keys = [x.strip().lower() for x in agent_keys_raw.split(",") if x.strip()]
 if not agent_keys:
@@ -136,6 +144,20 @@ if not rows:
         outp.parent.mkdir(parents=True, exist_ok=True)
         outp.write_text(json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"[ok] wrote {outp}")
+    if recommendation_output_path:
+        rec = {
+            "schema_version": "agent-signal-decision-llm-observe-agent-key-trend-recommendation-v1",
+            "status": "skip",
+            "reason": "no_reports",
+            "reports": 0,
+            "agent_keys": list(agent_keys),
+            "recommend_action": "none",
+            "warn_agent_keys": [],
+        }
+        recp = Path(recommendation_output_path)
+        recp.parent.mkdir(parents=True, exist_ok=True)
+        recp.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"[ok] wrote {recp}")
     raise SystemExit(0)
 
 anchor = max(dt for dt, _ in rows)
@@ -158,6 +180,7 @@ for dt, payload in rows:
         slot["llm_ok"] += max(0, llm_ok)
 
 result_rows: list[dict] = []
+warn_agent_keys: list[str] = []
 for key in agent_keys:
     days_sorted = sorted(by_key_day[key].keys())
     total_records = sum(int(by_key_day[key][d]["records"]) for d in days_sorted)
@@ -177,6 +200,8 @@ for key in agent_keys:
         else:
             break
     status = "warn" if latest_ratio < min_ratio and consecutive_low_days >= min_consecutive_days else "ok"
+    if status == "warn":
+        warn_agent_keys.append(key)
     print(
         f"[{status}] {prefix} signal_decision_llm_observe_agent_key_trend "
         f"agent_key={key} reports={report_count} days={len(days_sorted)} "
@@ -215,4 +240,23 @@ if output_path:
     outp.parent.mkdir(parents=True, exist_ok=True)
     outp.write_text(json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[ok] wrote {outp}")
+
+if recommendation_output_path:
+    status = "recommend" if warn_agent_keys else "hold"
+    recommendation = {
+        "schema_version": "agent-signal-decision-llm-observe-agent-key-trend-recommendation-v1",
+        "status": status,
+        "reason": "low_llm_ok_ratio_consecutive_days" if warn_agent_keys else "all_agent_keys_stable",
+        "reports": int(report_count),
+        "window_days": int(days),
+        "min_ratio": float(round(min_ratio, 6)),
+        "min_consecutive_days": int(min_consecutive_days),
+        "agent_keys": list(agent_keys),
+        "warn_agent_keys": sorted(warn_agent_keys),
+        "recommend_action": "review_llm_prompt_or_model_routing" if warn_agent_keys else "none",
+    }
+    recp = Path(recommendation_output_path)
+    recp.parent.mkdir(parents=True, exist_ok=True)
+    recp.write_text(json.dumps(recommendation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"[ok] wrote {recp}")
 PY

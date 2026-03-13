@@ -26,6 +26,7 @@ def test_print_signal_decision_llm_observe_agent_key_trend_help() -> None:
     assert "--days <n>" in out
     assert "--min-ratio <float>" in out
     assert "--agent-keys <csv>" in out
+    assert "--recommendation-output <path>" in out
 
 
 def test_print_signal_decision_llm_observe_agent_key_trend_output(tmp_path: Path) -> None:
@@ -46,6 +47,7 @@ def test_print_signal_decision_llm_observe_agent_key_trend_output(tmp_path: Path
     _write("llm_observe.a.json", 1773446400000, 10, 1)  # 0.10
     _write("llm_observe.b.json", 1773360000000, 10, 1)  # 0.10
     out_path = tmp_path / "trend.latest.json"
+    rec_path = tmp_path / "trend.recommendation.latest.json"
     proc = subprocess.run(
         [
             "bash",
@@ -62,6 +64,8 @@ def test_print_signal_decision_llm_observe_agent_key_trend_output(tmp_path: Path
             "social_news",
             "--output",
             str(out_path),
+            "--recommendation-output",
+            str(rec_path),
             "--prefix",
             "nightly",
         ],
@@ -74,6 +78,11 @@ def test_print_signal_decision_llm_observe_agent_key_trend_output(tmp_path: Path
     out = str(proc.stdout or "")
     assert "[warn] nightly signal_decision_llm_observe_agent_key_trend agent_key=social_news" in out
     assert out_path.exists()
+    assert rec_path.exists()
     trend = json.loads(out_path.read_text(encoding="utf-8"))
     assert trend["schema_version"] == "agent-signal-decision-llm-observe-agent-key-trend-v1"
     assert trend["rows"][0]["agent_key"] == "social_news"
+    recommendation = json.loads(rec_path.read_text(encoding="utf-8"))
+    assert recommendation["schema_version"] == "agent-signal-decision-llm-observe-agent-key-trend-recommendation-v1"
+    assert recommendation["status"] == "recommend"
+    assert recommendation["warn_agent_keys"] == ["social_news"]

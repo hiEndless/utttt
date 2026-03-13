@@ -139,6 +139,7 @@ AGENT_ACTION_HINT_CASES_REPORT_PATH="${AGENT_ACTION_HINT_CASES_REPORT_PATH:-veri
 AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="${AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH:-verification/reports/agent_action_hint_missing_cases.latest.json}"
 AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH="${AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH:-verification/reports/agent_signal_decision_llm_observe.latest.json}"
 AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_REPORT_PATH="${AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_REPORT_PATH:-verification/reports/agent_signal_decision_llm_observe_agent_key_trend.latest.json}"
+AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH="${AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH:-verification/reports/agent_signal_decision_llm_observe_agent_key_trend_recommendation.latest.json}"
 REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-1}"
 AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
@@ -159,6 +160,7 @@ echo "[nightly] MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT=$MAX
 echo "[nightly] WITH_AGENT_ACTION_HINT_CASES_REPORT=$WITH_AGENT_ACTION_HINT_CASES_REPORT AGENT_ACTION_HINT_CASES_REPORT_PATH=$AGENT_ACTION_HINT_CASES_REPORT_PATH AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH=$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH"
 echo "[nightly] AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
 echo "[nightly] AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_REPORT_PATH=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_REPORT_PATH"
+echo "[nightly] AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH"
 if bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
   --output "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH" >/dev/null; then
   echo "[nightly] signal_decision_llm_observe_report_path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
@@ -175,7 +177,33 @@ if bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
     --min-consecutive-days 3 \
     --agent-keys "social_news,onchain,technical,liquidation" \
     --output "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_REPORT_PATH" \
+    --recommendation-output "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH" \
     --prefix nightly
+  LLM_OBSERVE_TREND_RECOMMENDATION_STATUS="$(python3 - <<'PY' "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH"
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    print("missing")
+    raise SystemExit(0)
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    print("invalid_json")
+    raise SystemExit(0)
+if str(payload.get("schema_version") or "") != "agent-signal-decision-llm-observe-agent-key-trend-recommendation-v1":
+    print("unsupported_schema_version")
+    raise SystemExit(0)
+status = str(payload.get("status") or "").strip().lower()
+if status in {"recommend", "hold", "skip"}:
+    print(status)
+else:
+    print("unknown_status")
+PY
+)"
+  echo "[nightly] llm_observe_trend_recommendation_status=$LLM_OBSERVE_TREND_RECOMMENDATION_STATUS recommendation_report_path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH"
 else
   echo "[nightly] signal_decision_llm_observe_report_failed path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
 fi
