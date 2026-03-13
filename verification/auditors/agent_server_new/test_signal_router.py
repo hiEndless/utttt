@@ -2,6 +2,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -41,6 +43,24 @@ def test_signal_router_routes_selected_type_from_event_center() -> None:
 def test_signal_router_normalizes_event_type_aliases() -> None:
     key = route_signal_agent_key(signal_event={"payload": {"event_type": "forced_liquidation_cluster"}})
     assert key == "liquidation"
+
+
+@pytest.mark.parametrize(
+    ("event_type", "expected"),
+    [
+        ("market_indicator_event", "technical"),
+        ("ta_signal", "technical"),
+        ("onchain_wallet_alert", "onchain"),
+        ("whale_transfer_alert", "onchain"),
+        ("liquidation_spike", "liquidation"),
+        ("forced_liquidation", "liquidation"),
+        ("news_event", "social_news"),
+        ("x_sentiment_alert", "social_news"),
+    ],
+)
+def test_signal_router_normalizes_business_alias_baseline(event_type: str, expected: str) -> None:
+    key = route_signal_agent_key(signal_event={"payload": {"event_type": event_type}})
+    assert key == expected
 
 
 def test_signal_router_routes_generic_when_unknown() -> None:
