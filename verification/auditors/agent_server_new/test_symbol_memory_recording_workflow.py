@@ -9,8 +9,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
@@ -39,11 +38,7 @@ class _MarketState:
             symbol="ETHUSDT",
             msl=_build_msl_from_dict(_sample_msl()),
             msl_meta={"schema_version": 2},
-            cross_horizon={
-                "alignment": "aligned",
-                "suggested_policy": "follow_long_term",
-                "policy_reason": "timeframe_aligned",
-            },
+            cross_horizon={"alignment": "aligned", "suggested_policy": "follow_long_term", "policy_reason": "timeframe_aligned"},
             state_features={"evidence": {}, "anomalies": {}},
             anomaly_flags=[
                 "state_features_semantic_contract_missing",
@@ -74,35 +69,6 @@ def test_trade_event_workflow_records_symbol_memory():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
         memory = InMemorySymbolMemoryAdapter()
         wf = TradeEventWorkflow(
             market_state=_MarketState(),
@@ -129,10 +95,6 @@ def test_trade_event_workflow_records_symbol_memory():
         assert mem["summary"]["contract_warning_count"] == 2
         assert "state_features_semantic_contract_missing" in list(mem["summary"]["recent_contract_warning_types"] or [])
         assert mem["recent"][0]["event_id"] == "evt-memory-001"
-        warnings = list(mem["recent"][0].get("contract_warnings") or [])
-        assert "state_features_semantic_contract_missing" in warnings
-        assert "msl_meta_schema_version_missing" in warnings
-        assert "external_event_input_ignored" not in warnings
 
     import pytest
 

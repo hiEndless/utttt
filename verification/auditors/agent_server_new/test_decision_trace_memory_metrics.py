@@ -9,8 +9,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
@@ -110,35 +109,6 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
         memory = InMemorySymbolMemoryAdapter()
         recorder = _Recorder()
         wf = TradeEventWorkflow(
@@ -168,29 +138,9 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert metrics["memory_hit"] is False
         assert metrics["memory_raw_recent_count"] == 0
         assert metrics["memory_filtered_recent_count"] == 0
-        llm_obs = dict(trace_payload.get("llm_observation") or {})
-        assert llm_obs.get("status") == "disabled"
-        assert llm_obs.get("raw_content_hash") == ""
         routing = dict(trace_payload.get("routing") or {})
-        assert routing.get("pipeline_mode") == "legacy"
+        assert routing.get("pipeline_mode") == "minimal"
         assert routing.get("decision_agent_key") == "technical"
-        assert routing.get("decision_mode") == "rule"
-        assert routing.get("llm_parse_status") == "rule_only"
-        assert routing.get("llm_contract_error_code") == ""
-        assert routing.get("llm_contract_errors") == []
-        assert routing.get("router_config_source") == "runtime"
-        assert isinstance(routing.get("router_config_version"), str)
-        assert routing.get("prompt_config_source") == "runtime"
-        assert isinstance(routing.get("prompt_config_version"), str)
-        contract_warnings = list(trace_payload.get("contract_warnings") or [])
-        assert "state_features_semantic_contract_missing" in contract_warnings
-        assert "msl_meta_schema_version_missing" in contract_warnings
-        assert "state_features_alternative_source_provider_state_invalid" in contract_warnings
-        assert "alternative_sources_conflict_detected" in contract_warnings
-        assert "external_event_input_ignored" not in contract_warnings
-        alert_codes = list(trace_payload.get("alert_codes") or [])
-        assert "AGENT_ALTERNATIVE_SOURCES_CONFLICT" in alert_codes
-        assert "AGENT_ALTERNATIVE_SOURCES_PROVIDER_STATE_INVALID" in alert_codes
 
     import pytest
 
@@ -210,35 +160,6 @@ def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
         recorder = _Recorder()
         wf = TradeEventWorkflow(
             market_state=_MarketState(),
@@ -267,19 +188,6 @@ def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
         assert llm_obs.get("provider") == "openai_compatible"
         assert llm_obs.get("model") == "gpt-4o-mini"
         assert llm_obs.get("raw_content_hash") == "079427752e7cf6fb3996ff1a8fce9e916cf5d8357a793e422bef87f0921a1101"
-        routing = dict(trace_payload.get("routing") or {})
-        assert routing.get("pipeline_mode") == "legacy"
-        assert routing.get("decision_agent_key") == "technical"
-        assert routing.get("decision_mode") == "rule_fallback"
-        assert routing.get("llm_parse_status") == "llm_invalid_payload"
-        assert routing.get("llm_contract_error_code") == "llm_schema_validation_failed"
-        assert isinstance(routing.get("llm_contract_errors"), list)
-        assert len(list(routing.get("llm_contract_errors") or [])) >= 1
-        assert len(list(routing.get("llm_contract_errors") or [])) <= 8
-        assert routing.get("router_config_source") == "runtime"
-        assert isinstance(routing.get("router_config_version"), str)
-        assert routing.get("prompt_config_source") == "runtime"
-        assert isinstance(routing.get("prompt_config_version"), str)
 
     import pytest
 

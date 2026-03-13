@@ -42,36 +42,6 @@ from .event_context import EventContext
 logger = logging.getLogger(__name__)
 
 
-def load_horizon_policy_config_from_env() -> Dict[str, Any]:
-    """保留旧符号名供测试 monkeypatch；minimal 链路不再消费该配置。"""
-    return {}
-
-
-def resolve_intent(**kwargs: Any) -> Any:  # noqa: ANN401
-    _ = kwargs
-    raise RuntimeError("legacy_intent_resolver_removed")
-
-
-def build_rule_plan(**kwargs: Any) -> Any:  # noqa: ANN401
-    _ = kwargs
-    raise RuntimeError("legacy_rule_planner_removed")
-
-
-def strategy_gate_v2(**kwargs: Any) -> Any:  # noqa: ANN401
-    _ = kwargs
-    raise RuntimeError("legacy_strategy_gate_removed")
-
-
-def risk_gate(ctx: Any) -> Any:  # noqa: ANN401
-    _ = ctx
-    raise RuntimeError("legacy_risk_gate_removed")
-
-
-def build_execution_plan(**kwargs: Any) -> Any:  # noqa: ANN401
-    _ = kwargs
-    raise RuntimeError("legacy_execution_planner_removed")
-
-
 @dataclass(frozen=True)
 class TradeEventInput:
     """事件中心推送的最小输入集合（示例）。"""
