@@ -7,6 +7,7 @@ SKIP_RELEASE_BASELINE_ALIGNMENT=0
 WITH_AGENT_READYZ=0
 WITH_PIPELINE_MODE_REPORT=0
 WITH_AGENT_CLOSED_LOOP_SMOKE=0
+WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=0
 MAX_AGENT_READYZ_LEVEL="red"
 REQUIRE_AGENT_READYZ_REPORT=0
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
@@ -42,6 +43,10 @@ while (($# > 0)); do
       ;;
     --with-agent-closed-loop-smoke)
       WITH_AGENT_CLOSED_LOOP_SMOKE=1
+      shift
+      ;;
+    --with-agent-action-hint-semantics-report)
+      WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
       shift
       ;;
     --max-agent-readyz-level)
@@ -84,6 +89,8 @@ Options:
   --with-agent-readyz                    启用 agent readyz 聚合观测（默认关闭）
   --with-pipeline-mode-report            启用 pipeline_mode 灰度聚合观测（默认关闭）
   --with-agent-closed-loop-smoke         启用 agent->execution 三态闭环自检（默认关闭）
+  --with-agent-action-hint-semantics-report
+                                          启用 minimal 语义映射聚合观测（默认关闭）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
@@ -107,6 +114,9 @@ if [[ "$WITH_PIPELINE_MODE_REPORT" == "1" ]]; then
 fi
 if [[ "$WITH_AGENT_CLOSED_LOOP_SMOKE" == "1" ]]; then
   ENV_PREFIX+=(WITH_AGENT_CLOSED_LOOP_SMOKE=1)
+fi
+if [[ "$WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT" == "1" ]]; then
+  ENV_PREFIX+=(WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1)
 fi
 ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
 ENV_PREFIX+=(REQUIRE_AGENT_READYZ_REPORT="$REQUIRE_AGENT_READYZ_REPORT")

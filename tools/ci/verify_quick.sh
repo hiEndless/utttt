@@ -17,6 +17,8 @@ Optional Observability:
   WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
   WITH_PIPELINE_MODE_REPORT=1    启用 pipeline_mode 灰度聚合观测（默认关闭）
   WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
+  WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
+                                启用 minimal 语义映射聚合观测（默认关闭）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -97,6 +99,45 @@ else
 fi
 if [[ "${WITH_AGENT_CLOSED_LOOP_SMOKE:-0}" == "1" ]]; then
   bash tools/local/check_agent_execution_closed_loop_smoke.sh
+fi
+if [[ "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" ]]; then
+  REPORT_PATH="verification/reports/agent_action_hint_semantics.latest.json"
+  bash tools/local/run_agent_action_hint_semantics_report.sh --output "$REPORT_PATH"
+  if test -x ./venv/bin/python; then
+    PY_BIN=./venv/bin/python
+  else
+    PY_BIN=python3
+  fi
+  SUMMARY_LINE=$("$PY_BIN" - "$REPORT_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    print("minimal_decision_count=0 actual_hint_available_count=0 match_count=0 mismatch_count=0 missing_actual_hint_count=0 match_ratio_on_available=0.0")
+    raise SystemExit(0)
+data = json.loads(path.read_text(encoding="utf-8"))
+summary = dict(data.get("summary") or {})
+print(
+    "minimal_decision_count={minimal_decision_count} "
+    "actual_hint_available_count={actual_hint_available_count} "
+    "match_count={match_count} mismatch_count={mismatch_count} "
+    "missing_actual_hint_count={missing_actual_hint_count} "
+    "match_ratio_on_available={match_ratio_on_available}".format(
+        minimal_decision_count=int(summary.get("minimal_decision_count") or 0),
+        actual_hint_available_count=int(summary.get("actual_hint_available_count") or 0),
+        match_count=int(summary.get("match_count") or 0),
+        mismatch_count=int(summary.get("mismatch_count") or 0),
+        missing_actual_hint_count=int(summary.get("missing_actual_hint_count") or 0),
+        match_ratio_on_available=float(summary.get("match_ratio_on_available") or 0.0),
+    )
+)
+PY
+)
+  echo "[quick] action_hint_semantics_summary $SUMMARY_LINE"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" ]]; then
