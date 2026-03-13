@@ -198,7 +198,7 @@ python3 -m verification.reports.check_thresholds \
   --min-event-type-match-alias-ratio -1 \
   --max-action-hint-semantics-mismatch-count 0 \
   --max-action-hint-semantics-missing-actual-hint-count 0 \
-  --min-action-hint-semantics-match-ratio -1 \
+  --min-action-hint-semantics-match-ratio 0.95 \
   --require-agent-readyz-report
 ```
 
