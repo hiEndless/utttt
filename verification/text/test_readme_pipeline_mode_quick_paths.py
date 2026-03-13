@@ -47,6 +47,12 @@ def test_readme_contracts_docs_exist() -> None:
         assert full_path.is_file(), f"missing readme file: {label}"
 
 
+def test_readme_contract_labels_cover_all_docs() -> None:
+    docs = set(README_CONTRACTS_SNIPPETS_DOCS)
+    labels = set(README_CONTRACTS_DOC_LABELS.keys())
+    assert labels.issuperset(docs), f"missing labels for docs: {docs - labels}"
+
+
 def test_readme_snippet_overrides_are_sorted() -> None:
     override_list = [str(p) for p in README_SNIPPET_OVERRIDES.keys()]
     assert override_list == sorted(override_list), f"README_SNIPPET_OVERRIDES not sorted: {override_list}"
