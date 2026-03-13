@@ -31,6 +31,7 @@ def test_trade_event_workflow_no_legacy_module_import() -> None:
         "domain.strategy_gate",
         "domain.risk_gate",
         "domain.execution_planner",
+        "domain.horizon_policy_gate",
     ]
     for token in forbidden_import_tokens:
         assert token not in text

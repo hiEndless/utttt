@@ -429,7 +429,7 @@ signal_event + active_events + MSL
 
 ## 目录建议
 
-推荐收敛后的目录：
+### 主链路目录（推荐扩展位置）
 
 ```text
 agent_server_new/
@@ -458,7 +458,24 @@ agent_server_new/
     decision_trace.py
 ```
 
-说明：
+### 历史域模块目录（不参与主链路扩展）
+
+```text
+agent_server_new/
+  domain/
+    intent_resolver.py
+    rule_planner.py
+    strategy_gate.py
+    risk_gate.py
+    execution_planner.py
+    horizon_policy_gate.py
+```
+
+约束：
+- 上述文件仅用于历史回放与语义快照兼容，不作为新增业务能力的扩展入口。
+- `trade_event_workflow.py` 主链路禁止 import 这些历史域模块。
+
+说明（主链路）：
 
 - `domain/market_state_engine.py` 不应长期保留在这里
 - `compat/market_structure.py` 只允许作为过渡兼容层
@@ -488,6 +505,7 @@ agent_server_new/
 - `domain/strategy_gate.py`
 - `domain/risk_gate.py`
 - `domain/execution_planner.py`
+- `domain/horizon_policy_gate.py`
   - 以上文件已标记 `Deprecated legacy domain module`，禁止在 `trade_event_workflow.py` 主链路 import。
 
 以下文件是当前主链路核心：
