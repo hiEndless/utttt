@@ -14,7 +14,7 @@ from services.agent_server_new.domain.execution_planner import build_execution_p
 from services.agent_server_new.domain.horizon_policy_gate import load_horizon_policy_config_from_env
 from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
-from services.agent_server_new.domain.pipeline_compat_adapter import build_pipeline_compat_state
+from services.agent_server_new.domain.pipeline_compat_adapter import build_legacy_stage_outputs, build_pipeline_compat_state
 from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
 from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
 from services.agent_server_new.domain.signal_decision_agent import (
@@ -417,63 +417,8 @@ class TradeEventWorkflow:
 
         if self._recorder:
             if self._legacy_pipeline_enabled:
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "intent_resolver",
-                    {
-                        "intent": intent.intent,
-                        "direction": intent.direction,
-                        "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
-                        "reasons": list(intent.reasons),
-                        "notes": intent.notes,
-                    },
-                )
-
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "rule_planner",
-                    {
-                        "intent": {
-                            "intent": rule_plan.intent.intent,
-                            "direction": rule_plan.intent.direction,
-                            "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
-                        },
-                        "sizing": dict(rule_plan.sizing or {}),
-                        "reasons": list(rule_plan.reasons),
-                        "notes": rule_plan.notes,
-                    },
-                )
-
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "horizon_policy_gate",
-                    {"allowed": hpg_allowed, "reasons": list(hpg_reasons), "cross_horizon": dict(ch)},
-                )
-
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "strategy_gate",
-                    {"allowed": sg_allowed, "reasons": list(sg_reasons)},
-                )
-
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "execution_planner",
-                    {
-                        "action": plan.action,
-                        "direction": plan.direction,
-                        "sizing": dict(plan.sizing or {}),
-                        "allowance": {
-                            "allow_open": plan.allowance.allow_open,
-                            "allow_add": plan.allowance.allow_add,
-                            "allow_reduce": plan.allowance.allow_reduce,
-                            "allow_exit": plan.allowance.allow_exit,
-                            "reasons": list(plan.allowance.reasons),
-                        },
-                        "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
-                        "notes": plan.notes,
-                    },
-                )
+                for stage_name, stage_payload in build_legacy_stage_outputs(state=compat, cross_horizon=ch):
+                    await self._recorder.record_agent_output(event.event_id, stage_name, stage_payload)
             else:
                 await self._recorder.record_agent_output(
                     event.event_id,

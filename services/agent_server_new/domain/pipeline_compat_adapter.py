@@ -233,3 +233,76 @@ def build_pipeline_compat_state(
         allowance=allowance,
         plan=plan,
     )
+
+
+def build_legacy_stage_outputs(
+    *,
+    state: PipelineCompatState,
+    cross_horizon: Dict[str, str],
+) -> list[tuple[str, Dict[str, Any]]]:
+    return [
+        (
+            "intent_resolver",
+            {
+                "intent": state.intent.intent,
+                "direction": state.intent.direction,
+                "confidence": {
+                    "level": state.intent.confidence.level,
+                    "score": state.intent.confidence.score,
+                },
+                "reasons": list(state.intent.reasons),
+                "notes": state.intent.notes,
+            },
+        ),
+        (
+            "rule_planner",
+            {
+                "intent": {
+                    "intent": state.rule_plan.intent.intent,
+                    "direction": state.rule_plan.intent.direction,
+                    "confidence": {
+                        "level": state.rule_plan.intent.confidence.level,
+                        "score": state.rule_plan.intent.confidence.score,
+                    },
+                },
+                "sizing": dict(state.rule_plan.sizing or {}),
+                "reasons": list(state.rule_plan.reasons),
+                "notes": state.rule_plan.notes,
+            },
+        ),
+        (
+            "horizon_policy_gate",
+            {
+                "allowed": bool(state.hpg_allowed),
+                "reasons": list(state.hpg_reasons),
+                "cross_horizon": dict(cross_horizon or {}),
+            },
+        ),
+        (
+            "strategy_gate",
+            {
+                "allowed": bool(state.sg_allowed),
+                "reasons": list(state.sg_reasons),
+            },
+        ),
+        (
+            "execution_planner",
+            {
+                "action": state.plan.action,
+                "direction": state.plan.direction,
+                "sizing": dict(state.plan.sizing or {}),
+                "allowance": {
+                    "allow_open": state.plan.allowance.allow_open,
+                    "allow_add": state.plan.allowance.allow_add,
+                    "allow_reduce": state.plan.allowance.allow_reduce,
+                    "allow_exit": state.plan.allowance.allow_exit,
+                    "reasons": list(state.plan.allowance.reasons),
+                },
+                "confidence": {
+                    "level": state.plan.confidence.level,
+                    "score": state.plan.confidence.score,
+                },
+                "notes": state.plan.notes,
+            },
+        ),
+    ]
