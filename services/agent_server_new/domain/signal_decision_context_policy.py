@@ -116,8 +116,38 @@ def build_llm_observation_context(
     events_limit: int = 8,
 ) -> Dict[str, Any]:
     key = normalize_decision_agent_key(decision_agent_key)
+    decision_prompt = {
+        "focus": "generic_signal_validation",
+        "checklist": ["direction_consistency", "evidence_quality", "market_regime_fit"],
+        "avoid": ["position_sizing", "execution_action", "risk_gate_decision"],
+    }
+    if key == "technical":
+        decision_prompt = {
+            "focus": "technical_signal_validation",
+            "checklist": ["trend_structure", "orderbook_liquidity", "oi_change_consistency"],
+            "avoid": ["news_sentiment_overweight", "execution_action", "risk_gate_decision"],
+        }
+    elif key == "liquidation":
+        decision_prompt = {
+            "focus": "liquidation_shock_validation",
+            "checklist": ["liquidation_cluster_strength", "cascade_risk", "rebound_probability"],
+            "avoid": ["long_horizon_macro_overweight", "execution_action", "risk_gate_decision"],
+        }
+    elif key == "onchain":
+        decision_prompt = {
+            "focus": "onchain_flow_validation",
+            "checklist": ["wallet_flow_direction", "exchange_inflow_outflow_shift", "source_reliability"],
+            "avoid": ["micro_orderbook_overweight", "execution_action", "risk_gate_decision"],
+        }
+    elif key == "social_news":
+        decision_prompt = {
+            "focus": "social_news_event_validation",
+            "checklist": ["source_credibility", "cross_source_consistency", "timeliness_and_decay"],
+            "avoid": ["single_post_overweight", "execution_action", "risk_gate_decision"],
+        }
     return {
         "decision_agent_key": key,
+        "decision_prompt": decision_prompt,
         "key_market_features": clip_key_market_features_for_agent(
             decision_agent_key=key,
             key_market_features=key_market_features,

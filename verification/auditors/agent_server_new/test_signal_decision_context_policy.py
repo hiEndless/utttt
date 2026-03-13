@@ -56,4 +56,6 @@ def test_build_llm_observation_context_normalizes_unknown_agent_key() -> None:
         events_limit=1,
     )
     assert out.get("decision_agent_key") == "generic"
+    prompt = dict(out.get("decision_prompt") or {})
+    assert prompt.get("focus") == "generic_signal_validation"
     assert len(list(out.get("active_events") or [])) == 1

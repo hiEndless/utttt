@@ -66,13 +66,24 @@ class OpenAICompatibleLLMObserver:
 
         chat_url = f"{self._base_url}/chat/completions"
         user_payload = dict(payload or {})
+        prompt_cfg = dict(user_payload.get("decision_prompt") or {})
+        focus = str(prompt_cfg.get("focus") or "generic_signal_validation").strip()
+        checklist = [str(x).strip() for x in list(prompt_cfg.get("checklist") or []) if str(x).strip()]
+        avoid = [str(x).strip() for x in list(prompt_cfg.get("avoid") or []) if str(x).strip()]
+        system_prompt = (
+            "You are a market signal validator. "
+            "Return concise JSON object only. "
+            f"focus={focus}; "
+            f"checklist={','.join(checklist) if checklist else 'none'}; "
+            f"avoid={','.join(avoid) if avoid else 'none'}."
+        )
         body = {
             "model": self._model_id,
             "temperature": 0.1,
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a market observer. Return concise JSON object only.",
+                    "content": system_prompt,
                 },
                 {
                     "role": "user",
@@ -111,4 +122,3 @@ class OpenAICompatibleLLMObserver:
                 if delay_s > 0:
                     await asyncio.sleep(delay_s)
         raise RuntimeError("llm observer retry exhausted unexpectedly")
-

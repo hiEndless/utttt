@@ -239,6 +239,7 @@ signal_event + active_events + MSL
   - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
   - 路由优先级：`event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - LLM 输入裁剪会使用路由结果 `decision_agent_key` 选择对应证据视角（`technical/liquidation/onchain/social_news/generic`）
+  - 同时输出 `decision_prompt(focus/checklist/avoid)`，用于按事件类型定制 LLM 判定指令
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`

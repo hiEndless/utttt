@@ -613,6 +613,8 @@ def test_trade_event_workflow_llm_payload_is_trimmed_by_decision_agent_key():
         )
         assert out.signal_decision.decision_mode == "llm"
         assert observer.payload.get("decision_agent_key") == "onchain"
+        decision_prompt = dict(observer.payload.get("decision_prompt") or {})
+        assert decision_prompt.get("focus") == "onchain_flow_validation"
         active_events = list(observer.payload.get("active_events") or [])
         assert active_events
         first_type = str((active_events[0] or {}).get("type") or "")

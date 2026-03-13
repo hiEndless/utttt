@@ -43,8 +43,9 @@ class _FakeAsyncClient:
         return None
 
     async def post(self, url: str, json, headers):  # noqa: ANN001
-        _ = (url, json, headers)
+        _ = (url, headers)
         self._counter["calls"] += 1
+        self._counter["last_json"] = dict(json or {})
         event = self._scripted.pop(0)
         if isinstance(event, Exception):
             raise event
@@ -72,6 +73,40 @@ def test_openai_compatible_llm_observer_success(monkeypatch):
     assert out["model"] == "gpt-4o-mini"
     assert out["raw_content"] == "{\"trend\":\"up\"}"
     assert counter["calls"] == 1
+
+
+def test_openai_compatible_llm_observer_uses_decision_prompt(monkeypatch):
+    import services.agent_server_new.adapters.llm_openai_compatible as mod
+
+    counter = {"calls": 0}
+    scripted = [
+        _FakeResponse(
+            200,
+            {
+                "choices": [{"message": {"content": "{\"trend\":\"up\"}"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            },
+        )
+    ]
+    monkeypatch.setattr(mod.httpx, "AsyncClient", lambda timeout: _FakeAsyncClient(scripted, counter))
+    obs = OpenAICompatibleLLMObserver(model_id="gpt-4o-mini", api_key="sk-test", base_url="http://unit.test", retry_max=0)
+    asyncio.run(
+        obs.observe(
+            {
+                "symbol": "ETHUSDT",
+                "decision_prompt": {
+                    "focus": "onchain_flow_validation",
+                    "checklist": ["wallet_flow_direction"],
+                    "avoid": ["execution_action"],
+                },
+            }
+        )
+    )
+    messages = list(counter.get("last_json", {}).get("messages") or [])
+    system = dict(messages[0] or {}) if messages else {}
+    text = str(system.get("content") or "")
+    assert "focus=onchain_flow_validation" in text
+    assert "checklist=wallet_flow_direction" in text
 
 
 def test_openai_compatible_llm_observer_retries_then_success(monkeypatch):

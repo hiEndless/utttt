@@ -328,6 +328,7 @@ class TradeEventWorkflow:
                 "symbol": event.symbol,
                 "signal_direction": event.signal_direction,
                 "decision_agent_key": llm_ctx["decision_agent_key"],
+                "decision_prompt": dict(llm_ctx.get("decision_prompt") or {}),
                 "signal_event": dict(ctx.signal_event or {}),
                 "msl": ctx.msl.to_llm_dict(),
                 "key_market_features": dict(llm_ctx.get("key_market_features") or {}),
