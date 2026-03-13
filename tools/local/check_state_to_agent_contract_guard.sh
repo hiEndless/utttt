@@ -23,6 +23,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   verification/auditors/agent_server_new/test_bootstrap.py \
   verification/auditors/agent_server_new/test_signal_decision_agent.py \
   verification/auditors/agent_server_new/test_signal_router.py \
+  verification/auditors/agent_server_new/test_signal_router_event_type_boundary_guard.py \
   verification/auditors/agent_server_new/test_active_events_redis_adapter.py \
   verification/auditors/agent_server_new/test_active_events_contract_guard.py \
   verification/auditors/agent_server_new/test_pipeline_traceability_contract.py \

@@ -240,6 +240,7 @@ signal_event + active_events + MSL
   - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`
   - 路由优先级：`event_type_aliases` 归一化后再走 `event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - 默认已内置四类业务事件别名基线：`market_indicator/onchain_wallet/liquidation/social_news`
+  - 边界守卫：`verification/auditors/agent_server_new/test_signal_router_event_type_boundary_guard.py` 会校验 event_center 常见事件命名是否命中路由基线
   - LLM 输入裁剪会使用路由结果 `decision_agent_key` 选择对应证据视角（`technical/liquidation/onchain/social_news/generic`）
   - 同时输出 `decision_prompt(focus/checklist/avoid)`，用于按事件类型定制 LLM 判定指令
 - `AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE`

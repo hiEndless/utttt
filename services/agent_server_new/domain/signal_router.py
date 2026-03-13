@@ -258,3 +258,35 @@ def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[
         if any(k in text for k in keywords):
             return agent_key
     return str(cfg.get("default_agent_key") or "generic").strip().lower() or "generic"
+
+
+def normalize_signal_event_type(
+    *,
+    signal_event: Dict[str, Any],
+    router_config: Dict[str, Any] | None = None,
+) -> Dict[str, str]:
+    """归一化入口事件类型，供边界守卫与诊断使用。"""
+    payload = dict((signal_event or {}).get("payload") or {})
+    cfg = dict(router_config or load_signal_router_config_from_env())
+    event_type_aliases = dict(cfg.get("event_type_aliases") or {})
+    raw_event_type = str(
+        payload.get("selected_type")
+        or payload.get("selected_event_type")
+        or payload.get("event_type")
+        or payload.get("type")
+        or payload.get("kind")
+        or payload.get("signal_type")
+        or ""
+    ).strip().lower()
+    normalized_event_type = str(event_type_aliases.get(raw_event_type) or raw_event_type).strip().lower()
+    if not raw_event_type:
+        matched = "empty"
+    elif normalized_event_type != raw_event_type:
+        matched = "alias"
+    else:
+        matched = "canonical_or_raw"
+    return {
+        "raw_event_type": raw_event_type,
+        "normalized_event_type": normalized_event_type,
+        "matched": matched,
+    }

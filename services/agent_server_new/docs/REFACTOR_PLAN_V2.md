@@ -130,6 +130,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
   - 显式路由优先级：`event_type_aliases` 归一化后 `event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - 业务 canonical 覆盖：`market_indicator_signal/onchain_wallet_anomaly/large_liquidation/social_news`
   - 业务别名基线已扩展（指标/链上/清算/社媒），作为上游事件命名波动的稳定收敛层。
+- 已新增入口边界守卫测试：`event_center_new -> agent_server_new` 常见事件类型必须命中 canonical/alias 路由基线，避免 silently 回落 `generic`。
 - LLM 旁路主判输入已增加“按 `decision_agent_key` 的证据裁剪”：
   - `technical/liquidation/onchain/social_news/generic` 使用不同的 active_events 与 key_features 过滤策略
   - 避免把无关噪声证据送入 LLM，降低跨事件类型误判
