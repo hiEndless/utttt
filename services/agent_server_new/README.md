@@ -370,6 +370,8 @@ signal_event + active_events + MSL
 
 - 单进程串联 `market_state_engine -> agent_server_new`：
   - `python -m services.agent_server_new.pipeline_smoke --dry-run`
+- 最小闭环 smoke（固定 stub，直接输出 `signal_verdict + execution_action/reject_reason`）：
+  - `bash tools/local/run_agent_execution_closed_loop_smoke.sh`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 
