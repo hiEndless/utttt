@@ -47,4 +47,8 @@ README_CONTRACTS_DOCS_REQUIRED_SNIPPETS: dict[Path, tuple[str, ...]] = dict(
 
 
 def get_required_snippets_for_doc(path: Path) -> tuple[str, ...]:
-    return tuple(README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.get(Path(path), ()))
+    normalized = Path(str(Path(path)).replace("\\", "/"))
+    for key, snippets in README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.items():
+        if Path(str(key).replace("\\", "/")) == normalized:
+            return tuple(snippets)
+    return ()

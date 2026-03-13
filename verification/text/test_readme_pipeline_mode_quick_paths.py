@@ -67,3 +67,9 @@ def test_pipeline_mode_snippets_are_sorted() -> None:
     for path, snippets in README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.items():
         for snippet in snippets:
             assert snippet, f"empty snippet in {path}"
+
+
+def test_get_required_snippets_for_doc_supports_equivalent_path_shapes() -> None:
+    canonical = Path("services/agent_server_new/README.md")
+    alt = Path("./services/agent_server_new/README.md")
+    assert get_required_snippets_for_doc(canonical) == get_required_snippets_for_doc(alt)
