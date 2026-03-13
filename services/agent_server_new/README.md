@@ -232,6 +232,9 @@ signal_event + active_events + MSL
   - 是否启用 AI 自适应策略预留字段输出（默认：`false`）
 - `AGENT_AI_ADAPTIVE_MODE`
   - 预留模式（`observe|recommend|bounded_apply`，默认：`observe`）
+- `AGENT_LEGACY_PIPELINE_ENABLED`
+  - 是否启用 legacy planner/gate 链路（默认：`true`）
+  - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`
@@ -249,6 +252,12 @@ signal_event + active_events + MSL
   - Redis provider 会把 `selected_event` 归一成 `active_events` 最小结构：`event_id/source/type/asset/direction/score/timeframe/evidence`
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
   - `event_recorder = JsonlEventRecorder.from_env()`（当 `AGENT_EVENT_RECORDER_MODE=jsonl`）
+
+### 兼容开关灰度建议
+
+1. 测试环境先设置 `AGENT_LEGACY_PIPELINE_ENABLED=false`，观察 `decision_trace.routing.pipeline_mode` 是否稳定为 `minimal`。
+2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 模式差异。
+3. 生产灰度按 symbol 白名单逐步扩大，确认无回归后再考虑默认切换。
 
 ### MarketState 语义告警（非阻断）
 

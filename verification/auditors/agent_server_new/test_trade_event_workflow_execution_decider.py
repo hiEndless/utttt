@@ -218,3 +218,53 @@ def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("should not call resolve_intent")),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("should not call build_rule_plan")),
+        )
+
+        decider = _ExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=decider,
+            recorder=None,
+            legacy_pipeline_enabled=False,
+        )
+        out = await wf.run(
+            TradeEventInput(
+                event_id="evt-exec-minimal-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.action == "hold"
+        assert decider.called is True
+        assert decider.payload["decision_id"] == "evt-exec-minimal-001"
+        assert decider.payload["risk_hints"]["agent_action_hint"] == "hold"
+        assert decider.payload["risk_hints"]["agent_notes"] == "legacy_pipeline_disabled"
+        assert decider.payload["risk_hints"]["decision_mode"] == "rule"
+        assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
