@@ -36,6 +36,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "agent-decision-trace-schema-guard-report-v1",
                 "agent-pipeline-mode-report-v1",
                 "agent-event-type-match-report-v1",
+                "agent-decision-agent-key-report-v1",
                 "agent-action-hint-semantics-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
@@ -96,6 +97,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     pipeline_mode_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-pipeline-mode-report-v1"]
     event_type_match_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-event-type-match-report-v1"
+    ]
+    decision_agent_key_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-decision-agent-key-report-v1"
     ]
     action_hint_semantics_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-action-hint-semantics-report-v1"
@@ -391,6 +395,53 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         )
         event_type_match_top_unknown_event_types = rows_sorted[:10]
 
+    decision_agent_key_report_count = len(decision_agent_key_reports)
+    latest_decision_agent_key_report_path = ""
+    decision_agent_key_technical_count = 0
+    decision_agent_key_onchain_count = 0
+    decision_agent_key_liquidation_count = 0
+    decision_agent_key_social_news_count = 0
+    decision_agent_key_generic_count = 0
+    decision_agent_key_unknown_count = 0
+    decision_agent_key_unknown_ratio = 0.0
+    decision_agent_key_core_four_coverage_ratio = 0.0
+    decision_agent_key_top_unknown: List[Dict[str, Any]] = []
+    if decision_agent_key_reports:
+        latest_decision_agent_key = max(
+            decision_agent_key_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_decision_agent_key_report_path = str(latest_decision_agent_key.get("_path") or "")
+        summary = dict(latest_decision_agent_key.get("summary") or {})
+        decision_agent_key_technical_count = _to_int(summary.get("technical_count"), 0)
+        decision_agent_key_onchain_count = _to_int(summary.get("onchain_count"), 0)
+        decision_agent_key_liquidation_count = _to_int(summary.get("liquidation_count"), 0)
+        decision_agent_key_social_news_count = _to_int(summary.get("social_news_count"), 0)
+        decision_agent_key_generic_count = _to_int(summary.get("generic_count"), 0)
+        decision_agent_key_unknown_count = _to_int(summary.get("unknown_count"), 0)
+        try:
+            decision_agent_key_unknown_ratio = round(float(summary.get("unknown_ratio") or 0.0), 6)
+        except Exception:
+            decision_agent_key_unknown_ratio = 0.0
+        try:
+            decision_agent_key_core_four_coverage_ratio = round(float(summary.get("core_four_coverage_ratio") or 0.0), 6)
+        except Exception:
+            decision_agent_key_core_four_coverage_ratio = 0.0
+        rows = [
+            dict(x)
+            for x in list(latest_decision_agent_key.get("top_unknown_agent_keys") or [])
+            if isinstance(x, dict)
+        ]
+        rows_sorted = sorted(
+            rows,
+            key=lambda x: (-_to_int(x.get("count"), 0), str(x.get("decision_agent_key") or "")),
+        )
+        decision_agent_key_top_unknown = rows_sorted[:10]
+
     action_hint_semantics_report_count = len(action_hint_semantics_reports)
     latest_action_hint_semantics_report_path = ""
     action_hint_semantics_minimal_decision_count = 0
@@ -485,6 +536,17 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "event_type_match_alias_ratio": event_type_match_alias_ratio,
         "event_type_match_canonical_or_raw_ratio": event_type_match_canonical_or_raw_ratio,
         "event_type_match_top_unknown_event_types": event_type_match_top_unknown_event_types,
+        "decision_agent_key_report_count": decision_agent_key_report_count,
+        "latest_decision_agent_key_report_path": latest_decision_agent_key_report_path,
+        "decision_agent_key_technical_count": decision_agent_key_technical_count,
+        "decision_agent_key_onchain_count": decision_agent_key_onchain_count,
+        "decision_agent_key_liquidation_count": decision_agent_key_liquidation_count,
+        "decision_agent_key_social_news_count": decision_agent_key_social_news_count,
+        "decision_agent_key_generic_count": decision_agent_key_generic_count,
+        "decision_agent_key_unknown_count": decision_agent_key_unknown_count,
+        "decision_agent_key_unknown_ratio": decision_agent_key_unknown_ratio,
+        "decision_agent_key_core_four_coverage_ratio": decision_agent_key_core_four_coverage_ratio,
+        "decision_agent_key_top_unknown": decision_agent_key_top_unknown,
         "action_hint_semantics_report_count": action_hint_semantics_report_count,
         "latest_action_hint_semantics_report_path": latest_action_hint_semantics_report_path,
         "action_hint_semantics_minimal_decision_count": action_hint_semantics_minimal_decision_count,

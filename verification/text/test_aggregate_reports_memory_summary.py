@@ -130,6 +130,26 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 {"event_id": "evt-err-1", "status": "mismatch"},
             ],
         },
+        {
+            "schema_version": "agent-decision-agent-key-report-v1",
+            "generated_at_ms": 4000,
+            "summary": {
+                "decision_trace_record_count": 12,
+                "decision_trace_event_count": 8,
+                "technical_count": 3,
+                "onchain_count": 2,
+                "liquidation_count": 1,
+                "social_news_count": 2,
+                "generic_count": 2,
+                "unknown_count": 2,
+                "unknown_ratio": 0.166667,
+                "core_four_coverage_ratio": 0.666667,
+            },
+            "top_unknown_agent_keys": [
+                {"decision_agent_key": "custom_agent_x", "count": 1},
+                {"decision_agent_key": "missing", "count": 1},
+            ],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -190,3 +210,16 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["action_hint_semantics_mismatch_count"] == 1
     assert out["action_hint_semantics_missing_actual_hint_count"] == 2
     assert float(out["action_hint_semantics_match_ratio_on_available"]) == 0.9
+    assert out["decision_agent_key_report_count"] == 1
+    assert out["decision_agent_key_technical_count"] == 3
+    assert out["decision_agent_key_onchain_count"] == 2
+    assert out["decision_agent_key_liquidation_count"] == 1
+    assert out["decision_agent_key_social_news_count"] == 2
+    assert out["decision_agent_key_generic_count"] == 2
+    assert out["decision_agent_key_unknown_count"] == 2
+    assert float(out["decision_agent_key_unknown_ratio"]) == 0.166667
+    assert float(out["decision_agent_key_core_four_coverage_ratio"]) == 0.666667
+    decision_top_unknown = list(out.get("decision_agent_key_top_unknown") or [])
+    assert decision_top_unknown
+    assert decision_top_unknown[0]["decision_agent_key"] == "custom_agent_x"
+    assert decision_top_unknown[0]["count"] == 1

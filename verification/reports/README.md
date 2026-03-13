@@ -138,6 +138,7 @@ Notes:
   - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
   - `pipeline_mode_*`（legacy/minimal 灰度计数与比例快照）
   - `event_type_match_*`（event type canonical/alias/empty 命中统计与 unknown top 快照）
+  - `decision_agent_key_*`（technical/onchain/liquidation/social_news/generic/unknown 分布与核心四类覆盖率）
   - `action_hint_semantics_*`（minimal 语义映射命中率：`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）
 
 Check thresholds:
