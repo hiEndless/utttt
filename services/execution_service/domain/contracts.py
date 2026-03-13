@@ -156,8 +156,12 @@ class DecisionIntent:
             if mode not in {"llm", "rule_fallback", "rule"}:
                 raise ValueError("risk_hints.decision_mode 必须是 llm/rule_fallback/rule")
         llm_parse_status = risk_hints.get("llm_parse_status")
-        if llm_parse_status is not None and not str(llm_parse_status).strip():
-            raise ValueError("risk_hints.llm_parse_status 必须是非空字符串")
+        if llm_parse_status is not None:
+            status = str(llm_parse_status).strip().lower()
+            if status not in {"llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"}:
+                raise ValueError(
+                    "risk_hints.llm_parse_status 必须是 llm_ok/llm_invalid_payload/llm_status_not_ok/llm_not_provided/rule_only"
+                )
         signal_verdict = risk_hints.get("signal_verdict")
         if signal_verdict is not None:
             verdict = str(signal_verdict).strip().lower()

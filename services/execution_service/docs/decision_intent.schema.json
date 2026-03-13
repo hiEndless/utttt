@@ -59,7 +59,7 @@
         },
         "llm_parse_status": {
           "type": "string",
-          "minLength": 1
+          "enum": ["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
         },
         "signal_verdict": {
           "type": "string",

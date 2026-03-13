@@ -673,6 +673,9 @@ def _build_signal_decision(
     mode = str(decision_mode or "rule").strip().lower()
     if mode not in {"llm", "rule_fallback", "rule"}:
         mode = "rule"
+    parse_status = str(llm_parse_status or "rule_only").strip().lower()
+    if parse_status not in {"llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"}:
+        parse_status = "rule_only"
     conf = getattr(signal, "confidence", Confidence(level="low", score=0.0))
     raw_score = float(getattr(conf, "score", 0.0) or 0.0)
     reliability_score = max(0.0, min(1.0, raw_score))
@@ -683,7 +686,7 @@ def _build_signal_decision(
         symbol=str(event.symbol),
         decision_agent_key=str(decision_agent_key or "generic"),
         decision_mode=mode,  # type: ignore[arg-type]
-        llm_parse_status=str(llm_parse_status or "rule_only"),
+        llm_parse_status=parse_status,  # type: ignore[arg-type]
         signal_direction=direction,  # type: ignore[arg-type]
         signal_verdict=verdict,  # type: ignore[arg-type]
         confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]

@@ -91,8 +91,8 @@
         },
         {
           "schema": "services/execution_service/docs/decision_intent.schema.json",
-          "json_path": "properties.risk_hints.properties.llm_parse_status.minLength",
-          "expected": 1
+          "json_path": "properties.risk_hints.properties.llm_parse_status.enum",
+          "expected": ["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
         },
         {
           "schema": "contracts/schemas/alternative_source_summary.schema.json",

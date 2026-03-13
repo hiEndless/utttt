@@ -232,7 +232,7 @@ def test_decision_intent_rejects_invalid_decision_mode() -> None:
         assert "decision_mode" in str(exc)
 
 
-def test_decision_intent_rejects_empty_llm_parse_status() -> None:
+def test_decision_intent_rejects_invalid_llm_parse_status() -> None:
     payload = {
         "decision_id": "dec-007c",
         "exchange": "binance",
@@ -241,7 +241,7 @@ def test_decision_intent_rejects_empty_llm_parse_status() -> None:
         "direction_intent": "long",
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
-        "risk_hints": {"llm_parse_status": ""},
+        "risk_hints": {"llm_parse_status": "unknown_status"},
     }
     try:
         DecisionIntent.from_dict(payload)

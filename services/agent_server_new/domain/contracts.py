@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Literal, Optional
 Direction = Literal["long", "short", "none"]
 RiskAction = Literal["add", "reduce", "hold", "exit", "skip"]
 ActionIntentType = Literal["increase", "decrease", "close", "hold", "skip"]
+LLMParseStatus = Literal["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ class SignalDecision:
     symbol: str
     decision_agent_key: str
     decision_mode: Literal["llm", "rule_fallback", "rule"]
-    llm_parse_status: str
+    llm_parse_status: LLMParseStatus
     signal_direction: Direction
     signal_verdict: Literal["accept", "reject", "uncertain"]
     confidence: Confidence
