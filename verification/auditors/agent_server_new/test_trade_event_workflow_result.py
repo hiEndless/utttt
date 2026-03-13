@@ -1000,7 +1000,12 @@ def test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop
             legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
-                "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
+                "technical": {
+                    "focus": "technical_signal_validation",
+                    "checklist": ["trend_alignment"],
+                    "avoid": [],
+                    "model_id": "gpt-technical-mini",
+                },
                 "social_news": {
                     "focus": "social_news_event_validation",
                     "checklist": ["source_credibility"],
@@ -1035,23 +1040,38 @@ def test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop
                 payload={"event_type": "xfeed_unknown_b", "source_category": "news"},
             )
         )
+        out_market = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-source-category-market-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "xfeed_unknown_c", "source_category": "market"},
+            )
+        )
 
         assert out_onchain.signal_decision.decision_agent_key == "onchain"
         assert out_news.signal_decision.decision_agent_key == "social_news"
+        assert out_market.signal_decision.decision_agent_key == "technical"
         assert out_onchain.execution_result is not None
         assert out_news.execution_result is not None
+        assert out_market.execution_result is not None
 
         by_event = {str((x or {}).get("event_id") or ""): dict(x or {}) for x in observer.calls}
         prompt_onchain = dict((by_event.get("evt-source-category-onchain-001") or {}).get("decision_prompt") or {})
         prompt_news = dict((by_event.get("evt-source-category-news-001") or {}).get("decision_prompt") or {})
+        prompt_market = dict((by_event.get("evt-source-category-market-001") or {}).get("decision_prompt") or {})
         assert prompt_onchain.get("model_id") == "gpt-onchain-mini"
         assert prompt_news.get("model_id") == "gpt-social-mini"
+        assert prompt_market.get("model_id") == "gpt-technical-mini"
 
-        assert len(execution_decider.payloads) == 2
+        assert len(execution_decider.payloads) == 3
         risk_hints_onchain = dict((execution_decider.payloads[0] or {}).get("risk_hints") or {})
         risk_hints_news = dict((execution_decider.payloads[1] or {}).get("risk_hints") or {})
+        risk_hints_market = dict((execution_decider.payloads[2] or {}).get("risk_hints") or {})
         assert risk_hints_onchain.get("decision_agent_key") == "onchain"
         assert risk_hints_news.get("decision_agent_key") == "social_news"
+        assert risk_hints_market.get("decision_agent_key") == "technical"
 
     import pytest
 

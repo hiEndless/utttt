@@ -82,6 +82,13 @@ def test_signal_router_routes_by_source_category_when_event_type_unknown() -> No
     assert key == "liquidation"
 
 
+def test_signal_router_routes_market_category_to_technical_when_event_type_unknown() -> None:
+    key = route_signal_agent_key(
+        signal_event={"payload": {"event_type": "custom_unknown_type", "source_category": "market"}}
+    )
+    assert key == "technical"
+
+
 def test_signal_router_routes_by_event_source_category_alias() -> None:
     key = route_signal_agent_key(
         signal_event={"payload": {"type": "custom_unknown_type", "event_source_category": "social"}}

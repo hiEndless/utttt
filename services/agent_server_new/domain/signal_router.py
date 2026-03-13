@@ -8,6 +8,9 @@ from typing import Any, Dict, List
 
 
 _SOURCE_CATEGORY_ALIASES = {
+    "market": "technical",
+    "market_data": "technical",
+    "market_signal": "technical",
     "market_indicator": "technical",
     "market_indicator_signal": "technical",
     "market_indicator_event_signal": "technical",
