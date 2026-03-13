@@ -13,11 +13,13 @@ _DEFAULT_METRICS = {
     "decision_confidence_requests": 0,
     "confidence_alias_mismatch_rejections": 0,
 }
+_PROMPT_PREFIX = "prompt_config_version::"
 
 
 @dataclass
 class InMemoryConfidenceMetricsStore:
     counters: Dict[str, int] = field(default_factory=lambda: dict(_DEFAULT_METRICS))
+    prompt_version_counters: Dict[str, int] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     async def record_decide_request(self, *, has_confidence: bool, has_decision_confidence: bool) -> None:
@@ -34,15 +36,27 @@ class InMemoryConfidenceMetricsStore:
                 self.counters.get("confidence_alias_mismatch_rejections", 0)
             ) + 1
 
+    async def record_prompt_config_version(self, *, prompt_config_version: str) -> None:
+        version = str(prompt_config_version or "").strip()
+        if not version:
+            return
+        with self._lock:
+            self.prompt_version_counters[version] = int(self.prompt_version_counters.get(version, 0)) + 1
+
     async def snapshot(self) -> Dict[str, int]:
         with self._lock:
             out = dict(_DEFAULT_METRICS)
             out.update({str(k): int(v) for k, v in dict(self.counters or {}).items()})
             return out
 
+    async def snapshot_prompt_config_versions(self) -> Dict[str, int]:
+        with self._lock:
+            return {str(k): int(v) for k, v in dict(self.prompt_version_counters or {}).items() if str(k).strip()}
+
     async def reset(self) -> None:
         with self._lock:
             self.counters = dict(_DEFAULT_METRICS)
+            self.prompt_version_counters = {}
 
 
 @dataclass
@@ -60,6 +74,12 @@ class RedisConfidenceMetricsStore:
     async def record_mismatch_rejection(self) -> None:
         await self.redis_client.hincrby(self.key, "confidence_alias_mismatch_rejections", 1)
 
+    async def record_prompt_config_version(self, *, prompt_config_version: str) -> None:
+        version = str(prompt_config_version or "").strip()
+        if not version:
+            return
+        await self.redis_client.hincrby(self.key, f"{_PROMPT_PREFIX}{version}", 1)
+
     async def snapshot(self) -> Dict[str, int]:
         raw = await self.redis_client.hgetall(self.key)
         out = dict(_DEFAULT_METRICS)
@@ -68,8 +88,27 @@ class RedisConfidenceMetricsStore:
                 name = str(k or "").strip()
                 if not name:
                     continue
+                if name.startswith(_PROMPT_PREFIX):
+                    continue
                 try:
                     out[name] = int(v)
+                except Exception:
+                    continue
+        return out
+
+    async def snapshot_prompt_config_versions(self) -> Dict[str, int]:
+        raw = await self.redis_client.hgetall(self.key)
+        out: Dict[str, int] = {}
+        if isinstance(raw, dict):
+            for k, v in raw.items():
+                name = str(k or "").strip()
+                if not name.startswith(_PROMPT_PREFIX):
+                    continue
+                version = name[len(_PROMPT_PREFIX) :].strip()
+                if not version:
+                    continue
+                try:
+                    out[version] = int(v)
                 except Exception:
                     continue
         return out

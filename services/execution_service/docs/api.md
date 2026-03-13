@@ -350,6 +350,7 @@
   - `reconcile_status_raw`: 最近一次回执原始状态（如有）
 - `confidence_migration`：
   - `metrics`: confidence 迁移计数快照（与 `/debug/confidence-metrics` 同口径）
+  - `prompt_config_version_counters`: prompt 配置版本计数快照（key 为版本哈希）
   - `v2_cutover_readiness`: 基于当前计数的门槛布尔摘要（`confidence_only_zero/alias_mismatch_zero`）
 - 状态机跃迁规则（冻结）：
   - `pending -> pending/submitted/failed/skipped/decided`
@@ -373,6 +374,9 @@
     "decision_confidence_requests": 3,
     "confidence_alias_mismatch_rejections": 1
   },
+  "prompt_config_version_metrics": {
+    "f00dbabe1234abcd": 2
+  },
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -383,6 +387,7 @@
 - `confidence_only_requests`: 仅提供 `confidence`（未提供 `decision_confidence`）的请求数；运行时会自动回填到 canonical 字段 `decision_confidence` 后继续处理。
 - `decision_confidence_requests`: 提供 `decision_confidence` 的请求数（可同时带 `confidence`）。
 - `confidence_alias_mismatch_rejections`: 因双字段不一致被拒绝（400）的次数。
+- `prompt_config_version_metrics`: 仅统计携带 `risk_hints.prompt_config_version` 的请求，按版本哈希分桶计数。
 - 当前为进程内内存指标，重启后清零；用于迁移阶段联调观察，不作为长期计费/审计指标。
 - 若启用 Redis 指标存储，重启后不清零。
 - reset 接口默认返回 `403`，仅在 `EXECUTION_DEBUG_ALLOW_METRICS_RESET=true` 时可用。

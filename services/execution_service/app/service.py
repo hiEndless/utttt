@@ -189,6 +189,7 @@ class ExecutionService:
         if redact:
             _apply_redaction(position_state_out, account_state_out)
         confidence_metrics = await self._confidence_metrics_store.snapshot()
+        prompt_version_metrics = await self._confidence_metrics_store.snapshot_prompt_config_versions()
         out = {
             "exchange": exchange,
             "account_id": account_id,
@@ -196,7 +197,10 @@ class ExecutionService:
             "position_state": position_state_out,
             "account_state": account_state_out,
             "risk_policy": dict(risk_policy or {}),
-            "confidence_migration": _build_confidence_migration_view(confidence_metrics),
+            "confidence_migration": _build_confidence_migration_view(
+                confidence_metrics,
+                prompt_config_version_metrics=prompt_version_metrics,
+            ),
             "redacted": bool(redact),
             "ts": int(time.time() * 1000),
         }
@@ -205,8 +209,11 @@ class ExecutionService:
             out["decision_state"] = await self._execution_state_store.get_state(str(decision_id))
         return out
 
-    async def get_confidence_migration_metrics(self) -> Dict[str, int]:
-        return await self._confidence_metrics_store.snapshot()
+    async def get_confidence_migration_metrics(self) -> Dict[str, Any]:
+        return {
+            "confidence_counters": await self._confidence_metrics_store.snapshot(),
+            "prompt_config_version_counters": await self._confidence_metrics_store.snapshot_prompt_config_versions(),
+        }
 
     async def reset_confidence_migration_metrics(self) -> None:
         await self._confidence_metrics_store.reset()
@@ -369,6 +376,13 @@ class ExecutionService:
             has_confidence=bool(has_conf),
             has_decision_confidence=bool(has_decision_conf),
         )
+        risk_hints = payload.get("risk_hints")
+        if isinstance(risk_hints, Mapping):
+            prompt_config_version = str(risk_hints.get("prompt_config_version") or "").strip()
+            if prompt_config_version:
+                await self._confidence_metrics_store.record_prompt_config_version(
+                    prompt_config_version=prompt_config_version,
+                )
 
     async def _submit_with_retry(self, *, decision: DecisionIntent, result: ExecutionResult) -> ExecutionResult:
         attempts = 0
@@ -558,7 +572,11 @@ def _normalize_decision_state_source(raw: Any) -> str:
     return "execution_service"
 
 
-def _build_confidence_migration_view(metrics: Mapping[str, Any]) -> Dict[str, Any]:
+def _build_confidence_migration_view(
+    metrics: Mapping[str, Any],
+    *,
+    prompt_config_version_metrics: Mapping[str, Any] | None = None,
+) -> Dict[str, Any]:
     m = {
         "decide_requests_total": int((metrics or {}).get("decide_requests_total") or 0),
         "confidence_only_requests": int((metrics or {}).get("confidence_only_requests") or 0),
@@ -569,7 +587,16 @@ def _build_confidence_migration_view(metrics: Mapping[str, Any]) -> Dict[str, An
         "confidence_only_zero": m["confidence_only_requests"] == 0,
         "alias_mismatch_zero": m["confidence_alias_mismatch_rejections"] == 0,
     }
-    return {"metrics": m, "v2_cutover_readiness": readiness}
+    prompt_counters = {
+        str(k): int(v)
+        for k, v in dict(prompt_config_version_metrics or {}).items()
+        if str(k).strip()
+    }
+    return {
+        "metrics": m,
+        "v2_cutover_readiness": readiness,
+        "prompt_config_version_counters": prompt_counters,
+    }
 
 
 def _normalize_reconcile_status(status: str) -> str | None:

@@ -10,7 +10,13 @@ class ConfidenceMetricsStore(Protocol):
     async def record_mismatch_rejection(self) -> None:
         ...
 
+    async def record_prompt_config_version(self, *, prompt_config_version: str) -> None:
+        ...
+
     async def snapshot(self) -> Dict[str, int]:
+        ...
+
+    async def snapshot_prompt_config_versions(self) -> Dict[str, int]:
         ...
 
     async def reset(self) -> None:

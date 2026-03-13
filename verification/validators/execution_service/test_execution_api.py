@@ -97,6 +97,10 @@ def test_decide_policy_snapshot_includes_agent_prompt_config_version() -> None:
     assert state_resp.status_code == 200
     state = state_resp.json()
     assert state["decision_state"]["policy_snapshot"]["agent_prompt_config_version"] == "f00dbabe1234abcd"
+    metrics_resp = client.get("/internal/execution/debug/confidence-metrics")
+    assert metrics_resp.status_code == 200
+    prompt_metrics = dict(metrics_resp.json().get("prompt_config_version_metrics") or {})
+    assert prompt_metrics.get("f00dbabe1234abcd") == 1
 
 
 def test_decide_bad_request() -> None:
@@ -173,10 +177,12 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     r0 = client.get("/internal/execution/debug/confidence-metrics")
     assert r0.status_code == 200
     m0 = dict(r0.json().get("confidence_migration_metrics") or {})
+    p0 = dict(r0.json().get("prompt_config_version_metrics") or {})
     assert m0.get("decide_requests_total") == 0
     assert m0.get("confidence_only_requests") == 0
     assert m0.get("decision_confidence_requests") == 0
     assert m0.get("confidence_alias_mismatch_rejections") == 0
+    assert p0 == {}
 
     r1 = client.post(
         "/internal/execution/decide",
@@ -230,10 +236,12 @@ def test_confidence_migration_metrics_exposed_and_counted() -> None:
     assert r4.status_code == 200
     body = r4.json()
     metrics = dict(body.get("confidence_migration_metrics") or {})
+    prompt_metrics = dict(body.get("prompt_config_version_metrics") or {})
     assert metrics["decide_requests_total"] == 3
     assert metrics["confidence_only_requests"] == 0
     assert metrics["decision_confidence_requests"] == 3
     assert metrics["confidence_alias_mismatch_rejections"] == 1
+    assert prompt_metrics == {}
     assert body["ts_ms"] == body["ts"]
 
 

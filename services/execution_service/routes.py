@@ -93,9 +93,13 @@ def create_router(service: ExecutionService, *, allow_debug_metrics_reset: bool 
     @router.get("/debug/confidence-metrics")
     async def confidence_metrics() -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
+        metrics = await service.get_confidence_migration_metrics()
+        counters = dict(metrics.get("confidence_counters") or {})
+        prompt_counters = dict(metrics.get("prompt_config_version_counters") or {})
         return {
             "service": "execution_service",
-            "confidence_migration_metrics": await service.get_confidence_migration_metrics(),
+            "confidence_migration_metrics": counters,
+            "prompt_config_version_metrics": prompt_counters,
             "ts": now_ms,
             "ts_ms": now_ms,
         }
