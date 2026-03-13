@@ -5,6 +5,7 @@ GLOB_PATTERN="verification/reports/agent_signal_decision_replay*.json"
 SOURCE_TYPE="social_news"
 DAYS=7
 PREFIX="nightly"
+OUTPUT_PATH=""
 
 print_help() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Options:
   --source <type>    来源类型（默认 social_news）
   --days <n>         统计窗口天数（默认 7）
   --prefix <name>    输出前缀（默认 nightly）
+  --output <path>    趋势 JSON 输出路径（默认不落盘）
   --help, -h         显示帮助
 
 Description:
@@ -46,6 +48,10 @@ while (($# > 0)); do
       PREFIX="${2:-$PREFIX}"
       shift 2
       ;;
+    --output)
+      OUTPUT_PATH="${2:-$OUTPUT_PATH}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1" >&2
       print_help
@@ -54,7 +60,7 @@ while (($# > 0)); do
   esac
 done
 
-python3 - "$GLOB_PATTERN" "$SOURCE_TYPE" "$DAYS" "$PREFIX" <<'PY'
+python3 - "$GLOB_PATTERN" "$SOURCE_TYPE" "$DAYS" "$PREFIX" "$OUTPUT_PATH" <<'PY'
 from __future__ import annotations
 
 import glob
@@ -64,12 +70,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-if len(sys.argv) != 5:
-    raise SystemExit("usage: <glob_pattern> <source_type> <days> <prefix>")
+if len(sys.argv) != 6:
+    raise SystemExit("usage: <glob_pattern> <source_type> <days> <prefix> <output_path>")
 
 glob_pattern = str(sys.argv[1] or "").strip() or "verification/reports/agent_signal_decision_replay*.json"
 source_type = str(sys.argv[2] or "").strip().lower() or "social_news"
 prefix = str(sys.argv[4] or "").strip() or "nightly"
+output_path_raw = str(sys.argv[5] or "").strip()
 try:
     days = max(1, int(sys.argv[3]))
 except Exception:
@@ -116,10 +123,24 @@ for path in sorted(glob.glob(glob_pattern)):
     row_bucket["fallback"] += fallback
 
 if loaded_reports <= 0:
-    print(
-        f"[{prefix}] signal_decision_replay_trend "
-        f"source={source_type} window_days={days} reports=0 total=0 fallback=0 ratio=0.000000"
-    )
+    payload = {
+        "schema_version": "agent-signal-decision-replay-trend-v1",
+        "source_type": source_type,
+        "window_days": int(days),
+        "reports": 0,
+        "days": 0,
+        "total": 0,
+        "fallback": 0,
+        "ratio": 0.0,
+        "latest_day": "",
+        "latest_ratio": 0.0,
+    }
+    print(f"[{prefix}] signal_decision_replay_trend source={source_type} window_days={days} reports=0 total=0 fallback=0 ratio=0.000000")
+    if output_path_raw:
+        out = Path(output_path_raw)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"[ok] wrote {out}")
     raise SystemExit(0)
 
 days_sorted = sorted(by_day.keys())
@@ -131,10 +152,27 @@ latest_total = int(by_day[latest_day]["total"])
 latest_fallback = int(by_day[latest_day]["fallback"])
 latest_ratio = 0.0 if latest_total <= 0 else float(latest_fallback) / float(latest_total)
 
+payload = {
+    "schema_version": "agent-signal-decision-replay-trend-v1",
+    "source_type": source_type,
+    "window_days": int(days),
+    "reports": int(loaded_reports),
+    "days": int(len(days_sorted)),
+    "total": int(total_all),
+    "fallback": int(fallback_all),
+    "ratio": round(float(ratio), 6),
+    "latest_day": latest_day,
+    "latest_ratio": round(float(latest_ratio), 6),
+}
 print(
     f"[{prefix}] signal_decision_replay_trend "
     f"source={source_type} window_days={days} reports={loaded_reports} "
     f"days={len(days_sorted)} total={total_all} fallback={fallback_all} ratio={ratio:.6f} "
     f"latest_day={latest_day} latest_ratio={latest_ratio:.6f}"
 )
+if output_path_raw:
+    out = Path(output_path_raw)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"[ok] wrote {out}")
 PY

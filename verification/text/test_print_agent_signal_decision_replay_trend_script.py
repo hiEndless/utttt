@@ -25,6 +25,7 @@ def test_print_agent_signal_decision_replay_trend_help() -> None:
     assert "--glob <pattern>" in out
     assert "--source <type>" in out
     assert "--days <n>" in out
+    assert "--output <path>" in out
 
 
 def test_print_agent_signal_decision_replay_trend_output(tmp_path: Path) -> None:
@@ -66,3 +67,38 @@ def test_print_agent_signal_decision_replay_trend_output(tmp_path: Path) -> None
     assert "source=social_news" in out
     assert "reports=2" in out
     assert "fallback=7" in out
+
+
+def test_print_agent_signal_decision_replay_trend_output_file(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": "agent-signal-decision-replay-report-v1",
+        "generated_at_ms": 1773446400000,
+        "source_decision_mode_counts": [
+            {"signal_source_type": "social_news", "decision_mode": "rule", "count": 9},
+            {"signal_source_type": "social_news", "decision_mode": "rule_fallback", "count": 1},
+        ],
+    }
+    replay_path = tmp_path / "agent_signal_decision_replay.single.json"
+    replay_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    trend_path = tmp_path / "agent_signal_decision_replay_trend.latest.json"
+    proc = subprocess.run(
+        [
+            "bash",
+            str(SCRIPT_PATH),
+            "--glob",
+            str(tmp_path / "agent_signal_decision_replay*.json"),
+            "--output",
+            str(trend_path),
+        ],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    out = str(proc.stdout or "")
+    assert "[ok] wrote " in out
+    assert trend_path.exists()
+    trend = json.loads(trend_path.read_text(encoding="utf-8"))
+    assert trend["schema_version"] == "agent-signal-decision-replay-trend-v1"
+    assert trend["source_type"] == "social_news"

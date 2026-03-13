@@ -81,6 +81,7 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_GLOB" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_SOURCE" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_REPORT_PATH" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out

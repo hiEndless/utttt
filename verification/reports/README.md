@@ -303,6 +303,7 @@ bash tools/local/check_agent_signal_decision_replay_guard.sh verification/report
 Print signal decision replay fallback trend (nightly default enabled):
 ```bash
 bash tools/local/print_agent_signal_decision_replay_trend.sh --source social_news --days 7 --prefix nightly
+bash tools/local/print_agent_signal_decision_replay_trend.sh --source social_news --days 7 --output verification/reports/agent_signal_decision_replay_trend.latest.json
 ```
 
 说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
