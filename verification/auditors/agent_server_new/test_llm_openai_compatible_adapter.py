@@ -96,6 +96,7 @@ def test_openai_compatible_llm_observer_uses_decision_prompt(monkeypatch):
                 "symbol": "ETHUSDT",
                 "decision_prompt": {
                     "focus": "onchain_flow_validation",
+                    "task": "validate_onchain_signal",
                     "checklist": ["wallet_flow_direction"],
                     "avoid": ["execution_action"],
                 },
@@ -105,6 +106,7 @@ def test_openai_compatible_llm_observer_uses_decision_prompt(monkeypatch):
     messages = list(counter.get("last_json", {}).get("messages") or [])
     system = dict(messages[0] or {}) if messages else {}
     text = str(system.get("content") or "")
+    assert "task=validate_onchain_signal" in text
     assert "focus=onchain_flow_validation" in text
     assert "checklist=wallet_flow_direction" in text
 

@@ -17,10 +17,11 @@ def _default_config_path() -> Path:
 
 def _normalize_prompt(item: Dict[str, Any], *, fallback: Dict[str, Any]) -> Dict[str, Any]:
     focus = str(item.get("focus") or fallback.get("focus") or "").strip() or str(fallback.get("focus") or "")
+    task = str(item.get("task") or fallback.get("task") or "").strip()
     checklist = [str(x).strip() for x in list(item.get("checklist") or fallback.get("checklist") or []) if str(x).strip()]
     avoid = [str(x).strip() for x in list(item.get("avoid") or fallback.get("avoid") or []) if str(x).strip()]
     model_id = str(item.get("model_id") or fallback.get("model_id") or "").strip()
-    out = {"focus": focus, "checklist": checklist, "avoid": avoid}
+    out = {"focus": focus, "task": task, "checklist": checklist, "avoid": avoid}
     if model_id:
         out["model_id"] = model_id
     return out
@@ -83,6 +84,9 @@ def validate_signal_decision_prompt_profiles(
         focus = str(node.get("focus") or "").strip()
         if not focus:
             raise ValueError(f"signal_decision_prompt_profiles.{key}.focus 不能为空")
+        task = node.get("task")
+        if task is not None and not str(task or "").strip():
+            raise ValueError(f"signal_decision_prompt_profiles.{key}.task 不能为空字符串")
         for field_name in ("checklist", "avoid"):
             arr = node.get(field_name)
             if arr is None:

@@ -32,4 +32,5 @@ def test_signal_agent_registry_spec_lookup() -> None:
 def test_signal_agent_registry_exposes_default_prompt_profiles() -> None:
     profiles = default_signal_decision_prompt_profiles()
     assert str((profiles.get("technical") or {}).get("focus") or "") == "technical_signal_validation"
+    assert str((profiles.get("technical") or {}).get("task") or "")
     assert str((profiles.get("social_news") or {}).get("focus") or "") == "social_news_event_validation"

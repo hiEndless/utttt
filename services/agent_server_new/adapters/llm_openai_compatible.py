@@ -75,11 +75,13 @@ class OpenAICompatibleLLMObserver:
         if not model_id:
             raise RuntimeError("llm observer requires model_id")
         focus = str(prompt_cfg.get("focus") or "generic_signal_validation").strip()
+        task = str(prompt_cfg.get("task") or "validate_signal").strip()
         checklist = [str(x).strip() for x in list(prompt_cfg.get("checklist") or []) if str(x).strip()]
         avoid = [str(x).strip() for x in list(prompt_cfg.get("avoid") or []) if str(x).strip()]
         system_prompt = (
             "You are a market signal validator. "
             "Return concise JSON object only. "
+            f"task={task or 'validate_signal'}; "
             f"focus={focus}; "
             f"checklist={','.join(checklist) if checklist else 'none'}; "
             f"avoid={','.join(avoid) if avoid else 'none'}."

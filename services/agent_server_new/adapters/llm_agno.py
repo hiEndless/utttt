@@ -75,7 +75,7 @@ class AgnoLLMObserver:
         candidate = str(prompt_cfg.get("model_id") or "").strip()
         return candidate or self._model_id
 
-    def _build_agent(self, *, model_id: str, focus: str, checklist: List[str], avoid: List[str]) -> Agent:
+    def _build_agent(self, *, model_id: str, focus: str, task: str, checklist: List[str], avoid: List[str]) -> Agent:
         model = OpenAILike(
             id=model_id,
             base_url=self._base_url or None,
@@ -92,7 +92,7 @@ class AgnoLLMObserver:
                 "signal_verdict must be one of: accept, reject.\n"
                 "signal_direction must be one of: long, short, neutral.\n"
                 "confidence_score must be a float in [0,1].\n"
-                f"focus={focus}; checklist={checklist_text}; avoid={avoid_text}."
+                f"focus={focus}; task={task or 'validate_signal'}; checklist={checklist_text}; avoid={avoid_text}."
             ),
         )
 
@@ -136,6 +136,7 @@ class AgnoLLMObserver:
         if not model_id:
             raise RuntimeError("agno llm observer requires model_id")
         focus = str(prompt_cfg.get("focus") or "generic_signal_validation").strip()
+        task = str(prompt_cfg.get("task") or "validate_signal").strip()
         checklist = [str(x).strip() for x in list(prompt_cfg.get("checklist") or []) if str(x).strip()]
         avoid = [str(x).strip() for x in list(prompt_cfg.get("avoid") or []) if str(x).strip()]
 
@@ -144,6 +145,7 @@ class AgnoLLMObserver:
                 agent = self._agent_factory(
                     model_id=model_id,
                     focus=focus,
+                    task=task,
                     checklist=checklist,
                     avoid=avoid,
                 )
