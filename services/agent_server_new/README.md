@@ -119,17 +119,15 @@ signal_event + active_events + MSL
 ### 历史链路（已下线）
 
 - `SignalEvaluator -> IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner`
-- 该链路仅用于历史域模块回放说明，不参与 workflow 主链路执行。
+- 该链路对应模块已物理删除，不参与 workflow 主链路执行。
 
 其中：
 
 - LLM 只负责语义判断、解释、冲突权衡
 - 硬约束由 execution_service 统一生效
 - `ExecutionPlan` 是决策层终点，不是执行层入口代码
-- `HorizonPolicyGate` 在策略门控前执行，用于把跨周期冲突建议快速转为保守动作（例如 `wait_confirmation -> skip/watch`）
-- `HorizonPolicyGate` 已降级为历史域模块：`services/agent_server_new/domain/horizon_policy_gate.py`
 - 账户/仓位/PnL 相关信息由 execution 层读取并做最终动作裁决，agent 不承担该部分权责
-- workflow 主链路不再消费 horizon policy 配置。
+- workflow 主链路不再消费 horizon policy 配置，相关历史模块已删除。
 
 ## 运行配置（建议）
 
@@ -454,22 +452,10 @@ agent_server_new/
     decision_trace.py
 ```
 
-### 历史域模块目录（不参与主链路扩展）
+### 历史域模块状态（已删除）
 
-```text
-agent_server_new/
-  domain/
-    intent_resolver.py
-    rule_planner.py
-    strategy_gate.py
-    risk_gate.py
-    execution_planner.py
-    horizon_policy_gate.py
-```
-
-约束：
-- 上述文件仅用于历史回放与语义快照兼容，不作为新增业务能力的扩展入口。
-- `trade_event_workflow.py` 主链路禁止 import 这些历史域模块。
+- `intent/rule/strategy/risk/horizon/execution_planner` 相关历史域模块已物理删除。
+- `trade_event_workflow.py` 主链路仍保留防回流 import 守卫。
 
 说明（主链路）：
 
@@ -494,7 +480,7 @@ agent_server_new/
 - 它们的核心职责是从 `market_structure/raw features` 生成状态摘要
 - 这属于状态层，不属于决策层
 
-以下文件为历史域模块（非 workflow 主链路依赖），仅用于语义快照兼容与回放，不参与执行风控裁决：
+以下历史域模块已删除（不再保留代码文件）：
 
 - `domain/intent_resolver.py`
 - `domain/rule_planner.py`
@@ -502,7 +488,9 @@ agent_server_new/
 - `domain/risk_gate.py`
 - `domain/execution_planner.py`
 - `domain/horizon_policy_gate.py`
-  - 以上文件已标记 `Deprecated legacy domain module`，禁止在 `trade_event_workflow.py` 主链路 import。
+- `domain/strategy_gate_reasons.py`
+- `domain/risk_gate_reasons.py`
+- `domain/horizon_policy_reasons.py`
 
 以下文件是当前主链路核心：
 
@@ -626,7 +614,7 @@ agent_server_new/
 
 1. workflow 主链路固定为 `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`。
 2. 兼容开关与兼容壳已下线，`pipeline_mode` 固定为 `minimal`。
-3. `intent/rule/strategy/risk/horizon/execution_planner` 已降级为历史域模块，并由守卫禁止回流主链路。
+3. `intent/rule/strategy/risk/horizon/execution_planner` 历史域模块已删除，并由守卫禁止回流主链路。
 4. `DecisionTrace` 语义快照边界已冻结，最终风控与执行动作以 `execution_service` 为唯一权威。
 
 ### 待优化项

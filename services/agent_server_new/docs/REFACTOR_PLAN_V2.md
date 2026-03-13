@@ -136,10 +136,10 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - 兼容层已下线：不再提供 legacy/minimal 双态切换，也不保留兼容壳 workflow。
 - `DecisionTrace.routing.pipeline_mode` 固定为 `minimal`，用于观测链路完整性。
 - `DecisionTrace` 中 `intent/rule_plan/strategy_gate_result/risk_gate` 统一定义为“语义快照字段”，不承载 execution 最终风控语义。
-- `intent_resolver/rule_planner/strategy_gate/risk_gate/execution_planner` 已降级为历史域模块（deprecated），并由 `test_workflow_minimal_boundary_guard.py` 防止 workflow 回流 import。
-- `horizon_policy_gate` 已同样降级为历史域模块（deprecated），不再作为 workflow 参数与运行时配置接入点。
+- `intent_resolver/rule_planner/strategy_gate/risk_gate/execution_planner` 历史域模块已物理删除，并由 `test_workflow_minimal_boundary_guard.py` 防止 workflow 回流 import。
+- `horizon_policy_gate` 历史域模块已物理删除，不再作为 workflow 参数与运行时配置接入点。
 - `ExecutionPlan.sizing/allowance` 在 agent->execution 链路中定义为语义建议字段，execution 可覆盖或忽略，最终以 execution 规则为准。
-- `risk_gate` 相关测试已迁移为 `test_legacy_risk_gate_context.py` 与 `test_legacy_risk_gate_reason_codes.py`，明确其为历史域模块验证而非主链路能力验收。
+- 历史域模块相关单测已移除，保留“工作流防回流 + 文件不存在”守卫。
 - execution 成为唯一最终动作裁决路径。
 
 ## 9. 验收标准

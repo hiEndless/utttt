@@ -18,6 +18,7 @@
 - signal freshness 优先使用 `event_ts_ms`，并兼容 `ts_ms` 等历史字段
 - active_events evidence 内建议保留 `event_ts_ms/processed_ts_ms`
 - `ts_ms` 仅作为过渡兼容别名
+- `intent/rule/strategy/risk/horizon/execution_planner` 历史模块已删除，旧链路术语仅用于迁移背景说明
 
 ---
 
@@ -32,16 +33,12 @@
    - active_events（从 event_center_new 的 selected_event 流归一化而来）
    - symbol_memory（可选，inmemory/redis）
 3. signal_evaluator：输出 SignalVerdict（只裁决“信号有效性”，不直接决定动作）
-4. intent_resolver：输出 ActionIntent（动作意图）
-5. rule_planner：输出 RulePlan（规则化 sizing）
-6. horizon_policy_gate：读取 `cross_horizon.suggested_policy` 并做保守门控
-7. strategy_gate：策略语义门控（freshness、冲突、脆弱性等）
-8. risk_gate：风险许可（账户级/全局级门控，按 MSL + position_context + active_events 动态推导）
-   - `decision_trace.risk_gate` 额外输出 `global_regime/cooldown_active/regime_sources`，用于解释本次风险门控触发来源
-9. execution_planner：输出 ExecutionPlan（最终 agent 计划）
-10. （可选）execution_decider：HTTP 调用 execution_service 返回最终裁决 dict
-11. （可选）recorder：写出 market_context/agent_output/decision_trace
-12. （可选）symbol_memory_recorder：写入本次决策摘要作为 symbol 记忆
+4. signal_router：按事件类型路由到不同 signal decision agent
+5. signal_decision_agent：输出语义判定（accept/reject/uncertain）与方向/置信度
+6. workflow_decider：输出 ExecutionPlan（语义建议）
+7. （可选）execution_decider：HTTP 调用 execution_service 返回最终裁决 dict
+8. （可选）recorder：写出 market_context/agent_output/decision_trace
+9. （可选）symbol_memory_recorder：写入本次决策摘要作为 symbol 记忆
 
 主实现：[trade_event_workflow.py](services/agent_server_new/app/workflows/trade_event_workflow.py#L104-L369)
 

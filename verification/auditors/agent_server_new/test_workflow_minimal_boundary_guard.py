@@ -35,3 +35,20 @@ def test_trade_event_workflow_no_legacy_module_import() -> None:
     ]
     for token in forbidden_import_tokens:
         assert token not in text
+
+
+def test_legacy_domain_modules_removed() -> None:
+    root = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "domain"
+    legacy_files = [
+        "intent_resolver.py",
+        "rule_planner.py",
+        "strategy_gate.py",
+        "strategy_gate_reasons.py",
+        "risk_gate.py",
+        "risk_gate_reasons.py",
+        "horizon_policy_gate.py",
+        "horizon_policy_reasons.py",
+        "execution_planner.py",
+    ]
+    for name in legacy_files:
+        assert not (root / name).exists()
