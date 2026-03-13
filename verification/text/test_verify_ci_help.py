@@ -45,6 +45,8 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
     assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
     assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
+    assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_HINT" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND" not in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
@@ -112,6 +114,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in regression_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in nightly_text
+    assert "tools/local/print_agent_signal_decision_replay_recommendation_hint.sh" in regression_text
     assert "tools/local/print_agent_signal_decision_replay_trend.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_trend_recommendation.sh" in nightly_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in regression_text

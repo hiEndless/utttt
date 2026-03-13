@@ -310,6 +310,7 @@ Print recommendation marker from trend report (non-blocking):
 ```bash
 bash tools/local/check_agent_signal_decision_replay_trend_recommendation.sh verification/reports/agent_signal_decision_replay_trend.latest.json 0.70 3 20
 bash tools/local/check_agent_signal_decision_replay_trend_recommendation.sh verification/reports/agent_signal_decision_replay_trend.latest.json 0.70 3 20 verification/reports/agent_signal_decision_replay_recommendation.latest.json
+bash tools/local/print_agent_signal_decision_replay_recommendation_hint.sh verification/reports/agent_signal_decision_replay_recommendation.latest.json
 ```
 
 说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
