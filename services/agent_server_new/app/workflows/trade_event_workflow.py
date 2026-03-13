@@ -544,6 +544,16 @@ class TradeEventWorkflow:
                     )
             except Exception as exc:  # pragma: no cover
                 logger.warning("执行层裁决失败 event_id=%s err=%s", event.event_id, exc)
+                if self._recorder:
+                    await self._recorder.record_agent_output(
+                        event.event_id,
+                        "execution_decider",
+                        {
+                            "status": "error",
+                            "error_type": exc.__class__.__name__,
+                            "error": str(exc),
+                        },
+                    )
 
         if self._recorder:
             if self._legacy_pipeline_enabled:

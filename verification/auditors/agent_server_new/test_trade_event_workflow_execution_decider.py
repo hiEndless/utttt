@@ -70,6 +70,23 @@ class _ExecutionDecider:
         return {"execution_action": "add", "reject_reason": None}
 
 
+class _FailingExecutionDecider:
+    async def decide(self, payload):  # noqa: ANN001
+        _ = payload
+        raise RuntimeError("execution unavailable")
+
+
+class _Recorder:
+    def __init__(self) -> None:
+        self.outputs = []
+
+    async def record_market_context(self, event_id: str, payload):  # noqa: ANN001
+        _ = (event_id, payload)
+
+    async def record_agent_output(self, event_id: str, agent_name: str, payload):  # noqa: ANN001
+        self.outputs.append((event_id, agent_name, dict(payload or {})))
+
+
 def test_trade_event_workflow_calls_execution_decider():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
@@ -272,6 +289,49 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
         assert decider.payload["risk_hints"]["prompt_config_source"] == "runtime"
         assert isinstance(decider.payload["risk_hints"]["prompt_config_version"], str)
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_records_execution_decider_error_when_unavailable():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        recorder = _Recorder()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=_FailingExecutionDecider(),
+            recorder=recorder,
+            legacy_pipeline_enabled=False,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-exec-fail-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.execution_result is None
+        rows = [x for x in recorder.outputs if x[1] == "execution_decider"]
+        assert rows
+        payload = rows[-1][2]
+        assert payload.get("status") == "error"
+        assert payload.get("error_type") == "RuntimeError"
 
     import pytest
 
