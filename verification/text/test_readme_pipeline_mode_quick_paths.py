@@ -27,7 +27,7 @@ def test_readme_contains_pipeline_mode_quick_paths(readme_relpath: str) -> None:
         assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {label}: {snippet}"
 
 
-def test_readme_snippet_overrides_reference_known_docs() -> None:
+def test_readme_required_snippets_reference_known_docs() -> None:
     allowed = {Path(p) for p in README_CONTRACTS_SNIPPETS_DOCS}
     required_paths = set(README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.keys())
     assert required_paths.issubset(allowed), f"required docs not registered: {required_paths - allowed}"
@@ -51,15 +51,15 @@ def test_readme_contract_labels_cover_all_docs() -> None:
     assert labels.issuperset(docs), f"missing labels for docs: {docs - labels}"
 
 
-def test_readme_snippet_overrides_are_sorted() -> None:
+def test_readme_required_snippet_map_is_sorted() -> None:
     required_list = [str(p) for p in README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.keys()]
     assert required_list == sorted(required_list), f"README_CONTRACTS_DOCS_REQUIRED_SNIPPETS not sorted: {required_list}"
 
 
-def test_readme_snippet_override_values_are_sorted() -> None:
+def test_readme_required_snippet_values_are_sorted() -> None:
     for path, snippets in README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.items():
         ordered = list(snippets)
-        assert ordered == sorted(ordered), f"override snippets not sorted for {path}: {ordered}"
+        assert ordered == sorted(ordered), f"required snippets not sorted for {path}: {ordered}"
 
 
 def test_pipeline_mode_snippets_are_sorted() -> None:

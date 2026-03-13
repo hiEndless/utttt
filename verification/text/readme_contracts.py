@@ -25,14 +25,6 @@ README_CONTRACTS_DOC_LABELS: dict[Path, str] = {
     Path("services/agent_server_new/README.md"): "agent_server_new_readme",
     Path("verification/reports/README.md"): "verification_reports_readme",
 }
-README_SNIPPET_OVERRIDES: dict[Path, tuple[str, ...]] = dict(
-    sorted(
-        {
-            Path("services/agent_server_new/README.md"): ("pipeline_mode_summary",),
-        }.items(),
-        key=lambda kv: str(kv[0]),
-    )
-)
 
 PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = tuple(
     sorted(
