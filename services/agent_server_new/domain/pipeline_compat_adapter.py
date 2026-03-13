@@ -9,7 +9,7 @@ from services.agent_server_new.observability.decision_trace import DecisionTrace
 
 @dataclass(frozen=True)
 class PipelineCompatState:
-    semantic_snapshots: Dict[str, Dict[str, Any]]
+    memory_intent: Dict[str, Any]
     allowance: RiskAllowance
     plan: ExecutionPlan
 
@@ -36,12 +36,6 @@ def build_pipeline_compat_state(
         "reasons": ["signal_semantic_plan"],
         "notes": "minimal_pipeline_semantic_plan",
     }
-    semantic_rule_plan = {
-        "intent": dict(semantic_intent),
-        "sizing": {},
-        "reasons": ["signal_semantic_plan"],
-        "notes": "minimal_pipeline_semantic_plan",
-    }
     allowance = RiskAllowance(
         allow_open=True,
         allow_add=True,
@@ -57,28 +51,8 @@ def build_pipeline_compat_state(
         sizing=None,
         notes="minimal_pipeline_semantic_plan",
     )
-    semantic_snapshots = {
-        "intent": semantic_intent,
-        "rule_plan": semantic_rule_plan,
-        "strategy_gate_result": {
-            "allowed": True,
-            "horizon_reasons": ["legacy_removed"],
-            "strategy_reasons": ["legacy_removed"],
-            "reasons": ["legacy_removed", "legacy_removed"],
-        },
-        "risk_gate": {
-            "global_regime": "normal",
-            "cooldown_active": False,
-            "regime_sources": ["execution_service_final_authority"],
-            "allow_open": allowance.allow_open,
-            "allow_add": allowance.allow_add,
-            "allow_reduce": allowance.allow_reduce,
-            "allow_exit": allowance.allow_exit,
-            "reasons": list(allowance.reasons),
-        },
-    }
     return PipelineCompatState(
-        semantic_snapshots=semantic_snapshots,
+        memory_intent=semantic_intent,
         allowance=allowance,
         plan=plan,
     )
@@ -89,10 +63,9 @@ def build_symbol_memory_semantic_sections(
     state: PipelineCompatState,
     cross_horizon: Dict[str, str],
 ) -> Dict[str, Dict[str, Any]]:
-    snapshots = dict(state.semantic_snapshots or {})
     return {
         "cross_horizon_policy": dict(cross_horizon or {}),
-        "intent": dict(snapshots.get("intent") or {}),
+        "intent": dict(state.memory_intent or {}),
         "plan": {
             "action": state.plan.action,
             "direction": state.plan.direction,

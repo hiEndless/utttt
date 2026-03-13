@@ -33,7 +33,7 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
     )
     assert out.plan.action == "add"
     assert out.plan.direction == "long"
-    assert dict(out.semantic_snapshots.get("rule_plan") or {}).get("notes") == "minimal_pipeline_semantic_plan"
+    assert dict(out.memory_intent or {}).get("notes") == "minimal_pipeline_semantic_plan"
 
 
 def test_pipeline_compat_adapter_symbol_memory_sections_contract() -> None:
