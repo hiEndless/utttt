@@ -14,7 +14,7 @@ from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E4
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
     build_symbol_memory_record_payload,
-    build_symbol_memory_semantic_sections,
+    build_symbol_memory_sections,
     build_workflow_bridge_payload,
 )
 
@@ -46,7 +46,7 @@ def test_decision_plan_adapter_symbol_memory_sections_contract() -> None:
         signal_event={},
         cross_horizon={},
     )
-    memory_sections = build_symbol_memory_semantic_sections(state=out, cross_horizon={"suggested_policy": "no_action"})
+    memory_sections = build_symbol_memory_sections(state=out, cross_horizon={"suggested_policy": "no_action"})
     assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
 
 

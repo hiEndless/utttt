@@ -10,7 +10,7 @@ DECISION_PLAN_NOTES = "minimal_pipeline_semantic_plan"
 
 
 @dataclass(frozen=True)
-class PipelineCompatState:
+class DecisionPlanState:
     memory_intent: Dict[str, Any]
     allowance: RiskAllowance
     plan: ExecutionPlan
@@ -24,7 +24,7 @@ def build_decision_plan_state(
     active_events: list[Dict[str, Any]],  # noqa: ARG001
     signal_event: Dict[str, Any],  # noqa: ARG001
     cross_horizon: Dict[str, str],  # noqa: ARG001
-) -> PipelineCompatState:
+) -> DecisionPlanState:
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     direction = str(getattr(signal, "direction", "") or "none").strip().lower()
     is_accept = verdict == "accept" and direction in {"long", "short"}
@@ -53,16 +53,16 @@ def build_decision_plan_state(
         sizing=None,
         notes=DECISION_PLAN_NOTES,
     )
-    return PipelineCompatState(
+    return DecisionPlanState(
         memory_intent=semantic_intent,
         allowance=allowance,
         plan=plan,
     )
 
 
-def build_symbol_memory_semantic_sections(
+def build_symbol_memory_sections(
     *,
-    state: PipelineCompatState,
+    state: DecisionPlanState,
     cross_horizon: Dict[str, str],
 ) -> Dict[str, Dict[str, Any]]:
     return {
@@ -83,25 +83,25 @@ def build_symbol_memory_record_payload(
     signal_event: Dict[str, Any],
     msl_summary: str,
     signal: Any,
-    state: PipelineCompatState,
+    state: DecisionPlanState,
     cross_horizon: Dict[str, str],
     contract_warnings: list[str],
     execution_result: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    semantic_sections = build_symbol_memory_semantic_sections(state=state, cross_horizon=cross_horizon)
+    memory_sections = build_symbol_memory_sections(state=state, cross_horizon=cross_horizon)
     return {
         "ts": int(ts),
         "event_id": str(event_id or ""),
         "signal_event": dict(signal_event or {}),
         "msl_summary": str(msl_summary or ""),
-        "cross_horizon_policy": dict(semantic_sections.get("cross_horizon_policy") or {}),
+        "cross_horizon_policy": dict(memory_sections.get("cross_horizon_policy") or {}),
         "signal": {
             "direction": signal.direction,
             "verdict": signal.verdict,
             "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
         },
-        "intent": dict(semantic_sections.get("intent") or {}),
-        "plan": dict(semantic_sections.get("plan") or {}),
+        "intent": dict(memory_sections.get("intent") or {}),
+        "plan": dict(memory_sections.get("plan") or {}),
         "contract_warnings": [str(x) for x in list(contract_warnings or []) if str(x).strip()],
         "execution_result": dict(execution_result or {}),
     }
@@ -210,7 +210,7 @@ def build_signal_decision_from_signal(
 
 def build_workflow_bridge_payload(
     *,
-    state: PipelineCompatState,
+    state: DecisionPlanState,
     signal_decision: SignalDecision,
     pipeline_mode: str = "minimal",
 ) -> Dict[str, Any]:
@@ -241,7 +241,7 @@ def build_workflow_bridge_payload(
 
 def build_recorder_stage_payloads(
     *,
-    state: PipelineCompatState,
+    state: DecisionPlanState,
     signal_decision: SignalDecision,
     pipeline_mode: str,
     cross_horizon: Dict[str, str],
@@ -279,7 +279,7 @@ def build_decision_trace_payload(
     prompt_config_source: str,
     prompt_config_version: str,
     event_type_diag: Dict[str, Any],
-    state: PipelineCompatState,
+    state: DecisionPlanState,
     llm_observation: Dict[str, Any],
 ) -> Dict[str, Any]:
     contract_warnings = [str(x) for x in list((key_market_features or {}).get("contract_warnings") or []) if x]
