@@ -38,6 +38,13 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
+    assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
+    assert "MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" in out
+    assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
+    assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
+    assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
@@ -62,6 +69,13 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
+    assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
+    assert "MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" in out
+    assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
+    assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
+    assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
@@ -84,6 +98,10 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_action_hint_semantics_summary.sh" in nightly_text
     assert "tools/local/run_agent_decision_agent_key_report.sh" in regression_text
     assert "tools/local/run_agent_decision_agent_key_report.sh" in nightly_text
+    assert "tools/local/run_agent_signal_decision_replay_report.sh" in regression_text
+    assert "tools/local/run_agent_signal_decision_replay_report.sh" in nightly_text
+    assert "tools/local/check_agent_signal_decision_replay_guard.sh" in regression_text
+    assert "tools/local/check_agent_signal_decision_replay_guard.sh" in nightly_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in regression_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text

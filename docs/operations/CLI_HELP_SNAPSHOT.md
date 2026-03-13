@@ -306,6 +306,13 @@ Environment:
   WITH_AGENT_ROUTE_REPLAY_REPORT  是否生成四类来源业务路由回放 artifact（1/0，默认 1）
   AGENT_ROUTE_REPLAY_REPORT_PATH  route replay 报告路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT  route_replay mismatch 计数上限（默认 -1 忽略）
+  WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT  是否生成信号决策回放 artifact（1/0，默认 1）
+  AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH  signal decision replay 报告路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT  signal decision replay 每来源最小样本数（默认 10）
+  MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO  market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO  onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO  large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO  social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 1）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 1）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.90）
@@ -344,6 +351,13 @@ Environment:
   WITH_AGENT_ROUTE_REPLAY_REPORT  是否生成四类来源业务路由回放 artifact（1/0，默认 1）
   AGENT_ROUTE_REPLAY_REPORT_PATH  route replay 报告路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT  route_replay mismatch 计数上限（默认 0）
+  WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT  是否生成信号决策回放 artifact（1/0，默认 1）
+  AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH  signal decision replay 报告路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT  signal decision replay 每来源最小样本数（默认 10）
+  MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO  market_indicator 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO  onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO  large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO  social_news 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）

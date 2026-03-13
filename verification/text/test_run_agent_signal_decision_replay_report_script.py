@@ -107,6 +107,10 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
     assert summary["decision_mode_rule_count"] == 1
     assert summary["decision_mode_llm_count"] == 1
     assert summary["decision_mode_rule_fallback_count"] == 1
+    matrix = list(report["source_decision_mode_counts"])
+    assert {"signal_source_type": "market_indicator", "decision_mode": "rule", "count": 1} in matrix
+    assert {"signal_source_type": "social_news", "decision_mode": "llm", "count": 1} in matrix
+    assert {"signal_source_type": "onchain_wallet", "decision_mode": "rule_fallback", "count": 1} in matrix
     latest_rows = list(report["latest_rows"])
     assert len(latest_rows) == 2
     assert latest_rows[0]["event_id"] == "evt-3"
