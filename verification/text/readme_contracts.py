@@ -11,6 +11,7 @@ from pathlib import Path
 # - readme-contracts-v2：增加 CLI_HELP_SNAPSHOT 版本锚点与 docs_bundle 日志版本输出联动。
 README_CONTRACTS_VERSION = "readme-contracts-v2"
 README_CONTRACTS_BASELINE_PATH = Path("verification/text/readme_contracts_version.baseline")
+README_CONTRACTS_DOC_ANCHOR = f"README_CONTRACTS_VERSION={README_CONTRACTS_VERSION}"
 
 PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = (
     "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
