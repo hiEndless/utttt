@@ -44,6 +44,12 @@
 - nightly：默认接入更严格 readyz 门禁（`MAX_AGENT_READYZ_LEVEL=yellow`，`REQUIRE_AGENT_READYZ_REPORT=1`）。
 - 聚合报告新增 readyz 字段用于发布核对：`agent_readyz_status_level`、`agent_readyz_report_count`、`agent_readyz_error_count`、`agent_readyz_errors`。
 
+7. decision_trace schema guard 门禁收敛（分层阈值）
+- quick：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=-1`（默认忽略，仅观测）。
+- regression：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=-1`（默认忽略，仅观测）。
+- nightly：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=0`（默认阻断）。
+- 聚合报告新增发布核对字段：`decision_trace_schema_guard_invalid_records`。
+
 ## 3. 关键验证结果
 
 - `bash tools/ci/verify_quick.sh` -> pass

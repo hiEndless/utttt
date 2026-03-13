@@ -47,11 +47,17 @@ git checkout refactor-guard-baseline-20260312
 - [x] readyz 门禁阈值已记录：
   - regression：`MAX_AGENT_READYZ_LEVEL`、`REQUIRE_AGENT_READYZ_REPORT`
   - nightly：`MAX_AGENT_READYZ_LEVEL`、`REQUIRE_AGENT_READYZ_REPORT`
+- [x] decision_trace schema guard 阈值已记录：
+  - quick：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=-1`
+  - regression：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=-1`
+  - nightly：`MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=0`
 - [x] 聚合报告 readyz 字段已核对：
   - `agent_readyz_status_level`
   - `agent_readyz_report_count`
   - `agent_readyz_error_count`
   - `agent_readyz_errors`
+- [x] 聚合报告 decision_trace schema guard 字段已核对：
+  - `decision_trace_schema_guard_invalid_records`
 
 ## 6) 滚动更新记录（2026-03-13）
 
