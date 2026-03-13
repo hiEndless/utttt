@@ -16,10 +16,15 @@ from services.agent_server_new.adapters.symbol_memory_redis import (
     RedisSymbolMemoryConfig,
     create_redis_client_from_env as create_memory_redis_client_from_env,
 )
+from services.agent_server_new.domain.signal_router import (
+    load_signal_router_config_from_env,
+    validate_signal_router_config,
+)
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_env
 
 logger = logging.getLogger(__name__)
+_ALLOWED_SIGNAL_AGENT_KEYS = {"technical", "liquidation", "onchain", "social_news", "generic"}
 
 
 def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
@@ -121,6 +126,13 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
     ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
+    signal_router_config = load_signal_router_config_from_env()
+    try:
+        validate_signal_router_config(signal_router_config, allowed_agent_keys=_ALLOWED_SIGNAL_AGENT_KEYS)
+    except ValueError as exc:
+        if runtime_profile in {"prod", "production"}:
+            raise RuntimeError(f"invalid signal router config in production: {exc}") from exc
+        raise RuntimeError(f"invalid signal router config: {exc}") from exc
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=position_context_provider,
@@ -136,4 +148,5 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         memory_dedup_key=memory_dedup_key,
         ai_adaptive_enabled=ai_adaptive_enabled,
         ai_adaptive_mode=ai_adaptive_mode,
+        signal_router_config=signal_router_config,
     )

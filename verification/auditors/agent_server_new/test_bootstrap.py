@@ -269,3 +269,58 @@ def test_create_trade_event_workflow_from_env_disable_decision_trace_schema_vali
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._decision_trace_schema_validate is False  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_config(monkeypatch, tmp_path):
+    import json
+
+    bad = tmp_path / "bad_router.json"
+    bad.write_text(
+        json.dumps(
+            {
+                "default_agent_key": "generic",
+                "rules": [
+                    {"agent_key": "technical", "keywords": ["indicator"]},
+                    {"agent_key": "onchain", "keywords": ["indicator"]},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", str(bad))
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when signal router config is invalid"
+    except RuntimeError as exc:
+        assert "invalid signal router config" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_prod_rejects_invalid_signal_router_config(monkeypatch, tmp_path):
+    import json
+
+    bad = tmp_path / "bad_router_prod.json"
+    bad.write_text(
+        json.dumps(
+            {
+                "default_agent_key": "generic",
+                "rules": [
+                    {"agent_key": "custom_unknown", "keywords": ["x"]},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", str(bad))
+    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when prod signal router config is invalid"
+    except RuntimeError as exc:
+        assert "invalid signal router config in production" in str(exc)

@@ -181,6 +181,7 @@ class TradeEventWorkflow:
         ai_adaptive_enabled: bool = False,
         ai_adaptive_mode: str = "observe",
         horizon_policy_config: Optional[Dict[str, Any]] = None,
+        signal_router_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
@@ -198,6 +199,7 @@ class TradeEventWorkflow:
         mode = str(ai_adaptive_mode or "observe").strip().lower()
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
+        self._signal_router_config = dict(signal_router_config or {})
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
         result = await self.run_with_result(event)
@@ -296,6 +298,7 @@ class TradeEventWorkflow:
             event=event,
             signal=signal,
             llm_observation=llm_observation,
+            signal_router_config=self._signal_router_config,
         )
 
         if self._recorder:
@@ -607,9 +610,11 @@ def _build_signal_decision(
     event: TradeEventInput,
     signal: Any,
     llm_observation: Dict[str, Any],
+    signal_router_config: Optional[Dict[str, Any]] = None,
 ) -> SignalDecision:
     decision_agent_key = route_signal_agent_key(
         signal_event={"payload": dict(event.payload or {})},
+        router_config=dict(signal_router_config or {}),
     )
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
