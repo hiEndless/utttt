@@ -26,13 +26,13 @@ data_server
 
 `agent_server_new` 只承担以下职责：
 
-- consume `signal_event`
-- consume `active_events`
-- consume `MSL`
-- 做 signal evaluation + event route
-- 做 signal semantic decision（accept/reject/uncertain）
-- 产出 `ExecutionPlan`
-- 产出 `DecisionTrace`
+- 消费 `signal_event`
+- 消费 `active_events`
+- 消费 `MSL`
+- 执行信号评估与事件路由
+- 执行信号语义判定（accept/reject/uncertain）
+- 输出 `ExecutionPlan`
+- 输出 `DecisionTrace`
 
 `agent_server_new` 不承担以下职责：
 

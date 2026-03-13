@@ -14,7 +14,13 @@ def test_readme_freezes_minimal_main_flow_and_historical_flow_label() -> None:
     assert "### 历史链路（已下线）" in text
     assert "IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner" in text
     assert "### 当前实现（过渡态）" not in text
-    assert "做 signal semantic decision（accept/reject/uncertain）" in text
+    assert "执行信号语义判定（accept/reject/uncertain）" in text
+    assert "消费 `signal_event`" in text
+    assert "消费 `active_events`" in text
+    assert "消费 `MSL`" in text
+    assert "执行信号评估与事件路由" in text
     assert "该对象是 agent 语义输出，不等价于 execution 最终动作" in text
-    assert "做 intent resolve / rule planning" not in text
-    assert "做 strategy gating / risk gating" not in text
+    assert "做 signal semantic decision（accept/reject/uncertain）" not in text
+    assert "consume `signal_event`" not in text
+    assert "consume `active_events`" not in text
+    assert "consume `MSL`" not in text
