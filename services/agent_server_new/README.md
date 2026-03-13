@@ -268,6 +268,7 @@ signal_event + active_events + MSL
 2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 模式差异。
 3. 生产灰度按 symbol 白名单逐步扩大，确认无回归后再考虑默认切换。
 4. minimal 模式下 recorder 仅保留 `workflow_bridge` 编排记录，不再输出 `intent/rule/gate/planner` 业务节点。
+5. minimal 模式下不会加载 `horizon policy` 配置，避免运行时仍耦合 legacy 业务链路。
 
 ### 本地灰度观测最短命令
 

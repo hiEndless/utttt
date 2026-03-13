@@ -637,3 +637,40 @@ def test_trade_event_workflow_llm_payload_is_trimmed_by_decision_agent_key():
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_mode_skips_horizon_policy_config_loading():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "load_horizon_policy_config_from_env",
+            lambda: (_ for _ in ()).throw(RuntimeError("should not load horizon config in minimal mode")),
+        )
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=None,
+            recorder=None,
+            legacy_pipeline_enabled=False,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-minimal-no-horizon-load-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.agent_plan.action == "hold"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()

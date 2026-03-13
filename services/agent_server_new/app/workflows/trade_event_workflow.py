@@ -262,7 +262,10 @@ class TradeEventWorkflow:
         mode = str(ai_adaptive_mode or "observe").strip().lower()
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._legacy_pipeline_enabled = bool(legacy_pipeline_enabled)
-        self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
+        if self._legacy_pipeline_enabled:
+            self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
+        else:
+            self._horizon_policy_config = {}
         self._signal_router_config = dict(signal_router_config or {})
         self._signal_decision_prompt_profiles = dict(signal_decision_prompt_profiles or {})
         self._signal_decision_agent = signal_decision_agent or (
