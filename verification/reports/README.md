@@ -233,3 +233,9 @@ Print action_hint semantics summary from aggregate report:
 ```bash
 bash tools/local/print_action_hint_semantics_summary.sh --summary verification/reports/summary.latest.json --prefix quick
 ```
+
+Guard action_hint mismatch cases:
+```bash
+bash tools/local/check_agent_action_hint_cases_guard.sh
+bash tools/local/check_agent_action_hint_cases_guard.sh verification/reports/agent_action_hint_cases.latest.json 0
+```

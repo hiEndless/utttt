@@ -128,4 +128,7 @@ if [[ "$WITH_AGENT_ACTION_HINT_CASES_REPORT" == "1" ]]; then
     --format json \
     --output "$AGENT_ACTION_HINT_CASES_REPORT_PATH" >/dev/null
   echo "[regression] action_hint_cases_report_path=$AGENT_ACTION_HINT_CASES_REPORT_PATH"
+  bash tools/local/check_agent_action_hint_cases_guard.sh \
+    "$AGENT_ACTION_HINT_CASES_REPORT_PATH" \
+    "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT"
 fi
