@@ -36,6 +36,10 @@ MAX_ROUTE_REPLAY_MISMATCH_COUNT="-1"
 MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT="-1"
 MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT="-1"
 MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO="-1"
+MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT="-1"
+MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT="-1"
+MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT="-1"
+MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT="-1"
 
 while (($# > 0)); do
   case "$1" in
@@ -98,6 +102,14 @@ Options:
                                action_hint_semantics missing_actual_hint 计数上限（默认 -1 忽略）
   --min-action-hint-semantics-match-ratio <float>
                                action_hint_semantics match_ratio 下限（默认 -1 忽略）
+  --max-signal-decision-llm-observe-missing-decision-mode-count <int>
+                               signal_decision_llm_observe missing_decision_mode 计数上限（默认 -1 忽略）
+  --max-signal-decision-llm-observe-missing-llm-parse-status-count <int>
+                               signal_decision_llm_observe missing_llm_parse_status 计数上限（默认 -1 忽略）
+  --min-signal-decision-llm-observe-decision-mode-llm-count <int>
+                               signal_decision_llm_observe decision_mode_llm_count 下限（默认 -1 忽略）
+  --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count <int>
+                               signal_decision_llm_observe llm_parse_status_llm_ok_count 下限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 USAGE
@@ -239,6 +251,22 @@ USAGE
       MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO="${2:-$MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO}"
       shift 2
       ;;
+    --max-signal-decision-llm-observe-missing-decision-mode-count)
+      MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT="${2:-$MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT}"
+      shift 2
+      ;;
+    --max-signal-decision-llm-observe-missing-llm-parse-status-count)
+      MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT="${2:-$MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT}"
+      shift 2
+      ;;
+    --min-signal-decision-llm-observe-decision-mode-llm-count)
+      MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT="${2:-$MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT}"
+      shift 2
+      ;;
+    --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count)
+      MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT="${2:-$MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT}"
+      shift 2
+      ;;
     --require-agent-readyz-report)
       REQUIRE_AGENT_READYZ_REPORT=1
       shift
@@ -322,6 +350,10 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-action-hint-semantics-mismatch-count "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT"
     --max-action-hint-semantics-missing-actual-hint-count "$MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT"
     --min-action-hint-semantics-match-ratio "$MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO"
+    --max-signal-decision-llm-observe-missing-decision-mode-count "$MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT"
+    --max-signal-decision-llm-observe-missing-llm-parse-status-count "$MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT"
+    --min-signal-decision-llm-observe-decision-mode-llm-count "$MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT"
+    --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count "$MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT"
   )
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     THRESHOLD_ARGS+=(--require-agent-readyz-report)

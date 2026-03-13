@@ -195,6 +195,10 @@ python3 -m verification.reports.check_thresholds \
   --max-action-hint-semantics-mismatch-count -1 \
   --max-action-hint-semantics-missing-actual-hint-count -1 \
   --min-action-hint-semantics-match-ratio -1 \
+  --max-signal-decision-llm-observe-missing-decision-mode-count -1 \
+  --max-signal-decision-llm-observe-missing-llm-parse-status-count -1 \
+  --min-signal-decision-llm-observe-decision-mode-llm-count -1 \
+  --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count -1 \
   --max-agent-readyz-level yellow \
   --require-agent-readyz-report
 ```

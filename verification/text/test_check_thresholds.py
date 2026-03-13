@@ -397,3 +397,67 @@ def test_check_thresholds_fails_when_action_hint_semantics_exceeds_limit(tmp_pat
         ]
     )
     assert code == 1
+
+
+def test_check_thresholds_passes_when_signal_decision_llm_observe_within_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "signal_decision_llm_observe_missing_decision_mode_count": 1,
+        "signal_decision_llm_observe_missing_llm_parse_status_count": 1,
+        "signal_decision_llm_observe_decision_mode_llm_count": 3,
+        "signal_decision_llm_observe_llm_parse_status_llm_ok_count": 2,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-signal-decision-llm-observe-missing-decision-mode-count",
+            "1",
+            "--max-signal-decision-llm-observe-missing-llm-parse-status-count",
+            "1",
+            "--min-signal-decision-llm-observe-decision-mode-llm-count",
+            "2",
+            "--min-signal-decision-llm-observe-llm-parse-status-llm-ok-count",
+            "2",
+        ]
+    )
+    assert code == 0
+
+
+def test_check_thresholds_fails_when_signal_decision_llm_observe_exceeds_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "signal_decision_llm_observe_missing_decision_mode_count": 2,
+        "signal_decision_llm_observe_missing_llm_parse_status_count": 3,
+        "signal_decision_llm_observe_decision_mode_llm_count": 1,
+        "signal_decision_llm_observe_llm_parse_status_llm_ok_count": 0,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-signal-decision-llm-observe-missing-decision-mode-count",
+            "1",
+            "--max-signal-decision-llm-observe-missing-llm-parse-status-count",
+            "1",
+            "--min-signal-decision-llm-observe-decision-mode-llm-count",
+            "2",
+            "--min-signal-decision-llm-observe-llm-parse-status-llm-ok-count",
+            "1",
+        ]
+    )
+    assert code == 1

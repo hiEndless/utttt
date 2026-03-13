@@ -116,6 +116,30 @@ def _build_parser() -> argparse.ArgumentParser:
         help="最小 action_hint_semantics match_ratio_on_available，-1 表示忽略",
     )
     p.add_argument(
+        "--max-signal-decision-llm-observe-missing-decision-mode-count",
+        type=int,
+        default=-1,
+        help="最大 signal_decision_llm_observe missing_decision_mode 计数，-1 表示忽略",
+    )
+    p.add_argument(
+        "--max-signal-decision-llm-observe-missing-llm-parse-status-count",
+        type=int,
+        default=-1,
+        help="最大 signal_decision_llm_observe missing_llm_parse_status 计数，-1 表示忽略",
+    )
+    p.add_argument(
+        "--min-signal-decision-llm-observe-decision-mode-llm-count",
+        type=int,
+        default=-1,
+        help="最小 signal_decision_llm_observe decision_mode_llm_count，-1 表示忽略",
+    )
+    p.add_argument(
+        "--min-signal-decision-llm-observe-llm-parse-status-llm-ok-count",
+        type=int,
+        default=-1,
+        help="最小 signal_decision_llm_observe llm_parse_status_llm_ok_count，-1 表示忽略",
+    )
+    p.add_argument(
         "--require-agent-readyz-report",
         action="store_true",
         help="要求 summary 中存在 agent readyz 报告（agent_readyz_report_count > 0）",
@@ -150,6 +174,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     action_hint_semantics_match_ratio = _to_float(summary.get("action_hint_semantics_match_ratio_on_available"), 0.0)
     route_replay_mismatch_count = _to_int(summary.get("route_replay_mismatch_count"), 0)
+    signal_decision_llm_observe_missing_decision_mode_count = _to_int(
+        summary.get("signal_decision_llm_observe_missing_decision_mode_count"), 0
+    )
+    signal_decision_llm_observe_missing_llm_parse_status_count = _to_int(
+        summary.get("signal_decision_llm_observe_missing_llm_parse_status_count"), 0
+    )
+    signal_decision_llm_observe_decision_mode_llm_count = _to_int(
+        summary.get("signal_decision_llm_observe_decision_mode_llm_count"), 0
+    )
+    signal_decision_llm_observe_llm_parse_status_llm_ok_count = _to_int(
+        summary.get("signal_decision_llm_observe_llm_parse_status_llm_ok_count"), 0
+    )
     if agent_readyz_level not in _LEVEL_ORDER:
         agent_readyz_level = "red"
 
@@ -265,6 +301,46 @@ def main(argv: list[str] | None = None) -> int:
             f"{float(args.min_action_hint_semantics_match_ratio)} "
             f"(actual={action_hint_semantics_match_ratio})"
         )
+    if (
+        int(args.max_signal_decision_llm_observe_missing_decision_mode_count) >= 0
+        and signal_decision_llm_observe_missing_decision_mode_count
+        > int(args.max_signal_decision_llm_observe_missing_decision_mode_count)
+    ):
+        errors.append(
+            "signal_decision_llm_observe_missing_decision_mode_count>"
+            f"{int(args.max_signal_decision_llm_observe_missing_decision_mode_count)} "
+            f"(actual={signal_decision_llm_observe_missing_decision_mode_count})"
+        )
+    if (
+        int(args.max_signal_decision_llm_observe_missing_llm_parse_status_count) >= 0
+        and signal_decision_llm_observe_missing_llm_parse_status_count
+        > int(args.max_signal_decision_llm_observe_missing_llm_parse_status_count)
+    ):
+        errors.append(
+            "signal_decision_llm_observe_missing_llm_parse_status_count>"
+            f"{int(args.max_signal_decision_llm_observe_missing_llm_parse_status_count)} "
+            f"(actual={signal_decision_llm_observe_missing_llm_parse_status_count})"
+        )
+    if (
+        int(args.min_signal_decision_llm_observe_decision_mode_llm_count) >= 0
+        and signal_decision_llm_observe_decision_mode_llm_count
+        < int(args.min_signal_decision_llm_observe_decision_mode_llm_count)
+    ):
+        errors.append(
+            "signal_decision_llm_observe_decision_mode_llm_count<"
+            f"{int(args.min_signal_decision_llm_observe_decision_mode_llm_count)} "
+            f"(actual={signal_decision_llm_observe_decision_mode_llm_count})"
+        )
+    if (
+        int(args.min_signal_decision_llm_observe_llm_parse_status_llm_ok_count) >= 0
+        and signal_decision_llm_observe_llm_parse_status_llm_ok_count
+        < int(args.min_signal_decision_llm_observe_llm_parse_status_llm_ok_count)
+    ):
+        errors.append(
+            "signal_decision_llm_observe_llm_parse_status_llm_ok_count<"
+            f"{int(args.min_signal_decision_llm_observe_llm_parse_status_llm_ok_count)} "
+            f"(actual={signal_decision_llm_observe_llm_parse_status_llm_ok_count})"
+        )
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -288,8 +364,12 @@ def main(argv: list[str] | None = None) -> int:
         f"decision_agent_key_unknown_count={decision_agent_key_unknown_count} "
         f"action_hint_semantics_mismatch_count={action_hint_semantics_mismatch_count} "
         f"action_hint_semantics_missing_actual_hint_count={action_hint_semantics_missing_actual_hint_count} "
-        f"action_hint_semantics_match_ratio_on_available={action_hint_semantics_match_ratio}"
-        f"route_replay_mismatch_count={route_replay_mismatch_count}"
+        f"action_hint_semantics_match_ratio_on_available={action_hint_semantics_match_ratio} "
+        f"route_replay_mismatch_count={route_replay_mismatch_count} "
+        f"signal_decision_llm_observe_missing_decision_mode_count={signal_decision_llm_observe_missing_decision_mode_count} "
+        f"signal_decision_llm_observe_missing_llm_parse_status_count={signal_decision_llm_observe_missing_llm_parse_status_count} "
+        f"signal_decision_llm_observe_decision_mode_llm_count={signal_decision_llm_observe_decision_mode_llm_count} "
+        f"signal_decision_llm_observe_llm_parse_status_llm_ok_count={signal_decision_llm_observe_llm_parse_status_llm_ok_count}"
     )
     return 0
 

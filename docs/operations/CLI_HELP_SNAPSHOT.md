@@ -139,6 +139,14 @@ Options:
                                action_hint_semantics missing_actual_hint 计数上限（默认 -1 忽略）
   --min-action-hint-semantics-match-ratio <float>
                                action_hint_semantics match_ratio 下限（默认 -1 忽略）
+  --max-signal-decision-llm-observe-missing-decision-mode-count <int>
+                               signal_decision_llm_observe missing_decision_mode 计数上限（默认 -1 忽略）
+  --max-signal-decision-llm-observe-missing-llm-parse-status-count <int>
+                               signal_decision_llm_observe missing_llm_parse_status 计数上限（默认 -1 忽略）
+  --min-signal-decision-llm-observe-decision-mode-llm-count <int>
+                               signal_decision_llm_observe decision_mode_llm_count 下限（默认 -1 忽略）
+  --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count <int>
+                               signal_decision_llm_observe llm_parse_status_llm_ok_count 下限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 ```

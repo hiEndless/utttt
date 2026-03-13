@@ -57,3 +57,7 @@ def test_aggregate_and_check_help_contains_decision_trace_schema_guard_flags() -
     assert "--max-action-hint-semantics-mismatch-count <int>" in out
     assert "--max-action-hint-semantics-missing-actual-hint-count <int>" in out
     assert "--min-action-hint-semantics-match-ratio <float>" in out
+    assert "--max-signal-decision-llm-observe-missing-decision-mode-count <int>" in out
+    assert "--max-signal-decision-llm-observe-missing-llm-parse-status-count <int>" in out
+    assert "--min-signal-decision-llm-observe-decision-mode-llm-count <int>" in out
+    assert "--min-signal-decision-llm-observe-llm-parse-status-llm-ok-count <int>" in out
