@@ -43,6 +43,8 @@ if (($# > 0)); then
   exit 1
 fi
 
+SUMMARY_PATH="verification/reports/summary.latest.json"
+
 # CI 强约束：禁止在 CI 环境通过 skip 开关绕过关键守卫。
 if [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   if [[ "${VERIFY_QUICK_SKIP_RELEASE_BASELINE_ALIGNMENT:-0}" == "1" ]]; then
@@ -123,5 +125,31 @@ if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     QUICK_ARGS+=(--require-agent-readyz-report)
   fi
+  QUICK_ARGS+=(--summary-path "$SUMMARY_PATH")
   bash tools/local/aggregate_and_check.sh "${QUICK_ARGS[@]}"
+  if [[ -f "$SUMMARY_PATH" ]]; then
+    python3 - "$SUMMARY_PATH" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+
+legacy = int(payload.get("pipeline_mode_legacy_count") or 0)
+minimal = int(payload.get("pipeline_mode_minimal_count") or 0)
+unknown = int(payload.get("pipeline_mode_unknown_count") or 0)
+missing = int(payload.get("pipeline_mode_missing_count") or 0)
+legacy_ratio = float(payload.get("pipeline_mode_legacy_ratio") or 0.0)
+minimal_ratio = float(payload.get("pipeline_mode_minimal_ratio") or 0.0)
+print(
+    "[quick] pipeline_mode_summary "
+    f"legacy={legacy} minimal={minimal} unknown={unknown} missing={missing} "
+    f"legacy_ratio={legacy_ratio:.6f} minimal_ratio={minimal_ratio:.6f}"
+)
+PY
+  fi
 fi
