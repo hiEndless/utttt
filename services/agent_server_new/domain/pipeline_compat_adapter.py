@@ -351,3 +351,27 @@ def build_decision_trace_legacy_sections(
             "reasons": list(state.allowance.reasons),
         },
     }
+
+
+def build_symbol_memory_legacy_sections(
+    *,
+    state: PipelineCompatState,
+    cross_horizon: Dict[str, str],
+) -> Dict[str, Dict[str, Any]]:
+    return {
+        "cross_horizon_policy": dict(cross_horizon or {}),
+        "intent": {
+            "intent": state.intent.intent,
+            "direction": state.intent.direction,
+            "confidence": {
+                "level": state.intent.confidence.level,
+                "score": state.intent.confidence.score,
+            },
+            "reasons": list(state.intent.reasons),
+        },
+        "plan": {
+            "action": state.plan.action,
+            "direction": state.plan.direction,
+            "notes": state.plan.notes,
+        },
+    }

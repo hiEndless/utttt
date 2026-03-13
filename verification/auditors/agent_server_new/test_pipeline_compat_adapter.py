@@ -10,6 +10,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
     build_decision_trace_legacy_sections,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
+    build_symbol_memory_legacy_sections,
 )
 
 
@@ -50,3 +51,5 @@ def test_pipeline_compat_adapter_builds_legacy_stage_outputs_contract() -> None:
     assert names == ["intent_resolver", "rule_planner", "horizon_policy_gate", "strategy_gate", "execution_planner"]
     trace_sections = build_decision_trace_legacy_sections(state=out)
     assert set(trace_sections.keys()) == {"intent", "rule_plan", "strategy_gate_result", "risk_gate"}
+    memory_sections = build_symbol_memory_legacy_sections(state=out, cross_horizon={"suggested_policy": "no_action"})
+    assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
