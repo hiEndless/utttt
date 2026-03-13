@@ -111,6 +111,14 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
     assert {"signal_source_type": "market_indicator", "decision_mode": "rule", "count": 1} in matrix
     assert {"signal_source_type": "social_news", "decision_mode": "llm", "count": 1} in matrix
     assert {"signal_source_type": "onchain_wallet", "decision_mode": "rule_fallback", "count": 1} in matrix
+    source_parse = list(report["source_llm_parse_status_counts"])
+    assert {"signal_source_type": "market_indicator", "llm_parse_status": "rule_only", "count": 1} in source_parse
+    assert {"signal_source_type": "social_news", "llm_parse_status": "llm_ok", "count": 1} in source_parse
+    assert {"signal_source_type": "onchain_wallet", "llm_parse_status": "llm_invalid_payload", "count": 1} in source_parse
+    source_verdict = list(report["source_verdict_counts"])
+    assert {"signal_source_type": "market_indicator", "signal_verdict": "accept", "count": 1} in source_verdict
+    assert {"signal_source_type": "social_news", "signal_verdict": "reject", "count": 1} in source_verdict
+    assert {"signal_source_type": "onchain_wallet", "signal_verdict": "uncertain", "count": 1} in source_verdict
     latest_rows = list(report["latest_rows"])
     assert len(latest_rows) == 2
     assert latest_rows[0]["event_id"] == "evt-3"

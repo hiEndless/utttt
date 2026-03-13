@@ -157,6 +157,9 @@ if [[ "$WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" == "1" ]]; then
   bash tools/local/run_agent_signal_decision_replay_report.sh \
     --output "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" >/dev/null
   echo "[regression] signal_decision_replay_report_path=$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH"
+  bash tools/local/print_signal_decision_quality_summary.sh \
+    --report "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" \
+    --prefix regression
   bash tools/local/check_agent_signal_decision_replay_guard.sh \
     "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" \
     "$AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" \

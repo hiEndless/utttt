@@ -76,6 +76,9 @@ Signal decision replay report (optional):
 bash tools/local/run_agent_signal_decision_replay_report.sh \
   --output verification/reports/agent_signal_decision_replay.latest.json
 bash tools/local/run_agent_signal_decision_replay_report.sh --help
+bash tools/local/print_signal_decision_quality_summary.sh \
+  --report verification/reports/agent_signal_decision_replay.latest.json \
+  --prefix nightly
 ```
 
 Signal decision LLM observe report (optional):

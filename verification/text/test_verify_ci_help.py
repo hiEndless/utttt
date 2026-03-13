@@ -119,6 +119,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/run_agent_decision_agent_key_report.sh" in nightly_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in regression_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in nightly_text
+    assert "tools/local/print_signal_decision_quality_summary.sh" in regression_text
+    assert "tools/local/print_signal_decision_quality_summary.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in regression_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in nightly_text
     assert "tools/local/print_agent_signal_decision_replay_recommendation_hint.sh" in regression_text
@@ -145,6 +147,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
     assert "tools/local/print_route_replay_summary.sh" in quick_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in quick_text
+    assert "tools/local/print_signal_decision_quality_summary.sh" in quick_text
     assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text

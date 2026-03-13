@@ -94,6 +94,8 @@ direction_counter: Counter[str] = Counter()
 decision_mode_counter: Counter[str] = Counter()
 llm_parse_status_counter: Counter[str] = Counter()
 source_decision_mode_counter: Counter[tuple[str, str]] = Counter()
+source_llm_parse_status_counter: Counter[tuple[str, str]] = Counter()
+source_verdict_counter: Counter[tuple[str, str]] = Counter()
 route_match_count = 0
 route_mismatch_count = 0
 latest_rows: list[dict[str, object]] = []
@@ -142,6 +144,8 @@ for raw in lines:
     decision_mode_counter[decision_mode] += 1
     llm_parse_status_counter[llm_parse_status] += 1
     source_decision_mode_counter[(source_type, decision_mode)] += 1
+    source_llm_parse_status_counter[(source_type, llm_parse_status)] += 1
+    source_verdict_counter[(source_type, verdict)] += 1
 
     expected = source_expected_agent.get(source_type)
     route_match = True
@@ -215,6 +219,28 @@ report = {
         }
         for (src, mode), cnt in sorted(
             source_decision_mode_counter.items(),
+            key=lambda kv: (-kv[1], kv[0][0], kv[0][1]),
+        )
+    ],
+    "source_llm_parse_status_counts": [
+        {
+            "signal_source_type": src,
+            "llm_parse_status": status,
+            "count": int(cnt),
+        }
+        for (src, status), cnt in sorted(
+            source_llm_parse_status_counter.items(),
+            key=lambda kv: (-kv[1], kv[0][0], kv[0][1]),
+        )
+    ],
+    "source_verdict_counts": [
+        {
+            "signal_source_type": src,
+            "signal_verdict": verdict,
+            "count": int(cnt),
+        }
+        for (src, verdict), cnt in sorted(
+            source_verdict_counter.items(),
             key=lambda kv: (-kv[1], kv[0][0], kv[0][1]),
         )
     ],
