@@ -142,6 +142,7 @@ class TradeEventWorkflow:
         symbol_memory_recorder: SymbolMemoryRecorder | None = None,
         llm_observer: LLMObserver | None = None,
         decision_trace_schema_validate: bool = True,
+        decision_trace_include_semantic_snapshots: bool = False,
         memory_recent_topk: int = 5,
         memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
         memory_dedup_key: str = "event_id",
@@ -164,6 +165,7 @@ class TradeEventWorkflow:
         self._symbol_memory_recorder = symbol_memory_recorder
         self._llm_observer = llm_observer
         self._decision_trace_schema_validate = bool(decision_trace_schema_validate)
+        self._decision_trace_include_semantic_snapshots = bool(decision_trace_include_semantic_snapshots)
         self._memory_recent_topk = max(1, int(memory_recent_topk))
         self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
         self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
@@ -420,6 +422,7 @@ class TradeEventWorkflow:
                 event_type_diag=event_type_diag,
                 state=compat,
                 llm_observation=dict(llm_observation),
+                include_semantic_snapshots=self._decision_trace_include_semantic_snapshots,
             )
             stage_payloads = build_recorder_stage_payloads(
                 state=compat,

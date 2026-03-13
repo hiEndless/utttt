@@ -202,6 +202,8 @@ signal_event + active_events + MSL
   - 单文件最大字节数（默认：`10485760`，即 10MB；超过后追加 `.1/.2...` 分片）
 - `AGENT_DECISION_TRACE_SCHEMA_VALIDATE`
   - 是否启用 decision_trace 运行时 schema 校验（默认：`true`；仅记录告警，不阻断主链路）
+- `AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS`
+  - 是否在 `decision_trace` 中输出 `intent/rule_plan/strategy_gate_result/risk_gate` 语义快照（默认：`false`；建议仅在回放排障时开启）
 - `AGENT_SYMBOL_MEMORY_ENABLED`
   - 是否启用 symbol 级记忆注入（默认：`false`）
 - `AGENT_SYMBOL_MEMORY_BACKEND`

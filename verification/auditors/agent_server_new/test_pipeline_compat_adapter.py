@@ -52,6 +52,24 @@ def test_pipeline_compat_adapter_semantic_sections_contract() -> None:
     assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
 
 
+def test_pipeline_compat_adapter_semantic_sections_can_be_disabled() -> None:
+    out = build_pipeline_compat_state(
+        signal=_sample_signal(),
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+    )
+    trace_sections = build_decision_trace_semantic_sections(state=out, include_semantic_snapshots=False)
+    assert trace_sections == {
+        "intent": {},
+        "rule_plan": {},
+        "strategy_gate_result": {},
+        "risk_gate": {},
+    }
+
+
 def test_pipeline_compat_adapter_builds_execution_decision_payload() -> None:
     signal_decision = SignalDecision(
         decision_id="evt-001",

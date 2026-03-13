@@ -85,7 +85,15 @@ def build_pipeline_compat_state(
 def build_decision_trace_semantic_sections(
     *,
     state: PipelineCompatState,
+    include_semantic_snapshots: bool = True,
 ) -> Dict[str, Dict[str, Any]]:
+    if not bool(include_semantic_snapshots):
+        return {
+            "intent": {},
+            "rule_plan": {},
+            "strategy_gate_result": {},
+            "risk_gate": {},
+        }
     return {
         "intent": {
             "intent": state.intent.intent,
@@ -356,9 +364,13 @@ def build_decision_trace_payload(
     event_type_diag: Dict[str, Any],
     state: PipelineCompatState,
     llm_observation: Dict[str, Any],
+    include_semantic_snapshots: bool = True,
 ) -> Dict[str, Any]:
     contract_warnings = [str(x) for x in list((key_market_features or {}).get("contract_warnings") or []) if x]
-    semantic_sections = build_decision_trace_semantic_sections(state=state)
+    semantic_sections = build_decision_trace_semantic_sections(
+        state=state,
+        include_semantic_snapshots=include_semantic_snapshots,
+    )
     trace = DecisionTrace(
         event_id=event_id,
         exchange=exchange,

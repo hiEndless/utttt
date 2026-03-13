@@ -121,6 +121,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 
 语义边界：
 - `intent/rule_plan/strategy_gate_result/risk_gate` 为 agent 语义快照字段，仅用于回放与解释，不代表 execution 最终风控裁决。
+  - 默认关闭（输出空对象）；仅当 `AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS=true` 时输出详细快照。
 - `execution_plan.sizing` 与 `execution_plan.allowance` 为 agent 语义建议字段，execution 可按自身规则覆盖或忽略。
 - 最终风控阻断与执行动作以 `execution_service` 返回结果为唯一权威。
 

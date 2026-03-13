@@ -157,6 +157,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     memory_recent_ttl_ms = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", 86_400_000, min_value=0)
     memory_dedup_key = str(os.getenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id") or "event_id").strip() or "event_id"
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
+    decision_trace_include_semantic_snapshots = _env_bool("AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS", "false")
     ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
@@ -194,6 +195,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         symbol_memory_provider=symbol_memory_adapter,
         symbol_memory_recorder=symbol_memory_adapter,
         decision_trace_schema_validate=decision_trace_schema_validate,
+        decision_trace_include_semantic_snapshots=decision_trace_include_semantic_snapshots,
         memory_recent_topk=memory_recent_topk,
         memory_recent_ttl_ms=memory_recent_ttl_ms,
         memory_dedup_key=memory_dedup_key,
