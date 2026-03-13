@@ -83,6 +83,9 @@ Signal decision LLM observe report (optional):
 bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
   --output verification/reports/agent_signal_decision_llm_observe.latest.json
 bash tools/local/run_agent_signal_decision_llm_observe_report.sh --help
+bash tools/local/print_signal_decision_llm_observe_agent_key_coverage.sh \
+  --report verification/reports/agent_signal_decision_llm_observe.latest.json \
+  --prefix nightly
 ```
 
 Inspect recent action_hint cases (optional):

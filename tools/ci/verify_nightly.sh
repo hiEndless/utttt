@@ -163,6 +163,9 @@ if bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
   bash tools/local/print_signal_decision_llm_observe_summary.sh \
     --report "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH" \
     --prefix nightly
+  bash tools/local/print_signal_decision_llm_observe_agent_key_coverage.sh \
+    --report "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH" \
+    --prefix nightly
 else
   echo "[nightly] signal_decision_llm_observe_report_failed path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
 fi

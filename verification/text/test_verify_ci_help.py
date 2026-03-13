@@ -130,6 +130,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/read_agent_signal_decision_recommendation_status.sh" in nightly_text
     assert "tools/local/run_agent_signal_decision_llm_observe_report.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_summary.sh" in nightly_text
+    assert "tools/local/print_signal_decision_llm_observe_agent_key_coverage.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_aggregate_summary.sh" in nightly_text
     assert "--with-signal-decision-llm-observe-report" in nightly_text
     assert "recommendation_artifact_status=" in nightly_text
