@@ -16,6 +16,7 @@ from services.agent_server_new.domain.intent_resolver import resolve_intent as r
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
 from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_decision_trace_legacy_sections,
+    build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
     build_symbol_memory_legacy_sections,
@@ -382,8 +383,10 @@ class TradeEventWorkflow:
 
         execution_result: Optional[Dict[str, Any]] = None
         if self._execution_decider is not None:
-            decision_payload = _build_decision_intent_payload(
-                event=event,
+            decision_payload = build_execution_decision_payload(
+                default_decision_id=event.event_id,
+                default_exchange=event.exchange,
+                default_symbol=event.symbol,
                 signal_decision=signal_decision,
                 plan=plan,
                 pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
@@ -542,75 +545,6 @@ class TradeEventWorkflow:
             )
 
         return WorkflowResult(agent_plan=plan, signal_decision=signal_decision, execution_result=execution_result)
-
-
-def _build_decision_intent_payload(
-    *,
-    event: TradeEventInput,
-    signal_decision: SignalDecision,
-    plan: ExecutionPlan,
-    pipeline_mode: str = "legacy",
-    cross_horizon: Dict[str, str],
-    prompt_config_source: str = "",
-    prompt_config_version: str = "",
-    ai_adaptive_enabled: bool = False,
-    ai_adaptive_mode: str = "observe",
-) -> Dict[str, Any]:
-    """把 agent 内部 ExecutionPlan 映射为 execution_service 的 DecisionIntent。"""
-
-    normalized_mode = str(pipeline_mode or "legacy").strip().lower()
-    decision_confidence_source = "agent_execution_plan"
-    decision_confidence = {
-        "level": str(plan.confidence.level or "low"),
-        "score": float(plan.confidence.score or 0.0),
-    }
-    if normalized_mode == "minimal":
-        signal_conf = signal_decision.confidence
-        decision_confidence = {
-            "level": str(signal_conf.level or "low"),
-            "score": float(signal_conf.score or 0.0),
-        }
-        decision_confidence_source = "agent_signal_decision"
-    agent_action_hint = str(plan.action or "hold").strip().lower() or "hold"
-    if normalized_mode == "minimal":
-        verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
-        direction = str(signal_decision.signal_direction or "none").strip().lower()
-        if verdict == "accept" and direction in {"long", "short"}:
-            agent_action_hint = "add"
-        else:
-            agent_action_hint = "hold"
-    payload = {
-        "decision_id": str(signal_decision.decision_id or event.event_id),
-        "exchange": str(signal_decision.exchange or event.exchange),
-        "symbol": str(signal_decision.symbol or event.symbol),
-        "direction_intent": str(signal_decision.signal_direction or "none"),
-        "decision_confidence": dict(decision_confidence),
-        "cross_horizon_policy": dict(cross_horizon or {}),
-        "risk_hints": {
-            "agent_action_hint": agent_action_hint,
-            "agent_notes": str(plan.notes or ""),
-            "decision_confidence": dict(decision_confidence),
-            "decision_confidence_source": decision_confidence_source,
-            "decision_agent_key": str(signal_decision.decision_agent_key or ""),
-            "decision_mode": str(signal_decision.decision_mode or "rule"),
-            "llm_parse_status": str(signal_decision.llm_parse_status or ""),
-            "prompt_config_source": str(prompt_config_source or ""),
-            "prompt_config_version": str(prompt_config_version or ""),
-            "signal_verdict": str(signal_decision.signal_verdict or ""),
-            "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
-            "signal_reasons": list(signal_decision.reasons or []),
-        },
-    }
-    if bool(ai_adaptive_enabled):
-        payload["execution_hint"] = {
-            "mode": "reserved",
-            "adaptive_mode": str(ai_adaptive_mode or "observe"),
-            "apply_scope": "none",
-        }
-        payload["adaptive_profile"] = {}
-        payload["adaptive_profile_version"] = "reserved-v0"
-        payload["adaptive_explain"] = {"status": "reserved_only"}
-    return payload
 
 
 def _build_signal_decision(

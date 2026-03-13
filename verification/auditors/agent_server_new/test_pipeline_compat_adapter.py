@@ -5,9 +5,10 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from services.agent_server_new.domain.contracts import Confidence, SignalVerdict  # noqa: E402
+from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
     build_decision_trace_legacy_sections,
+    build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
     build_symbol_memory_legacy_sections,
@@ -53,3 +54,68 @@ def test_pipeline_compat_adapter_builds_legacy_stage_outputs_contract() -> None:
     assert set(trace_sections.keys()) == {"intent", "rule_plan", "strategy_gate_result", "risk_gate"}
     memory_sections = build_symbol_memory_legacy_sections(state=out, cross_horizon={"suggested_policy": "no_action"})
     assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
+
+
+def test_pipeline_compat_adapter_builds_execution_decision_payload_modes() -> None:
+    signal_decision = SignalDecision(
+        decision_id="evt-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal_direction="long",
+        signal_verdict="accept",
+        confidence=Confidence(level="medium", score=0.7),
+        reliability_score=0.7,
+        reasons=["ok"],
+        evidence_refs=[],
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    plan_legacy = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82)),
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    ).plan
+    payload_legacy = build_execution_decision_payload(
+        default_decision_id="evt-default",
+        default_exchange="binance",
+        default_symbol="ETHUSDT",
+        signal_decision=signal_decision,
+        plan=plan_legacy,
+        pipeline_mode="legacy",
+        cross_horizon={"suggested_policy": "no_action"},
+    )
+    assert payload_legacy["risk_hints"]["decision_confidence_source"] == "agent_execution_plan"
+
+    signal_decision_min = SignalDecision(
+        decision_id="evt-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal_direction="long",
+        signal_verdict="accept",
+        confidence=Confidence(level="medium", score=0.7),
+        reliability_score=0.7,
+        reasons=["ok"],
+        evidence_refs=[],
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    payload_min = build_execution_decision_payload(
+        default_decision_id="evt-default",
+        default_exchange="binance",
+        default_symbol="ETHUSDT",
+        signal_decision=signal_decision_min,
+        plan=plan_legacy,
+        pipeline_mode="minimal",
+        cross_horizon={"suggested_policy": "no_action"},
+    )
+    assert payload_min["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
+    assert payload_min["risk_hints"]["agent_action_hint"] == "add"
