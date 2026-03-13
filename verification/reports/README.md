@@ -90,6 +90,8 @@ bash tools/local/inspect_agent_action_hint_cases.sh --help
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
+AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH=verification/reports/agent_signal_decision_replay_recommendation.latest.json \
+  bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
 ```
 
 Aggregate reports:
@@ -147,7 +149,8 @@ Notes:
   and semantic audit reports (`semantic-audit-v1`), symbol memory summary reports (`symbol-memory-summary-run-v1`),
   and agent readyz reports (`agent-readyz-report-v1`), pipeline_mode reports (`agent-pipeline-mode-report-v1`).
 - Release gate summary (`release-gate-summary-v1`) is generated independently by
-  `tools/local/check_release_ready.sh` and recommended for release check records.
+  `tools/local/check_release_ready.sh` and recommended for release check records；
+  摘要内会附带 `recommendation_artifact`（路径、status、schema_version、recommend_action）用于发布审计。
 - Summary includes:
   - `report_count/passed/failed/pass_rate` (verification suites)
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`

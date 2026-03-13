@@ -55,3 +55,40 @@ def test_release_gate_summary_json_contains_env_overrides_when_set() -> None:
     overrides = list(payload.get("env_overrides") or [])
     assert "MAX_AGENT_READYZ_LEVEL" in overrides
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in overrides
+
+
+def test_release_gate_summary_json_contains_recommendation_artifact_block(tmp_path: Path) -> None:
+    report_path = tmp_path / "agent_signal_decision_replay_recommendation.latest.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "agent-signal-decision-replay-trend-recommendation-v1",
+                "status": "recommend",
+                "recommend_action": "tighten_social_news_fallback_ratio_to_0_80",
+            }
+        ),
+        encoding="utf-8",
+    )
+    env = dict(os.environ)
+    env["AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH"] = str(report_path)
+    proc = subprocess.run(
+        [
+            "bash",
+            "tools/local/check_release_ready.sh",
+            "--print-summary-only",
+            "--summary-format",
+            "json",
+        ],
+        cwd=str(PROJECT_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    payload = json.loads(str(proc.stdout or "{}"))
+    artifact = dict(payload.get("recommendation_artifact") or {})
+    assert artifact.get("path") == str(report_path)
+    assert artifact.get("status") == "recommend"
+    assert artifact.get("recommend_action") == "tighten_social_news_fallback_ratio_to_0_80"
+    assert "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" in list(payload.get("env_overrides") or [])

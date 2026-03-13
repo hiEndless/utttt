@@ -31,6 +31,7 @@ while (($# > 0)); do
   NIGHTLY_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS nightly 默认 decision_trace schema guard invalid 上限（默认 0）
   NIGHTLY_REQUIRE_AGENT_READYZ_REPORT nightly 默认是否要求 readyz 报告（默认 1）
   MAX_LEGACY_CONFIDENCE_RATIO        nightly confidence 占比阈值（默认 0.05）
+  AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH recommendation 报告路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
 
 参数:
   --print-summary-only               仅打印门禁阈值摘要并退出（不执行四步检查）
@@ -70,6 +71,7 @@ REGRESSION_REQUIRE_AGENT_READYZ_REPORT="${REGRESSION_REQUIRE_AGENT_READYZ_REPORT
 NIGHTLY_MAX_AGENT_READYZ_LEVEL="${NIGHTLY_MAX_AGENT_READYZ_LEVEL:-yellow}"
 NIGHTLY_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${NIGHTLY_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:-0}"
 NIGHTLY_REQUIRE_AGENT_READYZ_REPORT="${NIGHTLY_REQUIRE_AGENT_READYZ_REPORT:-1}"
+AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH="${AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH:-verification/reports/agent_signal_decision_replay_recommendation.latest.json}"
 TS_MS="$(($(date +%s) * 1000))"
 ENV_OVERRIDES=()
 
@@ -91,6 +93,7 @@ collect_override "NIGHTLY_MAX_AGENT_READYZ_LEVEL"
 collect_override "NIGHTLY_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
 collect_override "NIGHTLY_REQUIRE_AGENT_READYZ_REPORT"
 collect_override "MAX_LEGACY_CONFIDENCE_RATIO"
+collect_override "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH"
 
 ENV_OVERRIDES_JSON="[]"
 if ((${#ENV_OVERRIDES[@]} > 0)); then
@@ -103,6 +106,56 @@ if ((${#ENV_OVERRIDES[@]} > 0)); then
   done
   ENV_OVERRIDES_JSON+="]"
 fi
+
+RECOMMENDATION_ARTIFACT_JSON="$(RECOMMENDATION_PATH="$AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+path = str(os.environ.get("RECOMMENDATION_PATH") or "").strip()
+payload = {
+    "path": path,
+    "status": "missing",
+    "schema_version": "",
+    "recommend_action": "none",
+}
+
+if not path:
+    payload["status"] = "missing"
+    print(json.dumps(payload, ensure_ascii=False))
+    raise SystemExit(0)
+
+file_path = Path(path)
+if not file_path.exists():
+    payload["status"] = "missing"
+    print(json.dumps(payload, ensure_ascii=False))
+    raise SystemExit(0)
+
+try:
+    data = json.loads(file_path.read_text(encoding="utf-8"))
+except Exception:
+    payload["status"] = "invalid_json"
+    print(json.dumps(payload, ensure_ascii=False))
+    raise SystemExit(0)
+
+schema_version = str(data.get("schema_version") or "")
+status = str(data.get("status") or "").strip()
+recommend_action = str(data.get("recommend_action") or "none").strip()
+if not recommend_action:
+    recommend_action = "none"
+
+payload["schema_version"] = schema_version
+payload["recommend_action"] = recommend_action
+if schema_version != "agent-signal-decision-replay-trend-recommendation-v1":
+    payload["status"] = "unsupported_schema_version"
+elif status in {"recommend", "hold", "skip"}:
+    payload["status"] = status
+else:
+    payload["status"] = "unknown_status"
+
+print(json.dumps(payload, ensure_ascii=False))
+PY
+)"
 
 if [[ "$SUMMARY_FORMAT" == "json" ]]; then
   cat <<JSON
@@ -128,6 +181,7 @@ if [[ "$SUMMARY_FORMAT" == "json" ]]; then
     "require_agent_readyz_report": ${NIGHTLY_REQUIRE_AGENT_READYZ_REPORT},
     "max_legacy_confidence_ratio": ${MAX_LEGACY_CONFIDENCE_RATIO}
   },
+  "recommendation_artifact": ${RECOMMENDATION_ARTIFACT_JSON},
   "checklist_template": "docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
 }
 JSON
@@ -141,6 +195,7 @@ else
   else
     echo "[release-gate] env_overrides: (none)"
   fi
+  echo "[release-gate] recommendation_artifact: ${RECOMMENDATION_ARTIFACT_JSON}"
   echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
 fi
 
