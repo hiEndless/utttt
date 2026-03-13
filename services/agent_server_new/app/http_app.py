@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from typing import Any, Dict
 from pathlib import Path
@@ -30,6 +31,13 @@ def _ready_status_level(*, errors: list[str], warnings: list[str]) -> str:
     if warnings:
         return "yellow"
     return "green"
+
+
+def _extract_error_code_from_exception_message(message: str) -> str | None:
+    matched = re.match(r"^\[([A-Z0-9_]+)\]", str(message or ""))
+    if not matched:
+        return None
+    return matched.group(1)
 
 
 def _check_market_state_healthz(*, timeout_s: float) -> tuple[bool, Dict[str, Any]]:
@@ -176,6 +184,9 @@ def create_router() -> APIRouter:
                 detail={"error": str(exc)},
             )
             errors.append("workflow_bootstrap_failed")
+            error_code = _extract_error_code_from_exception_message(str(exc))
+            if error_code:
+                errors.append(error_code)
 
         if check_market_state:
             ok, detail = _check_market_state_healthz(timeout_s=timeout_s)

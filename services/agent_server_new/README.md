@@ -327,6 +327,7 @@ signal_event + active_events + MSL
 - 版本信息：`GET /internal/agent/version`（`contract_version/runtime_version/runtime_profile`）
 - 就绪检查：`GET /internal/agent/readyz`
   - 当 workflow bootstrap 失败时返回 `503`
+  - 若 bootstrap 异常消息含 `[错误码]` 前缀（如 `[AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED]`），`errors` 会透传该稳定错误码
   - 响应包含 `status_level`：`green`（无告警）/`yellow`（仅 warning）/`red`（存在 error）
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
   - 可选上游检查（默认开启 market_state / redis）：
