@@ -260,6 +260,7 @@ Environment Switches (local debug only):
   VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1
 
 Optional Observability:
+  WITH_AGENT_ROUTING_GUARDS=1   启用路由守卫组合（pipeline_mode + route replay + router baseline replay + signal decision replay，默认关闭）
   WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
   WITH_PIPELINE_MODE_REPORT=1    启用 pipeline_mode 灰度聚合观测（默认关闭）
   WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
