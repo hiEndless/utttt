@@ -23,3 +23,8 @@ def test_normalize_doc_path_collapses_backslashes() -> None:
 def test_get_required_snippets_for_unknown_doc_returns_empty_tuple() -> None:
     unknown = Path("docs/not_exists.md")
     assert get_required_snippets_for_doc(unknown) == ()
+
+
+def test_get_required_snippets_for_empty_or_dot_path_returns_empty_tuple() -> None:
+    assert get_required_snippets_for_doc(Path("")) == ()
+    assert get_required_snippets_for_doc(Path(".")) == ()
