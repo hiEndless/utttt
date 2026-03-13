@@ -19,7 +19,10 @@ def _parse_version(value: str) -> int:
 
 def test_readme_contracts_version_not_lower_than_baseline() -> None:
     baseline_path = PROJECT_ROOT / "verification" / "text" / "readme_contracts_version.baseline"
-    baseline_raw = baseline_path.read_text(encoding="utf-8").strip()
+    lines = [line.strip() for line in baseline_path.read_text(encoding="utf-8").splitlines()]
+    effective = [line for line in lines if line and not line.startswith("#")]
+    assert len(effective) == 1, f"baseline must contain exactly one effective version line: {effective}"
+    baseline_raw = effective[0]
     current_ver = _parse_version(README_CONTRACTS_VERSION)
     baseline_ver = _parse_version(baseline_raw)
     assert current_ver >= baseline_ver, (
