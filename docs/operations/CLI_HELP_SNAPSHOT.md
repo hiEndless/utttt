@@ -8,6 +8,9 @@
 - `tools/local/verify_quick.sh` 是 `tools/ci/verify_quick.sh` 的本地代理入口。
 - `tools/local/verify_full.sh` 是 `tools/ci/new_arch_guards_full.sh` 的本地代理入口。
 
+文档守卫契约版本：
+- `README_CONTRACTS_VERSION=readme-contracts-v1`
+
 ## 刷新命令
 
 ```bash

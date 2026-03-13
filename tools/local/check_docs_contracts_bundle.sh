@@ -25,7 +25,8 @@ echo "[docs 6/13] contract bundle regression tests"
 
 echo "[docs 7/13] readme pipeline_mode quick path doc guards"
 ./venv/bin/pytest -q \
-  verification/text/test_readme_pipeline_mode_quick_paths.py
+  verification/text/test_readme_pipeline_mode_quick_paths.py \
+  verification/text/test_cli_help_snapshot_readme_contract_version.py
 
 echo "[docs 8/13] new_arch guards help snapshot guard"
 bash tools/local/check_new_arch_guards_help_snapshot_guard.sh
