@@ -83,6 +83,10 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
+    assert "WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_SAMPLES_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
@@ -156,6 +160,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_signal_decision_llm_observe_agent_key_trend.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_trend_recommendation_hint.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_aggregate_summary.sh" in nightly_text
+    assert "tools/local/run_agent_signal_router_baseline_replay.sh" in nightly_text
     assert "llm_observe_trend_recommendation_status=" in nightly_text
     assert "--with-signal-decision-llm-observe-report" in nightly_text
     assert "recommendation_artifact_status=" in nightly_text
