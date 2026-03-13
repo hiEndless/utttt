@@ -296,6 +296,7 @@ def test_create_trade_event_workflow_from_env_minimal_requires_execution_enabled
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when minimal mode disables execution"
     except RuntimeError as exc:
+        assert "AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED" in str(exc)
         assert "minimal pipeline requires AGENT_EXECUTION_ENABLED=true" in str(exc)
 
 

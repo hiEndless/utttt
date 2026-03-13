@@ -31,6 +31,7 @@ from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_
 
 logger = logging.getLogger(__name__)
 _ALLOWED_SIGNAL_AGENT_KEYS = {"technical", "liquidation", "onchain", "social_news", "generic"}
+_ERR_MINIMAL_EXECUTION_REQUIRED = "AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED"
 
 
 def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
@@ -150,7 +151,10 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     legacy_pipeline_enabled = _env_bool("AGENT_LEGACY_PIPELINE_ENABLED", "true")
     if (not legacy_pipeline_enabled) and (not execution_enabled):
-        msg = "minimal pipeline requires AGENT_EXECUTION_ENABLED=true to keep decision->execution closed loop"
+        msg = (
+            f"[{_ERR_MINIMAL_EXECUTION_REQUIRED}] "
+            "minimal pipeline requires AGENT_EXECUTION_ENABLED=true to keep decision->execution closed loop"
+        )
         raise RuntimeError(msg)
     signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
     signal_router_config = load_signal_router_config_from_env()
