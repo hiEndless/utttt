@@ -216,6 +216,10 @@ def test_pipeline_traceability_selected_event_to_decision_trace():
 
         trace = recorder.get_agent_payload(event_id, "decision_trace")
         assert trace
+        routing = dict(trace.get("routing") or {})
+        assert routing.get("event_type_raw") == "onchain_alert"
+        assert routing.get("event_type_normalized") == "onchain_alert"
+        assert routing.get("event_type_match_mode") == "canonical_or_raw"
         # signal source 可追溯
         assert ((trace.get("event") or {}).get("payload") or {}).get("source") == "event_center_new"
         # state evidence 可追溯（来自 selected_event_provider）

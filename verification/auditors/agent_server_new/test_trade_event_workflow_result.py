@@ -554,6 +554,9 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         assert trace_payload
         routing = dict(trace_payload.get("routing") or {})
         assert routing.get("pipeline_mode") == "minimal"
+        assert routing.get("event_type_raw") == "indicator_signal"
+        assert routing.get("event_type_normalized") == "market_indicator_signal"
+        assert routing.get("event_type_match_mode") == "alias"
         names = [name for _, name, _ in wf._recorder.outputs]  # noqa: SLF001
         assert "workflow_bridge" in names
         assert "intent_resolver" not in names

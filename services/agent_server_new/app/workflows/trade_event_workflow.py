@@ -32,7 +32,7 @@ from services.agent_server_new.domain.signal_decision_agent import (
     SignalDecisionAgent,
 )
 from services.agent_server_new.domain.signal_decision_context_policy import build_llm_observation_context
-from services.agent_server_new.domain.signal_router import route_signal_agent_key
+from services.agent_server_new.domain.signal_router import normalize_signal_event_type, route_signal_agent_key
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
@@ -398,6 +398,10 @@ class TradeEventWorkflow:
             llm_result=llm_result_raw,
         )
         signal = eval_result.signal
+        event_type_diag = normalize_signal_event_type(
+            signal_event=dict(ctx.signal_event or {}),
+            router_config=self._signal_router_config,
+        )
         signal_decision = _build_signal_decision(
             event=event,
             signal=signal,
@@ -651,6 +655,9 @@ class TradeEventWorkflow:
                     "router_config_version": self._signal_router_config_version,
                     "prompt_config_source": self._signal_prompt_config_source,
                     "prompt_config_version": self._signal_prompt_config_version,
+                    "event_type_raw": str(event_type_diag.get("raw_event_type") or ""),
+                    "event_type_normalized": str(event_type_diag.get("normalized_event_type") or ""),
+                    "event_type_match_mode": str(event_type_diag.get("matched") or "empty"),
                 },
                 intent={
                     "intent": intent.intent,

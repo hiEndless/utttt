@@ -79,6 +79,16 @@
         },
         "prompt_config_version": {
           "type": "string"
+        },
+        "event_type_raw": {
+          "type": "string"
+        },
+        "event_type_normalized": {
+          "type": "string"
+        },
+        "event_type_match_mode": {
+          "type": "string",
+          "enum": ["canonical_or_raw", "alias", "empty"]
         }
       },
       "required": [
@@ -91,7 +101,10 @@
         "router_config_source",
         "router_config_version",
         "prompt_config_source",
-        "prompt_config_version"
+        "prompt_config_version",
+        "event_type_raw",
+        "event_type_normalized",
+        "event_type_match_mode"
       ],
       "additionalProperties": true
     },
