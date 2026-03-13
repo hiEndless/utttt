@@ -6,34 +6,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List
 
+from services.agent_server_new.domain.signal_agent_registry import default_signal_decision_prompt_profiles
 
-_DEFAULT_PROFILES = {
-    "generic": {
-        "focus": "generic_signal_validation",
-        "checklist": ["direction_consistency", "evidence_quality", "market_regime_fit"],
-        "avoid": ["position_sizing", "execution_action", "risk_gate_decision"],
-    },
-    "technical": {
-        "focus": "technical_signal_validation",
-        "checklist": ["trend_structure", "orderbook_liquidity", "oi_change_consistency"],
-        "avoid": ["news_sentiment_overweight", "execution_action", "risk_gate_decision"],
-    },
-    "liquidation": {
-        "focus": "liquidation_shock_validation",
-        "checklist": ["liquidation_cluster_strength", "cascade_risk", "rebound_probability"],
-        "avoid": ["long_horizon_macro_overweight", "execution_action", "risk_gate_decision"],
-    },
-    "onchain": {
-        "focus": "onchain_flow_validation",
-        "checklist": ["wallet_flow_direction", "exchange_inflow_outflow_shift", "source_reliability"],
-        "avoid": ["micro_orderbook_overweight", "execution_action", "risk_gate_decision"],
-    },
-    "social_news": {
-        "focus": "social_news_event_validation",
-        "checklist": ["source_credibility", "cross_source_consistency", "timeliness_and_decay"],
-        "avoid": ["single_post_overweight", "execution_action", "risk_gate_decision"],
-    },
-}
+_DEFAULT_PROFILES = default_signal_decision_prompt_profiles()
 
 
 def _default_config_path() -> Path:

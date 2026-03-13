@@ -250,6 +250,7 @@ signal_event + active_events + MSL
   - 同时输出 `decision_prompt(focus/checklist/avoid/model_id?)`，用于按事件类型定制 LLM 判定指令与模型选择
 - `AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE`
   - 决策提示词配置文件路径（默认：`services/agent_server_new/config/signal_decision_prompt_profiles.json`）
+  - 未覆盖项会回退到 `services/agent_server_new/domain/signal_agent_registry.py` 中各 agent 的默认模板
   - 启动时会校验 `agent_key` 与 `focus/checklist/avoid/model_id(可选)` 字段格式，配置非法直接拒绝启动
   - 当 profile 配置 `model_id` 时，会覆盖默认 `AGENT_LLM_MODEL_ID`，实现按事件类型路由到不同信号决策模型
 - `AGENT_SIGNAL_DECISION_LLM_MODE`
