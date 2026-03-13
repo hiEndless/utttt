@@ -84,27 +84,6 @@ def build_pipeline_compat_state(
     )
 
 
-def build_decision_trace_semantic_sections(
-    *,
-    state: PipelineCompatState,
-    include_semantic_snapshots: bool = True,
-) -> Dict[str, Dict[str, Any]]:
-    if not bool(include_semantic_snapshots):
-        return {
-            "intent": {},
-            "rule_plan": {},
-            "strategy_gate_result": {},
-            "risk_gate": {},
-        }
-    snapshots = dict(state.semantic_snapshots or {})
-    return {
-        "intent": dict(snapshots.get("intent") or {}),
-        "rule_plan": dict(snapshots.get("rule_plan") or {}),
-        "strategy_gate_result": dict(snapshots.get("strategy_gate_result") or {}),
-        "risk_gate": dict(snapshots.get("risk_gate") or {}),
-    }
-
-
 def build_symbol_memory_semantic_sections(
     *,
     state: PipelineCompatState,
@@ -327,13 +306,8 @@ def build_decision_trace_payload(
     event_type_diag: Dict[str, Any],
     state: PipelineCompatState,
     llm_observation: Dict[str, Any],
-    include_semantic_snapshots: bool = True,
 ) -> Dict[str, Any]:
     contract_warnings = [str(x) for x in list((key_market_features or {}).get("contract_warnings") or []) if x]
-    semantic_sections = build_decision_trace_semantic_sections(
-        state=state,
-        include_semantic_snapshots=include_semantic_snapshots,
-    )
     trace = DecisionTrace(
         event_id=event_id,
         exchange=exchange,
@@ -365,10 +339,6 @@ def build_decision_trace_payload(
             "event_type_normalized": str((event_type_diag or {}).get("normalized_event_type") or ""),
             "event_type_match_mode": str((event_type_diag or {}).get("matched") or "empty"),
         },
-        intent=dict(semantic_sections.get("intent") or {}),
-        rule_plan=dict(semantic_sections.get("rule_plan") or {}),
-        strategy_gate_result=dict(semantic_sections.get("strategy_gate_result") or {}),
-        risk_gate=dict(semantic_sections.get("risk_gate") or {}),
         execution_plan={
             "action": state.plan.action,
             "direction": state.plan.direction,

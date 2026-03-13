@@ -40,10 +40,6 @@ class DecisionTrace:
 
     signal_verdict: Dict[str, Any]
     routing: Dict[str, Any]
-    intent: Dict[str, Any]
-    rule_plan: Dict[str, Any]
-    strategy_gate_result: Dict[str, Any]
-    risk_gate: Dict[str, Any]
     execution_plan: Dict[str, Any]
     llm_observation: Dict[str, Any] = field(default_factory=dict)
     memory_metrics: Dict[str, Any] = field(default_factory=dict)
@@ -65,10 +61,6 @@ class DecisionTrace:
             "anomalies": dict(self.anomalies),
             "signal_verdict": dict(self.signal_verdict),
             "routing": dict(self.routing),
-            "intent": dict(self.intent),
-            "rule_plan": dict(self.rule_plan),
-            "strategy_gate_result": dict(self.strategy_gate_result),
-            "risk_gate": dict(self.risk_gate),
             "execution_plan": dict(self.execution_plan),
             "llm_observation": dict(self.llm_observation),
             "memory_metrics": dict(self.memory_metrics),

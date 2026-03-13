@@ -112,7 +112,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 
 关键字段：
 - `event_id/exchange/symbol/ts`
-- `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
+- `signal_verdict/execution_plan`
 - `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`）
   - `pipeline_mode` 固定为 `minimal`
   - `llm_contract_error_code`：`""|llm_raw_content_missing|llm_json_parse_error|llm_json_not_object|llm_schema_validation_failed|llm_confidence_parse_error`
@@ -120,8 +120,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 - `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）
 
 语义边界：
-- `intent/rule_plan/strategy_gate_result/risk_gate` 为 agent 语义快照字段，仅用于回放与解释，不代表 execution 最终风控裁决。
-  - 默认关闭（输出空对象）；仅当 `AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS=true` 时输出详细快照。
+- `decision_trace` 已移除 `intent/rule_plan/strategy_gate_result/risk_gate` 历史语义快照字段，避免与 execution 权责混淆。
 - `execution_plan.sizing` 与 `execution_plan.allowance` 为 agent 语义建议字段，execution 可按自身规则覆盖或忽略。
 - 最终风控阻断与执行动作以 `execution_service` 返回结果为唯一权威。
 

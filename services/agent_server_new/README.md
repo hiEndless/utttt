@@ -202,8 +202,6 @@ signal_event + active_events + MSL
   - 单文件最大字节数（默认：`10485760`，即 10MB；超过后追加 `.1/.2...` 分片）
 - `AGENT_DECISION_TRACE_SCHEMA_VALIDATE`
   - 是否启用 decision_trace 运行时 schema 校验（默认：`true`；仅记录告警，不阻断主链路）
-- `AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS`
-  - 是否在 `decision_trace` 中输出 `intent/rule_plan/strategy_gate_result/risk_gate` 语义快照（默认：`false`；建议仅在回放排障时开启）
 - `AGENT_SYMBOL_MEMORY_ENABLED`
   - 是否启用 symbol 级记忆注入（默认：`false`）
 - `AGENT_SYMBOL_MEMORY_BACKEND`
@@ -605,7 +603,7 @@ agent_server_new/
 1. workflow 主链路固定为 `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`。
 2. `trade_event_workflow.py` 不得 import `intent/rule/strategy/risk/execution_planner/horizon_policy` 历史域模块。
 3. `DecisionTrace.routing.pipeline_mode` 固定为 `minimal`。
-4. `intent/rule_plan/strategy_gate_result/risk_gate` 仅作为语义快照，不承载 execution 最终风控语义。
+4. `decision_trace` 不再输出 `intent/rule_plan/strategy_gate_result/risk_gate` 字段。
 5. `ExecutionPlan.sizing/allowance` 仅为语义建议字段，execution 可覆盖或忽略。
 6. 最终风控阻断与执行动作以 `execution_service` 返回为唯一权威。
 
@@ -616,7 +614,7 @@ agent_server_new/
 1. workflow 主链路固定为 `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`。
 2. 兼容开关与兼容壳已下线，`pipeline_mode` 固定为 `minimal`。
 3. `intent/rule/strategy/risk/horizon/execution_planner` 历史域模块已删除，并由守卫禁止回流主链路。
-4. `DecisionTrace` 语义快照边界已冻结，最终风控与执行动作以 `execution_service` 为唯一权威。
+4. `DecisionTrace` 已移除语义快照字段，仅保留主链路判定与执行计划可观测字段。
 
 ### 待优化项
 

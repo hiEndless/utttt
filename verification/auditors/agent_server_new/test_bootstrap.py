@@ -37,7 +37,6 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert wf._ai_adaptive_enabled is False  # noqa: SLF001
     assert wf._ai_adaptive_mode == "observe"  # noqa: SLF001
     assert wf._decision_trace_schema_validate is True  # noqa: SLF001
-    assert wf._decision_trace_include_semantic_snapshots is False  # noqa: SLF001
     assert wf._market_state._base_url == "http://localhost:8300"  # noqa: SLF001
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
 
@@ -169,16 +168,6 @@ def test_create_trade_event_workflow_from_env_enables_jsonl_event_recorder(monke
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._recorder, JsonlEventRecorder)  # noqa: SLF001
-
-
-def test_create_trade_event_workflow_from_env_enables_decision_trace_semantic_snapshots(monkeypatch):
-    monkeypatch.setenv("AGENT_DECISION_TRACE_INCLUDE_SEMANTIC_SNAPSHOTS", "true")
-
-    import services.agent_server_new.app.bootstrap as mod
-
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
-    wf = create_trade_event_workflow_from_env()
-    assert wf._decision_trace_include_semantic_snapshots is True  # noqa: SLF001
 
 
 def test_create_trade_event_workflow_from_env_invalid_event_recorder_mode(monkeypatch):

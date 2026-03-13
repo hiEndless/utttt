@@ -598,8 +598,7 @@ ExecutionPlan：
 | msl | object | `msl.to_llm_dict()` 输出 |
 | key_features | object | key_market_features（包含裁剪 features 列表） |
 | evidence/anomalies | object | 从 key_market_features 拿的 evidence/anomalies（通常来自 state_features） |
-| signal_verdict/intent/rule_plan | object | 兼容语义快照（由 adapter 生成） |
-| strategy_gate_result/risk_gate/execution_plan | object | 兼容语义快照与计划摘要（不代表 execution 最终风控裁决） |
+| signal_verdict/execution_plan | object | 主链路判定与计划摘要 |
 | llm_observation | object | LLM 旁路观察摘要（`status/provider/model/raw_content_hash`，失败或禁用也会输出固定语义） |
 | memory_metrics | object | memory_observability |
 | tags | array[string] | 标签（当前固定含 decision_trace） |

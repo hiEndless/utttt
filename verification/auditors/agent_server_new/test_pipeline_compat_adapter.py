@@ -8,7 +8,6 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
     build_decision_trace_payload,
-    build_decision_trace_semantic_sections,
     build_execution_decision_payload,
     build_pipeline_compat_state,
     build_recorder_stage_payloads,
@@ -37,7 +36,7 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
     assert dict(out.semantic_snapshots.get("rule_plan") or {}).get("notes") == "minimal_pipeline_semantic_plan"
 
 
-def test_pipeline_compat_adapter_semantic_sections_contract() -> None:
+def test_pipeline_compat_adapter_symbol_memory_sections_contract() -> None:
     out = build_pipeline_compat_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
@@ -46,28 +45,8 @@ def test_pipeline_compat_adapter_semantic_sections_contract() -> None:
         signal_event={},
         cross_horizon={},
     )
-    trace_sections = build_decision_trace_semantic_sections(state=out)
-    assert set(trace_sections.keys()) == {"intent", "rule_plan", "strategy_gate_result", "risk_gate"}
     memory_sections = build_symbol_memory_semantic_sections(state=out, cross_horizon={"suggested_policy": "no_action"})
     assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
-
-
-def test_pipeline_compat_adapter_semantic_sections_can_be_disabled() -> None:
-    out = build_pipeline_compat_state(
-        signal=_sample_signal(),
-        msl=None,  # type: ignore[arg-type]
-        position_context={},
-        active_events=[],
-        signal_event={},
-        cross_horizon={},
-    )
-    trace_sections = build_decision_trace_semantic_sections(state=out, include_semantic_snapshots=False)
-    assert trace_sections == {
-        "intent": {},
-        "rule_plan": {},
-        "strategy_gate_result": {},
-        "risk_gate": {},
-    }
 
 
 def test_pipeline_compat_adapter_builds_execution_decision_payload() -> None:

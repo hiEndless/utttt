@@ -20,10 +20,9 @@ def test_decision_trace_semantic_boundary_doc_guard() -> None:
     contract_doc = (Path(PROJECT_ROOT) / "services" / "agent_server_new" / "docs" / "runner_output_contract.md").read_text(
         encoding="utf-8"
     )
-    assert "语义快照字段" in contract_doc
+    assert "已移除 `intent/rule_plan/strategy_gate_result/risk_gate`" in contract_doc
     assert "语义建议字段" in contract_doc
     assert "sizing" in contract_doc
     assert "allowance" in contract_doc
-    assert "不等价于 execution 最终动作" in contract_doc
     assert "execution_service" in contract_doc
     assert "唯一权威" in contract_doc

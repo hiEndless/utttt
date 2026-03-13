@@ -108,22 +108,6 @@
       ],
       "additionalProperties": true
     },
-    "intent": {
-      "type": "object",
-      "description": "semantic snapshot only; not execution final risk authority"
-    },
-    "rule_plan": {
-      "type": "object",
-      "description": "semantic snapshot only; not execution final risk authority"
-    },
-    "strategy_gate_result": {
-      "type": "object",
-      "description": "semantic snapshot only; not execution final risk authority"
-    },
-    "risk_gate": {
-      "type": "object",
-      "description": "semantic snapshot only; not execution final risk authority"
-    },
     "execution_plan": {
       "type": "object"
     },
@@ -190,10 +174,6 @@
     "anomalies",
     "signal_verdict",
     "routing",
-    "intent",
-    "rule_plan",
-    "strategy_gate_result",
-    "risk_gate",
     "execution_plan",
     "llm_observation",
     "memory_metrics",

@@ -69,7 +69,7 @@ class _Recorder:
         self.outputs.append((event_id, agent_name, dict(payload or {})))
 
 
-def test_decision_trace_contains_semantic_risk_snapshot_fields_when_enabled() -> None:
+def test_decision_trace_removes_legacy_semantic_snapshot_fields() -> None:
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -84,7 +84,6 @@ def test_decision_trace_contains_semantic_risk_snapshot_fields_when_enabled() ->
             position_context=_Position(),
             active_events=_Events(),
             recorder=recorder,
-            decision_trace_include_semantic_snapshots=True,
         )
         await wf.run_with_result(
             TradeEventInput(
@@ -102,58 +101,10 @@ def test_decision_trace_contains_semantic_risk_snapshot_fields_when_enabled() ->
                 trace_payload = payload
                 break
         assert trace_payload
-        risk_gate = dict(trace_payload.get("risk_gate") or {})
-        assert isinstance(risk_gate.get("regime_sources"), list)
-        assert risk_gate.get("allow_add") is True
-        sg = dict(trace_payload.get("strategy_gate_result") or {})
-        assert isinstance(sg.get("horizon_reasons"), list)
-        assert isinstance(sg.get("strategy_reasons"), list)
-
-    import pytest
-
-    monkeypatch = pytest.MonkeyPatch()
-    try:
-        asyncio.run(_run(monkeypatch))
-    finally:
-        monkeypatch.undo()
-
-
-def test_decision_trace_semantic_risk_snapshot_disabled_by_default() -> None:
-    async def _run(monkeypatch):  # noqa: ANN001
-        import services.agent_server_new.app.workflows.trade_event_workflow as mod
-
-        monkeypatch.setattr(
-            mod,
-            "evaluate_signal",
-            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
-        )
-        recorder = _Recorder()
-        wf = TradeEventWorkflow(
-            market_state=_MarketState(),
-            position_context=_Position(),
-            active_events=_Events(),
-            recorder=recorder,
-        )
-        await wf.run_with_result(
-            TradeEventInput(
-                event_id="evt-risk-trace-002",
-                exchange="binance",
-                symbol="ETHUSDT",
-                signal_direction="long",
-                payload={"event_type": "indicator_signal"},
-            )
-        )
-
-        trace_payload = {}
-        for _, name, payload in recorder.outputs:
-            if name == "decision_trace":
-                trace_payload = payload
-                break
-        assert trace_payload
-        assert dict(trace_payload.get("risk_gate") or {}) == {}
-        assert dict(trace_payload.get("strategy_gate_result") or {}) == {}
-        assert dict(trace_payload.get("intent") or {}) == {}
-        assert dict(trace_payload.get("rule_plan") or {}) == {}
+        assert "intent" not in trace_payload
+        assert "rule_plan" not in trace_payload
+        assert "strategy_gate_result" not in trace_payload
+        assert "risk_gate" not in trace_payload
 
     import pytest
 

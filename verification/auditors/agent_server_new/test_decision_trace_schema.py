@@ -86,10 +86,6 @@ def _sample_decision_trace() -> Dict[str, Any]:
             "event_type_normalized": "market_indicator_signal",
             "event_type_match_mode": "alias",
         },
-        "intent": {"intent": "increase"},
-        "rule_plan": {"sizing": {"mode": "ratio"}},
-        "strategy_gate_result": {"allowed": True},
-        "risk_gate": {"global_regime": "normal"},
         "execution_plan": {"action": "add"},
         "llm_observation": {
             "status": "ok",
