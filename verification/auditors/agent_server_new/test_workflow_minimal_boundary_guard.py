@@ -19,3 +19,17 @@ def test_trade_event_workflow_no_legacy_gate_dependency() -> None:
     ]
     for token in forbidden_tokens:
         assert token not in text
+
+
+def test_trade_event_workflow_no_legacy_module_import() -> None:
+    path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "app" / "workflows" / "trade_event_workflow.py"
+    text = path.read_text(encoding="utf-8")
+    forbidden_import_tokens = [
+        "domain.intent_resolver",
+        "domain.rule_planner",
+        "domain.strategy_gate",
+        "domain.risk_gate",
+        "domain.execution_planner",
+    ]
+    for token in forbidden_import_tokens:
+        assert token not in text

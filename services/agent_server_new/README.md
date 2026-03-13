@@ -498,6 +498,7 @@ agent_server_new/
 - `domain/strategy_gate.py`
 - `domain/risk_gate.py`
 - `domain/execution_planner.py`
+  - 以上文件已标记 `Deprecated legacy domain module`，禁止在 `trade_event_workflow.py` 主链路 import。
 
 以下文件是当前主链路核心：
 

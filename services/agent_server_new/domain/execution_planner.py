@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""Deprecated legacy domain module.
+
+This module is kept only for historical compatibility and offline replay reference.
+TradeEventWorkflow minimal main path must not import or call this module.
+"""
+
 from typing import Any, Dict, Optional
 
 from .contracts import Confidence, ExecutionPlan, RiskAllowance, RulePlan
