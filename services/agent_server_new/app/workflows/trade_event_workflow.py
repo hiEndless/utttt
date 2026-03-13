@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import logging
 import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -90,6 +91,16 @@ def _sha256_text(value: Any) -> str:
     if not text:
         return ""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _signal_router_config_version(cfg: Dict[str, Any]) -> str:
+    if not isinstance(cfg, dict):
+        return ""
+    try:
+        stable = json.dumps(cfg, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    except Exception:
+        return ""
+    return _sha256_text(stable)[:16]
 
 
 def _derive_global_regime(
@@ -182,6 +193,8 @@ class TradeEventWorkflow:
         ai_adaptive_mode: str = "observe",
         horizon_policy_config: Optional[Dict[str, Any]] = None,
         signal_router_config: Optional[Dict[str, Any]] = None,
+        signal_router_config_source: str = "runtime",
+        signal_router_config_version: str = "",
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
@@ -200,6 +213,10 @@ class TradeEventWorkflow:
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
         self._signal_router_config = dict(signal_router_config or {})
+        self._signal_router_config_source = str(signal_router_config_source or "runtime").strip() or "runtime"
+        self._signal_router_config_version = str(signal_router_config_version or "").strip() or _signal_router_config_version(
+            self._signal_router_config
+        )
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
         result = await self.run_with_result(event)
@@ -461,6 +478,11 @@ class TradeEventWorkflow:
                     "verdict": signal.verdict,
                     "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
                     "invalidation_reasons": list(signal.invalidation_reasons),
+                },
+                routing={
+                    "decision_agent_key": signal_decision.decision_agent_key,
+                    "router_config_source": self._signal_router_config_source,
+                    "router_config_version": self._signal_router_config_version,
                 },
                 intent={
                     "intent": intent.intent,

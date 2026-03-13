@@ -128,6 +128,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
   - 环境变量覆盖：`AGENT_SIGNAL_ROUTER_CONFIG_FILE`
 - `bootstrap` 启动已接入 `SignalRouter` 配置校验门禁（生产环境配置非法直接拒绝启动）。
 - `TradeEventWorkflow` 已输出 `SignalDecision`，并把 `decision_agent_key` 透传到 execution payload 的 `risk_hints`。
+- `DecisionTrace` 已增加 `routing` 观测块，记录 `decision_agent_key/router_config_source/router_config_version`，用于回放时定位路由配置漂移。
 
 3. Phase C（兼容阶段）
 - 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。

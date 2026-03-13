@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import os
 
@@ -40,6 +42,14 @@ def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
 
 def _env_bool(name: str, default: str = "false") -> bool:
     return str(os.getenv(name, default) or default).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _signal_router_config_version(cfg: dict) -> str:
+    try:
+        stable = json.dumps(cfg, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    except Exception:
+        return ""
+    return hashlib.sha256(stable.encode("utf-8")).hexdigest()[:16]
 
 
 def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
@@ -126,6 +136,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
     ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
+    signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
     signal_router_config = load_signal_router_config_from_env()
     try:
         validate_signal_router_config(signal_router_config, allowed_agent_keys=_ALLOWED_SIGNAL_AGENT_KEYS)
@@ -149,4 +160,10 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         ai_adaptive_enabled=ai_adaptive_enabled,
         ai_adaptive_mode=ai_adaptive_mode,
         signal_router_config=signal_router_config,
+        signal_router_config_source=(
+            f"env:{signal_router_config_file}"
+            if signal_router_config_file
+            else "default:services/agent_server_new/config/signal_router_profiles.json"
+        ),
+        signal_router_config_version=_signal_router_config_version(signal_router_config),
     )

@@ -39,6 +39,7 @@ class DecisionTrace:
     anomalies: Dict[str, Any]
 
     signal_verdict: Dict[str, Any]
+    routing: Dict[str, Any]
     intent: Dict[str, Any]
     rule_plan: Dict[str, Any]
     strategy_gate_result: Dict[str, Any]
@@ -63,6 +64,7 @@ class DecisionTrace:
             "evidence": dict(self.evidence),
             "anomalies": dict(self.anomalies),
             "signal_verdict": dict(self.signal_verdict),
+            "routing": dict(self.routing),
             "intent": dict(self.intent),
             "rule_plan": dict(self.rule_plan),
             "strategy_gate_result": dict(self.strategy_gate_result),

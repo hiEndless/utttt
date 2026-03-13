@@ -34,6 +34,26 @@
     "signal_verdict": {
       "type": "object"
     },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "decision_agent_key": {
+          "type": "string"
+        },
+        "router_config_source": {
+          "type": "string"
+        },
+        "router_config_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_agent_key",
+        "router_config_source",
+        "router_config_version"
+      ],
+      "additionalProperties": true
+    },
     "intent": {
       "type": "object"
     },
@@ -111,6 +131,7 @@
     "evidence",
     "anomalies",
     "signal_verdict",
+    "routing",
     "intent",
     "rule_plan",
     "strategy_gate_result",

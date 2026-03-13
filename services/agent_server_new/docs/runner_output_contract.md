@@ -1,6 +1,6 @@
 # runner 输出契约（JSON）
 
-更新时间：2026-03-10
+更新时间：2026-03-13
 
 适用命令：
 
@@ -110,6 +110,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 关键字段：
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
+- `routing`（`decision_agent_key/router_config_source/router_config_version`）
 - `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）
 
 对应 schema：

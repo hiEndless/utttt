@@ -21,6 +21,11 @@ def _build_trace(*, llm_observation):  # noqa: ANN001
         evidence={},
         anomalies={},
         signal_verdict={},
+        routing={
+            "decision_agent_key": "technical",
+            "router_config_source": "runtime",
+            "router_config_version": "",
+        },
         intent={},
         rule_plan={},
         strategy_gate_result={},
