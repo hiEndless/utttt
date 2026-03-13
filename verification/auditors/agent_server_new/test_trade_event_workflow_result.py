@@ -12,6 +12,7 @@ from services.agent_server_new.app.workflows.trade_event_workflow import (
     TradeEventWorkflow,
 )
 from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
+from services.agent_server_new.domain.signal_decision_agent import SignalDecisionEvalResult
 from services.agent_server_new.domain.strategy_gate import StrategyGateResult
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
@@ -98,6 +99,19 @@ class _Recorder:
 
     async def record_agent_output(self, event_id: str, agent_name: str, payload):  # noqa: ANN001
         self.outputs.append((event_id, agent_name, dict(payload or {})))
+
+
+class _SignalDecisionAgent:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def decide(self, **kwargs):  # noqa: ANN003
+        self.calls += 1
+        _ = kwargs
+        return SignalDecisionEvalResult(
+            signal=SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.9)),
+            decision_agent_key="onchain",
+        )
 
 
 def test_trade_event_workflow_run_with_result_returns_execution_result():
@@ -302,6 +316,69 @@ def test_trade_event_workflow_decision_trace_schema_guard_warn_only():
         names = [name for _, name, _ in recorder.outputs]
         assert "decision_trace_schema_guard" in names
         assert "decision_trace" in names
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_uses_injected_signal_decision_agent():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
+        )
+        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
+        monkeypatch.setattr(
+            mod,
+            "risk_gate",
+            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_execution_plan",
+            lambda **kwargs: ExecutionPlan(
+                action="add",
+                direction="long",
+                allowance=kwargs["allowance"],
+                confidence=Confidence(level="high", score=0.9),
+                sizing={"mode": "ratio", "order_size_ratio": 0.1},
+                notes="ok",
+            ),
+        )
+        signal_agent = _SignalDecisionAgent()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=None,
+            recorder=None,
+            signal_decision_agent=signal_agent,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-signal-agent-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "whale_onchain_alert"},
+            )
+        )
+        assert signal_agent.calls == 1
+        assert out.signal_decision.decision_agent_key == "onchain"
+        assert out.signal_decision.reliability_score == 0.9
 
     import pytest
 

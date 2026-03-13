@@ -26,9 +26,12 @@ from services.agent_server_new.domain.risk_gate_reasons import (
     risk_gate_reason_portfolio_risk_state,
 )
 from services.agent_server_new.domain.rule_planner import build_rule_plan
-from services.agent_server_new.domain.signal_router import route_signal_agent_key
+from services.agent_server_new.domain.signal_decision_agent import (
+    RoutedRuleBasedSignalDecisionAgent,
+    SignalDecisionAgent,
+)
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
-from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
+from services.agent_server_new.experts.signal_evaluator import evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
 from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
 from services.agent_server_new.observability.decision_trace_schema_guard import validate_decision_trace_payload
@@ -193,6 +196,7 @@ class TradeEventWorkflow:
         ai_adaptive_mode: str = "observe",
         horizon_policy_config: Optional[Dict[str, Any]] = None,
         signal_router_config: Optional[Dict[str, Any]] = None,
+        signal_decision_agent: SignalDecisionAgent | None = None,
         signal_router_config_source: str = "runtime",
         signal_router_config_version: str = "",
     ) -> None:
@@ -213,6 +217,10 @@ class TradeEventWorkflow:
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
         self._signal_router_config = dict(signal_router_config or {})
+        self._signal_decision_agent = signal_decision_agent or RoutedRuleBasedSignalDecisionAgent(
+            router_config=self._signal_router_config,
+            signal_evaluator=evaluate_signal,
+        )
         self._signal_router_config_source = str(signal_router_config_source or "runtime").strip() or "runtime"
         self._signal_router_config_version = str(signal_router_config_version or "").strip() or _signal_router_config_version(
             self._signal_router_config
@@ -254,16 +262,15 @@ class TradeEventWorkflow:
                 },
             )
 
-        signal = evaluate_signal(
-            ctx=ExpertContext(
-                msl=ctx.msl,
-                key_market_features=ctx.key_market_features,
-                active_events=list(ctx.active_events),
-                signal_event=ctx.signal_event,
-                position_context=dict(ctx.position_context),
-            ),
+        eval_result = self._signal_decision_agent.decide(
             signal_direction=event.signal_direction,
+            msl=ctx.msl,
+            key_market_features=dict(ctx.key_market_features),
+            active_events=list(ctx.active_events),
+            signal_event=dict(ctx.signal_event),
+            position_context=dict(ctx.position_context),
         )
+        signal = eval_result.signal
         llm_observation = {
             "status": "disabled",
             "provider": "",
@@ -315,7 +322,7 @@ class TradeEventWorkflow:
             event=event,
             signal=signal,
             llm_observation=llm_observation,
-            signal_router_config=self._signal_router_config,
+            decision_agent_key=eval_result.decision_agent_key,
         )
 
         if self._recorder:
@@ -323,6 +330,7 @@ class TradeEventWorkflow:
                 event.event_id,
                 "signal_evaluator",
                 {
+                    "decision_agent_key": eval_result.decision_agent_key,
                     "direction": signal.direction,
                     "verdict": signal.verdict,
                     "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
@@ -632,12 +640,8 @@ def _build_signal_decision(
     event: TradeEventInput,
     signal: Any,
     llm_observation: Dict[str, Any],
-    signal_router_config: Optional[Dict[str, Any]] = None,
+    decision_agent_key: str,
 ) -> SignalDecision:
-    decision_agent_key = route_signal_agent_key(
-        signal_event={"payload": dict(event.payload or {})},
-        router_config=dict(signal_router_config or {}),
-    )
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
         verdict = "uncertain"
@@ -652,7 +656,7 @@ def _build_signal_decision(
         decision_id=str(event.event_id),
         exchange=str(event.exchange),
         symbol=str(event.symbol),
-        decision_agent_key=decision_agent_key,
+        decision_agent_key=str(decision_agent_key or "generic"),
         signal_direction=direction,  # type: ignore[arg-type]
         signal_verdict=verdict,  # type: ignore[arg-type]
         confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]

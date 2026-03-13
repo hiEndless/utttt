@@ -21,6 +21,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 ./venv/bin/pytest -q \
   verification/validators/market_state_engine \
   verification/auditors/agent_server_new/test_bootstrap.py \
+  verification/auditors/agent_server_new/test_signal_decision_agent.py \
   verification/auditors/agent_server_new/test_signal_router.py \
   verification/auditors/agent_server_new/test_active_events_redis_adapter.py \
   verification/auditors/agent_server_new/test_active_events_contract_guard.py \
