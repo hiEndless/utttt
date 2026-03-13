@@ -141,3 +141,7 @@ if [[ "$COMPACT" == "1" ]]; then
 fi
 
 bash tools/local/aggregate_and_check.sh "${AGG_ARGS[@]}"
+
+if [[ "$WITH_PIPELINE_MODE_REPORT" == "1" ]]; then
+  bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --prefix quick
+fi
