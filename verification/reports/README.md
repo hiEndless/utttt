@@ -86,6 +86,11 @@ bash tools/local/run_agent_signal_decision_llm_observe_report.sh --help
 bash tools/local/print_signal_decision_llm_observe_agent_key_coverage.sh \
   --report verification/reports/agent_signal_decision_llm_observe.latest.json \
   --prefix nightly
+bash tools/local/print_signal_decision_llm_observe_agent_key_trend.sh \
+  --glob 'verification/reports/agent_signal_decision_llm_observe*.json' \
+  --days 7 --min-ratio 0.15 --min-consecutive-days 3 \
+  --agent-keys social_news,onchain,technical,liquidation \
+  --prefix nightly
 ```
 
 Inspect recent action_hint cases (optional):
