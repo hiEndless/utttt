@@ -9,6 +9,7 @@ from services.agent_server_new.adapters.active_events_redis import RedisActiveEv
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
+from services.agent_server_new.adapters.llm_agno import AgnoLLMObserver
 from services.agent_server_new.adapters.llm_openai_compatible import OpenAICompatibleLLMObserver
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
@@ -118,9 +119,13 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         logger.warning("invalid AGENT_SIGNAL_DECISION_LLM_MODE=%s; fallback to hybrid", llm_decision_mode)
         llm_decision_mode = "hybrid"
     llm_observer = None
+    llm_backend = str(os.getenv("AGENT_SIGNAL_DECISION_LLM_BACKEND", "openai_compatible") or "openai_compatible").strip().lower()
     if llm_runtime.enabled and llm_runtime.ready:
         if llm_runtime.provider == "openai_compatible":
-            llm_observer = OpenAICompatibleLLMObserver.from_env(config=llm_runtime)
+            if llm_backend == "agno":
+                llm_observer = AgnoLLMObserver.from_env(config=llm_runtime)
+            else:
+                llm_observer = OpenAICompatibleLLMObserver.from_env(config=llm_runtime)
         else:
             logger.warning("unsupported AGENT_LLM_PROVIDER=%s; llm observer disabled", llm_runtime.provider)
     if llm_runtime.enabled and not llm_runtime.ready:

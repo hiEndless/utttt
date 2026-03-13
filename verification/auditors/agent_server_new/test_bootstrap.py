@@ -8,6 +8,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
+from services.agent_server_new.adapters.llm_agno import AgnoLLMObserver
 from services.agent_server_new.adapters.market_state_http import HttpMarketStateProvider
 from services.agent_server_new.adapters.position_context_execution_http import HttpExecutionPositionContextProvider
 from services.agent_server_new.adapters.symbol_memory_inmemory import InMemorySymbolMemoryAdapter
@@ -263,6 +264,21 @@ def test_create_trade_event_workflow_from_env_enable_llm_observer_wiring(monkeyp
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._llm_observer is not None  # noqa: SLF001
+    assert isinstance(wf._signal_decision_agent, RoutedHybridSignalDecisionAgent)  # noqa: SLF001
+
+
+def test_create_trade_event_workflow_from_env_enable_agno_llm_observer_wiring(monkeypatch):
+    monkeypatch.setenv("AGENT_LLM_ENABLED", "true")
+    monkeypatch.setenv("AGENT_LLM_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("AGENT_LLM_MODEL_ID", "gpt-4o-mini")
+    monkeypatch.setenv("AGENT_LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("AGENT_SIGNAL_DECISION_LLM_BACKEND", "agno")
+
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    wf = create_trade_event_workflow_from_env()
+    assert isinstance(wf._llm_observer, AgnoLLMObserver)  # noqa: SLF001
     assert isinstance(wf._signal_decision_agent, RoutedHybridSignalDecisionAgent)  # noqa: SLF001
 
 

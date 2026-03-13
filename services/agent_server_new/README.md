@@ -240,6 +240,9 @@ signal_event + active_events + MSL
   - LLM 信号判定模式（`hybrid|observe`，默认：`hybrid`）
   - `hybrid`：LLM 参与主判，解析失败自动 `rule_fallback`
   - `observe`：仅保留 LLM 观测记录，主判固定走规则（适用于阶段 A 旁路观测）
+- `AGENT_SIGNAL_DECISION_LLM_BACKEND`
+  - LLM 观测后端（`openai_compatible|agno`，默认：`openai_compatible`）
+  - 当 `AGENT_LLM_PROVIDER=openai_compatible` 且该项为 `agno` 时，bootstrap 会使用 `AgnoLLMObserver` 接入主链路
 
 可直接参考：`services/agent_server_new/.env.example`
 
