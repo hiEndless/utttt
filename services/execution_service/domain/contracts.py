@@ -150,6 +150,11 @@ class DecisionIntent:
         decision_agent_key = risk_hints.get("decision_agent_key")
         if decision_agent_key is not None and not str(decision_agent_key).strip():
             raise ValueError("risk_hints.decision_agent_key 必须是非空字符串")
+        decision_mode = risk_hints.get("decision_mode")
+        if decision_mode is not None:
+            mode = str(decision_mode).strip().lower()
+            if mode not in {"llm", "rule_fallback", "rule"}:
+                raise ValueError("risk_hints.decision_mode 必须是 llm/rule_fallback/rule")
         signal_verdict = risk_hints.get("signal_verdict")
         if signal_verdict is not None:
             verdict = str(signal_verdict).strip().lower()

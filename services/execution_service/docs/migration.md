@@ -30,6 +30,7 @@
 10. `decision_state` 已补充 `state_source`（语义来源）字段，保留 `source` 兼容标识
 11. `risk_hints.alternative_source_summary` 已升级为显式子 schema（单源位于 `contracts/schemas/alternative_source_summary.schema.json`），并在运行时入口做结构校验（防止字段语义静默漂移）
 12. `risk_hints.decision_agent_key/signal_verdict/signal_reliability_score` 已显式入 `DecisionIntent` schema，并在运行时做类型与范围校验（用于承接 agent 语义裁决信号）
+13. `risk_hints.decision_mode` 新增可选字段（`llm|rule_fallback|rule`），用于标记信号判定来源，便于 execution 侧做质量回溯统计（非 breaking，历史 producer 无需改造）
 
 ## 文档维护规则
 

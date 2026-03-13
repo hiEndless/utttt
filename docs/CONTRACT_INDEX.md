@@ -73,6 +73,7 @@
 
 - `execution_schema_mapping_version: execution-schema-mapping-v20`
 - `decision_intent_canonical_field: decision_confidence`（`confidence` 兼容窗口至 `2026-06-30`，详见 schema/migration）
+- `decision_signal_mode_field: risk_hints.decision_mode`（可选：`llm|rule_fallback|rule`）
 - `tools/local/check_execution_contract_entry_guard.sh`
 - `services/execution_service/docs/api.md`
 - `services/execution_service/docs/boundaries.md`

@@ -130,6 +130,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - `TradeEventWorkflow` 已输出 `SignalDecision`，并把 `decision_agent_key` 透传到 execution payload 的 `risk_hints`。
 - `DecisionTrace` 已增加 `routing` 观测块，记录 `decision_agent_key/router_config_source/router_config_version`，用于回放时定位路由配置漂移。
 - 主判入口已抽象为 `SignalDecisionAgent`（当前默认实现为 `RoutedRuleBasedSignalDecisionAgent`），workflow 不再直接调用 `evaluate_signal`，为后续替换 LLM 判定实现留出无侵入插槽。
+- 当启用 `llm_observer` 时，默认主判实现已切换为 `RoutedHybridSignalDecisionAgent`：优先消费 LLM 判定，解析失败自动 `rule_fallback`；并透传 `decision_mode(llm|rule_fallback|rule)` 到 execution `risk_hints`。
 
 3. Phase C（兼容阶段）
 - 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。

@@ -90,6 +90,17 @@ class _InvalidStatusLLMObserver:
         }
 
 
+class _StructuredLLMObserver:
+    async def observe(self, payload):  # noqa: ANN001
+        _ = payload
+        return {
+            "status": "ok",
+            "provider": "openai_compatible",
+            "model": "gpt-4o-mini",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"short\",\"confidence_score\":0.83,\"reasons\":[\"social_breaking_news\"]}",
+        }
+
+
 class _Recorder:
     def __init__(self) -> None:
         self.outputs = []
@@ -379,6 +390,69 @@ def test_trade_event_workflow_uses_injected_signal_decision_agent():
         assert signal_agent.calls == 1
         assert out.signal_decision.decision_agent_key == "onchain"
         assert out.signal_decision.reliability_score == 0.9
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_hybrid_signal_decision_agent_prefers_llm():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: ActionIntent(intent="increase", direction="short", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
+        )
+        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
+        monkeypatch.setattr(
+            mod,
+            "risk_gate",
+            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_execution_plan",
+            lambda **kwargs: ExecutionPlan(
+                action="add",
+                direction="short",
+                allowance=kwargs["allowance"],
+                confidence=Confidence(level="high", score=0.83),
+                sizing={"mode": "ratio", "order_size_ratio": 0.1},
+                notes="ok",
+            ),
+        )
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=None,
+            recorder=None,
+            llm_observer=_StructuredLLMObserver(),
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-hybrid-llm-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "social_news_signal"},
+            )
+        )
+        assert out.signal_decision.decision_mode == "llm"
+        assert out.signal_decision.signal_direction == "short"
+        assert out.signal_decision.signal_verdict == "accept"
+        assert out.signal_decision.reliability_score == 0.83
 
     import pytest
 

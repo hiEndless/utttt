@@ -6,7 +6,10 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
-from services.agent_server_new.domain.signal_decision_agent import RoutedRuleBasedSignalDecisionAgent
+from services.agent_server_new.domain.signal_decision_agent import (
+    RoutedHybridSignalDecisionAgent,
+    RoutedRuleBasedSignalDecisionAgent,
+)
 
 
 def _sample_msl() -> dict:
@@ -42,4 +45,51 @@ def test_routed_rule_based_signal_decision_agent_routes_and_evaluates():
         position_context={},
     )
     assert out.decision_agent_key == "social_news"
+    assert out.decision_mode == "rule"
+    assert out.signal.verdict in {"accept", "reject", "uncertain"}
+
+
+def test_routed_hybrid_signal_decision_agent_uses_llm_when_valid():
+    agent = RoutedHybridSignalDecisionAgent(
+        router_config={
+            "default_agent_key": "generic",
+            "rules": [{"agent_key": "onchain", "keywords": ["onchain"]}],
+        }
+    )
+    out = agent.decide(
+        signal_direction="short",
+        msl=_build_msl_from_dict(_sample_msl()),
+        key_market_features={},
+        active_events=[],
+        signal_event={"event_type": "onchain_wallet_alert"},
+        position_context={},
+        llm_result={
+            "status": "ok",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"short\",\"confidence_score\":0.81,\"reasons\":[\"wallet_flow\"]}",
+        },
+    )
+    assert out.decision_agent_key == "onchain"
+    assert out.decision_mode == "llm"
+    assert out.signal.direction == "short"
+    assert out.signal.verdict == "accept"
+
+
+def test_routed_hybrid_signal_decision_agent_fallbacks_to_rule_when_llm_invalid():
+    agent = RoutedHybridSignalDecisionAgent(
+        router_config={
+            "default_agent_key": "generic",
+            "rules": [{"agent_key": "onchain", "keywords": ["onchain"]}],
+        }
+    )
+    out = agent.decide(
+        signal_direction="long",
+        msl=_build_msl_from_dict(_sample_msl()),
+        key_market_features={},
+        active_events=[],
+        signal_event={"event_type": "onchain_wallet_alert"},
+        position_context={},
+        llm_result={"status": "ok", "raw_content": "{\"foo\":\"bar\"}"},
+    )
+    assert out.decision_agent_key == "onchain"
+    assert out.decision_mode == "rule_fallback"
     assert out.signal.verdict in {"accept", "reject", "uncertain"}

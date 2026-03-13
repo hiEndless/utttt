@@ -27,6 +27,7 @@ from services.agent_server_new.domain.risk_gate_reasons import (
 )
 from services.agent_server_new.domain.rule_planner import build_rule_plan
 from services.agent_server_new.domain.signal_decision_agent import (
+    RoutedHybridSignalDecisionAgent,
     RoutedRuleBasedSignalDecisionAgent,
     SignalDecisionAgent,
 )
@@ -217,9 +218,16 @@ class TradeEventWorkflow:
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
         self._signal_router_config = dict(signal_router_config or {})
-        self._signal_decision_agent = signal_decision_agent or RoutedRuleBasedSignalDecisionAgent(
-            router_config=self._signal_router_config,
-            signal_evaluator=evaluate_signal,
+        self._signal_decision_agent = signal_decision_agent or (
+            RoutedHybridSignalDecisionAgent(
+                router_config=self._signal_router_config,
+                signal_evaluator=evaluate_signal,
+            )
+            if self._llm_observer is not None
+            else RoutedRuleBasedSignalDecisionAgent(
+                router_config=self._signal_router_config,
+                signal_evaluator=evaluate_signal,
+            )
         )
         self._signal_router_config_source = str(signal_router_config_source or "runtime").strip() or "runtime"
         self._signal_router_config_version = str(signal_router_config_version or "").strip() or _signal_router_config_version(
@@ -262,21 +270,13 @@ class TradeEventWorkflow:
                 },
             )
 
-        eval_result = self._signal_decision_agent.decide(
-            signal_direction=event.signal_direction,
-            msl=ctx.msl,
-            key_market_features=dict(ctx.key_market_features),
-            active_events=list(ctx.active_events),
-            signal_event=dict(ctx.signal_event),
-            position_context=dict(ctx.position_context),
-        )
-        signal = eval_result.signal
         llm_observation = {
             "status": "disabled",
             "provider": "",
             "model": "",
             "raw_content_hash": "",
         }
+        llm_result_raw: Optional[Dict[str, Any]] = None
         if self._llm_observer is not None:
             llm_payload = {
                 "event_id": event.event_id,
@@ -290,6 +290,7 @@ class TradeEventWorkflow:
             }
             try:
                 llm_result = await self._llm_observer.observe(llm_payload)
+                llm_result_raw = dict(llm_result or {})
                 llm_observation = {
                     "status": str((llm_result or {}).get("status") or "ok"),
                     "provider": str((llm_result or {}).get("provider") or ""),
@@ -312,17 +313,29 @@ class TradeEventWorkflow:
                     "fallback": "rule_engine",
                     "error_type": exc.__class__.__name__,
                 }
+                llm_result_raw = {"status": "error", "error_type": exc.__class__.__name__}
                 if self._recorder:
                     await self._recorder.record_agent_output(
                         event.event_id,
                         "llm_observer",
                         {"status": "error", "fallback": "rule_engine", "error": str(exc)},
                     )
+        eval_result = self._signal_decision_agent.decide(
+            signal_direction=event.signal_direction,
+            msl=ctx.msl,
+            key_market_features=dict(ctx.key_market_features),
+            active_events=list(ctx.active_events),
+            signal_event=dict(ctx.signal_event),
+            position_context=dict(ctx.position_context),
+            llm_result=llm_result_raw,
+        )
+        signal = eval_result.signal
         signal_decision = _build_signal_decision(
             event=event,
             signal=signal,
             llm_observation=llm_observation,
             decision_agent_key=eval_result.decision_agent_key,
+            decision_mode=eval_result.decision_mode,
         )
 
         if self._recorder:
@@ -331,6 +344,7 @@ class TradeEventWorkflow:
                 "signal_evaluator",
                 {
                     "decision_agent_key": eval_result.decision_agent_key,
+                    "decision_mode": eval_result.decision_mode,
                     "direction": signal.direction,
                     "verdict": signal.verdict,
                     "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
@@ -618,6 +632,7 @@ def _build_decision_intent_payload(
             "decision_confidence": dict(decision_confidence),
             "decision_confidence_source": "agent_execution_plan",
             "decision_agent_key": str(signal_decision.decision_agent_key or ""),
+            "decision_mode": str(signal_decision.decision_mode or "rule"),
             "signal_verdict": str(signal_decision.signal_verdict or ""),
             "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
             "signal_reasons": list(signal_decision.reasons or []),
@@ -641,6 +656,7 @@ def _build_signal_decision(
     signal: Any,
     llm_observation: Dict[str, Any],
     decision_agent_key: str,
+    decision_mode: str,
 ) -> SignalDecision:
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
@@ -648,6 +664,9 @@ def _build_signal_decision(
     direction = str(getattr(signal, "direction", "") or "none").strip().lower()
     if direction not in {"long", "short", "none"}:
         direction = "none"
+    mode = str(decision_mode or "rule").strip().lower()
+    if mode not in {"llm", "rule_fallback", "rule"}:
+        mode = "rule"
     conf = getattr(signal, "confidence", Confidence(level="low", score=0.0))
     raw_score = float(getattr(conf, "score", 0.0) or 0.0)
     reliability_score = max(0.0, min(1.0, raw_score))
@@ -657,6 +676,7 @@ def _build_signal_decision(
         exchange=str(event.exchange),
         symbol=str(event.symbol),
         decision_agent_key=str(decision_agent_key or "generic"),
+        decision_mode=mode,  # type: ignore[arg-type]
         signal_direction=direction,  # type: ignore[arg-type]
         signal_verdict=verdict,  # type: ignore[arg-type]
         confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]

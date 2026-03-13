@@ -134,6 +134,7 @@ def test_trade_event_workflow_calls_execution_decider():
         assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_execution_plan"
         assert decider.payload["risk_hints"]["decision_agent_key"] == "technical"
+        assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert "execution_hint" not in decider.payload
         assert "adaptive_profile" not in decider.payload
 

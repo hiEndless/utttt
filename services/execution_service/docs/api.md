@@ -86,6 +86,7 @@
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
    - `decision_agent_key`: 可选，非空字符串（agent 路由键）
+   - `decision_mode`: 可选，`llm | rule_fallback | rule`（信号判定来源）
    - `signal_verdict`: 可选，`accept | reject | uncertain`
    - `signal_reliability_score`: 可选，`[0,1]` 浮点数
    - 若包含 `alternative_source_summary`，执行层只消费白名单键：
