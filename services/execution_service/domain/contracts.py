@@ -147,6 +147,22 @@ class DecisionIntent:
         risk_hints = payload.get("risk_hints") or {}
         if not isinstance(risk_hints, dict):
             raise ValueError("risk_hints 必须是对象")
+        decision_agent_key = risk_hints.get("decision_agent_key")
+        if decision_agent_key is not None and not str(decision_agent_key).strip():
+            raise ValueError("risk_hints.decision_agent_key 必须是非空字符串")
+        signal_verdict = risk_hints.get("signal_verdict")
+        if signal_verdict is not None:
+            verdict = str(signal_verdict).strip().lower()
+            if verdict not in {"accept", "reject", "uncertain"}:
+                raise ValueError("risk_hints.signal_verdict 必须是 accept/reject/uncertain")
+        signal_reliability_score = risk_hints.get("signal_reliability_score")
+        if signal_reliability_score is not None:
+            try:
+                score_value = float(signal_reliability_score)
+            except Exception as exc:
+                raise ValueError("risk_hints.signal_reliability_score 必须是 [0,1] 浮点数") from exc
+            if score_value < 0.0 or score_value > 1.0:
+                raise ValueError("risk_hints.signal_reliability_score 必须是 [0,1] 浮点数")
         alt_summary = risk_hints.get("alternative_source_summary")
         if alt_summary is not None:
             if not isinstance(alt_summary, Mapping):

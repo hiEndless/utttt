@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v19",
+  "version": "execution-schema-mapping-v20",
   "last_updated": "2026-03-13",
   "items": [
     {
@@ -63,6 +63,26 @@
           "schema": "services/execution_service/docs/decision_intent.schema.json",
           "json_path": "properties.risk_hints.properties.alternative_source_summary.$ref",
           "expected": "../../../contracts/schemas/alternative_source_summary.schema.json"
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.decision_agent_key.minLength",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.signal_verdict.enum",
+          "expected": ["accept", "reject", "uncertain"]
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.signal_reliability_score.minimum",
+          "expected": 0
+        },
+        {
+          "schema": "services/execution_service/docs/decision_intent.schema.json",
+          "json_path": "properties.risk_hints.properties.signal_reliability_score.maximum",
+          "expected": 1
         },
         {
           "schema": "contracts/schemas/alternative_source_summary.schema.json",

@@ -9,7 +9,7 @@
 ## 当前基线（Latest Only）
 
 1. API 入口：`services/execution_service/docs/api.md`
-2. 契约映射版本：`execution-schema-mapping-v19`
+2. 契约映射版本：`execution-schema-mapping-v20`
 3. 核心输入契约：`decision_intent.schema.json`
 4. 核心输出契约：`execution_result.schema.json`
 5. 对账输出契约：`execution_reconcile_result.schema.json`
@@ -29,6 +29,7 @@
 9. `order_result/reconcile_result` 已补充 `*_status` 与 `*_status_source` 语义字段，降低状态语义漂移风险
 10. `decision_state` 已补充 `state_source`（语义来源）字段，保留 `source` 兼容标识
 11. `risk_hints.alternative_source_summary` 已升级为显式子 schema（单源位于 `contracts/schemas/alternative_source_summary.schema.json`），并在运行时入口做结构校验（防止字段语义静默漂移）
+12. `risk_hints.decision_agent_key/signal_verdict/signal_reliability_score` 已显式入 `DecisionIntent` schema，并在运行时做类型与范围校验（用于承接 agent 语义裁决信号）
 
 ## 文档维护规则
 

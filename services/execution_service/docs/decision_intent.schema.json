@@ -49,6 +49,19 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "decision_agent_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signal_verdict": {
+          "type": "string",
+          "enum": ["accept", "reject", "uncertain"]
+        },
+        "signal_reliability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "alternative_source_summary": {
           "$ref": "../../../contracts/schemas/alternative_source_summary.schema.json"
         }

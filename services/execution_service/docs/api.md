@@ -32,7 +32,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v18",
+  "schema_mapping_version": "execution-schema-mapping-v20",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -85,6 +85,9 @@
 8. `confidence`: 可选兼容字段（deprecated，若仅提供该字段，运行时会回填到 `decision_confidence`；兼容窗口目标截止 `2026-06-30`）
 9. `cross_horizon_policy`: 对象（可为空对象）
 10. `risk_hints`: 对象（可为空对象）
+   - `decision_agent_key`: 可选，非空字符串（agent 路由键）
+   - `signal_verdict`: 可选，`accept | reject | uncertain`
+   - `signal_reliability_score`: 可选，`[0,1]` 浮点数
    - 若包含 `alternative_source_summary`，执行层只消费白名单键：
      `available_sources/unavailable_sources/provider_states/data_sources/inference_sources/feature_keys/evidence_counts`
      （其余键会在 adapter 阶段剔除；结构定义见 `contracts/schemas/alternative_source_summary.schema.json`）

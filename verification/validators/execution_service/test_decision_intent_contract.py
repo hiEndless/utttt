@@ -30,7 +30,12 @@ def test_decision_intent_v1_parse_success() -> None:
         "confidence": {"level": "medium", "score": 0.66},
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
-        "risk_hints": {"market_fragility": "medium"},
+        "risk_hints": {
+            "market_fragility": "medium",
+            "decision_agent_key": "technical",
+            "signal_verdict": "accept",
+            "signal_reliability_score": 0.81,
+        },
         "trace_id": "trace-001",
     }
     decision = DecisionIntent.from_dict(payload)
@@ -39,6 +44,9 @@ def test_decision_intent_v1_parse_success() -> None:
     assert data["account_id"] == "sub_1"
     assert data["direction_intent"] == "long"
     assert data["confidence"]["score"] == 0.66
+    assert data["risk_hints"]["decision_agent_key"] == "technical"
+    assert data["risk_hints"]["signal_verdict"] == "accept"
+    assert data["risk_hints"]["signal_reliability_score"] == 0.81
 
 
 def test_decision_intent_accepts_valid_alternative_source_summary() -> None:
@@ -164,6 +172,42 @@ def test_decision_intent_rejects_confidence_mismatch() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "不一致" in str(exc)
+
+
+def test_decision_intent_rejects_invalid_signal_verdict() -> None:
+    payload = {
+        "decision_id": "dec-006",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "high", "score": 0.92},
+        "cross_horizon_policy": {},
+        "risk_hints": {"signal_verdict": "maybe"},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "signal_verdict" in str(exc)
+
+
+def test_decision_intent_rejects_invalid_signal_reliability_score() -> None:
+    payload = {
+        "decision_id": "dec-007",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"signal_reliability_score": 1.3},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "signal_reliability_score" in str(exc)
 
 
 def test_execution_result_v1_parse_success() -> None:

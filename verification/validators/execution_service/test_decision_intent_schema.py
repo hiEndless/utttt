@@ -24,6 +24,9 @@ def test_decision_intent_schema_samples() -> None:
         "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
         "risk_hints": {
             "market_fragility": "medium",
+            "decision_agent_key": "technical",
+            "signal_verdict": "accept",
+            "signal_reliability_score": 0.83,
             "alternative_source_summary": {
                 "available_sources": ["news"],
                 "unavailable_sources": ["social", "onchain"],
@@ -50,6 +53,42 @@ def test_decision_intent_schema_samples() -> None:
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {}
+    }
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
+
+def test_decision_intent_schema_rejects_invalid_signal_verdict() -> None:
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    bad = {
+        "decision_id": "dec-004",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"signal_verdict": "maybe"},
+    }
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
+
+def test_decision_intent_schema_rejects_invalid_signal_reliability_score() -> None:
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    bad = {
+        "decision_id": "dec-005",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"signal_reliability_score": 1.2},
     }
     assert not validate_payload_with_local_refs(
         schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
