@@ -405,6 +405,10 @@ Environment:
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）
+  MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_DECISION_MODE_COUNT  signal_decision_llm_observe missing_decision_mode 计数上限（默认 -1 忽略）
+  MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT  signal_decision_llm_observe missing_llm_parse_status 计数上限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT  signal_decision_llm_observe decision_mode_llm_count 下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT  signal_decision_llm_observe llm_parse_status_llm_ok_count 下限（默认 -1 忽略）
   WITH_AGENT_ACTION_HINT_CASES_REPORT  是否生成 action_hint mismatch 回放 artifact（1/0，默认 1）
   AGENT_ACTION_HINT_CASES_REPORT_PATH  action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH  action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
