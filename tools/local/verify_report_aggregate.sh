@@ -7,6 +7,7 @@ MEMORY_SUMMARY_PATH='verification/reports/memory_summary.latest.json'
 AGENT_READYZ_PATH='verification/reports/agent_readyz.latest.json'
 DECISION_TRACE_SCHEMA_GUARD_PATH='verification/reports/agent_decision_trace_schema_guard.latest.json'
 PIPELINE_MODE_REPORT_PATH='verification/reports/agent_pipeline_mode.latest.json'
+EXECUTION_PROMPT_REPORT_PATH='verification/reports/execution_prompt_version.latest.json'
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 COMPACT=0
@@ -14,6 +15,7 @@ WITH_MEMORY_SUMMARY=0
 WITH_AGENT_READYZ=0
 WITH_DECISION_TRACE_SCHEMA_GUARD=0
 WITH_PIPELINE_MODE_REPORT=0
+WITH_EXECUTION_PROMPT_REPORT=0
 EXTRA_ARGS=()
 
 while (($# > 0)); do
@@ -35,6 +37,8 @@ Options:
   --decision-trace-schema-guard-path <path> decision_trace schema guard 输出路径（默认 verification/reports/agent_decision_trace_schema_guard.latest.json）
   --with-pipeline-mode-report  聚合前先生成 pipeline_mode 灰度报告
   --pipeline-mode-report-path <path> pipeline_mode 报告输出路径（默认 verification/reports/agent_pipeline_mode.latest.json）
+  --with-execution-prompt-report  聚合前先生成 execution prompt 版本报告
+  --execution-prompt-report-path <path> execution prompt 报告输出路径（默认 verification/reports/execution_prompt_version.latest.json）
   --agent-readyz-base-url <url>  agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --help, -h                   显示帮助
@@ -73,12 +77,20 @@ USAGE
       WITH_PIPELINE_MODE_REPORT=1
       shift
       ;;
+    --with-execution-prompt-report)
+      WITH_EXECUTION_PROMPT_REPORT=1
+      shift
+      ;;
     --decision-trace-schema-guard-path)
       DECISION_TRACE_SCHEMA_GUARD_PATH="${2:-$DECISION_TRACE_SCHEMA_GUARD_PATH}"
       shift 2
       ;;
     --pipeline-mode-report-path)
       PIPELINE_MODE_REPORT_PATH="${2:-$PIPELINE_MODE_REPORT_PATH}"
+      shift 2
+      ;;
+    --execution-prompt-report-path)
+      EXECUTION_PROMPT_REPORT_PATH="${2:-$EXECUTION_PROMPT_REPORT_PATH}"
       shift 2
       ;;
     --agent-readyz-path)
@@ -116,6 +128,10 @@ fi
 if [[ "$WITH_PIPELINE_MODE_REPORT" == "1" ]]; then
   bash tools/local/run_agent_pipeline_mode_report.sh \
     --output "$PIPELINE_MODE_REPORT_PATH"
+fi
+if [[ "$WITH_EXECUTION_PROMPT_REPORT" == "1" ]]; then
+  bash tools/local/run_execution_prompt_version_report.sh \
+    --output "$EXECUTION_PROMPT_REPORT_PATH"
 fi
 
 ARGS=(--glob "$GLOB" --output "$OUT")

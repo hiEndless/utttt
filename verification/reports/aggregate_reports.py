@@ -31,6 +31,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "semantic-audit-v1",
                 "symbol-memory-summary-run-v1",
                 "execution-confidence-metrics-v1",
+                "execution-prompt-version-report-v1",
                 "agent-readyz-report-v1",
                 "agent-decision-trace-schema-guard-report-v1",
                 "agent-pipeline-mode-report-v1",
@@ -82,6 +83,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             str(x.get("schema_version") or "") == "execution-confidence-metrics-v1"
             or isinstance(x.get("confidence_migration_metrics"), dict)
         )
+    ]
+    execution_prompt_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "execution-prompt-version-report-v1"
     ]
     agent_readyz_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-readyz-report-v1"]
     decision_trace_schema_guard_reports = [
@@ -223,6 +227,36 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             float(execution_confidence_only_requests) / float(denom), 6
         )
 
+    execution_prompt_report_count = len(execution_prompt_reports)
+    latest_execution_prompt_report_path = ""
+    execution_prompt_tracked_requests_total = 0
+    execution_prompt_version_count = 0
+    execution_prompt_tracking_coverage_ratio = 0.0
+    execution_prompt_top_versions: List[Dict[str, Any]] = []
+    if execution_prompt_reports:
+        latest_execution_prompt = max(
+            execution_prompt_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_execution_prompt_report_path = str(latest_execution_prompt.get("_path") or "")
+        summary = dict(latest_execution_prompt.get("summary") or {})
+        execution_prompt_tracked_requests_total = _to_int(summary.get("tracked_prompt_requests_total"), 0)
+        execution_prompt_version_count = _to_int(summary.get("prompt_version_count"), 0)
+        try:
+            execution_prompt_tracking_coverage_ratio = round(float(summary.get("tracking_coverage_ratio") or 0.0), 6)
+        except Exception:
+            execution_prompt_tracking_coverage_ratio = 0.0
+        rows = [dict(x) for x in list(latest_execution_prompt.get("versions") or []) if isinstance(x, dict)]
+        rows_sorted = sorted(
+            rows,
+            key=lambda x: (-_to_int(x.get("count"), 0), str(x.get("prompt_config_version") or "")),
+        )
+        execution_prompt_top_versions = rows_sorted[:5]
+
     agent_readyz_report_count = len(agent_readyz_reports)
     latest_agent_readyz_report_path = ""
     agent_readyz_ok = False
@@ -329,6 +363,12 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "execution_decision_confidence_requests": execution_decision_confidence_requests,
         "execution_confidence_alias_mismatch_rejections": execution_confidence_alias_mismatch_rejections,
         "execution_legacy_confidence_usage_ratio": execution_legacy_confidence_usage_ratio,
+        "execution_prompt_report_count": execution_prompt_report_count,
+        "latest_execution_prompt_report_path": latest_execution_prompt_report_path,
+        "execution_prompt_tracked_requests_total": execution_prompt_tracked_requests_total,
+        "execution_prompt_version_count": execution_prompt_version_count,
+        "execution_prompt_tracking_coverage_ratio": execution_prompt_tracking_coverage_ratio,
+        "execution_prompt_top_versions": execution_prompt_top_versions,
         "agent_readyz_report_count": agent_readyz_report_count,
         "latest_agent_readyz_report_path": latest_agent_readyz_report_path,
         "agent_readyz_ok": agent_readyz_ok,

@@ -6,11 +6,13 @@ WITH_MEMORY_SUMMARY=0
 WITH_AGENT_READYZ=0
 WITH_DECISION_TRACE_SCHEMA_GUARD=0
 WITH_PIPELINE_MODE_REPORT=0
+WITH_EXECUTION_PROMPT_REPORT=0
 SUMMARY_PATH="verification/reports/summary.latest.json"
 MEMORY_SUMMARY_PATH="verification/reports/memory_summary.latest.json"
 AGENT_READYZ_PATH="verification/reports/agent_readyz.latest.json"
 DECISION_TRACE_SCHEMA_GUARD_PATH="verification/reports/agent_decision_trace_schema_guard.latest.json"
 PIPELINE_MODE_REPORT_PATH="verification/reports/agent_pipeline_mode.latest.json"
+EXECUTION_PROMPT_REPORT_PATH="verification/reports/execution_prompt_version.latest.json"
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 COMPACT=1
@@ -29,11 +31,13 @@ Options:
   --with-agent-readyz          quick 后聚合前生成 agent readyz 报告
   --with-decision-trace-schema-guard  quick 后聚合前生成 decision_trace schema guard 报告
   --with-pipeline-mode-report  quick 后聚合前生成 pipeline_mode 灰度报告
+  --with-execution-prompt-report  quick 后聚合前生成 execution prompt 版本报告
   --summary-path <path>        聚合输出路径（默认 verification/reports/summary.latest.json）
   --memory-summary-path <path> memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
   --agent-readyz-path <path>   agent readyz 输出路径（默认 verification/reports/agent_readyz.latest.json）
   --decision-trace-schema-guard-path <path> decision_trace schema guard 输出路径（默认 verification/reports/agent_decision_trace_schema_guard.latest.json）
   --pipeline-mode-report-path <path> pipeline_mode 输出路径（默认 verification/reports/agent_pipeline_mode.latest.json）
+  --execution-prompt-report-path <path> execution prompt 输出路径（默认 verification/reports/execution_prompt_version.latest.json）
   --agent-readyz-base-url <url> agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --no-compact                 聚合输出使用格式化 JSON（默认 compact）
@@ -62,6 +66,10 @@ USAGE
       WITH_PIPELINE_MODE_REPORT=1
       shift
       ;;
+    --with-execution-prompt-report)
+      WITH_EXECUTION_PROMPT_REPORT=1
+      shift
+      ;;
     --summary-path)
       SUMMARY_PATH="${2:-$SUMMARY_PATH}"
       shift 2
@@ -80,6 +88,10 @@ USAGE
       ;;
     --pipeline-mode-report-path)
       PIPELINE_MODE_REPORT_PATH="${2:-$PIPELINE_MODE_REPORT_PATH}"
+      shift 2
+      ;;
+    --execution-prompt-report-path)
+      EXECUTION_PROMPT_REPORT_PATH="${2:-$EXECUTION_PROMPT_REPORT_PATH}"
       shift 2
       ;;
     --agent-readyz-base-url)
@@ -134,6 +146,12 @@ if [[ "$WITH_PIPELINE_MODE_REPORT" == "1" ]]; then
   AGG_ARGS+=(
     --with-pipeline-mode-report
     --pipeline-mode-report-path "$PIPELINE_MODE_REPORT_PATH"
+  )
+fi
+if [[ "$WITH_EXECUTION_PROMPT_REPORT" == "1" ]]; then
+  AGG_ARGS+=(
+    --with-execution-prompt-report
+    --execution-prompt-report-path "$EXECUTION_PROMPT_REPORT_PATH"
   )
 fi
 if [[ "$COMPACT" == "1" ]]; then
