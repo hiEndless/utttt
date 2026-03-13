@@ -10,9 +10,6 @@ from typing import Any, Dict, Optional
 from services.market_state_engine.src.contracts import MarketStateMSL
 
 from services.agent_server_new.domain.contracts import ExecutionPlan, SignalDecision
-from services.agent_server_new.domain.execution_planner import build_execution_plan as build_execution_plan  # noqa: F401
-from services.agent_server_new.domain.horizon_policy_gate import load_horizon_policy_config_from_env
-from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
 from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_decision_trace_payload,
@@ -22,8 +19,6 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_signal_decision_from_signal,
     build_symbol_memory_record_payload,
 )
-from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
-from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
 from services.agent_server_new.domain.signal_decision_agent import (
     RoutedHybridSignalDecisionAgent,
     RoutedRuleBasedSignalDecisionAgent,
@@ -31,7 +26,6 @@ from services.agent_server_new.domain.signal_decision_agent import (
 )
 from services.agent_server_new.domain.signal_decision_context_policy import build_llm_observation_context
 from services.agent_server_new.domain.signal_router import normalize_signal_event_type, route_signal_agent_key
-from services.agent_server_new.domain.strategy_gate import strategy_gate_v2 as strategy_gate_v2  # noqa: F401
 from services.agent_server_new.experts.signal_evaluator import evaluate_signal
 from services.agent_server_new.observability.decision_trace_schema_guard import validate_decision_trace_payload
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
@@ -46,6 +40,36 @@ from services.agent_server_new.app.context_builder import ContextBuilder
 from .event_context import EventContext
 
 logger = logging.getLogger(__name__)
+
+
+def load_horizon_policy_config_from_env() -> Dict[str, Any]:
+    """保留旧符号名供测试 monkeypatch；minimal 链路不再消费该配置。"""
+    return {}
+
+
+def resolve_intent(**kwargs: Any) -> Any:  # noqa: ANN401
+    _ = kwargs
+    raise RuntimeError("legacy_intent_resolver_removed")
+
+
+def build_rule_plan(**kwargs: Any) -> Any:  # noqa: ANN401
+    _ = kwargs
+    raise RuntimeError("legacy_rule_planner_removed")
+
+
+def strategy_gate_v2(**kwargs: Any) -> Any:  # noqa: ANN401
+    _ = kwargs
+    raise RuntimeError("legacy_strategy_gate_removed")
+
+
+def risk_gate(ctx: Any) -> Any:  # noqa: ANN401
+    _ = ctx
+    raise RuntimeError("legacy_risk_gate_removed")
+
+
+def build_execution_plan(**kwargs: Any) -> Any:  # noqa: ANN401
+    _ = kwargs
+    raise RuntimeError("legacy_execution_planner_removed")
 
 
 @dataclass(frozen=True)
@@ -133,10 +157,6 @@ def _sanitize_llm_contract_errors(values: Any, *, limit: int = 8) -> list[str]:
     return out
 
 
-def _pipeline_mode(legacy_pipeline_enabled: bool) -> str:
-    return "legacy" if bool(legacy_pipeline_enabled) else "minimal"
-
-
 class TradeEventWorkflow:
     """示例工作流：load context -> call expert -> rule planner -> risk gate -> execution planner -> persist。"""
 
@@ -157,8 +177,7 @@ class TradeEventWorkflow:
         memory_dedup_key: str = "event_id",
         ai_adaptive_enabled: bool = False,
         ai_adaptive_mode: str = "observe",
-        legacy_pipeline_enabled: bool = True,
-        horizon_policy_config: Optional[Dict[str, Any]] = None,
+        horizon_policy_config: Optional[Dict[str, Any]] = None,  # noqa: ARG002
         signal_router_config: Optional[Dict[str, Any]] = None,
         signal_decision_prompt_profiles: Optional[Dict[str, Dict[str, Any]]] = None,
         signal_decision_agent: SignalDecisionAgent | None = None,
@@ -182,11 +201,6 @@ class TradeEventWorkflow:
         self._ai_adaptive_enabled = bool(ai_adaptive_enabled)
         mode = str(ai_adaptive_mode or "observe").strip().lower()
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
-        self._legacy_pipeline_enabled = bool(legacy_pipeline_enabled)
-        if self._legacy_pipeline_enabled:
-            self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
-        else:
-            self._horizon_policy_config = {}
         self._signal_router_config = dict(signal_router_config or {})
         self._signal_decision_prompt_profiles = dict(signal_decision_prompt_profiles or {})
         self._signal_decision_agent = signal_decision_agent or (
@@ -340,7 +354,7 @@ class TradeEventWorkflow:
                 event.event_id,
                 "signal_evaluator",
                 {
-                    "pipeline_mode": _pipeline_mode(self._legacy_pipeline_enabled),
+                    "pipeline_mode": "minimal",
                     "decision_agent_key": eval_result.decision_agent_key,
                     "decision_mode": eval_result.decision_mode,
                     "llm_parse_status": eval_result.llm_parse_status,
@@ -357,19 +371,13 @@ class TradeEventWorkflow:
         ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
         position_ctx = dict(ctx.position_context or {})
         compat = build_pipeline_compat_state(
-            legacy_pipeline_enabled=self._legacy_pipeline_enabled,
             signal=signal,
             msl=ctx.msl,
             position_context=position_ctx,
             active_events=list(ctx.active_events),
             signal_event=dict(ctx.signal_event or {}),
             cross_horizon=ch,
-            horizon_policy_config=self._horizon_policy_config,
-            resolve_intent_fn=resolve_intent,
-            build_rule_plan_fn=build_rule_plan,
-            strategy_gate_fn=strategy_gate_v2,
-            risk_gate_fn=risk_gate,
-            build_execution_plan_fn=build_execution_plan,
+            horizon_policy_config={},
         )
         intent = compat.intent
         rule_plan = compat.rule_plan
@@ -390,7 +398,6 @@ class TradeEventWorkflow:
                 default_symbol=event.symbol,
                 signal_decision=signal_decision,
                 plan=plan,
-                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
                 cross_horizon=ch,
                 prompt_config_source=self._signal_prompt_config_source,
                 prompt_config_version=self._signal_prompt_config_version,
@@ -435,7 +442,7 @@ class TradeEventWorkflow:
                 key_market_features=dict(ctx.key_market_features),
                 signal=signal,
                 signal_decision=signal_decision,
-                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
+                pipeline_mode="minimal",
                 llm_contract_error_code=_sanitize_llm_contract_error_code(eval_result.llm_contract_error_code),
                 llm_contract_errors=_sanitize_llm_contract_errors(eval_result.llm_contract_errors),
                 router_config_source=self._signal_router_config_source,
@@ -449,7 +456,7 @@ class TradeEventWorkflow:
             stage_payloads = build_recorder_stage_payloads(
                 state=compat,
                 signal_decision=signal_decision,
-                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
+                pipeline_mode="minimal",
                 cross_horizon=ch,
                 decision_trace_payload=trace_payload,
             )

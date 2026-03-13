@@ -8,8 +8,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
@@ -102,34 +101,6 @@ def test_trade_event_workflow_calls_execution_decider():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
 
         decider = _ExecutionDecider()
         wf = TradeEventWorkflow(
@@ -155,7 +126,7 @@ def test_trade_event_workflow_calls_execution_decider():
         assert "confidence" not in decider.payload
         assert decider.payload["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
-        assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_execution_plan"
+        assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
         assert decider.payload["risk_hints"]["decision_agent_key"] == "technical"
         assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
@@ -181,34 +152,6 @@ def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_
             mod,
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
         )
 
         decider = _ExecutionDecider()
@@ -254,17 +197,6 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("should not call resolve_intent")),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: (_ for _ in ()).throw(RuntimeError("should not call build_rule_plan")),
-        )
-
         decider = _ExecutionDecider()
         wf = TradeEventWorkflow(
             market_state=_MarketState(),
@@ -272,7 +204,6 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
             active_events=_Events(),
             execution_decider=decider,
             recorder=None,
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run(
             TradeEventInput(
@@ -283,11 +214,11 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
                 payload={"event_type": "indicator_signal"},
             )
         )
-        assert out.action == "hold"
+        assert out.action == "add"
         assert decider.called is True
         assert decider.payload["decision_id"] == "evt-exec-minimal-001"
         assert decider.payload["risk_hints"]["agent_action_hint"] == "add"
-        assert decider.payload["risk_hints"]["agent_notes"] == "legacy_pipeline_disabled"
+        assert decider.payload["risk_hints"]["agent_notes"] == "minimal_pipeline_semantic_plan"
         assert decider.payload["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
@@ -321,7 +252,6 @@ def test_trade_event_workflow_records_execution_decider_error_when_unavailable()
             active_events=_Events(),
             execution_decider=_FailingExecutionDecider(),
             recorder=recorder,
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
             TradeEventInput(
@@ -364,7 +294,6 @@ def test_trade_event_workflow_records_execution_reject_result_as_business_outcom
             active_events=_Events(),
             execution_decider=_RejectingExecutionDecider(),
             recorder=recorder,
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
             TradeEventInput(

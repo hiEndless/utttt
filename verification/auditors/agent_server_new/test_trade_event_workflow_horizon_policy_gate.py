@@ -8,8 +8,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalVerdict
-from services.agent_server_new.domain.strategy_gate import StrategyGateResult
+from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
@@ -63,7 +62,7 @@ class _Events:
         return []
 
 
-def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
+def test_trade_event_workflow_horizon_wait_confirmation_no_longer_blocks_signal_plan():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -72,35 +71,6 @@ def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
         wf = TradeEventWorkflow(
             market_state=_MarketState("wait_confirmation", "short_long_trend_conflict"),
             position_context=_Position(),
@@ -116,8 +86,8 @@ def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
                 payload={"event_type": "indicator_signal"},
             )
         )
-        assert out.action == "skip"
-        assert "horizon_policy_gate_blocked" in str(out.notes or "")
+        assert out.action == "add"
+        assert "horizon_policy_gate_blocked" not in str(out.notes or "")
 
     import pytest
 
@@ -128,7 +98,7 @@ def test_trade_event_workflow_horizon_wait_confirmation_blocks_increase():
         monkeypatch.undo()
 
 
-def test_trade_event_workflow_follow_long_term_allows_pipeline():
+def test_trade_event_workflow_horizon_config_argument_is_ignored_in_minimal_pipeline():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -137,40 +107,12 @@ def test_trade_event_workflow_follow_long_term_allows_pipeline():
             "evaluate_signal",
             lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
         )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
         wf = TradeEventWorkflow(
-            market_state=_MarketState("follow_long_term", "timeframe_aligned"),
+            market_state=_MarketState("wait_confirmation", "short_long_trend_conflict"),
             position_context=_Position(),
             active_events=_Events(),
             recorder=None,
+            horizon_policy_config={"block_on_increase_policies": ["wait_confirmation"]},
         )
         out = await wf.run(
             TradeEventInput(
@@ -182,139 +124,6 @@ def test_trade_event_workflow_follow_long_term_allows_pipeline():
             )
         )
         assert out.action == "add"
-        assert "horizon_policy_gate_blocked" not in str(out.notes or "")
-
-    import pytest
-
-    monkeypatch = pytest.MonkeyPatch()
-    try:
-        asyncio.run(_run(monkeypatch))
-    finally:
-        monkeypatch.undo()
-
-
-def test_trade_event_workflow_custom_horizon_policy_config_can_disable_block():
-    async def _run(monkeypatch):  # noqa: ANN001
-        import services.agent_server_new.app.workflows.trade_event_workflow as mod
-
-        monkeypatch.setattr(
-            mod,
-            "evaluate_signal",
-            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
-        wf = TradeEventWorkflow(
-            market_state=_MarketState("wait_confirmation", "short_long_trend_conflict"),
-            position_context=_Position(),
-            active_events=_Events(),
-            recorder=None,
-            horizon_policy_config={"block_on_increase_policies": ["reduce_risk"]},
-        )
-        out = await wf.run(
-            TradeEventInput(
-                event_id="evt-003",
-                exchange="binance",
-                symbol="ETHUSDT",
-                signal_direction="long",
-                payload={"event_type": "indicator_signal"},
-            )
-        )
-        assert out.action == "add"
-        assert "horizon_policy_gate_blocked" not in str(out.notes or "")
-
-    import pytest
-
-    monkeypatch = pytest.MonkeyPatch()
-    try:
-        asyncio.run(_run(monkeypatch))
-    finally:
-        monkeypatch.undo()
-
-
-def test_trade_event_workflow_loads_horizon_policy_config_from_env():
-    async def _run(monkeypatch):  # noqa: ANN001
-        import services.agent_server_new.app.workflows.trade_event_workflow as mod
-
-        monkeypatch.setenv("AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE", "reduce_risk")
-        monkeypatch.setattr(
-            mod,
-            "evaluate_signal",
-            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "resolve_intent",
-            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_rule_plan",
-            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
-        )
-        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
-        monkeypatch.setattr(
-            mod,
-            "risk_gate",
-            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
-        )
-        monkeypatch.setattr(
-            mod,
-            "build_execution_plan",
-            lambda **kwargs: ExecutionPlan(
-                action="add",
-                direction="long",
-                allowance=kwargs["allowance"],
-                confidence=Confidence(level="medium", score=0.7),
-                sizing={"mode": "ratio", "order_size_ratio": 0.1},
-                notes="ok",
-            ),
-        )
-
-        wf = TradeEventWorkflow(
-            market_state=_MarketState("wait_confirmation", "short_long_trend_conflict"),
-            position_context=_Position(),
-            active_events=_Events(),
-            recorder=None,
-        )
-        out = await wf.run(
-            TradeEventInput(
-                event_id="evt-004",
-                exchange="binance",
-                symbol="ETHUSDT",
-                signal_direction="long",
-                payload={"event_type": "indicator_signal"},
-            )
-        )
-        assert out.action == "add"
-        assert "horizon_policy_gate_blocked" not in str(out.notes or "")
 
     import pytest
 

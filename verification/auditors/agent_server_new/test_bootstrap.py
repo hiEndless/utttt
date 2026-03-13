@@ -23,7 +23,6 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     monkeypatch.setenv("AGENT_MARKET_STATE_TIMEOUT_S", "9")
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
     monkeypatch.delenv("AGENT_EXECUTION_ENABLED", raising=False)
-    monkeypatch.delenv("AGENT_LEGACY_PIPELINE_ENABLED", raising=False)
 
     import services.agent_server_new.app.bootstrap as mod
 
@@ -37,7 +36,6 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
     assert wf._symbol_memory_recorder is None  # noqa: SLF001
     assert wf._ai_adaptive_enabled is False  # noqa: SLF001
     assert wf._ai_adaptive_mode == "observe"  # noqa: SLF001
-    assert wf._legacy_pipeline_enabled is False  # noqa: SLF001
     assert wf._decision_trace_schema_validate is True  # noqa: SLF001
     assert wf._market_state._base_url == "http://localhost:8300"  # noqa: SLF001
     assert float(wf._market_state._timeout_s) == 9.0  # noqa: SLF001
@@ -293,32 +291,16 @@ def test_create_trade_event_workflow_from_env_disable_decision_trace_schema_vali
     assert wf._decision_trace_schema_validate is False  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_can_disable_legacy_pipeline(monkeypatch):
-    monkeypatch.setenv("AGENT_LEGACY_PIPELINE_ENABLED", "false")
-    monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
-
-    import services.agent_server_new.app.bootstrap as mod
-
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
-    wf = create_trade_event_workflow_from_env()
-    assert wf._legacy_pipeline_enabled is False  # noqa: SLF001
-
-
-def test_create_trade_event_workflow_from_env_minimal_requires_execution_enabled(monkeypatch):
+def test_create_trade_event_workflow_from_env_allows_execution_disabled(monkeypatch):
     monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "dev")
-    monkeypatch.setenv("AGENT_LEGACY_PIPELINE_ENABLED", "false")
     monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "false")
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
 
     import services.agent_server_new.app.bootstrap as mod
 
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
-    try:
-        create_trade_event_workflow_from_env()
-        assert False, "expected RuntimeError when minimal mode disables execution"
-    except RuntimeError as exc:
-        assert "AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED" in str(exc)
-        assert "minimal pipeline requires AGENT_EXECUTION_ENABLED=true" in str(exc)
+    wf = create_trade_event_workflow_from_env()
+    assert wf._execution_decider is None  # noqa: SLF001
 
 
 def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_config(monkeypatch, tmp_path):

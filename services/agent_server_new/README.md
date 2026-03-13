@@ -232,13 +232,6 @@ signal_event + active_events + MSL
   - 是否启用 AI 自适应策略预留字段输出（默认：`false`）
 - `AGENT_AI_ADAPTIVE_MODE`
   - 预留模式（`observe|recommend|bounded_apply`，默认：`observe`）
-- `AGENT_LEGACY_PIPELINE_ENABLED`
-  - 迁移兼容开关：是否临时启用 legacy planner/gate 链路（默认：`false`）
-  - 仅用于回滚窗口与迁移排障，常态环境保持 `false`
-  - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
-  - minimal 链路下 `ExecutionPlan.confidence` 与 `SignalDecision.confidence` 保持一致，便于执行层与回放统一判读
-  - 若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环，所有环境一致）
-  - 未满足时启动报错码：`AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED`
 - `AGENT_SIGNAL_ROUTER_CONFIG_FILE`
   - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
   - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`
@@ -277,16 +270,14 @@ signal_event + active_events + MSL
   - `execution_decider = HttpExecutionDecisionProvider.from_env()`（当 `AGENT_EXECUTION_ENABLED=true`）
   - `event_recorder = JsonlEventRecorder.from_env()`（当 `AGENT_EVENT_RECORDER_MODE=jsonl`）
 
-### 兼容开关灰度建议
+### Minimal 链路落地建议
 
 1. 默认已启用 minimal 主链路，先观察 `decision_trace.routing.pipeline_mode` 是否稳定为 `minimal`。
-2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 回滚模式差异。
-3. 如需回滚 legacy，仅在短窗口设置 `AGENT_LEGACY_PIPELINE_ENABLED=true` 并记录生效时间。
-4. minimal 模式下 recorder 仅保留 `workflow_bridge` 编排记录，不再输出 `intent/rule/gate/planner` 业务节点。
-5. minimal 模式下不会加载 `horizon policy` 配置，避免运行时仍耦合 legacy 业务链路。
-6. minimal 模式下 `risk_hints.agent_action_hint` 由信号语义映射（`accept -> add`，`reject/uncertain -> hold`），不再跟随 legacy plan action。
-7. minimal 模式下 `decision_confidence` 改由 `SignalDecision.confidence` 直出，`decision_confidence_source=agent_signal_decision`。
-8. minimal 模式下 `WorkflowResult.agent_plan` 仅作占位（固定 `hold/none + low(0.0)`），业务应消费 `signal_decision` 与 execution 结果。
+2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 agent 信号判定结果是否一致。
+3. recorder 仅保留 `workflow_bridge` 编排记录，不再输出 `intent/rule/gate/planner` 业务节点。
+4. `risk_hints.agent_action_hint` 由信号语义映射（`accept -> add`，`reject/uncertain -> hold`）。
+5. `decision_confidence` 由 `SignalDecision.confidence` 直出，`decision_confidence_source=agent_signal_decision`。
+6. `WorkflowResult.agent_plan` 与 `signal_decision` 语义一致（非执行层最终动作）。
 
 最小闭环验证示例：
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_business_closed_loop_example`
@@ -308,7 +299,7 @@ signal_event + active_events + MSL
 - 业务路由回放（四类来源最小闭环）：`bash tools/local/run_agent_signal_source_route_replay.sh`
 - 以 JSON 输出并落盘：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --output verification/reports/agent_signal_source_route_replay.latest.json`
 - 仅观测不阻断（路由不匹配仍返回 0）：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --strict 0`
-- 关键日志行：`[quick] pipeline_mode_summary legacy=... minimal=... unknown=... missing=... legacy_ratio=... minimal_ratio=...`
+- 关键日志行：`[quick] pipeline_mode_summary minimal=... unknown=... missing=... minimal_ratio=...`
 - 判读建议：`unknown` 与 `missing` 应长期收敛到 `0`；灰度推进阶段 `minimal_ratio` 应随范围扩大而稳定上升。
 
 ### MarketState 语义告警（非阻断）
@@ -342,7 +333,7 @@ signal_event + active_events + MSL
 - 版本信息：`GET /internal/agent/version`（`contract_version/runtime_version/runtime_profile`）
 - 就绪检查：`GET /internal/agent/readyz`
   - 当 workflow bootstrap 失败时返回 `503`
-  - 若 bootstrap 异常消息含 `[错误码]` 前缀（如 `[AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED]`），`errors` 会透传该稳定错误码
+  - 若 bootstrap 异常消息含 `[错误码]` 前缀，`errors` 会透传该稳定错误码
   - 响应包含 `status_level`：`green`（无告警）/`yellow`（仅 warning）/`red`（存在 error）
   - `prod` 档位且 `AGENT_EXECUTION_ENABLED=false` 时输出 warning：`execution_decider_disabled_in_production`
   - 可选上游检查（默认开启 market_state / redis）：
@@ -374,7 +365,7 @@ signal_event + active_events + MSL
 - 按 jq 过滤：`bash tools/local/tail_agent_events.sh --jq '.agent_name == "decision_trace"'`
 - 友好展示（缩进 JSON）：`bash tools/local/tail_agent_events.sh --pretty`
 - 聚合 decision_trace schema 告警：`bash tools/local/run_agent_decision_trace_schema_report.sh`
-- 聚合 legacy/minimal 灰度占比：`bash tools/local/run_agent_pipeline_mode_report.sh`
+- 聚合 minimal 链路占比：`bash tools/local/run_agent_pipeline_mode_report.sh`
 - 聚合事件类型归一化命中率与 unknown top：`bash tools/local/run_agent_event_type_match_report.sh`
 - 聚合决策路由命中分布（technical/onchain/liquidation/social_news/generic/unknown）：`bash tools/local/run_agent_decision_agent_key_report.sh`
 - 聚合 minimal 语义映射命中率（`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）：`bash tools/local/run_agent_action_hint_semantics_report.sh`

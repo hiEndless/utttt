@@ -1,27 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict
-
-from services.market_state_engine.src.contracts import MarketStateMSL
+from typing import Any, Dict
 
 from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
-from services.agent_server_new.domain.execution_planner import build_execution_plan
-from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_gate
-from services.agent_server_new.domain.intent_resolver import resolve_intent
-from services.agent_server_new.domain.risk_gate import RiskGateContext, risk_gate
-from services.agent_server_new.domain.risk_gate_reasons import (
-    RISK_GATE_REASON_DEFAULT_NORMAL,
-    RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT,
-    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH,
-    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM,
-    RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH,
-    RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE,
-    risk_gate_reason_active_event,
-    risk_gate_reason_portfolio_risk_state,
-)
-from services.agent_server_new.domain.rule_planner import build_rule_plan
-from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
+from services.agent_server_new.domain.risk_gate import RiskGateContext
 from services.agent_server_new.observability.decision_trace import DecisionTrace, map_alert_codes_from_contract_warnings
 
 
@@ -39,172 +22,31 @@ class PipelineCompatState:
     plan: ExecutionPlan
 
 
-def _to_float(value: Any, default: float = 0.0) -> float:
-    try:
-        return float(value)
-    except Exception:
-        return float(default)
-
-
-def _derive_global_regime(
-    *,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-) -> tuple[str, list[str]]:
-    regime_rank = {"normal": 0, "elevated": 1, "critical": 2}
-    regime = "normal"
-    reasons: list[str] = []
-
-    def _raise(next_regime: str, reason: str) -> None:
-        nonlocal regime
-        if reason and reason not in reasons:
-            reasons.append(reason)
-        if regime_rank.get(next_regime, 0) > regime_rank.get(regime, 0):
-            regime = next_regime
-
-    portfolio_risk = dict((position_context or {}).get("portfolio_risk") or {})
-    position_risk_state = str(portfolio_risk.get("risk_state") or "normal").strip().lower()
-    if position_risk_state == "frozen":
-        _raise("critical", risk_gate_reason_portfolio_risk_state(position_risk_state))
-    elif position_risk_state in {"reduce_only", "warn"}:
-        _raise("elevated", risk_gate_reason_portfolio_risk_state(position_risk_state))
-
-    if msl.market_fragility == "high":
-        _raise("critical", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH)
-    elif msl.market_fragility == "medium":
-        _raise("elevated", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM)
-    if str(msl.volatility.volatility_regime or "unknown") == "high":
-        _raise("elevated", RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH)
-    if msl.horizon_alignment == "conflict":
-        _raise("elevated", RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT)
-
-    for item in list(active_events or []):
-        evt = dict(item or {})
-        evt_type = str(evt.get("type") or "").strip().lower()
-        score = _to_float(evt.get("score"), 0.0)
-        if evt_type in {"liquidation_cluster", "forced_liquidation", "exchange_risk"} and score >= 0.8:
-            _raise("critical", risk_gate_reason_active_event(evt_type, "critical"))
-        elif evt_type in {"volatility_spike", "funding_extreme", "basis_dislocation"} and score >= 0.7:
-            _raise("elevated", risk_gate_reason_active_event(evt_type, "elevated"))
-
-    if not reasons:
-        reasons.append(RISK_GATE_REASON_DEFAULT_NORMAL)
-    return regime, reasons
-
-
-def _derive_risk_gate_context(
-    *,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-) -> tuple[RiskGateContext, list[str]]:
-    pos = dict((position_context or {}).get("current_position") or {})
-    cooldown_seconds_left = int(pos.get("cooldown_seconds_left") or 0)
-    global_regime, reasons = _derive_global_regime(
-        msl=msl,
-        position_context=position_context,
-        active_events=active_events,
-    )
-    if cooldown_seconds_left > 0 and RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE not in reasons:
-        reasons.append(RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE)
-    return RiskGateContext(
-        global_regime=global_regime,
-        cooldown_active=(cooldown_seconds_left > 0),
-    ), reasons
-
-
 def build_pipeline_compat_state(
     *,
-    legacy_pipeline_enabled: bool,
     signal: Any,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-    signal_event: Dict[str, Any],
-    cross_horizon: Dict[str, str],
-    horizon_policy_config: Dict[str, Any],
-    resolve_intent_fn: Callable[..., Any] = resolve_intent,
-    build_rule_plan_fn: Callable[..., Any] = build_rule_plan,
-    horizon_policy_gate_fn: Callable[..., Any] = horizon_policy_gate,
-    strategy_gate_fn: Callable[..., Any] = strategy_gate_v2,
-    derive_risk_gate_context_fn: Callable[..., tuple[RiskGateContext, list[str]]] = _derive_risk_gate_context,
-    risk_gate_fn: Callable[..., RiskAllowance] = risk_gate,
-    build_execution_plan_fn: Callable[..., ExecutionPlan] = build_execution_plan,
+    msl: Any,  # noqa: ARG001
+    position_context: Dict[str, Any],  # noqa: ARG001
+    active_events: list[Dict[str, Any]],  # noqa: ARG001
+    signal_event: Dict[str, Any],  # noqa: ARG001
+    cross_horizon: Dict[str, str],  # noqa: ARG001
+    horizon_policy_config: Dict[str, Any],  # noqa: ARG001
 ) -> PipelineCompatState:
-    # 中文注释：legacy 决策链路集中为兼容层，workflow 主干只消费统一 state。
-    if legacy_pipeline_enabled:
-        intent = resolve_intent_fn(signal=signal, msl=msl, position_context=position_context)
-        rule_plan = build_rule_plan_fn(intent=intent, msl=msl, position_context=position_context)
-        hpg = horizon_policy_gate_fn(
-            suggested_policy=str(cross_horizon.get("suggested_policy") or "no_action"),
-            policy_reason=str(cross_horizon.get("policy_reason") or "insufficient_evidence"),
-            intent=str(intent.intent),
-            config=horizon_policy_config,
-        )
-        sg = strategy_gate_fn(
-            msl=msl,
-            signal=signal,
-            intent=intent,
-            rule_plan=rule_plan,
-            position_context=position_context,
-            signal_event=signal_event,
-        )
-        risk_ctx, risk_ctx_reasons = derive_risk_gate_context_fn(
-            msl=msl,
-            position_context=position_context,
-            active_events=active_events,
-        )
-        allowance = risk_gate_fn(risk_ctx)
-        hpg_allowed = bool(hpg.allowed)
-        hpg_reasons = list(hpg.reasons)
-        sg_allowed = bool(sg.allowed)
-        sg_reasons = list(sg.reasons)
-        if not hpg_allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"horizon_policy_gate_blocked: {','.join(hpg_reasons)}",
-            )
-        elif not sg_allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"strategy_gate_blocked: {','.join(sg_reasons)}",
-            )
-        else:
-            plan = build_execution_plan_fn(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
-        return PipelineCompatState(
-            intent=intent,
-            rule_plan=rule_plan,
-            hpg_allowed=hpg_allowed,
-            hpg_reasons=hpg_reasons,
-            sg_allowed=sg_allowed,
-            sg_reasons=sg_reasons,
-            risk_ctx=risk_ctx,
-            risk_ctx_reasons=risk_ctx_reasons,
-            allowance=allowance,
-            plan=plan,
-        )
-
+    verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
+    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
+    is_accept = verdict == "accept" and direction in {"long", "short"}
     intent = ActionIntent(
-        intent="hold",
-        direction="none",
+        intent="increase" if is_accept else "hold",
+        direction=direction if is_accept else "none",
         confidence=signal.confidence,
-        reasons=["legacy_pipeline_disabled"],
-        notes="legacy_pipeline_disabled",
+        reasons=["signal_semantic_plan"],
+        notes="minimal_pipeline_semantic_plan",
     )
     rule_plan = RulePlan(
         intent=intent,
         sizing={},
-        reasons=["legacy_pipeline_disabled"],
-        notes="legacy_pipeline_disabled",
+        reasons=["signal_semantic_plan"],
+        notes="minimal_pipeline_semantic_plan",
     )
     risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
     allowance = RiskAllowance(
@@ -212,104 +54,31 @@ def build_pipeline_compat_state(
         allow_add=True,
         allow_reduce=True,
         allow_exit=True,
-        reasons=["legacy_pipeline_disabled"],
+        reasons=["execution_service_final_authority"],
     )
     plan = ExecutionPlan(
-        action="hold",
-        direction="none",
+        action="add" if is_accept else "hold",
+        direction=direction if is_accept else "none",
         allowance=allowance,
         confidence=signal.confidence,
         sizing=None,
-        notes="legacy_pipeline_disabled",
+        notes="minimal_pipeline_semantic_plan",
     )
     return PipelineCompatState(
         intent=intent,
         rule_plan=rule_plan,
         hpg_allowed=True,
-        hpg_reasons=["legacy_pipeline_disabled"],
+        hpg_reasons=["legacy_removed"],
         sg_allowed=True,
-        sg_reasons=["legacy_pipeline_disabled"],
+        sg_reasons=["legacy_removed"],
         risk_ctx=risk_ctx,
-        risk_ctx_reasons=["legacy_pipeline_disabled"],
+        risk_ctx_reasons=["execution_service_final_authority"],
         allowance=allowance,
         plan=plan,
     )
 
 
-def build_legacy_stage_outputs(
-    *,
-    state: PipelineCompatState,
-    cross_horizon: Dict[str, str],
-) -> list[tuple[str, Dict[str, Any]]]:
-    return [
-        (
-            "intent_resolver",
-            {
-                "intent": state.intent.intent,
-                "direction": state.intent.direction,
-                "confidence": {
-                    "level": state.intent.confidence.level,
-                    "score": state.intent.confidence.score,
-                },
-                "reasons": list(state.intent.reasons),
-                "notes": state.intent.notes,
-            },
-        ),
-        (
-            "rule_planner",
-            {
-                "intent": {
-                    "intent": state.rule_plan.intent.intent,
-                    "direction": state.rule_plan.intent.direction,
-                    "confidence": {
-                        "level": state.rule_plan.intent.confidence.level,
-                        "score": state.rule_plan.intent.confidence.score,
-                    },
-                },
-                "sizing": dict(state.rule_plan.sizing or {}),
-                "reasons": list(state.rule_plan.reasons),
-                "notes": state.rule_plan.notes,
-            },
-        ),
-        (
-            "horizon_policy_gate",
-            {
-                "allowed": bool(state.hpg_allowed),
-                "reasons": list(state.hpg_reasons),
-                "cross_horizon": dict(cross_horizon or {}),
-            },
-        ),
-        (
-            "strategy_gate",
-            {
-                "allowed": bool(state.sg_allowed),
-                "reasons": list(state.sg_reasons),
-            },
-        ),
-        (
-            "execution_planner",
-            {
-                "action": state.plan.action,
-                "direction": state.plan.direction,
-                "sizing": dict(state.plan.sizing or {}),
-                "allowance": {
-                    "allow_open": state.plan.allowance.allow_open,
-                    "allow_add": state.plan.allowance.allow_add,
-                    "allow_reduce": state.plan.allowance.allow_reduce,
-                    "allow_exit": state.plan.allowance.allow_exit,
-                    "reasons": list(state.plan.allowance.reasons),
-                },
-                "confidence": {
-                    "level": state.plan.confidence.level,
-                    "score": state.plan.confidence.score,
-                },
-                "notes": state.plan.notes,
-            },
-        ),
-    ]
-
-
-def build_decision_trace_legacy_sections(
+def build_decision_trace_semantic_sections(
     *,
     state: PipelineCompatState,
 ) -> Dict[str, Dict[str, Any]]:
@@ -354,7 +123,7 @@ def build_decision_trace_legacy_sections(
     }
 
 
-def build_symbol_memory_legacy_sections(
+def build_symbol_memory_semantic_sections(
     *,
     state: PipelineCompatState,
     cross_horizon: Dict[str, str],
@@ -390,20 +159,20 @@ def build_symbol_memory_record_payload(
     contract_warnings: list[str],
     execution_result: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    legacy_sections = build_symbol_memory_legacy_sections(state=state, cross_horizon=cross_horizon)
+    semantic_sections = build_symbol_memory_semantic_sections(state=state, cross_horizon=cross_horizon)
     return {
         "ts": int(ts),
         "event_id": str(event_id or ""),
         "signal_event": dict(signal_event or {}),
         "msl_summary": str(msl_summary or ""),
-        "cross_horizon_policy": dict(legacy_sections.get("cross_horizon_policy") or {}),
+        "cross_horizon_policy": dict(semantic_sections.get("cross_horizon_policy") or {}),
         "signal": {
             "direction": signal.direction,
             "verdict": signal.verdict,
             "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
         },
-        "intent": dict(legacy_sections.get("intent") or {}),
-        "plan": dict(legacy_sections.get("plan") or {}),
+        "intent": dict(semantic_sections.get("intent") or {}),
+        "plan": dict(semantic_sections.get("plan") or {}),
         "contract_warnings": [str(x) for x in list(contract_warnings or []) if str(x).strip()],
         "execution_result": dict(execution_result or {}),
     }
@@ -416,31 +185,21 @@ def build_execution_decision_payload(
     default_symbol: str,
     signal_decision: SignalDecision,
     plan: ExecutionPlan,
-    pipeline_mode: str,
     cross_horizon: Dict[str, str],
     prompt_config_source: str = "",
     prompt_config_version: str = "",
     ai_adaptive_enabled: bool = False,
     ai_adaptive_mode: str = "observe",
 ) -> Dict[str, Any]:
-    normalized_mode = str(pipeline_mode or "legacy").strip().lower()
-    decision_confidence_source = "agent_execution_plan"
+    signal_conf = signal_decision.confidence
+    decision_confidence_source = "agent_signal_decision"
     decision_confidence = {
-        "level": str(plan.confidence.level or "low"),
-        "score": float(plan.confidence.score or 0.0),
+        "level": str(signal_conf.level or "low"),
+        "score": float(signal_conf.score or 0.0),
     }
-    if normalized_mode == "minimal":
-        signal_conf = signal_decision.confidence
-        decision_confidence = {
-            "level": str(signal_conf.level or "low"),
-            "score": float(signal_conf.score or 0.0),
-        }
-        decision_confidence_source = "agent_signal_decision"
-    agent_action_hint = str(plan.action or "hold").strip().lower() or "hold"
-    if normalized_mode == "minimal":
-        verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
-        direction = str(signal_decision.signal_direction or "none").strip().lower()
-        agent_action_hint = "add" if verdict == "accept" and direction in {"long", "short"} else "hold"
+    verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
+    direction = str(signal_decision.signal_direction or "none").strip().lower()
+    agent_action_hint = "add" if verdict == "accept" and direction in {"long", "short"} else "hold"
     payload = {
         "decision_id": str(signal_decision.decision_id or default_decision_id),
         "exchange": str(signal_decision.exchange or default_exchange),
@@ -526,7 +285,8 @@ def build_workflow_bridge_payload(
     signal_decision: SignalDecision,
     pipeline_mode: str = "minimal",
 ) -> Dict[str, Any]:
-    mode = str(pipeline_mode or "minimal").strip().lower() or "minimal"
+    _ = pipeline_mode
+    mode = "minimal"
     return {
         "pipeline_mode": mode,
         "notes": str(state.plan.notes or ""),
@@ -559,16 +319,13 @@ def build_recorder_stage_payloads(
     decision_trace_payload: Dict[str, Any] | None = None,
 ) -> Dict[str, Dict[str, Any]]:
     out: Dict[str, Dict[str, Any]] = {}
-    mode = str(pipeline_mode or "legacy").strip().lower()
-    if mode == "legacy":
-        for stage_name, stage_payload in build_legacy_stage_outputs(state=state, cross_horizon=cross_horizon):
-            out[stage_name] = dict(stage_payload or {})
-    else:
-        out["workflow_bridge"] = build_workflow_bridge_payload(
-            state=state,
-            signal_decision=signal_decision,
-            pipeline_mode=mode or "minimal",
-        )
+    _ = (pipeline_mode, cross_horizon)
+    mode = "minimal"
+    out["workflow_bridge"] = build_workflow_bridge_payload(
+        state=state,
+        signal_decision=signal_decision,
+        pipeline_mode=mode,
+    )
     if isinstance(decision_trace_payload, dict):
         out["decision_trace"] = dict(decision_trace_payload)
     return out
@@ -597,7 +354,7 @@ def build_decision_trace_payload(
     llm_observation: Dict[str, Any],
 ) -> Dict[str, Any]:
     contract_warnings = [str(x) for x in list((key_market_features or {}).get("contract_warnings") or []) if x]
-    legacy_sections = build_decision_trace_legacy_sections(state=state)
+    semantic_sections = build_decision_trace_semantic_sections(state=state)
     trace = DecisionTrace(
         event_id=event_id,
         exchange=exchange,
@@ -615,7 +372,7 @@ def build_decision_trace_payload(
             "invalidation_reasons": list(signal.invalidation_reasons),
         },
         routing={
-            "pipeline_mode": str(pipeline_mode or "legacy"),
+            "pipeline_mode": "minimal",
             "decision_agent_key": signal_decision.decision_agent_key,
             "decision_mode": signal_decision.decision_mode,
             "llm_parse_status": signal_decision.llm_parse_status,
@@ -629,10 +386,10 @@ def build_decision_trace_payload(
             "event_type_normalized": str((event_type_diag or {}).get("normalized_event_type") or ""),
             "event_type_match_mode": str((event_type_diag or {}).get("matched") or "empty"),
         },
-        intent=dict(legacy_sections.get("intent") or {}),
-        rule_plan=dict(legacy_sections.get("rule_plan") or {}),
-        strategy_gate_result=dict(legacy_sections.get("strategy_gate_result") or {}),
-        risk_gate=dict(legacy_sections.get("risk_gate") or {}),
+        intent=dict(semantic_sections.get("intent") or {}),
+        rule_plan=dict(semantic_sections.get("rule_plan") or {}),
+        strategy_gate_result=dict(semantic_sections.get("strategy_gate_result") or {}),
+        risk_gate=dict(semantic_sections.get("risk_gate") or {}),
         execution_plan={
             "action": state.plan.action,
             "direction": state.plan.direction,

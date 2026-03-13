@@ -563,7 +563,6 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
             active_events=_Events(),
             execution_decider=None,
             recorder=_Recorder(),
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
             TradeEventInput(
@@ -574,11 +573,11 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
                 payload={"event_type": "indicator_signal"},
             )
         )
-        assert out.agent_plan.action == "hold"
-        assert out.agent_plan.direction == "none"
+        assert out.agent_plan.action == "add"
+        assert out.agent_plan.direction == "long"
         assert out.agent_plan.confidence.level == out.signal_decision.confidence.level
         assert out.agent_plan.confidence.score == out.signal_decision.confidence.score
-        assert out.agent_plan.notes == "legacy_pipeline_disabled"
+        assert out.agent_plan.notes == "minimal_pipeline_semantic_plan"
         trace_payload = {}
         for _, name, payload in wf._recorder.outputs:  # noqa: SLF001
             if name == "decision_trace":
@@ -702,7 +701,6 @@ def test_trade_event_workflow_minimal_mode_skips_horizon_policy_config_loading()
             active_events=_Events(),
             execution_decider=None,
             recorder=None,
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
             TradeEventInput(
@@ -713,7 +711,7 @@ def test_trade_event_workflow_minimal_mode_skips_horizon_policy_config_loading()
                 payload={"event_type": "indicator_signal"},
             )
         )
-        assert out.agent_plan.action == "hold"
+        assert out.agent_plan.action == "add"
 
     import pytest
 
@@ -739,7 +737,6 @@ def test_trade_event_workflow_minimal_business_closed_loop_example():
             active_events=_Events(),
             execution_decider=_ExecutionDecider(),
             recorder=None,
-            legacy_pipeline_enabled=False,
         )
         out = await wf.run_with_result(
             TradeEventInput(
@@ -782,7 +779,6 @@ def test_trade_event_workflow_minimal_multi_event_route_model_closed_loop():
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
                 "technical": {
@@ -865,7 +861,6 @@ def test_trade_event_workflow_minimal_unknown_event_falls_back_to_generic_closed
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {
                     "focus": "generic_signal_validation",
@@ -932,7 +927,6 @@ def test_trade_event_workflow_minimal_selected_type_overrides_event_type_closed_
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
                 "technical": {
@@ -1006,7 +1000,6 @@ def test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
                 "technical": {
@@ -1109,7 +1102,6 @@ def test_trade_event_workflow_minimal_source_object_category_fallback_route_clos
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
                 "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
@@ -1178,7 +1170,6 @@ def test_trade_event_workflow_minimal_signal_source_type_route_closed_loop():
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=observer,
-            legacy_pipeline_enabled=False,
             signal_decision_prompt_profiles={
                 "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
                 "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
@@ -1270,7 +1261,6 @@ def test_trade_event_workflow_minimal_llm_reject_or_uncertain_maps_action_hint_h
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=_RejectOrUncertainObserver(),
-            legacy_pipeline_enabled=False,
         )
 
         out_reject = await wf.run_with_result(
@@ -1348,7 +1338,6 @@ def test_trade_event_workflow_minimal_llm_accept_valid_direction_maps_action_hin
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=_AcceptObserver(),
-            legacy_pipeline_enabled=False,
         )
 
         out_long = await wf.run_with_result(
@@ -1421,7 +1410,6 @@ def test_trade_event_workflow_minimal_llm_accept_none_direction_maps_action_hint
             execution_decider=execution_decider,
             recorder=None,
             llm_observer=_AcceptNoneDirectionObserver(),
-            legacy_pipeline_enabled=False,
         )
 
         out = await wf.run_with_result(

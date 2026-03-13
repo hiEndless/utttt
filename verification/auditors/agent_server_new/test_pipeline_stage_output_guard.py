@@ -16,7 +16,6 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
 def _sample_state_and_decision():
     signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
     state = build_pipeline_compat_state(
-        legacy_pipeline_enabled=False,
         signal=signal,
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -48,22 +47,3 @@ def test_pipeline_stage_output_guard_minimal_mode_keys_are_frozen() -> None:
         decision_trace_payload={"event_id": "evt-stage-guard-001"},
     )
     assert set(out.keys()) == {"workflow_bridge", "decision_trace"}
-
-
-def test_pipeline_stage_output_guard_legacy_mode_keys_are_frozen() -> None:
-    state, decision = _sample_state_and_decision()
-    out = build_recorder_stage_payloads(
-        state=state,
-        signal_decision=decision,
-        pipeline_mode="legacy",
-        cross_horizon={"suggested_policy": "no_action"},
-        decision_trace_payload={"event_id": "evt-stage-guard-001"},
-    )
-    assert set(out.keys()) == {
-        "intent_resolver",
-        "rule_planner",
-        "horizon_policy_gate",
-        "strategy_gate",
-        "execution_planner",
-        "decision_trace",
-    }

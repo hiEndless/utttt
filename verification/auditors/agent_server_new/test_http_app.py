@@ -40,7 +40,7 @@ def test_http_readyz_returns_503_when_bootstrap_invalid(monkeypatch) -> None:  #
     monkeypatch.setattr(
         mod,
         "create_trade_event_workflow_from_env",
-        lambda: (_ for _ in ()).throw(RuntimeError("[AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED] minimal mode requires execution")),
+        lambda: (_ for _ in ()).throw(RuntimeError("[AGENT_BOOTSTRAP_WORKFLOW_INVALID] workflow bootstrap invalid")),
     )
     app = create_app()
     client = TestClient(app)
@@ -50,7 +50,7 @@ def test_http_readyz_returns_503_when_bootstrap_invalid(monkeypatch) -> None:  #
     assert body["ok"] is False
     assert body["status_level"] == "red"
     assert "workflow_bootstrap_failed" in list(body.get("errors") or [])
-    assert "AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED" in list(body.get("errors") or [])
+    assert "AGENT_BOOTSTRAP_WORKFLOW_INVALID" in list(body.get("errors") or [])
 
 
 def test_http_readyz_upstream_warning_in_non_strict_mode(monkeypatch) -> None:  # noqa: ANN001
