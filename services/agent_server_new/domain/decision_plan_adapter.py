@@ -11,7 +11,7 @@ DECISION_PLAN_NOTES = "minimal_pipeline_semantic_plan"
 
 @dataclass(frozen=True)
 class DecisionPlanState:
-    memory_intent: Dict[str, Any]
+    decision_intent_snapshot: Dict[str, Any]
     allowance: RiskAllowance
     plan: ExecutionPlan
 
@@ -28,7 +28,7 @@ def build_decision_plan_state(
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     direction = str(getattr(signal, "direction", "") or "none").strip().lower()
     is_accept = verdict == "accept" and direction in {"long", "short"}
-    semantic_intent = {
+    decision_intent_snapshot = {
         "intent": "increase" if is_accept else "hold",
         "direction": direction if is_accept else "none",
         "confidence": {
@@ -54,7 +54,7 @@ def build_decision_plan_state(
         notes=DECISION_PLAN_NOTES,
     )
     return DecisionPlanState(
-        memory_intent=semantic_intent,
+        decision_intent_snapshot=decision_intent_snapshot,
         allowance=allowance,
         plan=plan,
     )
@@ -67,7 +67,7 @@ def build_symbol_memory_sections(
 ) -> Dict[str, Dict[str, Any]]:
     return {
         "cross_horizon_policy": dict(cross_horizon or {}),
-        "intent": dict(state.memory_intent or {}),
+        "intent": dict(state.decision_intent_snapshot or {}),
         "plan": {
             "action": state.plan.action,
             "direction": state.plan.direction,

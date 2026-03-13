@@ -34,7 +34,7 @@ def test_decision_plan_adapter_minimal_semantic_state() -> None:
     )
     assert out.plan.action == "add"
     assert out.plan.direction == "long"
-    assert dict(out.memory_intent or {}).get("notes") == DECISION_PLAN_NOTES
+    assert dict(out.decision_intent_snapshot or {}).get("notes") == DECISION_PLAN_NOTES
 
 
 def test_decision_plan_adapter_symbol_memory_sections_contract() -> None:
