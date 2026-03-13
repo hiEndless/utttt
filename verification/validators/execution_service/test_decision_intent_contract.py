@@ -35,6 +35,8 @@ def test_decision_intent_v1_parse_success() -> None:
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",
+            "prompt_config_source": "default:services/agent_server_new/config/signal_decision_prompt_profiles.json",
+            "prompt_config_version": "f00dbabe1234abcd",
             "signal_verdict": "accept",
             "signal_reliability_score": 0.81,
         },
@@ -49,6 +51,8 @@ def test_decision_intent_v1_parse_success() -> None:
     assert data["risk_hints"]["decision_agent_key"] == "technical"
     assert data["risk_hints"]["decision_mode"] == "rule"
     assert data["risk_hints"]["llm_parse_status"] == "rule_only"
+    assert data["risk_hints"]["prompt_config_source"].startswith("default:")
+    assert data["risk_hints"]["prompt_config_version"] == "f00dbabe1234abcd"
     assert data["risk_hints"]["signal_verdict"] == "accept"
     assert data["risk_hints"]["signal_reliability_score"] == 0.81
 
@@ -248,6 +252,24 @@ def test_decision_intent_rejects_invalid_llm_parse_status() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "llm_parse_status" in str(exc)
+
+
+def test_decision_intent_rejects_empty_prompt_config_source() -> None:
+    payload = {
+        "decision_id": "dec-007d",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"prompt_config_source": " "},
+    }
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "prompt_config_source" in str(exc)
 
 
 def test_execution_result_v1_parse_success() -> None:

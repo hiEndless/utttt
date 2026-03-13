@@ -32,6 +32,7 @@
 12. `risk_hints.decision_agent_key/signal_verdict/signal_reliability_score` 已显式入 `DecisionIntent` schema，并在运行时做类型与范围校验（用于承接 agent 语义裁决信号）
 13. `risk_hints.decision_mode` 新增可选字段（`llm|rule_fallback|rule`），用于标记信号判定来源，便于 execution 侧做质量回溯统计（非 breaking，历史 producer 无需改造）
 14. `risk_hints.llm_parse_status` 新增可选枚举字段（`llm_ok|llm_invalid_payload|llm_status_not_ok|llm_not_provided|rule_only`），用于记录 LLM 判定解析状态，辅助 fallback 根因分析（非 breaking）
+15. `risk_hints.prompt_config_source/prompt_config_version` 新增可选字段（非空字符串），用于追踪 agent 侧 decision_prompt 配置来源与版本，支持跨服务回放定位（非 breaking）
 
 ## 文档维护规则
 

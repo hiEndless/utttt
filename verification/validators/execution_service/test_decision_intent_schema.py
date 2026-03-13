@@ -27,6 +27,8 @@ def test_decision_intent_schema_samples() -> None:
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",
+            "prompt_config_source": "default:services/agent_server_new/config/signal_decision_prompt_profiles.json",
+            "prompt_config_version": "f00dbabe1234abcd",
             "signal_verdict": "accept",
             "signal_reliability_score": 0.83,
             "alternative_source_summary": {
@@ -127,6 +129,24 @@ def test_decision_intent_schema_rejects_invalid_llm_parse_status() -> None:
         "decision_confidence": {"level": "medium", "score": 0.66},
         "cross_horizon_policy": {},
         "risk_hints": {"llm_parse_status": "unknown_status"},
+    }
+    assert not validate_payload_with_local_refs(
+        schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"
+    )
+
+
+def test_decision_intent_schema_rejects_empty_prompt_config_source() -> None:
+    schema_path = Path(PROJECT_ROOT) / "services" / "execution_service" / "docs" / "decision_intent.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    bad = {
+        "decision_id": "dec-005d",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "long",
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {"prompt_config_source": ""},
     }
     assert not validate_payload_with_local_refs(
         schema, bad, Path(PROJECT_ROOT) / "services" / "execution_service" / "docs"

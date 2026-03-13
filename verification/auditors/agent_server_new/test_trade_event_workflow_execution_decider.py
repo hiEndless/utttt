@@ -136,6 +136,8 @@ def test_trade_event_workflow_calls_execution_decider():
         assert decider.payload["risk_hints"]["decision_agent_key"] == "technical"
         assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
+        assert decider.payload["risk_hints"]["prompt_config_source"] == "runtime"
+        assert isinstance(decider.payload["risk_hints"]["prompt_config_version"], str)
         assert "execution_hint" not in decider.payload
         assert "adaptive_profile" not in decider.payload
 
@@ -260,6 +262,8 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
         assert decider.payload["risk_hints"]["agent_notes"] == "legacy_pipeline_disabled"
         assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
+        assert decider.payload["risk_hints"]["prompt_config_source"] == "runtime"
+        assert isinstance(decider.payload["risk_hints"]["prompt_config_version"], str)
 
     import pytest
 

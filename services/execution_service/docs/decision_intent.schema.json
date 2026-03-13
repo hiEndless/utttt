@@ -61,6 +61,14 @@
           "type": "string",
           "enum": ["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
         },
+        "prompt_config_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_config_version": {
+          "type": "string",
+          "minLength": 1
+        },
         "signal_verdict": {
           "type": "string",
           "enum": ["accept", "reject", "uncertain"]

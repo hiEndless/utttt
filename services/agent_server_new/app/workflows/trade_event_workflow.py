@@ -515,6 +515,8 @@ class TradeEventWorkflow:
                 signal_decision=signal_decision,
                 plan=plan,
                 cross_horizon=ch,
+                prompt_config_source=self._signal_prompt_config_source,
+                prompt_config_version=self._signal_prompt_config_version,
                 ai_adaptive_enabled=self._ai_adaptive_enabled,
                 ai_adaptive_mode=self._ai_adaptive_mode,
             )
@@ -727,6 +729,8 @@ def _build_decision_intent_payload(
     signal_decision: SignalDecision,
     plan: ExecutionPlan,
     cross_horizon: Dict[str, str],
+    prompt_config_source: str = "",
+    prompt_config_version: str = "",
     ai_adaptive_enabled: bool = False,
     ai_adaptive_mode: str = "observe",
 ) -> Dict[str, Any]:
@@ -751,6 +755,8 @@ def _build_decision_intent_payload(
             "decision_agent_key": str(signal_decision.decision_agent_key or ""),
             "decision_mode": str(signal_decision.decision_mode or "rule"),
             "llm_parse_status": str(signal_decision.llm_parse_status or ""),
+            "prompt_config_source": str(prompt_config_source or ""),
+            "prompt_config_version": str(prompt_config_version or ""),
             "signal_verdict": str(signal_decision.signal_verdict or ""),
             "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
             "signal_reasons": list(signal_decision.reasons or []),

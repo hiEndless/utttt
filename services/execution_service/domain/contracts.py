@@ -162,6 +162,12 @@ class DecisionIntent:
                 raise ValueError(
                     "risk_hints.llm_parse_status 必须是 llm_ok/llm_invalid_payload/llm_status_not_ok/llm_not_provided/rule_only"
                 )
+        prompt_config_source = risk_hints.get("prompt_config_source")
+        if prompt_config_source is not None and not str(prompt_config_source).strip():
+            raise ValueError("risk_hints.prompt_config_source 必须是非空字符串")
+        prompt_config_version = risk_hints.get("prompt_config_version")
+        if prompt_config_version is not None and not str(prompt_config_version).strip():
+            raise ValueError("risk_hints.prompt_config_version 必须是非空字符串")
         signal_verdict = risk_hints.get("signal_verdict")
         if signal_verdict is not None:
             verdict = str(signal_verdict).strip().lower()

@@ -534,7 +534,7 @@ workflow 会把 agent 的 ExecutionPlan 映射为 execution_service 侧的 Decis
 | direction_intent | string | Y | long/short/none（来自 plan.direction） |
 | decision_confidence | object | Y | {level, score}（canonical） |
 | cross_horizon_policy | object | Y | {suggested_policy, policy_reason} |
-| risk_hints | object | Y | {agent_action_hint, agent_notes, decision_confidence, decision_confidence_source} |
+| risk_hints | object | Y | {agent_action_hint, agent_notes, decision_confidence, decision_confidence_source, decision_agent_key, decision_mode, llm_parse_status, prompt_config_source, prompt_config_version, signal_verdict, signal_reliability_score, signal_reasons} |
 
 说明：
 - 该链路默认不再发送 `confidence`（deprecated alias）。
