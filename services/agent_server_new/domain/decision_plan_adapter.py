@@ -18,7 +18,6 @@ SIGNAL_DECISION_PLAN_NOTES = "minimal_pipeline_semantic_plan"
 @dataclass(frozen=True)
 class DecisionPlanState:
     decision_intent_snapshot: Dict[str, Any]
-    allowance: RiskAllowance
     plan: ExecutionPlan
 
 
@@ -61,7 +60,6 @@ def build_decision_plan_state(
     )
     return DecisionPlanState(
         decision_intent_snapshot=decision_intent_snapshot,
-        allowance=allowance,
         plan=plan,
     )
 
