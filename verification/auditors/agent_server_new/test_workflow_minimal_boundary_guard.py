@@ -60,3 +60,10 @@ def test_contracts_no_legacy_intent_rule_types() -> None:
     assert "ActionIntentType" not in text
     assert "class ActionIntent" not in text
     assert "class RulePlan" not in text
+
+
+def test_decision_plan_adapter_has_legacy_boundary_note() -> None:
+    path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "domain" / "decision_plan_adapter.py"
+    text = path.read_text(encoding="utf-8")
+    assert "must not reintroduce" in text
+    assert "legacy intent/rule/gate/planner" in text
