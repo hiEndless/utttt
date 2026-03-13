@@ -613,6 +613,15 @@ agent_server_new/
 - 成交回报状态机
 - 仓位对账细节
 
+## 当前主链路验收清单
+
+1. workflow 主链路固定为 `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`。
+2. `trade_event_workflow.py` 不得 import `intent/rule/strategy/risk/execution_planner/horizon_policy` 历史域模块。
+3. `DecisionTrace.routing.pipeline_mode` 固定为 `minimal`。
+4. `intent/rule_plan/strategy_gate_result/risk_gate` 仅作为语义快照，不承载 execution 最终风控语义。
+5. `ExecutionPlan.sizing/allowance` 仅为语义建议字段，execution 可覆盖或忽略。
+6. 最终风控阻断与执行动作以 `execution_service` 返回为唯一权威。
+
 ## 迁移清单
 
 ### 第一阶段：逻辑剥离
