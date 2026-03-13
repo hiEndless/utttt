@@ -23,7 +23,7 @@ def _sample_signal() -> SignalVerdict:
     return SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
 
 
-def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
+def test_decision_plan_adapter_minimal_semantic_state() -> None:
     out = build_pipeline_compat_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
@@ -37,7 +37,7 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
     assert dict(out.memory_intent or {}).get("notes") == DECISION_PLAN_NOTES
 
 
-def test_pipeline_compat_adapter_symbol_memory_sections_contract() -> None:
+def test_decision_plan_adapter_symbol_memory_sections_contract() -> None:
     out = build_pipeline_compat_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
@@ -50,7 +50,7 @@ def test_pipeline_compat_adapter_symbol_memory_sections_contract() -> None:
     assert set(memory_sections.keys()) == {"cross_horizon_policy", "intent", "plan"}
 
 
-def test_pipeline_compat_adapter_builds_execution_decision_payload() -> None:
+def test_decision_plan_adapter_builds_execution_decision_payload() -> None:
     signal_decision = SignalDecision(
         decision_id="evt-001",
         exchange="binance",
@@ -86,7 +86,7 @@ def test_pipeline_compat_adapter_builds_execution_decision_payload() -> None:
     assert payload["risk_hints"]["agent_action_hint"] == "add"
 
 
-def test_pipeline_compat_adapter_builds_workflow_bridge_payload() -> None:
+def test_decision_plan_adapter_builds_workflow_bridge_payload() -> None:
     state = build_pipeline_compat_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
@@ -115,7 +115,7 @@ def test_pipeline_compat_adapter_builds_workflow_bridge_payload() -> None:
     assert payload["execution_plan"]["action"] == "add"
 
 
-def test_pipeline_compat_adapter_builds_decision_trace_payload() -> None:
+def test_decision_plan_adapter_builds_decision_trace_payload() -> None:
     signal = _sample_signal()
     state = build_pipeline_compat_state(
         signal=signal,
@@ -160,7 +160,7 @@ def test_pipeline_compat_adapter_builds_decision_trace_payload() -> None:
     assert trace["execution_plan"]["action"] == "add"
 
 
-def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_minimal() -> None:
+def test_decision_plan_adapter_builds_recorder_stage_payloads_for_minimal() -> None:
     state = build_pipeline_compat_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
@@ -189,7 +189,7 @@ def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_minimal() ->
     assert set(out.keys()) == {"workflow_bridge", "decision_trace"}
 
 
-def test_pipeline_compat_adapter_builds_symbol_memory_record_payload() -> None:
+def test_decision_plan_adapter_builds_symbol_memory_record_payload() -> None:
     signal = _sample_signal()
     state = build_pipeline_compat_state(
         signal=signal,
