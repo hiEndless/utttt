@@ -240,6 +240,66 @@ def test_trade_event_workflow_llm_payload_is_trimmed_by_decision_agent_key():
     asyncio.run(_run())
 
 
+def test_trade_event_workflow_routes_business_event_types_to_dedicated_agent_prompts():
+    async def _run():
+        cases = [
+            (
+                "indicator_signal",
+                {"event_type": "indicator_signal"},
+                "technical",
+                "technical_signal_validation",
+                "校验市场指标类信号方向是否与当前市场结构一致，仅输出信号有效性结论。",
+            ),
+            (
+                "wallet_alert",
+                {"event_type": "wallet_alert", "source_category": "onchain"},
+                "onchain",
+                "onchain_flow_validation",
+                "校验链上资金流与钱包异动是否支持当前信号方向，并评估证据一致性。",
+            ),
+            (
+                "forced_liquidation",
+                {"event_type": "forced_liquidation"},
+                "liquidation",
+                "liquidation_shock_validation",
+                "校验清算冲击类事件是否形成可持续方向信号，避免把短时噪声当成趋势。",
+            ),
+            (
+                "social_news",
+                {"event_type": "macro_news"},
+                "social_news",
+                "social_news_event_validation",
+                "校验社媒新闻类事件是否具备可交易的方向一致性，抑制单一来源噪声。",
+            ),
+        ]
+        for suffix, payload, expected_key, expected_focus, expected_task in cases:
+            observer = _CaptureLLMObserver()
+            wf = TradeEventWorkflow(
+                market_state=_MarketState(),
+                position_context=_Position(),
+                active_events=_Events(),
+                execution_decider=None,
+                recorder=None,
+                llm_observer=observer,
+            )
+            out = await wf.run_with_result(
+                TradeEventInput(
+                    event_id=f"evt-route-{suffix}-001",
+                    exchange="binance",
+                    symbol="ETHUSDT",
+                    signal_direction="long",
+                    payload=payload,
+                )
+            )
+            assert out.signal_decision.decision_mode in {"llm", "rule_fallback"}
+            assert observer.payload.get("decision_agent_key") == expected_key
+            decision_prompt = dict(observer.payload.get("decision_prompt") or {})
+            assert decision_prompt.get("focus") == expected_focus
+            assert decision_prompt.get("task") == expected_task
+
+    asyncio.run(_run())
+
+
 def test_trade_event_workflow_records_minimal_stage_outputs():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
