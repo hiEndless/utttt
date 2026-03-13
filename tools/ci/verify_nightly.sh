@@ -151,6 +151,9 @@ echo "[nightly] AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH=$AGENT_SIGNAL_DECI
 if bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
   --output "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH" >/dev/null; then
   echo "[nightly] signal_decision_llm_observe_report_path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
+  bash tools/local/print_signal_decision_llm_observe_summary.sh \
+    --report "$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH" \
+    --prefix nightly
 else
   echo "[nightly] signal_decision_llm_observe_report_failed path=$AGENT_SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
 fi
