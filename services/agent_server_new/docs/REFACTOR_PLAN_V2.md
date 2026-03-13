@@ -140,6 +140,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - `DecisionTrace` 已增加 `routing` 观测块，记录 `decision_agent_key/router_config_source/router_config_version/prompt_config_source/prompt_config_version`，用于回放时定位路由与提示词配置漂移。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，workflow recorder 已退化为单节点 `workflow_bridge`（编排桥接记录），不再输出 `intent/rule/gate/planner` 业务节点记录。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，不再加载 horizon policy 配置，避免 minimal 路径隐式依赖 legacy 风控初始化。
+- 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，透传给 execution 的 `risk_hints.agent_action_hint` 由 `SignalDecision` 语义映射（`accept->add`，其余 `hold`），不再依赖 legacy `ExecutionPlan.action`。
 - 主判入口已抽象为 `SignalDecisionAgent`（当前默认实现为 `RoutedRuleBasedSignalDecisionAgent`），workflow 不再直接调用 `evaluate_signal`，为后续替换 LLM 判定实现留出无侵入插槽。
 - 当启用 `llm_observer` 时，默认主判实现已切换为 `RoutedHybridSignalDecisionAgent`：优先消费 LLM 判定，解析失败自动 `rule_fallback`；并透传 `decision_mode(llm|rule_fallback|rule)` 到 execution `risk_hints`。
 - `DecisionTrace.routing` 已补充 `decision_mode/llm_parse_status`，用于回放时快速区分“LLM 直接判定”与“LLM 失败回退规则”的链路占比。

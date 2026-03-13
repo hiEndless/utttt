@@ -517,6 +517,7 @@ class TradeEventWorkflow:
                 event=event,
                 signal_decision=signal_decision,
                 plan=plan,
+                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
                 cross_horizon=ch,
                 prompt_config_source=self._signal_prompt_config_source,
                 prompt_config_version=self._signal_prompt_config_version,
@@ -754,6 +755,7 @@ def _build_decision_intent_payload(
     event: TradeEventInput,
     signal_decision: SignalDecision,
     plan: ExecutionPlan,
+    pipeline_mode: str = "legacy",
     cross_horizon: Dict[str, str],
     prompt_config_source: str = "",
     prompt_config_version: str = "",
@@ -766,6 +768,15 @@ def _build_decision_intent_payload(
         "level": str(plan.confidence.level or "low"),
         "score": float(plan.confidence.score or 0.0),
     }
+    normalized_mode = str(pipeline_mode or "legacy").strip().lower()
+    agent_action_hint = str(plan.action or "hold").strip().lower() or "hold"
+    if normalized_mode == "minimal":
+        verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
+        direction = str(signal_decision.signal_direction or "none").strip().lower()
+        if verdict == "accept" and direction in {"long", "short"}:
+            agent_action_hint = "add"
+        else:
+            agent_action_hint = "hold"
     payload = {
         "decision_id": str(signal_decision.decision_id or event.event_id),
         "exchange": str(signal_decision.exchange or event.exchange),
@@ -774,7 +785,7 @@ def _build_decision_intent_payload(
         "decision_confidence": dict(decision_confidence),
         "cross_horizon_policy": dict(cross_horizon or {}),
         "risk_hints": {
-            "agent_action_hint": str(plan.action or "hold"),
+            "agent_action_hint": agent_action_hint,
             "agent_notes": str(plan.notes or ""),
             "decision_confidence": dict(decision_confidence),
             "decision_confidence_source": "agent_execution_plan",

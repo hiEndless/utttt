@@ -228,6 +228,11 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
 
         monkeypatch.setattr(
             mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
             "resolve_intent",
             lambda **kwargs: (_ for _ in ()).throw(RuntimeError("should not call resolve_intent")),
         )
@@ -258,7 +263,7 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
         assert out.action == "hold"
         assert decider.called is True
         assert decider.payload["decision_id"] == "evt-exec-minimal-001"
-        assert decider.payload["risk_hints"]["agent_action_hint"] == "hold"
+        assert decider.payload["risk_hints"]["agent_action_hint"] == "add"
         assert decider.payload["risk_hints"]["agent_notes"] == "legacy_pipeline_disabled"
         assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
