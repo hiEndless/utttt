@@ -24,6 +24,13 @@ echo "[docs 6/13] contract bundle regression tests"
 ./venv/bin/pytest -q verification/validators/contracts/test_contract_change_bundle_guard.py
 
 echo "[docs 7/13] readme pipeline_mode quick path doc guards"
+README_CONTRACTS_VERSION="$(
+  ./venv/bin/python - <<'PY'
+from verification.text.readme_contracts import README_CONTRACTS_VERSION
+print(README_CONTRACTS_VERSION)
+PY
+)"
+echo "[info] README_CONTRACTS_VERSION=$README_CONTRACTS_VERSION"
 ./venv/bin/pytest -q \
   verification/text/test_readme_pipeline_mode_quick_paths.py \
   verification/text/test_cli_help_snapshot_readme_contract_version.py
