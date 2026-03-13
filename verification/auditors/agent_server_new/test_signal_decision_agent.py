@@ -96,3 +96,49 @@ def test_routed_hybrid_signal_decision_agent_fallbacks_to_rule_when_llm_invalid(
     assert out.decision_mode == "rule_fallback"
     assert out.llm_parse_status == "llm_invalid_payload"
     assert out.signal.verdict in {"accept", "reject", "uncertain"}
+
+
+def test_routed_hybrid_signal_decision_agent_rejects_out_of_range_score():
+    agent = RoutedHybridSignalDecisionAgent(
+        router_config={
+            "default_agent_key": "generic",
+            "rules": [{"agent_key": "onchain", "keywords": ["onchain"]}],
+        }
+    )
+    out = agent.decide(
+        signal_direction="long",
+        msl=_build_msl_from_dict(_sample_msl()),
+        key_market_features={},
+        active_events=[],
+        signal_event={"event_type": "onchain_wallet_alert"},
+        position_context={},
+        llm_result={
+            "status": "ok",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"long\",\"confidence_score\":1.2,\"reasons\":[]}",
+        },
+    )
+    assert out.decision_mode == "rule_fallback"
+    assert out.llm_parse_status == "llm_invalid_payload"
+
+
+def test_routed_hybrid_signal_decision_agent_rejects_unknown_fields():
+    agent = RoutedHybridSignalDecisionAgent(
+        router_config={
+            "default_agent_key": "generic",
+            "rules": [{"agent_key": "onchain", "keywords": ["onchain"]}],
+        }
+    )
+    out = agent.decide(
+        signal_direction="long",
+        msl=_build_msl_from_dict(_sample_msl()),
+        key_market_features={},
+        active_events=[],
+        signal_event={"event_type": "onchain_wallet_alert"},
+        position_context={},
+        llm_result={
+            "status": "ok",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"long\",\"confidence_score\":0.8,\"reasons\":[],\"foo\":\"bar\"}",
+        },
+    )
+    assert out.decision_mode == "rule_fallback"
+    assert out.llm_parse_status == "llm_invalid_payload"

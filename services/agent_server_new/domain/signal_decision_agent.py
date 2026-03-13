@@ -86,6 +86,16 @@ class RoutedRuleBasedSignalDecisionAgent:
 
 class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
     """混合实现：优先消费 LLM 判定，解析失败/异常时回落规则判定。"""
+    _ALLOWED_LLM_FIELDS = {
+        "signal_verdict",
+        "signal_direction",
+        "reliability_score",
+        "confidence_score",
+        "score",
+        "reasons",
+        "evidence_refs",
+        "notes",
+    }
 
     def _route_agent_key(self, *, signal_event: Dict[str, Any]) -> str:
         raw_signal_event = dict(signal_event or {})
@@ -105,30 +115,43 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
     def _parse_llm_signal(self, llm_result: Dict[str, Any]) -> SignalVerdict | None:
         data = dict(llm_result or {})
         raw = data.get("raw_content")
-        if isinstance(raw, str) and raw.strip():
-            try:
-                parsed = json.loads(raw)
-                if isinstance(parsed, dict):
-                    data = {**parsed, **data}
-            except Exception:
-                return None
-        verdict = str(data.get("signal_verdict") or data.get("verdict") or "").strip().lower()
+        if not isinstance(raw, str) or not raw.strip():
+            return None
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            return None
+        if not isinstance(parsed, dict):
+            return None
+        if any(str(k) not in self._ALLOWED_LLM_FIELDS for k in parsed.keys()):
+            return None
+
+        verdict = str(parsed.get("signal_verdict") or "").strip().lower()
         if verdict not in {"accept", "reject", "uncertain"}:
             return None
-        direction = str(data.get("signal_direction") or data.get("direction") or "none").strip().lower()
+        direction = str(parsed.get("signal_direction") or "").strip().lower()
         if direction not in {"long", "short", "none"}:
-            direction = "none"
-        raw_score = data.get("reliability_score")
+            return None
+        raw_score = parsed.get("reliability_score")
         if raw_score is None:
-            raw_score = data.get("confidence_score")
+            raw_score = parsed.get("confidence_score")
         if raw_score is None:
-            raw_score = data.get("score")
+            raw_score = parsed.get("score")
+        if raw_score is None:
+            return None
         try:
-            score = float(raw_score if raw_score is not None else 0.0)
+            score = float(raw_score)
         except Exception:
-            score = 0.0
-        score = max(0.0, min(1.0, score))
-        reasons = [str(x) for x in list(data.get("reasons") or []) if str(x).strip()]
+            return None
+        if score < 0.0 or score > 1.0:
+            return None
+        reasons_raw = parsed.get("reasons")
+        if reasons_raw is None:
+            reasons = []
+        elif isinstance(reasons_raw, list):
+            reasons = [str(x).strip() for x in reasons_raw if str(x).strip()]
+        else:
+            return None
         return SignalVerdict(
             direction=direction,  # type: ignore[arg-type]
             verdict=verdict,  # type: ignore[arg-type]
