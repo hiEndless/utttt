@@ -24,6 +24,9 @@ REQUIRE_AGENT_READYZ_REPORT=0
 MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="-1"
 MAX_PIPELINE_MODE_UNKNOWN_COUNT="-1"
 MAX_PIPELINE_MODE_MISSING_COUNT="-1"
+MAX_EVENT_TYPE_MATCH_MISSING_COUNT="-1"
+MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT="-1"
+MIN_EVENT_TYPE_MATCH_ALIAS_RATIO="-1"
 
 while (($# > 0)); do
   case "$1" in
@@ -64,6 +67,12 @@ Options:
                                pipeline_mode unknown 计数上限（默认 -1 忽略）
   --max-pipeline-mode-missing-count <int>
                                pipeline_mode 缺失计数上限（默认 -1 忽略）
+  --max-event-type-match-missing-count <int>
+                               event_type_match 缺失计数上限（默认 -1 忽略）
+  --max-event-type-match-unknown-count <int>
+                               event_type_match unknown 计数上限（默认 -1 忽略）
+  --min-event-type-match-alias-ratio <float>
+                               event_type_match alias 占比下限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 USAGE
@@ -157,6 +166,18 @@ USAGE
       MAX_PIPELINE_MODE_MISSING_COUNT="${2:-$MAX_PIPELINE_MODE_MISSING_COUNT}"
       shift 2
       ;;
+    --max-event-type-match-missing-count)
+      MAX_EVENT_TYPE_MATCH_MISSING_COUNT="${2:-$MAX_EVENT_TYPE_MATCH_MISSING_COUNT}"
+      shift 2
+      ;;
+    --max-event-type-match-unknown-count)
+      MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT="${2:-$MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT}"
+      shift 2
+      ;;
+    --min-event-type-match-alias-ratio)
+      MIN_EVENT_TYPE_MATCH_ALIAS_RATIO="${2:-$MIN_EVENT_TYPE_MATCH_ALIAS_RATIO}"
+      shift 2
+      ;;
     --require-agent-readyz-report)
       REQUIRE_AGENT_READYZ_REPORT=1
       shift
@@ -220,6 +241,9 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
     --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"
     --max-pipeline-mode-missing-count "$MAX_PIPELINE_MODE_MISSING_COUNT"
+    --max-event-type-match-missing-count "$MAX_EVENT_TYPE_MATCH_MISSING_COUNT"
+    --max-event-type-match-unknown-count "$MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT"
+    --min-event-type-match-alias-ratio "$MIN_EVENT_TYPE_MATCH_ALIAS_RATIO"
   )
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     THRESHOLD_ARGS+=(--require-agent-readyz-report)

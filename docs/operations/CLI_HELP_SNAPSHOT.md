@@ -113,6 +113,12 @@ Options:
                                pipeline_mode unknown 计数上限（默认 -1 忽略）
   --max-pipeline-mode-missing-count <int>
                                pipeline_mode 缺失计数上限（默认 -1 忽略）
+  --max-event-type-match-missing-count <int>
+                               event_type_match 缺失计数上限（默认 -1 忽略）
+  --max-event-type-match-unknown-count <int>
+                               event_type_match unknown 计数上限（默认 -1 忽略）
+  --min-event-type-match-alias-ratio <float>
+                               event_type_match alias 占比下限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 ```
