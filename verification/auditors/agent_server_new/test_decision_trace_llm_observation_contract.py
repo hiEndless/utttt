@@ -22,7 +22,7 @@ def _build_trace(*, llm_observation):  # noqa: ANN001
         anomalies={},
         signal_verdict={},
         routing={
-            "pipeline_mode": "legacy",
+            "pipeline_mode": "minimal",
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",

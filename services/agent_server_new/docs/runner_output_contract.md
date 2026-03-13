@@ -112,9 +112,14 @@ print(payload["source"], payload["action"], payload.get("reason"))
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
 - `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`）
+  - `pipeline_mode` 固定为 `minimal`
   - `llm_contract_error_code`：`""|llm_raw_content_missing|llm_json_parse_error|llm_json_not_object|llm_schema_validation_failed|llm_confidence_parse_error`
   - `llm_contract_errors`：字符串数组，最多 8 条
 - `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）
+
+语义边界：
+- `intent/rule_plan/strategy_gate_result/risk_gate` 为 agent 语义快照字段，仅用于回放与解释，不代表 execution 最终风控裁决。
+- 最终风控阻断与执行动作以 `execution_service` 返回结果为唯一权威。
 
 对应 schema：
 - `services/agent_server_new/docs/decision_trace.schema.json`

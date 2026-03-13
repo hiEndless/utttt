@@ -39,7 +39,7 @@
       "properties": {
         "pipeline_mode": {
           "type": "string",
-          "enum": ["legacy", "minimal"]
+          "enum": ["minimal"]
         },
         "decision_agent_key": {
           "type": "string"
@@ -109,16 +109,20 @@
       "additionalProperties": true
     },
     "intent": {
-      "type": "object"
+      "type": "object",
+      "description": "semantic snapshot only; not execution final risk authority"
     },
     "rule_plan": {
-      "type": "object"
+      "type": "object",
+      "description": "semantic snapshot only; not execution final risk authority"
     },
     "strategy_gate_result": {
-      "type": "object"
+      "type": "object",
+      "description": "semantic snapshot only; not execution final risk authority"
     },
     "risk_gate": {
-      "type": "object"
+      "type": "object",
+      "description": "semantic snapshot only; not execution final risk authority"
     },
     "execution_plan": {
       "type": "object"

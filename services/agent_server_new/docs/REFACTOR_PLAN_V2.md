@@ -173,6 +173,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - 完成 CLI/API 无破坏迁移。
 - 已完成兼容层下线：不再提供 legacy/minimal 双态切换。
 - `DecisionTrace.routing.pipeline_mode` 固定为 `minimal`，用于观测链路完整性。
+- `DecisionTrace` 中 `intent/rule_plan/strategy_gate_result/risk_gate` 统一定义为“语义快照字段”，不承载 execution 最终风控语义。
 
 4. Phase D（收口阶段）
 - 删除 agent 内风控/动作阻断遗留逻辑。
