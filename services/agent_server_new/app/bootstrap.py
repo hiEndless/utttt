@@ -129,7 +129,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             "(missing AGENT_LLM_MODEL_ID/API_KEY)"
         )
 
-    execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "false")
+    execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "true")
     event_recorder_mode = str(os.getenv("AGENT_EVENT_RECORDER_MODE", "none") or "none").strip().lower()
     recorder = None
     if event_recorder_mode == "jsonl":
@@ -159,7 +159,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
     ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
-    legacy_pipeline_enabled = _env_bool("AGENT_LEGACY_PIPELINE_ENABLED", "true")
+    legacy_pipeline_enabled = _env_bool("AGENT_LEGACY_PIPELINE_ENABLED", "false")
     if (not legacy_pipeline_enabled) and (not execution_enabled):
         msg = (
             f"[{_ERR_MINIMAL_EXECUTION_REQUIRED}] "

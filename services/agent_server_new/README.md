@@ -151,7 +151,7 @@ signal_event + active_events + MSL
 - `AGENT_MARKET_STATE_TIMEOUT_S`
   - market_state HTTP 请求超时秒数（默认：`10`）
 - `AGENT_EXECUTION_ENABLED`
-  - 是否启用 execution_service 下游裁决（默认：`false`）
+  - 是否启用 execution_service 下游裁决（默认：`true`）
 - `AGENT_EXECUTION_BASE_URL`
   - execution_service 服务地址（默认：`http://127.0.0.1:9962`）
 - `AGENT_EXECUTION_TIMEOUT_S`
@@ -233,7 +233,7 @@ signal_event + active_events + MSL
 - `AGENT_AI_ADAPTIVE_MODE`
   - 预留模式（`observe|recommend|bounded_apply`，默认：`observe`）
 - `AGENT_LEGACY_PIPELINE_ENABLED`
-  - 是否启用 legacy planner/gate 链路（默认：`true`）
+  - 是否启用 legacy planner/gate 链路（默认：`false`）
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
   - 若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环，所有环境一致）
   - 未满足时启动报错码：`AGENT_BOOTSTRAP_MINIMAL_EXECUTION_REQUIRED`
@@ -274,9 +274,9 @@ signal_event + active_events + MSL
 
 ### 兼容开关灰度建议
 
-1. 测试环境先设置 `AGENT_LEGACY_PIPELINE_ENABLED=false`，观察 `decision_trace.routing.pipeline_mode` 是否稳定为 `minimal`。
-2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 模式差异。
-3. 生产灰度按 symbol 白名单逐步扩大，确认无回归后再考虑默认切换。
+1. 默认已启用 minimal 主链路，先观察 `decision_trace.routing.pipeline_mode` 是否稳定为 `minimal`。
+2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 回滚模式差异。
+3. 如需回滚 legacy，仅在短窗口设置 `AGENT_LEGACY_PIPELINE_ENABLED=true` 并记录生效时间。
 4. minimal 模式下 recorder 仅保留 `workflow_bridge` 编排记录，不再输出 `intent/rule/gate/planner` 业务节点。
 5. minimal 模式下不会加载 `horizon policy` 配置，避免运行时仍耦合 legacy 业务链路。
 6. minimal 模式下 `risk_hints.agent_action_hint` 由信号语义映射（`accept -> add`，`reject/uncertain -> hold`），不再跟随 legacy plan action。

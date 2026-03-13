@@ -158,7 +158,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 3. Phase C（兼容阶段）
 - 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。
 - 完成 CLI/API 无破坏迁移。
-- 已新增兼容开关：`AGENT_LEGACY_PIPELINE_ENABLED`（默认 `true`）。
+- 已新增兼容开关：`AGENT_LEGACY_PIPELINE_ENABLED`（默认 `false`）。
   - `true`：维持旧 planner/gate 链路行为。
   - `false`：跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner` 主链路，使用最小 `ExecutionPlan(hold)`，由 execution 侧做最终裁决。
   - `DecisionTrace.routing.pipeline_mode`：`legacy|minimal`，用于灰度对比统计。
