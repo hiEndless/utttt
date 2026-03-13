@@ -35,6 +35,7 @@ def test_release_gate_summary_json_matches_schema() -> None:
 def test_release_gate_summary_json_contains_env_overrides_when_set() -> None:
     env = dict(os.environ)
     env["MAX_AGENT_READYZ_LEVEL"] = "yellow"
+    env["MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"] = "1"
     proc = subprocess.run(
         [
             "bash",
@@ -53,3 +54,4 @@ def test_release_gate_summary_json_contains_env_overrides_when_set() -> None:
     payload = json.loads(str(proc.stdout or "{}"))
     overrides = list(payload.get("env_overrides") or [])
     assert "MAX_AGENT_READYZ_LEVEL" in overrides
+    assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in overrides

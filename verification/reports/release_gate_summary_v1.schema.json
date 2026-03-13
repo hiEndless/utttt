@@ -37,6 +37,7 @@
       "required": [
         "with_agent_readyz",
         "max_agent_readyz_level",
+        "max_decision_trace_schema_guard_invalid_records",
         "require_agent_readyz_report"
       ],
       "properties": {
@@ -48,6 +49,10 @@
           "type": "string",
           "enum": ["green", "yellow", "red"]
         },
+        "max_decision_trace_schema_guard_invalid_records": {
+          "type": "integer",
+          "minimum": -1
+        },
         "require_agent_readyz_report": {
           "type": "integer",
           "enum": [0, 1]
@@ -58,12 +63,17 @@
       "type": "object",
       "required": [
         "max_agent_readyz_level",
+        "max_decision_trace_schema_guard_invalid_records",
         "require_agent_readyz_report"
       ],
       "properties": {
         "max_agent_readyz_level": {
           "type": "string",
           "enum": ["green", "yellow", "red"]
+        },
+        "max_decision_trace_schema_guard_invalid_records": {
+          "type": "integer",
+          "minimum": -1
         },
         "require_agent_readyz_report": {
           "type": "integer",
@@ -75,6 +85,7 @@
       "type": "object",
       "required": [
         "max_agent_readyz_level",
+        "max_decision_trace_schema_guard_invalid_records",
         "require_agent_readyz_report",
         "max_legacy_confidence_ratio"
       ],
@@ -82,6 +93,10 @@
         "max_agent_readyz_level": {
           "type": "string",
           "enum": ["green", "yellow", "red"]
+        },
+        "max_decision_trace_schema_guard_invalid_records": {
+          "type": "integer",
+          "minimum": -1
         },
         "require_agent_readyz_report": {
           "type": "integer",
