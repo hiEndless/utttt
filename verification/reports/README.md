@@ -264,8 +264,16 @@ python3 -m verification.reports.check_thresholds \
   --max-action-hint-semantics-mismatch-count 0 \
   --max-action-hint-semantics-missing-actual-hint-count 0 \
   --min-action-hint-semantics-match-ratio 0.95 \
+  --max-signal-decision-llm-observe-missing-decision-mode-count 0 \
+  --max-signal-decision-llm-observe-missing-llm-parse-status-count 0 \
+  --min-signal-decision-llm-observe-decision-mode-llm-count -1 \
+  --min-signal-decision-llm-observe-llm-parse-status-llm-ok-count -1 \
   --require-agent-readyz-report
 ```
+
+说明：
+- `verify_nightly` 默认已收紧 `signal_decision_llm_observe` 两项缺失计数到 `0`。
+- `min_signal_decision_llm_observe_*` 建议先保持 `-1`（仅观测），待样本稳定后再启用下限门禁。
 
 Check semantic warning budget by field:
 ```bash
