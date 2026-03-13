@@ -133,13 +133,17 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - 当启用 `llm_observer` 时，默认主判实现已切换为 `RoutedHybridSignalDecisionAgent`：优先消费 LLM 判定，解析失败自动 `rule_fallback`；并透传 `decision_mode(llm|rule_fallback|rule)` 到 execution `risk_hints`。
 - `DecisionTrace.routing` 已补充 `decision_mode/llm_parse_status`，用于回放时快速区分“LLM 直接判定”与“LLM 失败回退规则”的链路占比。
 - `DecisionTrace.routing` 已补充 `llm_contract_error_code/llm_contract_errors`，用于细分 `llm_invalid_payload` 的失败类型并支持离线统计。
-  - `llm_contract_error_code` 已收敛为标准枚举，`llm_contract_errors` 限制最多 8 条，避免 trace 膨胀。
+  - `llm_contract_error_code` 已收敛为标准枚举（`llm_raw_content_missing/llm_json_parse_error/llm_json_not_object/llm_schema_validation_failed/llm_confidence_parse_error`）。
+  - `llm_contract_errors` 限制最多 8 条，避免 trace 膨胀。
 - `RoutedHybridSignalDecisionAgent` 已启用严格 LLM 输出契约校验（JSON 对象 + 白名单字段 + 枚举/范围/类型校验），不合法 payload 统一回落 `rule_fallback`。
   - 契约文件：`services/agent_server_new/docs/llm_signal_decision.schema.json`
 
 3. Phase C（兼容阶段）
 - 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。
 - 完成 CLI/API 无破坏迁移。
+- 已新增兼容开关：`AGENT_LEGACY_PIPELINE_ENABLED`（默认 `true`）。
+  - `true`：维持旧 planner/gate 链路行为。
+  - `false`：跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner` 主链路，使用最小 `ExecutionPlan(hold)`，由 execution 侧做最终裁决。
 
 4. Phase D（收口阶段）
 - 删除 agent 内风控/动作阻断遗留逻辑。

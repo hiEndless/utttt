@@ -136,6 +136,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
     ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
     ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
+    legacy_pipeline_enabled = _env_bool("AGENT_LEGACY_PIPELINE_ENABLED", "true")
     signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
     signal_router_config = load_signal_router_config_from_env()
     try:
@@ -159,6 +160,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         memory_dedup_key=memory_dedup_key,
         ai_adaptive_enabled=ai_adaptive_enabled,
         ai_adaptive_mode=ai_adaptive_mode,
+        legacy_pipeline_enabled=legacy_pipeline_enabled,
         signal_router_config=signal_router_config,
         signal_router_config_source=(
             f"env:{signal_router_config_file}"

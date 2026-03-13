@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, SignalDecision
+from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
 from services.agent_server_new.domain.execution_planner import build_execution_plan
 from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_gate, load_horizon_policy_config_from_env
 from services.agent_server_new.domain.intent_resolver import resolve_intent
@@ -220,6 +220,7 @@ class TradeEventWorkflow:
         memory_dedup_key: str = "event_id",
         ai_adaptive_enabled: bool = False,
         ai_adaptive_mode: str = "observe",
+        legacy_pipeline_enabled: bool = True,
         horizon_policy_config: Optional[Dict[str, Any]] = None,
         signal_router_config: Optional[Dict[str, Any]] = None,
         signal_decision_agent: SignalDecisionAgent | None = None,
@@ -241,6 +242,7 @@ class TradeEventWorkflow:
         self._ai_adaptive_enabled = bool(ai_adaptive_enabled)
         mode = str(ai_adaptive_mode or "observe").strip().lower()
         self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
+        self._legacy_pipeline_enabled = bool(legacy_pipeline_enabled)
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
         self._signal_router_config = dict(signal_router_config or {})
         self._signal_decision_agent = signal_decision_agent or (
@@ -382,50 +384,90 @@ class TradeEventWorkflow:
                 },
             )
 
-        position_ctx = dict(ctx.position_context or {})
-        intent = resolve_intent(signal=signal, msl=ctx.msl, position_context=position_ctx)
-        rule_plan = build_rule_plan(intent=intent, msl=ctx.msl, position_context=position_ctx)
         ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
-        hpg = horizon_policy_gate(
-            suggested_policy=str(ch.get("suggested_policy") or "no_action"),
-            policy_reason=str(ch.get("policy_reason") or "insufficient_evidence"),
-            intent=str(intent.intent),
-            config=self._horizon_policy_config,
-        )
-        sg = strategy_gate_v2(
-            msl=ctx.msl,
-            signal=signal,
-            intent=intent,
-            rule_plan=rule_plan,
-            position_context=position_ctx,
-            signal_event=dict(ctx.signal_event or {}),
-        )
-        risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
-            msl=ctx.msl,
-            position_context=position_ctx,
-            active_events=list(ctx.active_events),
-        )
-        allowance = risk_gate(risk_ctx)
-        if not hpg.allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"horizon_policy_gate_blocked: {','.join(hpg.reasons)}",
+        position_ctx = dict(ctx.position_context or {})
+        if self._legacy_pipeline_enabled:
+            intent = resolve_intent(signal=signal, msl=ctx.msl, position_context=position_ctx)
+            rule_plan = build_rule_plan(intent=intent, msl=ctx.msl, position_context=position_ctx)
+            hpg = horizon_policy_gate(
+                suggested_policy=str(ch.get("suggested_policy") or "no_action"),
+                policy_reason=str(ch.get("policy_reason") or "insufficient_evidence"),
+                intent=str(intent.intent),
+                config=self._horizon_policy_config,
             )
-        elif not sg.allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"strategy_gate_blocked: {','.join(sg.reasons)}",
+            sg = strategy_gate_v2(
+                msl=ctx.msl,
+                signal=signal,
+                intent=intent,
+                rule_plan=rule_plan,
+                position_context=position_ctx,
+                signal_event=dict(ctx.signal_event or {}),
             )
+            risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
+                msl=ctx.msl,
+                position_context=position_ctx,
+                active_events=list(ctx.active_events),
+            )
+            allowance = risk_gate(risk_ctx)
+            hpg_allowed = bool(hpg.allowed)
+            hpg_reasons = list(hpg.reasons)
+            sg_allowed = bool(sg.allowed)
+            sg_reasons = list(sg.reasons)
+            if not hpg_allowed:
+                plan = ExecutionPlan(
+                    action="skip",
+                    direction="none",
+                    allowance=allowance,
+                    confidence=signal.confidence,
+                    sizing=None,
+                    notes=f"horizon_policy_gate_blocked: {','.join(hpg_reasons)}",
+                )
+            elif not sg_allowed:
+                plan = ExecutionPlan(
+                    action="skip",
+                    direction="none",
+                    allowance=allowance,
+                    confidence=signal.confidence,
+                    sizing=None,
+                    notes=f"strategy_gate_blocked: {','.join(sg_reasons)}",
+                )
+            else:
+                plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
         else:
-            plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
+            intent = ActionIntent(
+                intent="hold",
+                direction="none",
+                confidence=signal.confidence,
+                reasons=["legacy_pipeline_disabled"],
+                notes="legacy_pipeline_disabled",
+            )
+            rule_plan = RulePlan(
+                intent=intent,
+                sizing={},
+                reasons=["legacy_pipeline_disabled"],
+                notes="legacy_pipeline_disabled",
+            )
+            hpg_allowed = True
+            hpg_reasons = ["legacy_pipeline_disabled"]
+            sg_allowed = True
+            sg_reasons = ["legacy_pipeline_disabled"]
+            risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
+            risk_ctx_reasons = ["legacy_pipeline_disabled"]
+            allowance = RiskAllowance(
+                allow_open=True,
+                allow_add=True,
+                allow_reduce=True,
+                allow_exit=True,
+                reasons=["legacy_pipeline_disabled"],
+            )
+            plan = ExecutionPlan(
+                action="hold",
+                direction="none",
+                allowance=allowance,
+                confidence=signal.confidence,
+                sizing=None,
+                notes="legacy_pipeline_disabled",
+            )
 
         execution_result: Optional[Dict[str, Any]] = None
         if self._execution_decider is not None:
@@ -485,13 +527,13 @@ class TradeEventWorkflow:
             await self._recorder.record_agent_output(
                 event.event_id,
                 "horizon_policy_gate",
-                {"allowed": hpg.allowed, "reasons": list(hpg.reasons), "cross_horizon": dict(ch)},
+                {"allowed": hpg_allowed, "reasons": list(hpg_reasons), "cross_horizon": dict(ch)},
             )
 
             await self._recorder.record_agent_output(
                 event.event_id,
                 "strategy_gate",
-                {"allowed": sg.allowed, "reasons": list(sg.reasons)},
+                {"allowed": sg_allowed, "reasons": list(sg_reasons)},
             )
 
             await self._recorder.record_agent_output(
@@ -555,10 +597,10 @@ class TradeEventWorkflow:
                     "reasons": list(rule_plan.reasons),
                 },
                 strategy_gate_result={
-                    "allowed": bool(hpg.allowed and sg.allowed),
-                    "horizon_reasons": list(hpg.reasons),
-                    "strategy_reasons": list(sg.reasons),
-                    "reasons": [*list(hpg.reasons), *list(sg.reasons)],
+                    "allowed": bool(hpg_allowed and sg_allowed),
+                    "horizon_reasons": list(hpg_reasons),
+                    "strategy_reasons": list(sg_reasons),
+                    "reasons": [*list(hpg_reasons), *list(sg_reasons)],
                 },
                 risk_gate={
                     "global_regime": risk_ctx.global_regime,
