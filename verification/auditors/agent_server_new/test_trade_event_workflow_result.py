@@ -63,6 +63,37 @@ class _Events:
         return []
 
 
+class _EventsForLLMRoute:
+    async def get_active_events(self, exchange: str, symbol: str):
+        _ = (exchange, symbol)
+        return [
+            {"type": "social_trending", "score": 0.92, "source": "social"},
+            {"type": "wallet_alert", "score": 0.80, "evidence": {"event_source_category": "onchain"}},
+            {"type": "exchange_flow_spike", "score": 0.70, "source": "onchain_provider"},
+            {"type": "macro_news", "score": 0.60, "source": "news"},
+        ]
+
+
+class _MarketStateForLLMRoute(_MarketState):
+    async def get_market_state(self, exchange: str, symbol: str):
+        out = await super().get_market_state(exchange, symbol)
+        return MarketStateSnapshot(
+            exchange=out.exchange,
+            symbol=out.symbol,
+            msl=out.msl,
+            msl_meta=out.msl_meta,
+            cross_horizon=out.cross_horizon,
+            state_features={
+                "evidence": {},
+                "anomalies": {},
+                "features": {
+                    "social_sentiment_score": 0.82,
+                    "wallet_netflow_score": 0.77,
+                },
+            },
+        )
+
+
 class _ExecutionDecider:
     async def decide(self, payload):  # noqa: ANN001
         _ = payload
@@ -98,6 +129,20 @@ class _StructuredLLMObserver:
             "provider": "openai_compatible",
             "model": "gpt-4o-mini",
             "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"short\",\"confidence_score\":0.83,\"reasons\":[\"social_breaking_news\"]}",
+        }
+
+
+class _CaptureLLMObserver:
+    def __init__(self) -> None:
+        self.payload = {}
+
+    async def observe(self, payload):  # noqa: ANN001
+        self.payload = dict(payload or {})
+        return {
+            "status": "ok",
+            "provider": "openai_compatible",
+            "model": "gpt-4o-mini",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"long\",\"confidence_score\":0.76,\"reasons\":[\"ok\"]}",
         }
 
 
@@ -506,6 +551,75 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         assert trace_payload
         routing = dict(trace_payload.get("routing") or {})
         assert routing.get("pipeline_mode") == "minimal"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
+def test_trade_event_workflow_llm_payload_is_trimmed_by_decision_agent_key():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "resolve_intent",
+            lambda **kwargs: ActionIntent(intent="increase", direction="long", confidence=Confidence(level="medium", score=0.7)),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_rule_plan",
+            lambda **kwargs: RulePlan(intent=kwargs["intent"], sizing={"mode": "ratio", "order_size_ratio": 0.1}),
+        )
+        monkeypatch.setattr(mod, "strategy_gate_v2", lambda **kwargs: StrategyGateResult(allowed=True, reasons=[]))
+        monkeypatch.setattr(
+            mod,
+            "risk_gate",
+            lambda ctx: RiskAllowance(allow_open=True, allow_add=True, allow_reduce=True, allow_exit=True, reasons=[]),
+        )
+        monkeypatch.setattr(
+            mod,
+            "build_execution_plan",
+            lambda **kwargs: ExecutionPlan(
+                action="add",
+                direction="long",
+                allowance=kwargs["allowance"],
+                confidence=Confidence(level="medium", score=0.7),
+                sizing={"mode": "ratio", "order_size_ratio": 0.1},
+                notes="ok",
+            ),
+        )
+        observer = _CaptureLLMObserver()
+        wf = TradeEventWorkflow(
+            market_state=_MarketStateForLLMRoute(),
+            position_context=_Position(),
+            active_events=_EventsForLLMRoute(),
+            execution_decider=None,
+            recorder=None,
+            llm_observer=observer,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-llm-route-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "wallet_alert", "source_category": "onchain"},
+            )
+        )
+        assert out.signal_decision.decision_mode == "llm"
+        assert observer.payload.get("decision_agent_key") == "onchain"
+        active_events = list(observer.payload.get("active_events") or [])
+        assert active_events
+        first_type = str((active_events[0] or {}).get("type") or "")
+        assert first_type in {"wallet_alert", "exchange_flow_spike"}
+        kf = dict(observer.payload.get("key_market_features") or {})
+        names = [str((x or {}).get("name") or "") for x in list(kf.get("features") or [])]
+        assert "alternative_source_summary" in names
 
     import pytest
 

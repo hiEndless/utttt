@@ -31,6 +31,8 @@ from services.agent_server_new.domain.signal_decision_agent import (
     RoutedRuleBasedSignalDecisionAgent,
     SignalDecisionAgent,
 )
+from services.agent_server_new.domain.signal_decision_context_policy import build_llm_observation_context
+from services.agent_server_new.domain.signal_router import route_signal_agent_key
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
@@ -309,15 +311,27 @@ class TradeEventWorkflow:
         }
         llm_result_raw: Optional[Dict[str, Any]] = None
         if self._llm_observer is not None:
+            llm_agent_key = route_signal_agent_key(
+                signal_event=dict(ctx.signal_event or {}),
+                router_config=self._signal_router_config,
+            )
+            llm_ctx = build_llm_observation_context(
+                decision_agent_key=llm_agent_key,
+                key_market_features=dict(ctx.key_market_features or {}),
+                active_events=list(ctx.active_events or []),
+                features_limit=8,
+                events_limit=8,
+            )
             llm_payload = {
                 "event_id": event.event_id,
                 "exchange": event.exchange,
                 "symbol": event.symbol,
                 "signal_direction": event.signal_direction,
+                "decision_agent_key": llm_ctx["decision_agent_key"],
                 "signal_event": dict(ctx.signal_event or {}),
                 "msl": ctx.msl.to_llm_dict(),
-                "key_market_features": dict(ctx.key_market_features or {}),
-                "active_events": list(ctx.active_events or []),
+                "key_market_features": dict(llm_ctx.get("key_market_features") or {}),
+                "active_events": list(llm_ctx.get("active_events") or []),
             }
             try:
                 llm_result = await self._llm_observer.observe(llm_payload)
