@@ -67,6 +67,8 @@ bash tools/local/verify_report_aggregate.sh --help
 
 One-shot local pipeline (optional include memory summary):
 ```bash
+bash tools/local/verify_quick.sh --with-pipeline-mode-report
+bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
