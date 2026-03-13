@@ -3,6 +3,8 @@ set -euo pipefail
 
 EXCHANGE="binance"
 SYMBOL="ETHUSDT"
+FORMAT="table"
+OUTPUT_PATH=""
 
 print_help() {
   cat <<'USAGE'
@@ -12,6 +14,8 @@ Usage:
 Options:
   --exchange <name>  交易所（默认 binance）
   --symbol <name>    交易对（默认 ETHUSDT）
+  --format <type>    输出格式（table|json，默认 table）
+  --output <path>    输出文件路径（仅 format=json 时生效）
   --help, -h         显示帮助
 
 Description:
@@ -36,6 +40,14 @@ while (($# > 0)); do
       SYMBOL="${2:-$SYMBOL}"
       shift 2
       ;;
+    --format)
+      FORMAT="${2:-$FORMAT}"
+      shift 2
+      ;;
+    --output)
+      OUTPUT_PATH="${2:-$OUTPUT_PATH}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1" >&2
       print_help
@@ -50,22 +62,29 @@ else
   PY_BIN=python3
 fi
 
-"$PY_BIN" - "$EXCHANGE" "$SYMBOL" <<'PY'
+"$PY_BIN" - "$EXCHANGE" "$SYMBOL" "$FORMAT" "$OUTPUT_PATH" <<'PY'
 from __future__ import annotations
 
 import asyncio
 import json
 import sys
+from pathlib import Path
 
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
-if len(sys.argv) != 3:
-    raise SystemExit("usage: <exchange> <symbol>")
+if len(sys.argv) != 5:
+    raise SystemExit("usage: <exchange> <symbol> <format> <output_path>")
 
 exchange = str(sys.argv[1] or "binance").strip() or "binance"
 symbol = str(sys.argv[2] or "ETHUSDT").strip() or "ETHUSDT"
+output_format = str(sys.argv[3] or "table").strip().lower()
+output_path = str(sys.argv[4] or "").strip()
+if output_format not in {"table", "json"}:
+    raise SystemExit("[failed] --format must be one of: table|json")
+if output_path and output_format != "json":
+    raise SystemExit("[failed] --output requires --format json")
 
 
 def _sample_msl(sym: str) -> dict:
@@ -176,7 +195,31 @@ result = {
     "ok": bool(ok),
     "rows": rows,
 }
-print(json.dumps(result, ensure_ascii=False))
+
+if output_format == "json":
+    rendered = json.dumps(result, ensure_ascii=False)
+    if output_path:
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(rendered + "\n", encoding="utf-8")
+        print(f"[ok] wrote {out}")
+    print(rendered)
+else:
+    print(
+        "event_id\tsignal_source_type\texpected_agent_key\tdecision_agent_key\t"
+        "signal_verdict\tsignal_direction\texecution_action\troute_match"
+    )
+    for row in rows:
+        print(
+            f"{str(row.get('event_id') or '')}\t"
+            f"{str(row.get('signal_source_type') or '')}\t"
+            f"{str(row.get('expected_agent_key') or '')}\t"
+            f"{str(row.get('decision_agent_key') or '')}\t"
+            f"{str(row.get('signal_verdict') or '')}\t"
+            f"{str(row.get('signal_direction') or '')}\t"
+            f"{str(row.get('execution_action') or '')}\t"
+            f"{str(row.get('route_match') or False)}"
+        )
 if not ok:
     raise SystemExit(1)
 PY

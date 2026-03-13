@@ -24,10 +24,12 @@ def test_run_agent_signal_source_route_replay_help() -> None:
     out = str(proc.stdout or "")
     assert "--exchange <name>" in out
     assert "--symbol <name>" in out
+    assert "--format <type>" in out
+    assert "--output <path>" in out
     assert "signal_source_type -> decision_agent_key -> execution_action" in out
 
 
-def test_run_agent_signal_source_route_replay_output() -> None:
+def test_run_agent_signal_source_route_replay_output_table() -> None:
     proc = subprocess.run(
         ["bash", str(SCRIPT_PATH)],
         cwd=str(PROJECT_ROOT),
@@ -36,7 +38,35 @@ def test_run_agent_signal_source_route_replay_output() -> None:
         check=False,
     )
     assert proc.returncode == 0
-    payload = json.loads(str(proc.stdout or "").strip())
+    out = str(proc.stdout or "")
+    assert "event_id\tsignal_source_type\texpected_agent_key\tdecision_agent_key\t" in out
+    assert "market_indicator\ttechnical\ttechnical" in out
+    assert "onchain_wallet\tonchain\tonchain" in out
+    assert "large_liquidation\tliquidation\tliquidation" in out
+    assert "social_news\tsocial_news\tsocial_news" in out
+
+
+def test_run_agent_signal_source_route_replay_output_json_and_output_file(tmp_path: Path) -> None:
+    out_path = tmp_path / "route_replay.latest.json"
+    proc = subprocess.run(
+        [
+            "bash",
+            str(SCRIPT_PATH),
+            "--format",
+            "json",
+            "--output",
+            str(out_path),
+        ],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    lines = [x.strip() for x in str(proc.stdout or "").splitlines() if x.strip()]
+    assert lines
+    assert lines[0].startswith("[ok] wrote ")
+    payload = json.loads(lines[-1])
     assert payload["schema_version"] == "agent-signal-source-route-replay-v1"
     assert payload["ok"] is True
     rows = list(payload.get("rows") or [])
@@ -47,3 +77,4 @@ def test_run_agent_signal_source_route_replay_output() -> None:
     assert by_source["large_liquidation"]["decision_agent_key"] == "liquidation"
     assert by_source["social_news"]["decision_agent_key"] == "social_news"
     assert all(bool(x.get("route_match")) for x in rows)
+    assert out_path.exists()
