@@ -1285,3 +1285,64 @@ def test_trade_event_workflow_minimal_llm_accept_valid_direction_maps_action_hin
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_llm_accept_none_direction_maps_action_hint_hold():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.9)),
+        )
+
+        class _AcceptNoneDirectionObserver:
+            async def observe(self, payload):  # noqa: ANN001
+                _ = payload
+                return {
+                    "status": "ok",
+                    "provider": "openai_compatible",
+                    "model": "gpt-4o-mini",
+                    "raw_content": (
+                        "{\"signal_verdict\":\"accept\",\"signal_direction\":\"none\","
+                        "\"confidence_score\":0.73,\"reasons\":[\"direction_not_confirmed\"]}"
+                    ),
+                }
+
+        execution_decider = _CaptureExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=execution_decider,
+            recorder=None,
+            llm_observer=_AcceptNoneDirectionObserver(),
+            legacy_pipeline_enabled=False,
+        )
+
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-minimal-accept-none-hold-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+
+        assert out.signal_decision.signal_verdict == "accept"
+        assert out.signal_decision.signal_direction == "none"
+        assert out.execution_result is not None
+
+        assert len(execution_decider.payloads) == 1
+        risk_hints = dict((execution_decider.payloads[0] or {}).get("risk_hints") or {})
+        assert risk_hints.get("agent_action_hint") == "hold"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
