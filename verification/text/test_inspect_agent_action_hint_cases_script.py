@@ -25,6 +25,7 @@ def test_inspect_agent_action_hint_cases_help() -> None:
     assert "--input <path>" in out
     assert "--limit <n>" in out
     assert "--status <type>" in out
+    assert "--format <type>" in out
 
 
 def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path) -> None:
@@ -94,3 +95,19 @@ def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path
     assert "evt-mismatch" in out_mismatch
     assert "evt-ok" not in out_mismatch
     assert "evt-missing" not in out_mismatch
+
+    json_proc = subprocess.run(
+        ["bash", str(SCRIPT_PATH), "--input", str(input_path), "--status", "all", "--format", "json", "--limit", "2"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert json_proc.returncode == 0
+    payload = json.loads(str(json_proc.stdout or "{}"))
+    assert payload.get("schema_version") == "agent-action-hint-cases-v1"
+    assert payload.get("status_filter") == "all"
+    assert payload.get("limit") == 2
+    rows_out = list(payload.get("rows") or [])
+    assert payload.get("count") == len(rows_out)
+    assert len(rows_out) == 2

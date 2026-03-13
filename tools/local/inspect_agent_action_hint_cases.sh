@@ -4,6 +4,7 @@ set -euo pipefail
 INPUT_PATH="${AGENT_EVENT_RECORDER_JSONL_PATH:-verification/reports/agent_server_new_events.jsonl}"
 LIMIT=20
 STATUS="all"
+FORMAT="table"
 
 print_help() {
   cat <<'USAGE'
@@ -14,6 +15,7 @@ Options:
   --input <path>   输入 JSONL 路径（默认 AGENT_EVENT_RECORDER_JSONL_PATH 或 verification/reports/agent_server_new_events.jsonl）
   --limit <n>      输出最近事件条数（默认 20）
   --status <type>  过滤状态（all|ok|mismatch|missing，默认 all）
+  --format <type>  输出格式（table|json，默认 table）
   --help, -h       显示帮助
 
 Description:
@@ -40,6 +42,10 @@ while (($# > 0)); do
       STATUS="${2:-$STATUS}"
       shift 2
       ;;
+    --format)
+      FORMAT="${2:-$FORMAT}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1"
       print_help
@@ -54,7 +60,7 @@ else
   PY_BIN=python3
 fi
 
-"$PY_BIN" - "$INPUT_PATH" "$LIMIT" "$STATUS" <<'PY'
+"$PY_BIN" - "$INPUT_PATH" "$LIMIT" "$STATUS" "$FORMAT" <<'PY'
 from __future__ import annotations
 
 import json
@@ -62,8 +68,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-if len(sys.argv) != 4:
-    raise SystemExit("usage: <input_path> <limit> <status>")
+if len(sys.argv) != 5:
+    raise SystemExit("usage: <input_path> <limit> <status> <format>")
 
 input_path = Path(sys.argv[1])
 try:
@@ -73,6 +79,9 @@ except Exception:
 status_filter = str(sys.argv[3] or "all").strip().lower()
 if status_filter not in {"all", "ok", "mismatch", "missing"}:
     raise SystemExit("[failed] --status must be one of: all|ok|mismatch|missing")
+output_format = str(sys.argv[4] or "table").strip().lower()
+if output_format not in {"table", "json"}:
+    raise SystemExit("[failed] --format must be one of: table|json")
 
 
 def _normalize_direction(value: Any) -> str:
@@ -153,14 +162,30 @@ for event_id, item in decision_rows.items():
 
 rows_sorted = sorted(rows, key=lambda x: int(x.get("ts_ms") or 0), reverse=True)[:limit]
 
-print("event_id\tverdict\tdirection\texpected_hint\tactual_hint\tstatus")
-for row in rows_sorted:
+if output_format == "json":
     print(
-        f"{str(row.get('event_id') or '')}\t"
-        f"{str(row.get('verdict') or '')}\t"
-        f"{str(row.get('direction') or '')}\t"
-        f"{str(row.get('expected_hint') or '')}\t"
-        f"{str(row.get('actual_hint') or '')}\t"
-        f"{str(row.get('status') or '')}"
+        json.dumps(
+            {
+                "schema_version": "agent-action-hint-cases-v1",
+                "input_path": str(input_path),
+                "status_filter": status_filter,
+                "limit": int(limit),
+                "count": len(rows_sorted),
+                "rows": rows_sorted,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
     )
+else:
+    print("event_id\tverdict\tdirection\texpected_hint\tactual_hint\tstatus")
+    for row in rows_sorted:
+        print(
+            f"{str(row.get('event_id') or '')}\t"
+            f"{str(row.get('verdict') or '')}\t"
+            f"{str(row.get('direction') or '')}\t"
+            f"{str(row.get('expected_hint') or '')}\t"
+            f"{str(row.get('actual_hint') or '')}\t"
+            f"{str(row.get('status') or '')}"
+        )
 PY

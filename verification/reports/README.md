@@ -61,6 +61,7 @@ Inspect recent action_hint cases (optional):
 ```bash
 bash tools/local/inspect_agent_action_hint_cases.sh --limit 20
 bash tools/local/inspect_agent_action_hint_cases.sh --status mismatch
+bash tools/local/inspect_agent_action_hint_cases.sh --status mismatch --format json
 bash tools/local/inspect_agent_action_hint_cases.sh --help
 ```
 
