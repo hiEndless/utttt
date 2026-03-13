@@ -41,3 +41,9 @@ def test_readme_contracts_doc_list_is_sorted() -> None:
 def test_readme_snippet_overrides_are_sorted() -> None:
     override_list = [str(p) for p in README_SNIPPET_OVERRIDES.keys()]
     assert override_list == sorted(override_list), f"README_SNIPPET_OVERRIDES not sorted: {override_list}"
+
+
+def test_readme_snippet_override_values_are_sorted() -> None:
+    for path, snippets in README_SNIPPET_OVERRIDES.items():
+        ordered = list(snippets)
+        assert ordered == sorted(ordered), f"override snippets not sorted for {path}: {ordered}"
