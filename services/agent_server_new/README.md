@@ -282,6 +282,7 @@ signal_event + active_events + MSL
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_multi_event_route_model_closed_loop`
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_unknown_event_falls_back_to_generic_closed_loop`
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_selected_type_overrides_event_type_closed_loop`
+- `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop`
 
 ### 本地灰度观测最短命令
 

@@ -977,3 +977,86 @@ def test_trade_event_workflow_minimal_selected_type_overrides_event_type_closed_
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_source_category_fallback_route_closed_loop():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.8)),
+        )
+        observer = _RouteCaptureLLMObserver()
+        execution_decider = _CaptureExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=execution_decider,
+            recorder=None,
+            llm_observer=observer,
+            legacy_pipeline_enabled=False,
+            signal_decision_prompt_profiles={
+                "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
+                "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
+                "social_news": {
+                    "focus": "social_news_event_validation",
+                    "checklist": ["source_credibility"],
+                    "avoid": ["single_post_overweight"],
+                    "model_id": "gpt-social-mini",
+                },
+                "onchain": {
+                    "focus": "onchain_flow_validation",
+                    "checklist": ["wallet_flow_direction"],
+                    "avoid": ["execution_action"],
+                    "model_id": "gpt-onchain-mini",
+                },
+                "liquidation": {"focus": "liquidation_shock_validation", "checklist": [], "avoid": []},
+            },
+        )
+
+        out_onchain = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-source-category-onchain-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "xfeed_unknown_a", "source_category": "onchain"},
+            )
+        )
+        out_news = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-source-category-news-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="short",
+                payload={"event_type": "xfeed_unknown_b", "source_category": "news"},
+            )
+        )
+
+        assert out_onchain.signal_decision.decision_agent_key == "onchain"
+        assert out_news.signal_decision.decision_agent_key == "social_news"
+        assert out_onchain.execution_result is not None
+        assert out_news.execution_result is not None
+
+        by_event = {str((x or {}).get("event_id") or ""): dict(x or {}) for x in observer.calls}
+        prompt_onchain = dict((by_event.get("evt-source-category-onchain-001") or {}).get("decision_prompt") or {})
+        prompt_news = dict((by_event.get("evt-source-category-news-001") or {}).get("decision_prompt") or {})
+        assert prompt_onchain.get("model_id") == "gpt-onchain-mini"
+        assert prompt_news.get("model_id") == "gpt-social-mini"
+
+        assert len(execution_decider.payloads) == 2
+        risk_hints_onchain = dict((execution_decider.payloads[0] or {}).get("risk_hints") or {})
+        risk_hints_news = dict((execution_decider.payloads[1] or {}).get("risk_hints") or {})
+        assert risk_hints_onchain.get("decision_agent_key") == "onchain"
+        assert risk_hints_news.get("decision_agent_key") == "social_news"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
