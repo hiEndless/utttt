@@ -300,4 +300,5 @@ bash tools/local/check_agent_signal_decision_replay_guard.sh verification/report
 ```
 
 说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
+`tools/ci/verify_nightly.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.90`；
 其余来源默认仍为 `-1`（忽略）。
