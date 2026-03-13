@@ -38,6 +38,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "agent-event-type-match-report-v1",
                 "agent-decision-agent-key-report-v1",
                 "agent-action-hint-semantics-report-v1",
+                "agent-signal-source-route-replay-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -103,6 +104,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     ]
     action_hint_semantics_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-action-hint-semantics-report-v1"
+    ]
+    route_replay_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-signal-source-route-replay-v1"
     ]
 
     total = len(verification_reports)
@@ -474,6 +478,31 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         except Exception:
             action_hint_semantics_match_ratio_on_available = 0.0
 
+    route_replay_report_count = len(route_replay_reports)
+    latest_route_replay_report_path = ""
+    route_replay_ok = False
+    route_replay_count = 0
+    route_replay_mismatch_count = 0
+    route_replay_match_ratio = 0.0
+    if route_replay_reports:
+        latest_route_replay = max(
+            route_replay_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_route_replay_report_path = str(latest_route_replay.get("_path") or "")
+        route_replay_ok = bool(latest_route_replay.get("ok"))
+        route_replay_count = _to_int(latest_route_replay.get("count"), 0)
+        rows = [dict(x) for x in list(latest_route_replay.get("rows") or []) if isinstance(x, dict)]
+        if route_replay_count <= 0:
+            route_replay_count = len(rows)
+        route_replay_mismatch_count = len([x for x in rows if not bool(x.get("route_match"))])
+        route_replay_match_count = max(0, route_replay_count - route_replay_mismatch_count)
+        route_replay_match_ratio = round(float(route_replay_match_count) / float(max(1, route_replay_count)), 6)
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -555,6 +584,12 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "action_hint_semantics_mismatch_count": action_hint_semantics_mismatch_count,
         "action_hint_semantics_missing_actual_hint_count": action_hint_semantics_missing_actual_hint_count,
         "action_hint_semantics_match_ratio_on_available": action_hint_semantics_match_ratio_on_available,
+        "route_replay_report_count": route_replay_report_count,
+        "latest_route_replay_report_path": latest_route_replay_report_path,
+        "route_replay_ok": route_replay_ok,
+        "route_replay_count": route_replay_count,
+        "route_replay_mismatch_count": route_replay_mismatch_count,
+        "route_replay_match_ratio": route_replay_match_ratio,
     }
 
 

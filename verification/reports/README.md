@@ -64,6 +64,13 @@ bash tools/local/run_agent_action_hint_semantics_report.sh \
 bash tools/local/run_agent_action_hint_semantics_report.sh --help
 ```
 
+Signal source route replay report (optional):
+```bash
+bash tools/local/run_agent_signal_source_route_replay.sh --format json \
+  --output verification/reports/agent_signal_source_route_replay.latest.json
+bash tools/local/run_agent_signal_source_route_replay.sh --help
+```
+
 Inspect recent action_hint cases (optional):
 ```bash
 bash tools/local/inspect_agent_action_hint_cases.sh --limit 20
@@ -141,6 +148,7 @@ Notes:
   - `event_type_match_*`（event type canonical/alias/empty 命中统计与 unknown top 快照）
   - `decision_agent_key_*`（technical/onchain/liquidation/social_news/generic/unknown 分布与核心四类覆盖率）
   - `action_hint_semantics_*`（minimal 语义映射命中率：`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）
+  - `route_replay_*`（四类来源业务回放快照：是否通过、mismatch 数、match_ratio）
 
 Check thresholds:
 ```bash

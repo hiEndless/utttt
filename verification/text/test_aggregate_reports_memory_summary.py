@@ -150,6 +150,18 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 {"decision_agent_key": "missing", "count": 1},
             ],
         },
+        {
+            "schema_version": "agent-signal-source-route-replay-v1",
+            "generated_at_ms": 4100,
+            "ok": False,
+            "count": 4,
+            "rows": [
+                {"event_id": "evt-route-1", "route_match": True},
+                {"event_id": "evt-route-2", "route_match": True},
+                {"event_id": "evt-route-3", "route_match": False},
+                {"event_id": "evt-route-4", "route_match": True},
+            ],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -223,3 +235,8 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert decision_top_unknown
     assert decision_top_unknown[0]["decision_agent_key"] == "custom_agent_x"
     assert decision_top_unknown[0]["count"] == 1
+    assert out["route_replay_report_count"] == 1
+    assert out["route_replay_ok"] is False
+    assert out["route_replay_count"] == 4
+    assert out["route_replay_mismatch_count"] == 1
+    assert float(out["route_replay_match_ratio"]) == 0.75
