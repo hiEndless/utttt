@@ -362,3 +362,27 @@ def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_even
         assert False, "expected RuntimeError when event_type_routes contains invalid agent_key"
     except RuntimeError as exc:
         assert "invalid signal router config" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_rejects_invalid_signal_prompt_config(monkeypatch, tmp_path):
+    import json
+
+    bad = tmp_path / "bad_prompt_profiles.json"
+    bad.write_text(
+        json.dumps(
+            {
+                "generic": {"focus": "generic_signal_validation", "checklist": ["x"], "avoid": ["y"]},
+                "custom_unknown": {"focus": "x", "checklist": [], "avoid": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE", str(bad))
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when signal decision prompt config is invalid"
+    except RuntimeError as exc:
+        assert "invalid signal decision prompt config" in str(exc)

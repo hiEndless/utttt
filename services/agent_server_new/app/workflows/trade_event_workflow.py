@@ -229,6 +229,7 @@ class TradeEventWorkflow:
         legacy_pipeline_enabled: bool = True,
         horizon_policy_config: Optional[Dict[str, Any]] = None,
         signal_router_config: Optional[Dict[str, Any]] = None,
+        signal_decision_prompt_profiles: Optional[Dict[str, Dict[str, Any]]] = None,
         signal_decision_agent: SignalDecisionAgent | None = None,
         signal_router_config_source: str = "runtime",
         signal_router_config_version: str = "",
@@ -251,6 +252,7 @@ class TradeEventWorkflow:
         self._legacy_pipeline_enabled = bool(legacy_pipeline_enabled)
         self._horizon_policy_config = dict(horizon_policy_config or load_horizon_policy_config_from_env())
         self._signal_router_config = dict(signal_router_config or {})
+        self._signal_decision_prompt_profiles = dict(signal_decision_prompt_profiles or {})
         self._signal_decision_agent = signal_decision_agent or (
             RoutedHybridSignalDecisionAgent(
                 router_config=self._signal_router_config,
@@ -319,6 +321,7 @@ class TradeEventWorkflow:
                 decision_agent_key=llm_agent_key,
                 key_market_features=dict(ctx.key_market_features or {}),
                 active_events=list(ctx.active_events or []),
+                prompt_profiles=self._signal_decision_prompt_profiles,
                 features_limit=8,
                 events_limit=8,
             )

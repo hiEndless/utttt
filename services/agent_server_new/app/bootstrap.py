@@ -22,6 +22,10 @@ from services.agent_server_new.domain.signal_router import (
     load_signal_router_config_from_env,
     validate_signal_router_config,
 )
+from services.agent_server_new.domain.signal_decision_prompt_profiles import (
+    load_signal_decision_prompt_profiles_from_env,
+    validate_signal_decision_prompt_profiles,
+)
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_env
 
@@ -145,6 +149,13 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         if runtime_profile in {"prod", "production"}:
             raise RuntimeError(f"invalid signal router config in production: {exc}") from exc
         raise RuntimeError(f"invalid signal router config: {exc}") from exc
+    signal_prompt_profiles = load_signal_decision_prompt_profiles_from_env()
+    try:
+        validate_signal_decision_prompt_profiles(signal_prompt_profiles, allowed_agent_keys=_ALLOWED_SIGNAL_AGENT_KEYS)
+    except ValueError as exc:
+        if runtime_profile in {"prod", "production"}:
+            raise RuntimeError(f"invalid signal decision prompt config in production: {exc}") from exc
+        raise RuntimeError(f"invalid signal decision prompt config: {exc}") from exc
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=position_context_provider,
@@ -162,6 +173,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         ai_adaptive_mode=ai_adaptive_mode,
         legacy_pipeline_enabled=legacy_pipeline_enabled,
         signal_router_config=signal_router_config,
+        signal_decision_prompt_profiles=signal_prompt_profiles,
         signal_router_config_source=(
             f"env:{signal_router_config_file}"
             if signal_router_config_file

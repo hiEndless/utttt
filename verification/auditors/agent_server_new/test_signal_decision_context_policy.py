@@ -59,3 +59,17 @@ def test_build_llm_observation_context_normalizes_unknown_agent_key() -> None:
     prompt = dict(out.get("decision_prompt") or {})
     assert prompt.get("focus") == "generic_signal_validation"
     assert len(list(out.get("active_events") or [])) == 1
+
+
+def test_build_llm_observation_context_supports_custom_prompt_profiles() -> None:
+    out = build_llm_observation_context(
+        decision_agent_key="onchain",
+        prompt_profiles={
+            "generic": {"focus": "generic_v2", "checklist": ["a"], "avoid": ["b"]},
+            "onchain": {"focus": "onchain_v2", "checklist": ["wallet"], "avoid": ["noise"]},
+        },
+        key_market_features={"features": [{"name": "cross_horizon", "value": {}}]},
+        active_events=[{"type": "wallet_alert", "score": 0.9}],
+    )
+    prompt = dict(out.get("decision_prompt") or {})
+    assert prompt.get("focus") == "onchain_v2"
