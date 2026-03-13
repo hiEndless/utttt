@@ -118,6 +118,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "recommendation_artifact_status=" in regression_text
     assert "tools/local/print_agent_signal_decision_replay_trend.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_trend_recommendation.sh" in nightly_text
+    assert "recommendation_artifact_status=" in nightly_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in regression_text
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
