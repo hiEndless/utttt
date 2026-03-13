@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import ActionIntent, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
+from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
 from services.agent_server_new.domain.execution_planner import build_execution_plan
 from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_gate
 from services.agent_server_new.domain.intent_resolver import resolve_intent
@@ -441,6 +441,51 @@ def build_execution_decision_payload(
         payload["adaptive_profile_version"] = "reserved-v0"
         payload["adaptive_explain"] = {"status": "reserved_only"}
     return payload
+
+
+def build_signal_decision_from_signal(
+    *,
+    decision_id: str,
+    exchange: str,
+    symbol: str,
+    signal: Any,
+    llm_observation: Dict[str, Any],
+    decision_agent_key: str,
+    decision_mode: str,
+    llm_parse_status: str,
+) -> SignalDecision:
+    verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
+    if verdict not in {"accept", "reject", "uncertain"}:
+        verdict = "uncertain"
+    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
+    if direction not in {"long", "short", "none"}:
+        direction = "none"
+    mode = str(decision_mode or "rule").strip().lower()
+    if mode not in {"llm", "rule_fallback", "rule"}:
+        mode = "rule"
+    parse_status = str(llm_parse_status or "rule_only").strip().lower()
+    if parse_status not in {"llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"}:
+        parse_status = "rule_only"
+    conf = getattr(signal, "confidence", None)
+    raw_score = float(getattr(conf, "score", 0.0) or 0.0)
+    reliability_score = max(0.0, min(1.0, raw_score))
+    reasons = [str(x) for x in list(getattr(signal, "invalidation_reasons", []) or []) if str(x)]
+    normalized_conf = Confidence(level="low", score=0.0) if conf is None else conf
+    return SignalDecision(
+        decision_id=str(decision_id or ""),
+        exchange=str(exchange or ""),
+        symbol=str(symbol or ""),
+        decision_agent_key=str(decision_agent_key or "generic"),
+        decision_mode=mode,  # type: ignore[arg-type]
+        llm_parse_status=parse_status,  # type: ignore[arg-type]
+        signal_direction=direction,  # type: ignore[arg-type]
+        signal_verdict=verdict,  # type: ignore[arg-type]
+        confidence=normalized_conf,  # type: ignore[arg-type]
+        reliability_score=reliability_score,
+        reasons=reasons,
+        evidence_refs=[],
+        llm_observation=dict(llm_observation or {}),
+    )
 
 
 def build_workflow_bridge_payload(

@@ -11,6 +11,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
     build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
+    build_signal_decision_from_signal,
     build_symbol_memory_legacy_sections,
     build_workflow_bridge_payload,
 )
@@ -154,3 +155,22 @@ def test_pipeline_compat_adapter_builds_workflow_bridge_payload() -> None:
     assert payload["decision"]["decision_agent_key"] == "technical"
     assert payload["execution_plan"]["action"] == "hold"
     assert payload["execution_plan"]["confidence"] == {"level": "high", "score": 0.82}
+
+
+def test_pipeline_compat_adapter_builds_signal_decision_from_signal() -> None:
+    signal = SignalVerdict(direction="short", verdict="accept", confidence=Confidence(level="medium", score=0.66))
+    out = build_signal_decision_from_signal(
+        decision_id="evt-signal-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal=signal,
+        llm_observation={"status": "ok"},
+        decision_agent_key="onchain",
+        decision_mode="llm",
+        llm_parse_status="llm_ok",
+    )
+    assert out.decision_id == "evt-signal-001"
+    assert out.signal_direction == "short"
+    assert out.signal_verdict == "accept"
+    assert out.reliability_score == 0.66
+    assert out.decision_agent_key == "onchain"

@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, SignalDecision
+from services.agent_server_new.domain.contracts import ExecutionPlan, SignalDecision
 from services.agent_server_new.domain.execution_planner import build_execution_plan as build_execution_plan  # noqa: F401
 from services.agent_server_new.domain.horizon_policy_gate import load_horizon_policy_config_from_env
 from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
@@ -19,6 +19,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
+    build_signal_decision_from_signal,
     build_symbol_memory_legacy_sections,
     build_workflow_bridge_payload,
 )
@@ -326,8 +327,10 @@ class TradeEventWorkflow:
             signal_event=dict(ctx.signal_event or {}),
             router_config=self._signal_router_config,
         )
-        signal_decision = _build_signal_decision(
-            event=event,
+        signal_decision = build_signal_decision_from_signal(
+            decision_id=event.event_id,
+            exchange=event.exchange,
+            symbol=event.symbol,
             signal=signal,
             llm_observation=llm_observation,
             decision_agent_key=eval_result.decision_agent_key,
@@ -533,50 +536,6 @@ class TradeEventWorkflow:
             )
 
         return WorkflowResult(agent_plan=plan, signal_decision=signal_decision, execution_result=execution_result)
-
-
-def _build_signal_decision(
-    *,
-    event: TradeEventInput,
-    signal: Any,
-    llm_observation: Dict[str, Any],
-    decision_agent_key: str,
-    decision_mode: str,
-    llm_parse_status: str,
-) -> SignalDecision:
-    verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
-    if verdict not in {"accept", "reject", "uncertain"}:
-        verdict = "uncertain"
-    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
-    if direction not in {"long", "short", "none"}:
-        direction = "none"
-    mode = str(decision_mode or "rule").strip().lower()
-    if mode not in {"llm", "rule_fallback", "rule"}:
-        mode = "rule"
-    parse_status = str(llm_parse_status or "rule_only").strip().lower()
-    if parse_status not in {"llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"}:
-        parse_status = "rule_only"
-    conf = getattr(signal, "confidence", Confidence(level="low", score=0.0))
-    raw_score = float(getattr(conf, "score", 0.0) or 0.0)
-    reliability_score = max(0.0, min(1.0, raw_score))
-    reasons = [str(x) for x in list(getattr(signal, "invalidation_reasons", []) or []) if str(x)]
-    return SignalDecision(
-        decision_id=str(event.event_id),
-        exchange=str(event.exchange),
-        symbol=str(event.symbol),
-        decision_agent_key=str(decision_agent_key or "generic"),
-        decision_mode=mode,  # type: ignore[arg-type]
-        llm_parse_status=parse_status,  # type: ignore[arg-type]
-        signal_direction=direction,  # type: ignore[arg-type]
-        signal_verdict=verdict,  # type: ignore[arg-type]
-        confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]
-        reliability_score=reliability_score,
-        reasons=reasons,
-        evidence_refs=[],
-        llm_observation=dict(llm_observation or {}),
-    )
-
-
 def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     """兼容旧测试入口，统一委托给 adapter 层单点 MSL 解析器。"""
     return _build_msl_from_dict(dict(d or {}))
