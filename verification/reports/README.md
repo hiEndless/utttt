@@ -36,6 +36,13 @@ bash tools/local/run_agent_decision_trace_schema_report.sh \
 bash tools/local/run_agent_decision_trace_schema_report.sh --help
 ```
 
+Pipeline mode report (optional):
+```bash
+bash tools/local/run_agent_pipeline_mode_report.sh \
+  --output verification/reports/agent_pipeline_mode.latest.json
+bash tools/local/run_agent_pipeline_mode_report.sh --help
+```
+
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
@@ -54,6 +61,7 @@ bash tools/local/verify_report_aggregate.sh --compact
 bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
 bash tools/local/verify_report_aggregate.sh --with-agent-readyz --compact
 bash tools/local/verify_report_aggregate.sh --with-decision-trace-schema-guard --compact
+bash tools/local/verify_report_aggregate.sh --with-pipeline-mode-report --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
@@ -62,6 +70,7 @@ One-shot local pipeline (optional include memory summary):
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
+bash tools/local/aggregate_and_check.sh --with-pipeline-mode-report
 bash tools/local/aggregate_and_check.sh --help
 ```
 
@@ -78,7 +87,7 @@ bash tools/local/aggregate_and_check.sh --skip-thresholds --compact
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), symbol memory summary reports (`symbol-memory-summary-run-v1`),
-  and agent readyz reports (`agent-readyz-report-v1`).
+  and agent readyz reports (`agent-readyz-report-v1`), pipeline_mode reports (`agent-pipeline-mode-report-v1`).
 - Release gate summary (`release-gate-summary-v1`) is generated independently by
   `tools/local/check_release_ready.sh` and recommended for release check records.
 - Summary includes:
@@ -89,6 +98,7 @@ Notes:
   - `execution_confidence_*`（execution 迁移指标快照与 `execution_legacy_confidence_usage_ratio`）
   - `agent_readyz_*`（agent 可用性分级快照：`green/yellow/red`、warning/error 计数）
   - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
+  - `pipeline_mode_*`（legacy/minimal 灰度计数与比例快照）
 
 Check thresholds:
 ```bash

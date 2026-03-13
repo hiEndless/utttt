@@ -21,6 +21,8 @@ def test_verify_report_aggregate_help_contains_decision_trace_schema_guard_flags
     out = str(proc.stdout or "")
     assert "--with-decision-trace-schema-guard" in out
     assert "--decision-trace-schema-guard-path <path>" in out
+    assert "--with-pipeline-mode-report" in out
+    assert "--pipeline-mode-report-path <path>" in out
 
 
 def test_aggregate_and_check_help_contains_decision_trace_schema_guard_flags() -> None:
@@ -35,3 +37,5 @@ def test_aggregate_and_check_help_contains_decision_trace_schema_guard_flags() -
     out = str(proc.stdout or "")
     assert "--with-decision-trace-schema-guard" in out
     assert "--decision-trace-schema-guard-path <path>" in out
+    assert "--with-pipeline-mode-report" in out
+    assert "--pipeline-mode-report-path <path>" in out
