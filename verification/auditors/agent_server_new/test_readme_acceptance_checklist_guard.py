@@ -15,3 +15,5 @@ def test_readme_has_frozen_main_flow_acceptance_checklist() -> None:
     assert "ExecutionPlan.sizing/allowance" in text
     assert "execution_service" in text
     assert "唯一权威" in text
+    assert "这只是过渡方案" not in text
+    assert "还需要继续收窄" not in text

@@ -559,9 +559,7 @@ agent_server_new/
 
 ## 需要调整的工作流
 
-当前 `app/workflows/trade_event_workflow.py` 的总体方向是对的，但还需要继续收窄：
-
-当前工作流里仍然通过 `ContextBuilder` 间接吸收市场状态构建逻辑，这只是过渡方案。
+`app/workflows/trade_event_workflow.py` 当前按固定主链路运行，`ContextBuilder` 只承担轻量上下文组装。
 
 最终应改为：
 
@@ -654,7 +652,7 @@ agent_server_new/
 2. 部分状态层 contract 仍和决策层 contract 混在一起
 3. workflow 还承担了部分状态组装责任
 
-这些都不是方向错误，但说明当前仍处于“状态层和决策层半分离”的阶段。
+这些属于已识别技术债项，按上文迁移清单持续收敛。
 
 ## 收敛后的定义
 
