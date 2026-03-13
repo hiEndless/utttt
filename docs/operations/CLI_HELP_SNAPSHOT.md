@@ -378,6 +378,10 @@ Environment:
   MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO  onchain_wallet 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO  large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO  social_news 的 rule_fallback 比例上限（默认 0.90）
+  WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND  是否输出 signal decision replay 趋势摘要（1/0，默认 1）
+  AGENT_SIGNAL_DECISION_REPLAY_TREND_GLOB  趋势输入 glob（默认 verification/reports/agent_signal_decision_replay*.json）
+  AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS  趋势窗口天数（默认 7）
+  AGENT_SIGNAL_DECISION_REPLAY_TREND_SOURCE  趋势来源类型（默认 social_news）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）

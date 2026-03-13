@@ -122,6 +122,7 @@ WITH_AGENT_ROUTE_REPLAY_REPORT=1 MAX_ROUTE_REPLAY_MISMATCH_COUNT=0 bash tools/ci
 WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 bash tools/ci/verify_quick.sh
 WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85 bash tools/ci/verify_quick.sh
 WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.80 bash tools/ci/verify_regression.sh
+WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND=1 AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS=7 bash tools/ci/verify_nightly.sh
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
@@ -297,6 +298,11 @@ Guard signal decision replay fallback ratio by source:
 ```bash
 bash tools/local/check_agent_signal_decision_replay_guard.sh
 bash tools/local/check_agent_signal_decision_replay_guard.sh verification/reports/agent_signal_decision_replay.latest.json 10 -1 -1 -1 0.80
+```
+
+Print signal decision replay fallback trend (nightly default enabled):
+```bash
+bash tools/local/print_agent_signal_decision_replay_trend.sh --source social_news --days 7 --prefix nightly
 ```
 
 说明：`tools/ci/verify_regression.sh` 默认已启用 `MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO=0.85`；
