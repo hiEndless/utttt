@@ -279,6 +279,7 @@ signal_event + active_events + MSL
 
 最小闭环验证示例：
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_business_closed_loop_example`
+- `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_multi_event_route_model_closed_loop`
 
 ### 本地灰度观测最短命令
 
