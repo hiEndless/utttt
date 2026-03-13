@@ -9,6 +9,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.domain.signal_router import (
     reset_signal_router_cache,
     route_signal_agent_key,
+    validate_signal_router_config,
 )
 
 
@@ -77,3 +78,44 @@ def test_signal_router_loads_config_from_env(monkeypatch, tmp_path) -> None:  # 
     reset_signal_router_cache()
     key = route_signal_agent_key(signal_event={"payload": {"event_type": "macro_news"}})
     assert key == "macro_watch"
+
+
+def test_signal_router_validate_rejects_duplicate_keywords() -> None:
+    cfg = {
+        "default_agent_key": "generic",
+        "rules": [
+            {"agent_key": "technical", "keywords": ["indicator"]},
+            {"agent_key": "onchain", "keywords": ["indicator"]},
+        ],
+    }
+    try:
+        validate_signal_router_config(cfg)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "关键词重复冲突" in str(exc)
+
+
+def test_signal_router_validate_rejects_unknown_agent_key() -> None:
+    cfg = {
+        "default_agent_key": "generic",
+        "rules": [
+            {"agent_key": "custom_unknown", "keywords": ["alpha"]},
+        ],
+    }
+    try:
+        validate_signal_router_config(
+            cfg,
+            allowed_agent_keys={"technical", "liquidation", "onchain", "social_news", "generic"},
+        )
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "agent_key 非法" in str(exc)
+
+
+def test_signal_router_validate_rejects_empty_rules() -> None:
+    cfg = {"default_agent_key": "generic", "rules": []}
+    try:
+        validate_signal_router_config(cfg)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "rules 必须是非空数组" in str(exc)

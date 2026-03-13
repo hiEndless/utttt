@@ -66,6 +66,44 @@ def load_signal_router_config_from_env() -> Dict[str, Any]:
     return _load_router_config(path)
 
 
+def validate_signal_router_config(
+    cfg: Dict[str, Any],
+    *,
+    allowed_agent_keys: set[str] | None = None,
+) -> None:
+    """校验路由配置：空规则、未知 agent_key、重复关键词。"""
+    if not isinstance(cfg, dict):
+        raise ValueError("signal_router config 必须是对象")
+    default_agent_key = str(cfg.get("default_agent_key") or "").strip().lower()
+    if not default_agent_key:
+        raise ValueError("signal_router.default_agent_key 不能为空")
+    rules = cfg.get("rules")
+    if not isinstance(rules, list) or not rules:
+        raise ValueError("signal_router.rules 必须是非空数组")
+    allowed = set([x.strip().lower() for x in list(allowed_agent_keys or set()) if str(x).strip()])
+    if allowed and default_agent_key not in allowed:
+        raise ValueError(f"signal_router.default_agent_key 非法: {default_agent_key}")
+    keyword_owner: Dict[str, str] = {}
+    for idx, item in enumerate(list(rules)):
+        if not isinstance(item, dict):
+            raise ValueError(f"signal_router.rules[{idx}] 必须是对象")
+        agent_key = str(item.get("agent_key") or "").strip().lower()
+        if not agent_key:
+            raise ValueError(f"signal_router.rules[{idx}].agent_key 不能为空")
+        if allowed and agent_key not in allowed:
+            raise ValueError(f"signal_router.rules[{idx}].agent_key 非法: {agent_key}")
+        keywords = [str(x).strip().lower() for x in list(item.get("keywords") or []) if str(x).strip()]
+        if not keywords:
+            raise ValueError(f"signal_router.rules[{idx}].keywords 不能为空")
+        for key in keywords:
+            owner = keyword_owner.get(key)
+            if owner and owner != agent_key:
+                raise ValueError(
+                    f"signal_router.rules 关键词重复冲突: {key} ({owner} vs {agent_key})"
+                )
+            keyword_owner[key] = agent_key
+
+
 def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[str, Any] | None = None) -> str:
     """按事件类型/来源类别路由信号决策 agent（配置驱动）。"""
     payload = dict((signal_event or {}).get("payload") or {})
