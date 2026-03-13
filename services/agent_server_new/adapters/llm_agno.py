@@ -7,7 +7,8 @@ import os
 from typing import Any, Callable, Dict, List
 
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
+from agno.models.message import Message
+from agno.models.openai import OpenAILike
 
 from services.agent_server_new.runtime.llm_runtime import LLMRuntimeConfig
 
@@ -75,25 +76,24 @@ class AgnoLLMObserver:
         return candidate or self._model_id
 
     def _build_agent(self, *, model_id: str, focus: str, checklist: List[str], avoid: List[str]) -> Agent:
-        model = OpenAIChat(
+        model = OpenAILike(
             id=model_id,
-            api_key=self._api_key,
             base_url=self._base_url or None,
-            timeout=self._timeout_s,
-            max_retries=self._retry_max,
-            temperature=self._temperature,
+            api_key=self._api_key,
         )
+        checklist_text = ",".join(checklist) if checklist else "none"
+        avoid_text = ",".join(avoid) if avoid else "none"
         return Agent(
             model=model,
-            markdown=False,
-            parse_response=False,
-            instructions=[
-                "You are a market signal validator.",
-                "Return JSON object only.",
-                f"focus={focus}",
-                f"checklist={','.join(checklist) if checklist else 'none'}",
-                f"avoid={','.join(avoid) if avoid else 'none'}",
-            ],
+            instructions=(
+                "You are a market signal validator.\n"
+                "Return JSON object only.\n"
+                "Required keys: signal_verdict, signal_direction, confidence_score, reasons.\n"
+                "signal_verdict must be one of: accept, reject.\n"
+                "signal_direction must be one of: long, short, neutral.\n"
+                "confidence_score must be a float in [0,1].\n"
+                f"focus={focus}; checklist={checklist_text}; avoid={avoid_text}."
+            ),
         )
 
     @staticmethod
@@ -113,6 +113,16 @@ class AgnoLLMObserver:
             if isinstance(value, (int, float)):
                 usage[key] = int(value)
         return usage
+
+    async def _run_agent(self, *, agent: Any, user_payload: Dict[str, Any]) -> Any:
+        content = json.dumps(user_payload, ensure_ascii=False)
+        if hasattr(agent, "arun"):
+            return await agent.arun(
+                Message(role="user", content=content),
+                stream=False,
+                debug_mode=True,
+            )
+        return await asyncio.to_thread(agent.run, content)
 
     async def observe(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         if not self._model_id:
@@ -137,7 +147,7 @@ class AgnoLLMObserver:
                     checklist=checklist,
                     avoid=avoid,
                 )
-                run_out = await asyncio.to_thread(agent.run, str(user_payload))
+                run_out = await self._run_agent(agent=agent, user_payload=user_payload)
                 raw_content = self._stringify_content(getattr(run_out, "content", ""))
                 return {
                     "provider": "agno",

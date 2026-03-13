@@ -26,8 +26,10 @@ class _FakeRunOut:
 class _FakeAgent:
     def __init__(self, scripted):  # noqa: ANN001
         self._scripted = scripted
+        self.last_input = None
 
-    def run(self, _input):  # noqa: ANN001
+    async def arun(self, message, stream=False, debug_mode=False):  # noqa: ANN001, ARG002
+        self.last_input = message
         event = self._scripted.pop(0)
         if isinstance(event, Exception):
             raise event
@@ -89,3 +91,17 @@ def test_agno_llm_observer_from_env() -> None:
     obs = AgnoLLMObserver.from_env(config=cfg)
     assert obs._model_id == "gpt-4o-mini"  # noqa: SLF001
     assert obs._api_key == "sk-test"  # noqa: SLF001
+
+
+def test_agno_llm_observer_uses_json_message_input() -> None:
+    scripted = [_FakeRunOut(content='{"signal_verdict":"accept"}')]
+    fake = _FakeAgent(scripted)
+    obs = AgnoLLMObserver(
+        model_id="gpt-4o-mini",
+        api_key="sk-test",
+        retry_max=0,
+        agent_factory=lambda **kwargs: fake,  # noqa: ARG005
+    )
+    asyncio.run(obs.observe({"symbol": "ETHUSDT", "note": "中文"}))
+    assert fake.last_input is not None
+    assert '"symbol": "ETHUSDT"' in str(getattr(fake.last_input, "content", ""))
