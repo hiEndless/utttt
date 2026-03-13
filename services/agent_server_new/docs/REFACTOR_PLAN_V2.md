@@ -142,6 +142,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - `TradeEventWorkflow` 已透传 `prompt_config_source/prompt_config_version` 到 execution `risk_hints`，用于跨服务回放追踪提示词配置。
 - `DecisionTrace` 已增加 `routing` 观测块，记录 `decision_agent_key/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`，用于回放时定位路由与提示词配置漂移。
 - workflow 已统一“先路由后判定”：同一个 `decision_agent_key` 同时用于 LLM 观测上下文与 `SignalDecisionAgent.decide`，避免重复路由造成潜在漂移。
+- workflow 已新增 `pipeline_compat_state` 兼容层适配（集中 legacy gate 中间态），主干聚焦 `signal_decision -> decision_intent_payload -> execution_decider`，为后续下线 legacy 分支做结构准备。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，workflow recorder 已退化为单节点 `workflow_bridge`（编排桥接记录），不再输出 `intent/rule/gate/planner` 业务节点记录。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，不再加载 horizon policy 配置，避免 minimal 路径隐式依赖 legacy 风控初始化。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，透传给 execution 的 `risk_hints.agent_action_hint` 由 `SignalDecision` 语义映射（`accept->add`，其余 `hold`），不再依赖 legacy `ExecutionPlan.action`。

@@ -72,6 +72,20 @@ class WorkflowResult:
     execution_result: Optional[Dict[str, Any]] = None
 
 
+@dataclass(frozen=True)
+class _PipelineCompatState:
+    intent: ActionIntent
+    rule_plan: RulePlan
+    hpg_allowed: bool
+    hpg_reasons: list[str]
+    sg_allowed: bool
+    sg_reasons: list[str]
+    risk_ctx: RiskGateContext
+    risk_ctx_reasons: list[str]
+    allowance: RiskAllowance
+    plan: ExecutionPlan
+
+
 def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[str, str]:
     feats = list((key_market_features or {}).get("features") or [])
     for item in feats:
@@ -214,6 +228,121 @@ def _derive_risk_gate_context(
         global_regime=global_regime,
         cooldown_active=(cooldown_seconds_left > 0),
     ), reasons
+
+
+def _build_pipeline_compat_state(
+    *,
+    legacy_pipeline_enabled: bool,
+    signal: Any,
+    msl: MarketStateMSL,
+    position_context: Dict[str, Any],
+    active_events: list[Dict[str, Any]],
+    signal_event: Dict[str, Any],
+    cross_horizon: Dict[str, str],
+    horizon_policy_config: Dict[str, Any],
+) -> _PipelineCompatState:
+    # 中文注释：legacy 决策链路集中为兼容层，workflow 主干只消费统一 state。
+    if legacy_pipeline_enabled:
+        intent = resolve_intent(signal=signal, msl=msl, position_context=position_context)
+        rule_plan = build_rule_plan(intent=intent, msl=msl, position_context=position_context)
+        hpg = horizon_policy_gate(
+            suggested_policy=str(cross_horizon.get("suggested_policy") or "no_action"),
+            policy_reason=str(cross_horizon.get("policy_reason") or "insufficient_evidence"),
+            intent=str(intent.intent),
+            config=horizon_policy_config,
+        )
+        sg = strategy_gate_v2(
+            msl=msl,
+            signal=signal,
+            intent=intent,
+            rule_plan=rule_plan,
+            position_context=position_context,
+            signal_event=signal_event,
+        )
+        risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
+            msl=msl,
+            position_context=position_context,
+            active_events=active_events,
+        )
+        allowance = risk_gate(risk_ctx)
+        hpg_allowed = bool(hpg.allowed)
+        hpg_reasons = list(hpg.reasons)
+        sg_allowed = bool(sg.allowed)
+        sg_reasons = list(sg.reasons)
+        if not hpg_allowed:
+            plan = ExecutionPlan(
+                action="skip",
+                direction="none",
+                allowance=allowance,
+                confidence=signal.confidence,
+                sizing=None,
+                notes=f"horizon_policy_gate_blocked: {','.join(hpg_reasons)}",
+            )
+        elif not sg_allowed:
+            plan = ExecutionPlan(
+                action="skip",
+                direction="none",
+                allowance=allowance,
+                confidence=signal.confidence,
+                sizing=None,
+                notes=f"strategy_gate_blocked: {','.join(sg_reasons)}",
+            )
+        else:
+            plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
+        return _PipelineCompatState(
+            intent=intent,
+            rule_plan=rule_plan,
+            hpg_allowed=hpg_allowed,
+            hpg_reasons=hpg_reasons,
+            sg_allowed=sg_allowed,
+            sg_reasons=sg_reasons,
+            risk_ctx=risk_ctx,
+            risk_ctx_reasons=risk_ctx_reasons,
+            allowance=allowance,
+            plan=plan,
+        )
+
+    intent = ActionIntent(
+        intent="hold",
+        direction="none",
+        confidence=signal.confidence,
+        reasons=["legacy_pipeline_disabled"],
+        notes="legacy_pipeline_disabled",
+    )
+    rule_plan = RulePlan(
+        intent=intent,
+        sizing={},
+        reasons=["legacy_pipeline_disabled"],
+        notes="legacy_pipeline_disabled",
+    )
+    risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
+    allowance = RiskAllowance(
+        allow_open=True,
+        allow_add=True,
+        allow_reduce=True,
+        allow_exit=True,
+        reasons=["legacy_pipeline_disabled"],
+    )
+    plan = ExecutionPlan(
+        action="hold",
+        direction="none",
+        allowance=allowance,
+        confidence=signal.confidence,
+        sizing=None,
+        notes="legacy_pipeline_disabled",
+    )
+    return _PipelineCompatState(
+        intent=intent,
+        rule_plan=rule_plan,
+        hpg_allowed=True,
+        hpg_reasons=["legacy_pipeline_disabled"],
+        sg_allowed=True,
+        sg_reasons=["legacy_pipeline_disabled"],
+        risk_ctx=risk_ctx,
+        risk_ctx_reasons=["legacy_pipeline_disabled"],
+        allowance=allowance,
+        plan=plan,
+    )
 
 
 class TradeEventWorkflow:
@@ -433,88 +562,26 @@ class TradeEventWorkflow:
 
         ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
         position_ctx = dict(ctx.position_context or {})
-        if self._legacy_pipeline_enabled:
-            intent = resolve_intent(signal=signal, msl=ctx.msl, position_context=position_ctx)
-            rule_plan = build_rule_plan(intent=intent, msl=ctx.msl, position_context=position_ctx)
-            hpg = horizon_policy_gate(
-                suggested_policy=str(ch.get("suggested_policy") or "no_action"),
-                policy_reason=str(ch.get("policy_reason") or "insufficient_evidence"),
-                intent=str(intent.intent),
-                config=self._horizon_policy_config,
-            )
-            sg = strategy_gate_v2(
-                msl=ctx.msl,
-                signal=signal,
-                intent=intent,
-                rule_plan=rule_plan,
-                position_context=position_ctx,
-                signal_event=dict(ctx.signal_event or {}),
-            )
-            risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
-                msl=ctx.msl,
-                position_context=position_ctx,
-                active_events=list(ctx.active_events),
-            )
-            allowance = risk_gate(risk_ctx)
-            hpg_allowed = bool(hpg.allowed)
-            hpg_reasons = list(hpg.reasons)
-            sg_allowed = bool(sg.allowed)
-            sg_reasons = list(sg.reasons)
-            if not hpg_allowed:
-                plan = ExecutionPlan(
-                    action="skip",
-                    direction="none",
-                    allowance=allowance,
-                    confidence=signal.confidence,
-                    sizing=None,
-                    notes=f"horizon_policy_gate_blocked: {','.join(hpg_reasons)}",
-                )
-            elif not sg_allowed:
-                plan = ExecutionPlan(
-                    action="skip",
-                    direction="none",
-                    allowance=allowance,
-                    confidence=signal.confidence,
-                    sizing=None,
-                    notes=f"strategy_gate_blocked: {','.join(sg_reasons)}",
-                )
-            else:
-                plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
-        else:
-            intent = ActionIntent(
-                intent="hold",
-                direction="none",
-                confidence=signal.confidence,
-                reasons=["legacy_pipeline_disabled"],
-                notes="legacy_pipeline_disabled",
-            )
-            rule_plan = RulePlan(
-                intent=intent,
-                sizing={},
-                reasons=["legacy_pipeline_disabled"],
-                notes="legacy_pipeline_disabled",
-            )
-            hpg_allowed = True
-            hpg_reasons = ["legacy_pipeline_disabled"]
-            sg_allowed = True
-            sg_reasons = ["legacy_pipeline_disabled"]
-            risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
-            risk_ctx_reasons = ["legacy_pipeline_disabled"]
-            allowance = RiskAllowance(
-                allow_open=True,
-                allow_add=True,
-                allow_reduce=True,
-                allow_exit=True,
-                reasons=["legacy_pipeline_disabled"],
-            )
-            plan = ExecutionPlan(
-                action="hold",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes="legacy_pipeline_disabled",
-            )
+        compat = _build_pipeline_compat_state(
+            legacy_pipeline_enabled=self._legacy_pipeline_enabled,
+            signal=signal,
+            msl=ctx.msl,
+            position_context=position_ctx,
+            active_events=list(ctx.active_events),
+            signal_event=dict(ctx.signal_event or {}),
+            cross_horizon=ch,
+            horizon_policy_config=self._horizon_policy_config,
+        )
+        intent = compat.intent
+        rule_plan = compat.rule_plan
+        hpg_allowed = compat.hpg_allowed
+        hpg_reasons = list(compat.hpg_reasons)
+        sg_allowed = compat.sg_allowed
+        sg_reasons = list(compat.sg_reasons)
+        risk_ctx = compat.risk_ctx
+        risk_ctx_reasons = list(compat.risk_ctx_reasons)
+        allowance = compat.allowance
+        plan = compat.plan
 
         execution_result: Optional[Dict[str, Any]] = None
         if self._execution_decider is not None:
