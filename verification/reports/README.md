@@ -247,3 +247,9 @@ bash tools/local/check_agent_action_hint_cases_guard.sh
 bash tools/local/check_agent_action_hint_cases_guard.sh verification/reports/agent_action_hint_cases.latest.json 0
 bash tools/local/check_agent_action_hint_cases_guard.sh verification/reports/agent_action_hint_missing_cases.latest.json 0 missing
 ```
+
+Guard decision_agent_key unknown count:
+```bash
+bash tools/local/check_agent_decision_agent_key_report_guard.sh
+bash tools/local/check_agent_decision_agent_key_report_guard.sh verification/reports/agent_decision_agent_key.latest.json 0
+```

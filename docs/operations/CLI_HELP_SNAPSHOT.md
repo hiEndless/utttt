@@ -266,6 +266,9 @@ Environment:
   MAX_EVENT_TYPE_MATCH_MISSING_COUNT  event_type_match 缺失计数上限（默认 -1 忽略）
   MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT  event_type_match unknown 计数上限（默认 -1 忽略）
   MIN_EVENT_TYPE_MATCH_ALIAS_RATIO  event_type_match alias 占比下限（默认 0.01）
+  WITH_AGENT_DECISION_AGENT_KEY_REPORT  是否生成 decision_agent_key 路由分布 artifact（1/0，默认 1）
+  AGENT_DECISION_AGENT_KEY_REPORT_PATH  decision_agent_key 报告路径（默认 verification/reports/agent_decision_agent_key.latest.json）
+  MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT  decision_agent_key unknown 计数上限（默认 -1 忽略）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 1）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 1）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.90）
@@ -298,6 +301,9 @@ Environment:
   MAX_EVENT_TYPE_MATCH_MISSING_COUNT  event_type_match 缺失计数上限（默认 0）
   MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT  event_type_match unknown 计数上限（默认 0）
   MIN_EVENT_TYPE_MATCH_ALIAS_RATIO  event_type_match alias 占比下限（默认 -1 忽略）
+  WITH_AGENT_DECISION_AGENT_KEY_REPORT  是否生成 decision_agent_key 路由分布 artifact（1/0，默认 1）
+  AGENT_DECISION_AGENT_KEY_REPORT_PATH  decision_agent_key 报告路径（默认 verification/reports/agent_decision_agent_key.latest.json）
+  MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT  decision_agent_key unknown 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）

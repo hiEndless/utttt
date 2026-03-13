@@ -32,6 +32,9 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MAX_EVENT_TYPE_MATCH_MISSING_COUNT" in out
     assert "MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT" in out
     assert "MIN_EVENT_TYPE_MATCH_ALIAS_RATIO" in out
+    assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
+    assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
+    assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
@@ -50,6 +53,9 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MAX_EVENT_TYPE_MATCH_MISSING_COUNT" in out
     assert "MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT" in out
     assert "MIN_EVENT_TYPE_MATCH_ALIAS_RATIO" in out
+    assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
+    assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
+    assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
@@ -66,6 +72,10 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_event_type_match_summary.sh" in nightly_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in regression_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in nightly_text
+    assert "tools/local/run_agent_decision_agent_key_report.sh" in regression_text
+    assert "tools/local/run_agent_decision_agent_key_report.sh" in nightly_text
+    assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in regression_text
+    assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
