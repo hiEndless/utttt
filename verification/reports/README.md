@@ -71,6 +71,13 @@ bash tools/local/run_agent_signal_source_route_replay.sh --format json \
 bash tools/local/run_agent_signal_source_route_replay.sh --help
 ```
 
+Signal decision replay report (optional):
+```bash
+bash tools/local/run_agent_signal_decision_replay_report.sh \
+  --output verification/reports/agent_signal_decision_replay.latest.json
+bash tools/local/run_agent_signal_decision_replay_report.sh --help
+```
+
 Inspect recent action_hint cases (optional):
 ```bash
 bash tools/local/inspect_agent_action_hint_cases.sh --limit 20
@@ -112,6 +119,7 @@ WITH_AGENT_CLOSED_LOOP_SMOKE=1 bash tools/ci/verify_quick.sh
 WITH_AGENT_ACTION_HINT_CASES_REPORT=1 bash tools/ci/verify_quick.sh
 WITH_AGENT_DECISION_AGENT_KEY_REPORT=1 MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT=0 bash tools/ci/verify_quick.sh
 WITH_AGENT_ROUTE_REPLAY_REPORT=1 MAX_ROUTE_REPLAY_MISMATCH_COUNT=0 bash tools/ci/verify_quick.sh
+WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1 bash tools/ci/verify_quick.sh
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
@@ -263,6 +271,11 @@ bash tools/local/print_decision_agent_key_summary.sh --summary verification/repo
 Print action_hint semantics summary from aggregate report:
 ```bash
 bash tools/local/print_action_hint_semantics_summary.sh --summary verification/reports/summary.latest.json --prefix quick
+```
+
+Print signal decision replay summary from replay report:
+```bash
+bash tools/local/print_signal_decision_replay_summary.sh --report verification/reports/agent_signal_decision_replay.latest.json --prefix quick
 ```
 
 Guard action_hint mismatch cases:

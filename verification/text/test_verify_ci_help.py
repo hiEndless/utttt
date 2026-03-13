@@ -88,6 +88,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
     assert "tools/local/print_route_replay_summary.sh" in quick_text
+    assert "tools/local/run_agent_signal_decision_replay_report.sh" in quick_text
+    assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
     assert "--status missing" in regression_text
@@ -104,10 +106,12 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "WITH_AGENT_ACTION_HINT_CASES_REPORT=1" in out
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT=1" in out
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT=1" in out
+    assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1" in out
     assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
@@ -123,9 +127,11 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--with-agent-action-hint-cases-report" in out
     assert "--with-agent-decision-agent-key-report" in out
     assert "--with-agent-route-replay-report" in out
+    assert "--with-agent-signal-decision-replay-report" in out
     assert "--agent-action-hint-cases-report-path <path>" in out
     assert "--agent-action-hint-missing-cases-report-path <path>" in out
     assert "--agent-decision-agent-key-report-path <path>" in out
     assert "--agent-route-replay-report-path <path>" in out
+    assert "--agent-signal-decision-replay-report-path <path>" in out
     assert "--max-decision-agent-key-unknown-count <int>" in out
     assert "--max-route-replay-mismatch-count <int>" in out

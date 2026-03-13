@@ -25,6 +25,8 @@ Optional Observability:
                                 启用 decision_agent_key 路由分布观测（默认关闭）
   WITH_AGENT_ROUTE_REPLAY_REPORT=1
                                 启用四类来源业务路由回放观测（默认关闭）
+  WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1
+                                启用信号决策结果回放观测（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
@@ -33,6 +35,8 @@ Optional Observability:
                                 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   AGENT_ROUTE_REPLAY_REPORT_PATH
                                 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
+  AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
+                                signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -145,8 +149,14 @@ if [[ "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
     --output "$AGENT_ROUTE_REPLAY_REPORT_PATH" >/dev/null
   echo "[quick] route_replay_report_path=$AGENT_ROUTE_REPLAY_REPORT_PATH"
 fi
+if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
+  AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH="${AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH:-verification/reports/agent_signal_decision_replay.latest.json}"
+  bash tools/local/run_agent_signal_decision_replay_report.sh \
+    --output "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" >/dev/null
+  echo "[quick] signal_decision_replay_report_path=$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH"
+fi
 
-if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
+if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" || "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
   MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:--1}"
   MAX_PIPELINE_MODE_UNKNOWN_COUNT="${MAX_PIPELINE_MODE_UNKNOWN_COUNT:--1}"
@@ -156,7 +166,7 @@ if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "
   REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-0}"
   AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
   AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
-  echo "[quick] WITH_AGENT_READYZ=${WITH_AGENT_READYZ:-0} WITH_PIPELINE_MODE_REPORT=${WITH_PIPELINE_MODE_REPORT:-0} WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0} WITH_AGENT_DECISION_AGENT_KEY_REPORT=${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0} WITH_AGENT_ROUTE_REPLAY_REPORT=${WITH_AGENT_ROUTE_REPLAY_REPORT:-0} MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+  echo "[quick] WITH_AGENT_READYZ=${WITH_AGENT_READYZ:-0} WITH_PIPELINE_MODE_REPORT=${WITH_PIPELINE_MODE_REPORT:-0} WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0} WITH_AGENT_DECISION_AGENT_KEY_REPORT=${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0} WITH_AGENT_ROUTE_REPLAY_REPORT=${WITH_AGENT_ROUTE_REPLAY_REPORT:-0} WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0} MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
   echo "[quick] MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
   echo "[quick] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_COUNT MAX_PIPELINE_MODE_MISSING_COUNT=$MAX_PIPELINE_MODE_MISSING_COUNT MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT=$MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT MAX_ROUTE_REPLAY_MISMATCH_COUNT=$MAX_ROUTE_REPLAY_MISMATCH_COUNT"
   QUICK_ARGS=(
@@ -194,5 +204,10 @@ if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "
   fi
   if [[ "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" ]]; then
     bash tools/local/print_route_replay_summary.sh --summary "$SUMMARY_PATH" --prefix quick
+  fi
+  if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
+    bash tools/local/print_signal_decision_replay_summary.sh \
+      --report "${AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH:-verification/reports/agent_signal_decision_replay.latest.json}" \
+      --prefix quick
   fi
 fi
