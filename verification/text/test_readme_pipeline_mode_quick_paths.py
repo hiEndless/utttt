@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from verification.text.readme_contracts import (
     PIPELINE_MODE_QUICK_SNIPPETS,
     README_CONTRACTS_SNIPPETS_DOCS,
+    README_SNIPPET_OVERRIDES,
     README_CONTRACTS_VERSION,
 )
 
@@ -20,8 +21,7 @@ from verification.text.readme_contracts import (
 def test_readme_contains_pipeline_mode_quick_paths(readme_relpath: str) -> None:
     readme_path = PROJECT_ROOT / readme_relpath
     text = readme_path.read_text(encoding="utf-8")
-    required_snippets = PIPELINE_MODE_QUICK_SNIPPETS
-    if readme_relpath.endswith("services/agent_server_new/README.md"):
-        required_snippets = PIPELINE_MODE_QUICK_SNIPPETS + ("pipeline_mode_summary",)
+    override = README_SNIPPET_OVERRIDES.get(Path(readme_relpath))
+    required_snippets = PIPELINE_MODE_QUICK_SNIPPETS + (override or ())
     for snippet in required_snippets:
         assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {readme_relpath}: {snippet}"

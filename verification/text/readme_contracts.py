@@ -16,6 +16,9 @@ README_CONTRACTS_SNIPPETS_DOCS: tuple[Path, ...] = (
     Path("services/agent_server_new/README.md"),
     Path("verification/reports/README.md"),
 )
+README_SNIPPET_OVERRIDES: dict[Path, tuple[str, ...]] = {
+    Path("services/agent_server_new/README.md"): ("pipeline_mode_summary",),
+}
 
 PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = (
     "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
