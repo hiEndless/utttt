@@ -345,6 +345,7 @@ signal_event + active_events + MSL
 - 友好展示（缩进 JSON）：`bash tools/local/tail_agent_events.sh --pretty`
 - 聚合 decision_trace schema 告警：`bash tools/local/run_agent_decision_trace_schema_report.sh`
 - 聚合 legacy/minimal 灰度占比：`bash tools/local/run_agent_pipeline_mode_report.sh`
+- 聚合事件类型归一化命中率与 unknown top：`bash tools/local/run_agent_event_type_match_report.sh`
 - 若 `verification/reports` 下存在该报表，`verification/reports/aggregate_reports.py` 会附带输出 `pipeline_mode_*` 汇总字段。
 
 ## Memory Observability

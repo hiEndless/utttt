@@ -43,6 +43,13 @@ bash tools/local/run_agent_pipeline_mode_report.sh \
 bash tools/local/run_agent_pipeline_mode_report.sh --help
 ```
 
+Event type match report (optional):
+```bash
+bash tools/local/run_agent_event_type_match_report.sh \
+  --output verification/reports/agent_event_type_match.latest.json
+bash tools/local/run_agent_event_type_match_report.sh --help
+```
+
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
