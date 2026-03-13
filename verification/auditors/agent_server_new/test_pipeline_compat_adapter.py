@@ -14,6 +14,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
     build_pipeline_compat_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
+    build_symbol_memory_record_payload,
     build_symbol_memory_legacy_sections,
     build_workflow_bridge_payload,
 )
@@ -296,3 +297,32 @@ def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_legacy() -> 
         "execution_planner",
         "decision_trace",
     }
+
+
+def test_pipeline_compat_adapter_builds_symbol_memory_record_payload() -> None:
+    signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+    state = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=signal,
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    )
+    payload = build_symbol_memory_record_payload(
+        ts=123,
+        event_id="evt-memory-001",
+        signal_event={"payload": {"event_type": "indicator_signal"}},
+        msl_summary="ok",
+        signal=signal,
+        state=state,
+        cross_horizon={"suggested_policy": "no_action"},
+        contract_warnings=["state_features_semantic_contract_missing"],
+        execution_result={"execution_action": "add"},
+    )
+    assert payload["event_id"] == "evt-memory-001"
+    assert payload["plan"]["action"] == "hold"
+    assert payload["intent"]["intent"] == "hold"
+    assert payload["signal"]["confidence"] == {"level": "high", "score": 0.82}

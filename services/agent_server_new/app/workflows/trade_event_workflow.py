@@ -20,7 +20,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_pipeline_compat_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
-    build_symbol_memory_legacy_sections,
+    build_symbol_memory_record_payload,
 )
 from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
 from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
@@ -475,26 +475,20 @@ class TradeEventWorkflow:
 
         if self._symbol_memory_recorder is not None:
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
-            memory_legacy = build_symbol_memory_legacy_sections(state=compat, cross_horizon=ch)
             await self._symbol_memory_recorder.record_symbol_memory(
                 event.exchange,
                 event.symbol,
-                {
-                    "ts": int(time.time() * 1000),
-                    "event_id": event.event_id,
-                    "signal_event": dict(ctx.signal_event or {}),
-                    "msl_summary": str(ctx.msl.summary or ""),
-                    "cross_horizon_policy": dict(memory_legacy.get("cross_horizon_policy") or {}),
-                    "signal": {
-                        "direction": signal.direction,
-                        "verdict": signal.verdict,
-                        "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
-                    },
-                    "intent": dict(memory_legacy.get("intent") or {}),
-                    "plan": dict(memory_legacy.get("plan") or {}),
-                    "contract_warnings": contract_warnings,
-                    "execution_result": dict(execution_result or {}),
-                },
+                build_symbol_memory_record_payload(
+                    ts=int(time.time() * 1000),
+                    event_id=event.event_id,
+                    signal_event=dict(ctx.signal_event or {}),
+                    msl_summary=str(ctx.msl.summary or ""),
+                    signal=signal,
+                    state=compat,
+                    cross_horizon=ch,
+                    contract_warnings=contract_warnings,
+                    execution_result=dict(execution_result or {}),
+                ),
             )
 
         return WorkflowResult(agent_plan=plan, signal_decision=signal_decision, execution_result=execution_result)

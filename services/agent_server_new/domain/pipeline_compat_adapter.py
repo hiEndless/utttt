@@ -378,6 +378,37 @@ def build_symbol_memory_legacy_sections(
     }
 
 
+def build_symbol_memory_record_payload(
+    *,
+    ts: int,
+    event_id: str,
+    signal_event: Dict[str, Any],
+    msl_summary: str,
+    signal: Any,
+    state: PipelineCompatState,
+    cross_horizon: Dict[str, str],
+    contract_warnings: list[str],
+    execution_result: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
+    legacy_sections = build_symbol_memory_legacy_sections(state=state, cross_horizon=cross_horizon)
+    return {
+        "ts": int(ts),
+        "event_id": str(event_id or ""),
+        "signal_event": dict(signal_event or {}),
+        "msl_summary": str(msl_summary or ""),
+        "cross_horizon_policy": dict(legacy_sections.get("cross_horizon_policy") or {}),
+        "signal": {
+            "direction": signal.direction,
+            "verdict": signal.verdict,
+            "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
+        },
+        "intent": dict(legacy_sections.get("intent") or {}),
+        "plan": dict(legacy_sections.get("plan") or {}),
+        "contract_warnings": [str(x) for x in list(contract_warnings or []) if str(x).strip()],
+        "execution_result": dict(execution_result or {}),
+    }
+
+
 def build_execution_decision_payload(
     *,
     default_decision_id: str,
