@@ -92,3 +92,31 @@ def test_release_gate_summary_json_contains_recommendation_artifact_block(tmp_pa
     assert artifact.get("status") == "recommend"
     assert artifact.get("recommend_action") == "tighten_social_news_fallback_ratio_to_0_80"
     assert "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" in list(payload.get("env_overrides") or [])
+
+
+def test_release_gate_summary_text_contains_recommendation_release_hint(tmp_path: Path) -> None:
+    report_path = tmp_path / "agent_signal_decision_replay_recommendation.latest.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "agent-signal-decision-replay-trend-recommendation-v1",
+                "status": "recommend",
+                "recommend_action": "tighten_social_news_fallback_ratio_to_0_80",
+            }
+        ),
+        encoding="utf-8",
+    )
+    env = dict(os.environ)
+    env["AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH"] = str(report_path)
+    proc = subprocess.run(
+        ["bash", "tools/local/check_release_ready.sh", "--print-summary-only"],
+        cwd=str(PROJECT_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    out = str(proc.stdout or "")
+    assert "recommendation_release_hint:" in out
+    assert "status=recommend 建议评审阈值收紧" in out

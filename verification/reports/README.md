@@ -92,6 +92,7 @@ Release gate summary (optional, for release audit):
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
 AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH=verification/reports/agent_signal_decision_replay_recommendation.latest.json \
   bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
+bash tools/local/check_release_ready.sh --print-summary-only
 ```
 
 Aggregate reports:

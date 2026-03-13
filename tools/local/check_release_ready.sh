@@ -156,6 +156,36 @@ else:
 print(json.dumps(payload, ensure_ascii=False))
 PY
 )"
+RECOMMENDATION_RELEASE_HINT="$(RECOMMENDATION_ARTIFACT_JSON="$RECOMMENDATION_ARTIFACT_JSON" python3 - <<'PY'
+import json
+import os
+
+try:
+    payload = json.loads(str(os.environ.get("RECOMMENDATION_ARTIFACT_JSON") or "{}"))
+except Exception:
+    print("status_unknown 建议人工确认 recommendation artifact")
+    raise SystemExit(0)
+
+status = str(payload.get("status") or "").strip()
+action = str(payload.get("recommend_action") or "none").strip() or "none"
+if status == "recommend":
+    print(f"status=recommend 建议评审阈值收紧 action={action}")
+elif status == "hold":
+    print("status=hold 当前无需调整阈值")
+elif status == "skip":
+    print("status=skip 当前样本不足，保持观测")
+elif status == "missing":
+    print("status=missing 未发现 recommendation artifact")
+elif status == "invalid_json":
+    print("status=invalid_json recommendation artifact 非法")
+elif status == "unsupported_schema_version":
+    print("status=unsupported_schema_version recommendation artifact 版本不支持")
+elif status == "unknown_status":
+    print("status=unknown_status recommendation artifact 状态未知")
+else:
+    print("status_unknown 建议人工确认 recommendation artifact")
+PY
+)"
 
 if [[ "$SUMMARY_FORMAT" == "json" ]]; then
   cat <<JSON
@@ -196,6 +226,7 @@ else
     echo "[release-gate] env_overrides: (none)"
   fi
   echo "[release-gate] recommendation_artifact: ${RECOMMENDATION_ARTIFACT_JSON}"
+  echo "[release-gate] recommendation_release_hint: ${RECOMMENDATION_RELEASE_HINT}"
   echo "[release-gate] checklist template: docs/operations/RELEASE_GATE_CHECKLIST_TEMPLATE.md"
 fi
 
