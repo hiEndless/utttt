@@ -8,9 +8,9 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E402
     DECISION_PLAN_NOTES,
+    build_decision_plan_state,
     build_decision_trace_payload,
     build_execution_decision_payload,
-    build_pipeline_compat_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
     build_symbol_memory_record_payload,
@@ -24,7 +24,7 @@ def _sample_signal() -> SignalVerdict:
 
 
 def test_decision_plan_adapter_minimal_semantic_state() -> None:
-    out = build_pipeline_compat_state(
+    out = build_decision_plan_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -38,7 +38,7 @@ def test_decision_plan_adapter_minimal_semantic_state() -> None:
 
 
 def test_decision_plan_adapter_symbol_memory_sections_contract() -> None:
-    out = build_pipeline_compat_state(
+    out = build_decision_plan_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -66,7 +66,7 @@ def test_decision_plan_adapter_builds_execution_decision_payload() -> None:
         decision_mode="rule",
         llm_parse_status="rule_only",
     )
-    plan = build_pipeline_compat_state(
+    plan = build_decision_plan_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -87,7 +87,7 @@ def test_decision_plan_adapter_builds_execution_decision_payload() -> None:
 
 
 def test_decision_plan_adapter_builds_workflow_bridge_payload() -> None:
-    state = build_pipeline_compat_state(
+    state = build_decision_plan_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -117,7 +117,7 @@ def test_decision_plan_adapter_builds_workflow_bridge_payload() -> None:
 
 def test_decision_plan_adapter_builds_decision_trace_payload() -> None:
     signal = _sample_signal()
-    state = build_pipeline_compat_state(
+    state = build_decision_plan_state(
         signal=signal,
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -161,7 +161,7 @@ def test_decision_plan_adapter_builds_decision_trace_payload() -> None:
 
 
 def test_decision_plan_adapter_builds_recorder_stage_payloads_for_minimal() -> None:
-    state = build_pipeline_compat_state(
+    state = build_decision_plan_state(
         signal=_sample_signal(),
         msl=None,  # type: ignore[arg-type]
         position_context={},
@@ -191,7 +191,7 @@ def test_decision_plan_adapter_builds_recorder_stage_payloads_for_minimal() -> N
 
 def test_decision_plan_adapter_builds_symbol_memory_record_payload() -> None:
     signal = _sample_signal()
-    state = build_pipeline_compat_state(
+    state = build_decision_plan_state(
         signal=signal,
         msl=None,  # type: ignore[arg-type]
         position_context={},

@@ -12,8 +12,8 @@ from services.market_state_engine.src.contracts import MarketStateMSL
 from services.agent_server_new.domain.contracts import ExecutionPlan, SignalDecision
 from services.agent_server_new.domain.decision_plan_adapter import (
     build_decision_trace_payload,
+    build_decision_plan_state,
     build_execution_decision_payload,
-    build_pipeline_compat_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
     build_symbol_memory_record_payload,
@@ -339,7 +339,7 @@ class TradeEventWorkflow:
 
         ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
         position_ctx = dict(ctx.position_context or {})
-        compat = build_pipeline_compat_state(
+        compat = build_decision_plan_state(
             signal=signal,
             msl=ctx.msl,
             position_context=position_ctx,

@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.domain.contracts import Confidence, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E402
-    build_pipeline_compat_state,
+    build_decision_plan_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,
 )
@@ -15,7 +15,7 @@ from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E4
 
 def _sample_state_and_decision():
     signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
-    state = build_pipeline_compat_state(
+    state = build_decision_plan_state(
         signal=signal,
         msl=None,  # type: ignore[arg-type]
         position_context={},

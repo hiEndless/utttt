@@ -16,7 +16,7 @@ class PipelineCompatState:
     plan: ExecutionPlan
 
 
-def build_pipeline_compat_state(
+def build_decision_plan_state(
     *,
     signal: Any,
     msl: Any,  # noqa: ARG001
