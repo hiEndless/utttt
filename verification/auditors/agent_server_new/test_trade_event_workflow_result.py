@@ -1129,3 +1129,81 @@ def test_trade_event_workflow_minimal_source_object_category_fallback_route_clos
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_llm_reject_or_uncertain_maps_action_hint_hold():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.9)),
+        )
+
+        class _RejectOrUncertainObserver:
+            def __init__(self) -> None:
+                self._i = 0
+
+            async def observe(self, payload):  # noqa: ANN001
+                _ = payload
+                self._i += 1
+                if self._i == 1:
+                    content = "{\"signal_verdict\":\"reject\",\"signal_direction\":\"long\",\"confidence_score\":0.72,\"reasons\":[\"evidence_conflict\"]}"
+                else:
+                    content = "{\"signal_verdict\":\"uncertain\",\"signal_direction\":\"none\",\"confidence_score\":0.61,\"reasons\":[\"insufficient_consensus\"]}"
+                return {
+                    "status": "ok",
+                    "provider": "openai_compatible",
+                    "model": "gpt-4o-mini",
+                    "raw_content": content,
+                }
+
+        execution_decider = _CaptureExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=execution_decider,
+            recorder=None,
+            llm_observer=_RejectOrUncertainObserver(),
+            legacy_pipeline_enabled=False,
+        )
+
+        out_reject = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-minimal-reject-hold-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        out_uncertain = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-minimal-uncertain-hold-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+
+        assert out_reject.signal_decision.signal_verdict == "reject"
+        assert out_uncertain.signal_decision.signal_verdict == "uncertain"
+        assert out_reject.execution_result is not None
+        assert out_uncertain.execution_result is not None
+
+        assert len(execution_decider.payloads) == 2
+        risk_hints_reject = dict((execution_decider.payloads[0] or {}).get("risk_hints") or {})
+        risk_hints_uncertain = dict((execution_decider.payloads[1] or {}).get("risk_hints") or {})
+        assert risk_hints_reject.get("agent_action_hint") == "hold"
+        assert risk_hints_uncertain.get("agent_action_hint") == "hold"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
