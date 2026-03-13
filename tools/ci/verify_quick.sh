@@ -47,6 +47,16 @@ Optional Observability:
                                 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO
                                 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT
+                                signal decision source quality 每来源最小样本数（默认 10）
+  MIN_MARKET_INDICATOR_LLM_OK_RATIO
+                                market_indicator 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_ONCHAIN_WALLET_LLM_OK_RATIO
+                                onchain_wallet 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_LARGE_LIQUIDATION_LLM_OK_RATIO
+                                large_liquidation 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_SOCIAL_NEWS_LLM_OK_RATIO
+                                social_news 的 llm_ok 比例下限（默认 -1 忽略）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -174,6 +184,11 @@ if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
   MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO="${MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO:--1}"
   MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO="${MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO:--1}"
   MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO="${MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO:--1}"
+  MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT="${MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT:-10}"
+  MIN_MARKET_INDICATOR_LLM_OK_RATIO="${MIN_MARKET_INDICATOR_LLM_OK_RATIO:--1}"
+  MIN_ONCHAIN_WALLET_LLM_OK_RATIO="${MIN_ONCHAIN_WALLET_LLM_OK_RATIO:--1}"
+  MIN_LARGE_LIQUIDATION_LLM_OK_RATIO="${MIN_LARGE_LIQUIDATION_LLM_OK_RATIO:--1}"
+  MIN_SOCIAL_NEWS_LLM_OK_RATIO="${MIN_SOCIAL_NEWS_LLM_OK_RATIO:--1}"
   bash tools/local/run_agent_signal_decision_replay_report.sh \
     --output "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" >/dev/null
   echo "[quick] signal_decision_replay_report_path=$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH"
@@ -187,6 +202,13 @@ if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
     "$MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" \
     "$MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" \
     "$MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO"
+  bash tools/local/check_agent_signal_decision_source_quality_guard.sh \
+    "$AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" \
+    "$MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT" \
+    "$MIN_MARKET_INDICATOR_LLM_OK_RATIO" \
+    "$MIN_ONCHAIN_WALLET_LLM_OK_RATIO" \
+    "$MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" \
+    "$MIN_SOCIAL_NEWS_LLM_OK_RATIO"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" || "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then

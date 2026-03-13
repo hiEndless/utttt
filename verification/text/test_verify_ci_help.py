@@ -46,6 +46,11 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
     assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
     assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT" in out
+    assert "MIN_MARKET_INDICATOR_LLM_OK_RATIO" in out
+    assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
+    assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
+    assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_HINT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND" not in out
@@ -81,6 +86,11 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
     assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
     assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT" in out
+    assert "MIN_MARKET_INDICATOR_LLM_OK_RATIO" in out
+    assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
+    assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
+    assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_GLOB" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS" in out
@@ -123,6 +133,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_signal_decision_quality_summary.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in regression_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in nightly_text
+    assert "tools/local/check_agent_signal_decision_source_quality_guard.sh" in regression_text
+    assert "tools/local/check_agent_signal_decision_source_quality_guard.sh" in nightly_text
     assert "tools/local/print_agent_signal_decision_replay_recommendation_hint.sh" in regression_text
     assert "tools/local/read_agent_signal_decision_recommendation_status.sh" in regression_text
     assert "tools/local/run_agent_signal_decision_llm_observe_report.sh" in regression_text
@@ -150,6 +162,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_signal_decision_quality_summary.sh" in quick_text
     assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in quick_text
+    assert "tools/local/check_agent_signal_decision_source_quality_guard.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
     assert "--status missing" in regression_text
@@ -177,6 +190,11 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
     assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
     assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT" in out
+    assert "MIN_MARKET_INDICATOR_LLM_OK_RATIO" in out
+    assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
+    assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
+    assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
