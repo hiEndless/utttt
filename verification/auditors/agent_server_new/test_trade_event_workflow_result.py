@@ -1131,6 +1131,76 @@ def test_trade_event_workflow_minimal_source_object_category_fallback_route_clos
         monkeypatch.undo()
 
 
+def test_trade_event_workflow_minimal_signal_source_type_route_closed_loop():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.8)),
+        )
+        observer = _RouteCaptureLLMObserver()
+        execution_decider = _CaptureExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=execution_decider,
+            recorder=None,
+            llm_observer=observer,
+            legacy_pipeline_enabled=False,
+            signal_decision_prompt_profiles={
+                "generic": {"focus": "generic_signal_validation", "checklist": [], "avoid": []},
+                "technical": {"focus": "technical_signal_validation", "checklist": [], "avoid": []},
+                "social_news": {"focus": "social_news_event_validation", "checklist": [], "avoid": []},
+                "onchain": {"focus": "onchain_flow_validation", "checklist": [], "avoid": []},
+                "liquidation": {"focus": "liquidation_shock_validation", "checklist": [], "avoid": []},
+            },
+        )
+
+        cases = [
+            ("evt-source-type-tech-001", "market_indicator", "technical"),
+            ("evt-source-type-onchain-001", "onchain_wallet", "onchain"),
+            ("evt-source-type-liq-001", "large_liquidation", "liquidation"),
+            ("evt-source-type-social-001", "social_news", "social_news"),
+        ]
+        for event_id, source_type, expected_agent_key in cases:
+            out = await wf.run_with_result(
+                TradeEventInput(
+                    event_id=event_id,
+                    exchange="binance",
+                    symbol="ETHUSDT",
+                    signal_direction="long",
+                    payload={
+                        "event_type": "xfeed_unknown_source_type",
+                        "signal_source_type": source_type,
+                    },
+                )
+            )
+            assert out.signal_decision.decision_agent_key == expected_agent_key
+            assert out.execution_result is not None
+            assert out.execution_result.get("execution_action") == "add"
+
+        by_event = {str((x or {}).get("event_id") or ""): dict(x or {}) for x in observer.calls}
+        for event_id, _, expected_agent_key in cases:
+            llm_payload = dict(by_event.get(event_id) or {})
+            assert llm_payload.get("decision_agent_key") == expected_agent_key
+
+        assert len(execution_decider.payloads) == len(cases)
+        for i, (_, _, expected_agent_key) in enumerate(cases):
+            risk_hints = dict((execution_decider.payloads[i] or {}).get("risk_hints") or {})
+            assert risk_hints.get("decision_agent_key") == expected_agent_key
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
+
+
 def test_trade_event_workflow_minimal_llm_reject_or_uncertain_maps_action_hint_hold():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
