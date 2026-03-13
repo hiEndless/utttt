@@ -162,6 +162,28 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 {"event_id": "evt-route-4", "route_match": True},
             ],
         },
+        {
+            "schema_version": "agent-signal-decision-llm-observe-report-v1",
+            "generated_at_ms": 4200,
+            "summary": {
+                "decision_trace_record_count": 12,
+                "decision_trace_event_count": 10,
+                "missing_decision_mode_count": 1,
+                "missing_llm_parse_status_count": 2,
+                "decision_mode": {
+                    "rule": 5,
+                    "rule_fallback": 4,
+                    "llm": 2,
+                    "missing": 1,
+                },
+                "llm_parse_status": {
+                    "rule_only": 5,
+                    "llm_invalid_payload": 4,
+                    "llm_ok": 2,
+                    "missing": 1,
+                },
+            },
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -240,3 +262,16 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["route_replay_count"] == 4
     assert out["route_replay_mismatch_count"] == 1
     assert float(out["route_replay_match_ratio"]) == 0.75
+    assert out["signal_decision_llm_observe_report_count"] == 1
+    assert out["signal_decision_llm_observe_record_count"] == 12
+    assert out["signal_decision_llm_observe_event_count"] == 10
+    assert out["signal_decision_llm_observe_missing_decision_mode_count"] == 1
+    assert out["signal_decision_llm_observe_missing_llm_parse_status_count"] == 2
+    assert out["signal_decision_llm_observe_decision_mode_rule_count"] == 5
+    assert out["signal_decision_llm_observe_decision_mode_rule_fallback_count"] == 4
+    assert out["signal_decision_llm_observe_decision_mode_llm_count"] == 2
+    assert out["signal_decision_llm_observe_decision_mode_missing_count"] == 1
+    assert out["signal_decision_llm_observe_llm_parse_status_rule_only_count"] == 5
+    assert out["signal_decision_llm_observe_llm_parse_status_llm_invalid_payload_count"] == 4
+    assert out["signal_decision_llm_observe_llm_parse_status_llm_ok_count"] == 2
+    assert out["signal_decision_llm_observe_llm_parse_status_missing_count"] == 1

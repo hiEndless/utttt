@@ -39,6 +39,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "agent-decision-agent-key-report-v1",
                 "agent-action-hint-semantics-report-v1",
                 "agent-signal-source-route-replay-v1",
+                "agent-signal-decision-llm-observe-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -107,6 +108,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     ]
     route_replay_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-signal-source-route-replay-v1"
+    ]
+    signal_decision_llm_observe_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-signal-decision-llm-observe-report-v1"
     ]
 
     total = len(verification_reports)
@@ -503,6 +507,60 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         route_replay_match_count = max(0, route_replay_count - route_replay_mismatch_count)
         route_replay_match_ratio = round(float(route_replay_match_count) / float(max(1, route_replay_count)), 6)
 
+    signal_decision_llm_observe_report_count = len(signal_decision_llm_observe_reports)
+    latest_signal_decision_llm_observe_report_path = ""
+    signal_decision_llm_observe_record_count = 0
+    signal_decision_llm_observe_event_count = 0
+    signal_decision_llm_observe_missing_decision_mode_count = 0
+    signal_decision_llm_observe_missing_llm_parse_status_count = 0
+    signal_decision_llm_observe_decision_mode_rule_count = 0
+    signal_decision_llm_observe_decision_mode_rule_fallback_count = 0
+    signal_decision_llm_observe_decision_mode_llm_count = 0
+    signal_decision_llm_observe_decision_mode_missing_count = 0
+    signal_decision_llm_observe_llm_parse_status_llm_ok_count = 0
+    signal_decision_llm_observe_llm_parse_status_llm_invalid_payload_count = 0
+    signal_decision_llm_observe_llm_parse_status_rule_only_count = 0
+    signal_decision_llm_observe_llm_parse_status_llm_status_not_ok_count = 0
+    signal_decision_llm_observe_llm_parse_status_llm_not_provided_count = 0
+    signal_decision_llm_observe_llm_parse_status_missing_count = 0
+    if signal_decision_llm_observe_reports:
+        latest_signal_decision_llm_observe = max(
+            signal_decision_llm_observe_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_signal_decision_llm_observe_report_path = str(latest_signal_decision_llm_observe.get("_path") or "")
+        summary = dict(latest_signal_decision_llm_observe.get("summary") or {})
+        decision_mode = dict(summary.get("decision_mode") or {})
+        parse_status = dict(summary.get("llm_parse_status") or {})
+        signal_decision_llm_observe_record_count = _to_int(summary.get("decision_trace_record_count"), 0)
+        signal_decision_llm_observe_event_count = _to_int(summary.get("decision_trace_event_count"), 0)
+        signal_decision_llm_observe_missing_decision_mode_count = _to_int(summary.get("missing_decision_mode_count"), 0)
+        signal_decision_llm_observe_missing_llm_parse_status_count = _to_int(
+            summary.get("missing_llm_parse_status_count"), 0
+        )
+        signal_decision_llm_observe_decision_mode_rule_count = _to_int(decision_mode.get("rule"), 0)
+        signal_decision_llm_observe_decision_mode_rule_fallback_count = _to_int(
+            decision_mode.get("rule_fallback"), 0
+        )
+        signal_decision_llm_observe_decision_mode_llm_count = _to_int(decision_mode.get("llm"), 0)
+        signal_decision_llm_observe_decision_mode_missing_count = _to_int(decision_mode.get("missing"), 0)
+        signal_decision_llm_observe_llm_parse_status_llm_ok_count = _to_int(parse_status.get("llm_ok"), 0)
+        signal_decision_llm_observe_llm_parse_status_llm_invalid_payload_count = _to_int(
+            parse_status.get("llm_invalid_payload"), 0
+        )
+        signal_decision_llm_observe_llm_parse_status_rule_only_count = _to_int(parse_status.get("rule_only"), 0)
+        signal_decision_llm_observe_llm_parse_status_llm_status_not_ok_count = _to_int(
+            parse_status.get("llm_status_not_ok"), 0
+        )
+        signal_decision_llm_observe_llm_parse_status_llm_not_provided_count = _to_int(
+            parse_status.get("llm_not_provided"), 0
+        )
+        signal_decision_llm_observe_llm_parse_status_missing_count = _to_int(parse_status.get("missing"), 0)
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -590,6 +648,22 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "route_replay_count": route_replay_count,
         "route_replay_mismatch_count": route_replay_mismatch_count,
         "route_replay_match_ratio": route_replay_match_ratio,
+        "signal_decision_llm_observe_report_count": signal_decision_llm_observe_report_count,
+        "latest_signal_decision_llm_observe_report_path": latest_signal_decision_llm_observe_report_path,
+        "signal_decision_llm_observe_record_count": signal_decision_llm_observe_record_count,
+        "signal_decision_llm_observe_event_count": signal_decision_llm_observe_event_count,
+        "signal_decision_llm_observe_missing_decision_mode_count": signal_decision_llm_observe_missing_decision_mode_count,
+        "signal_decision_llm_observe_missing_llm_parse_status_count": signal_decision_llm_observe_missing_llm_parse_status_count,
+        "signal_decision_llm_observe_decision_mode_rule_count": signal_decision_llm_observe_decision_mode_rule_count,
+        "signal_decision_llm_observe_decision_mode_rule_fallback_count": signal_decision_llm_observe_decision_mode_rule_fallback_count,
+        "signal_decision_llm_observe_decision_mode_llm_count": signal_decision_llm_observe_decision_mode_llm_count,
+        "signal_decision_llm_observe_decision_mode_missing_count": signal_decision_llm_observe_decision_mode_missing_count,
+        "signal_decision_llm_observe_llm_parse_status_llm_ok_count": signal_decision_llm_observe_llm_parse_status_llm_ok_count,
+        "signal_decision_llm_observe_llm_parse_status_llm_invalid_payload_count": signal_decision_llm_observe_llm_parse_status_llm_invalid_payload_count,
+        "signal_decision_llm_observe_llm_parse_status_rule_only_count": signal_decision_llm_observe_llm_parse_status_rule_only_count,
+        "signal_decision_llm_observe_llm_parse_status_llm_status_not_ok_count": signal_decision_llm_observe_llm_parse_status_llm_status_not_ok_count,
+        "signal_decision_llm_observe_llm_parse_status_llm_not_provided_count": signal_decision_llm_observe_llm_parse_status_llm_not_provided_count,
+        "signal_decision_llm_observe_llm_parse_status_missing_count": signal_decision_llm_observe_llm_parse_status_missing_count,
     }
 
 

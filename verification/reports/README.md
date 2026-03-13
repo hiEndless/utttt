@@ -118,6 +118,7 @@ bash tools/local/verify_report_aggregate.sh --with-decision-trace-schema-guard -
 bash tools/local/verify_report_aggregate.sh --with-pipeline-mode-report --compact
 bash tools/local/verify_report_aggregate.sh --with-event-type-match-report --compact
 bash tools/local/verify_report_aggregate.sh --with-agent-action-hint-semantics-report --compact
+bash tools/local/verify_report_aggregate.sh --with-signal-decision-llm-observe-report --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
@@ -139,6 +140,7 @@ bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
 bash tools/local/aggregate_and_check.sh --with-pipeline-mode-report
 bash tools/local/aggregate_and_check.sh --with-event-type-match-report
 bash tools/local/aggregate_and_check.sh --with-agent-action-hint-semantics-report
+bash tools/local/aggregate_and_check.sh --with-signal-decision-llm-observe-report
 bash tools/local/aggregate_and_check.sh --help
 ```
 
@@ -172,6 +174,7 @@ Notes:
   - `decision_agent_key_*`（technical/onchain/liquidation/social_news/generic/unknown 分布与核心四类覆盖率）
   - `action_hint_semantics_*`（minimal 语义映射命中率：`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）
   - `route_replay_*`（四类来源业务回放快照：是否通过、mismatch 数、match_ratio）
+  - `signal_decision_llm_observe_*`（LLM 旁路观测快照：decision_mode 与 llm_parse_status 分布）
 
 Check thresholds:
 ```bash

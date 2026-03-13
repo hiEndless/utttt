@@ -10,6 +10,7 @@ PIPELINE_MODE_REPORT_PATH='verification/reports/agent_pipeline_mode.latest.json'
 EXECUTION_PROMPT_REPORT_PATH='verification/reports/execution_prompt_version.latest.json'
 EVENT_TYPE_MATCH_REPORT_PATH='verification/reports/agent_event_type_match.latest.json'
 ACTION_HINT_SEMANTICS_REPORT_PATH='verification/reports/agent_action_hint_semantics.latest.json'
+SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH='verification/reports/agent_signal_decision_llm_observe.latest.json'
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 COMPACT=0
@@ -20,6 +21,7 @@ WITH_PIPELINE_MODE_REPORT=0
 WITH_EXECUTION_PROMPT_REPORT=0
 WITH_EVENT_TYPE_MATCH_REPORT=0
 WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=0
+WITH_SIGNAL_DECISION_LLM_OBSERVE_REPORT=0
 EXTRA_ARGS=()
 
 while (($# > 0)); do
@@ -47,6 +49,8 @@ Options:
   --event-type-match-report-path <path> event_type 命中报告输出路径（默认 verification/reports/agent_event_type_match.latest.json）
   --with-agent-action-hint-semantics-report  聚合前先生成 action_hint 语义映射报告
   --agent-action-hint-semantics-report-path <path> action_hint 语义映射报告输出路径（默认 verification/reports/agent_action_hint_semantics.latest.json）
+  --with-signal-decision-llm-observe-report  聚合前先生成 signal decision LLM observe 报告
+  --signal-decision-llm-observe-report-path <path> signal decision LLM observe 报告输出路径（默认 verification/reports/agent_signal_decision_llm_observe.latest.json）
   --agent-readyz-base-url <url>  agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --help, -h                   显示帮助
@@ -97,6 +101,10 @@ USAGE
       WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
       shift
       ;;
+    --with-signal-decision-llm-observe-report)
+      WITH_SIGNAL_DECISION_LLM_OBSERVE_REPORT=1
+      shift
+      ;;
     --decision-trace-schema-guard-path)
       DECISION_TRACE_SCHEMA_GUARD_PATH="${2:-$DECISION_TRACE_SCHEMA_GUARD_PATH}"
       shift 2
@@ -115,6 +123,10 @@ USAGE
       ;;
     --agent-action-hint-semantics-report-path)
       ACTION_HINT_SEMANTICS_REPORT_PATH="${2:-$ACTION_HINT_SEMANTICS_REPORT_PATH}"
+      shift 2
+      ;;
+    --signal-decision-llm-observe-report-path)
+      SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH="${2:-$SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH}"
       shift 2
       ;;
     --agent-readyz-path)
@@ -164,6 +176,10 @@ fi
 if [[ "$WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT" == "1" ]]; then
   bash tools/local/run_agent_action_hint_semantics_report.sh \
     --output "$ACTION_HINT_SEMANTICS_REPORT_PATH"
+fi
+if [[ "$WITH_SIGNAL_DECISION_LLM_OBSERVE_REPORT" == "1" ]]; then
+  bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
+    --output "$SIGNAL_DECISION_LLM_OBSERVE_REPORT_PATH"
 fi
 
 ARGS=(--glob "$GLOB" --output "$OUT")

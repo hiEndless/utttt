@@ -27,6 +27,8 @@ def test_verify_report_aggregate_help_contains_decision_trace_schema_guard_flags
     assert "--event-type-match-report-path <path>" in out
     assert "--with-agent-action-hint-semantics-report" in out
     assert "--agent-action-hint-semantics-report-path <path>" in out
+    assert "--with-signal-decision-llm-observe-report" in out
+    assert "--signal-decision-llm-observe-report-path <path>" in out
 
 
 def test_aggregate_and_check_help_contains_decision_trace_schema_guard_flags() -> None:
@@ -47,6 +49,8 @@ def test_aggregate_and_check_help_contains_decision_trace_schema_guard_flags() -
     assert "--event-type-match-report-path <path>" in out
     assert "--with-agent-action-hint-semantics-report" in out
     assert "--agent-action-hint-semantics-report-path <path>" in out
+    assert "--with-signal-decision-llm-observe-report" in out
+    assert "--signal-decision-llm-observe-report-path <path>" in out
     assert "--max-event-type-match-missing-count <int>" in out
     assert "--max-event-type-match-unknown-count <int>" in out
     assert "--min-event-type-match-alias-ratio <float>" in out
