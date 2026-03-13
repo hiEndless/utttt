@@ -35,6 +35,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "agent-readyz-report-v1",
                 "agent-decision-trace-schema-guard-report-v1",
                 "agent-pipeline-mode-report-v1",
+                "agent-event-type-match-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -92,6 +93,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         x for x in reports if str(x.get("schema_version") or "") == "agent-decision-trace-schema-guard-report-v1"
     ]
     pipeline_mode_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-pipeline-mode-report-v1"]
+    event_type_match_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-event-type-match-report-v1"
+    ]
 
     total = len(verification_reports)
     passed = 0
@@ -336,6 +340,53 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         except Exception:
             pipeline_mode_minimal_ratio = 0.0
 
+    event_type_match_report_count = len(event_type_match_reports)
+    latest_event_type_match_report_path = ""
+    event_type_match_alias_count = 0
+    event_type_match_canonical_or_raw_count = 0
+    event_type_match_empty_count = 0
+    event_type_match_unknown_count = 0
+    event_type_match_missing_count = 0
+    event_type_match_alias_ratio = 0.0
+    event_type_match_canonical_or_raw_ratio = 0.0
+    event_type_match_top_unknown_event_types: List[Dict[str, Any]] = []
+    if event_type_match_reports:
+        latest_event_type_match = max(
+            event_type_match_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_event_type_match_report_path = str(latest_event_type_match.get("_path") or "")
+        summary = dict(latest_event_type_match.get("summary") or {})
+        event_type_match_alias_count = _to_int(summary.get("match_mode_alias_count"), 0)
+        event_type_match_canonical_or_raw_count = _to_int(summary.get("match_mode_canonical_or_raw_count"), 0)
+        event_type_match_empty_count = _to_int(summary.get("match_mode_empty_count"), 0)
+        event_type_match_unknown_count = _to_int(summary.get("match_mode_unknown_count"), 0)
+        event_type_match_missing_count = _to_int(summary.get("missing_match_mode_count"), 0)
+        try:
+            event_type_match_alias_ratio = round(float(summary.get("match_mode_alias_ratio") or 0.0), 6)
+        except Exception:
+            event_type_match_alias_ratio = 0.0
+        try:
+            event_type_match_canonical_or_raw_ratio = round(
+                float(summary.get("match_mode_canonical_or_raw_ratio") or 0.0), 6
+            )
+        except Exception:
+            event_type_match_canonical_or_raw_ratio = 0.0
+        rows = [
+            dict(x)
+            for x in list(latest_event_type_match.get("top_unknown_event_types") or [])
+            if isinstance(x, dict)
+        ]
+        rows_sorted = sorted(
+            rows,
+            key=lambda x: (-_to_int(x.get("count"), 0), str(x.get("event_type_raw") or "")),
+        )
+        event_type_match_top_unknown_event_types = rows_sorted[:10]
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -388,6 +439,16 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "pipeline_mode_missing_count": pipeline_mode_missing_count,
         "pipeline_mode_legacy_ratio": pipeline_mode_legacy_ratio,
         "pipeline_mode_minimal_ratio": pipeline_mode_minimal_ratio,
+        "event_type_match_report_count": event_type_match_report_count,
+        "latest_event_type_match_report_path": latest_event_type_match_report_path,
+        "event_type_match_alias_count": event_type_match_alias_count,
+        "event_type_match_canonical_or_raw_count": event_type_match_canonical_or_raw_count,
+        "event_type_match_empty_count": event_type_match_empty_count,
+        "event_type_match_unknown_count": event_type_match_unknown_count,
+        "event_type_match_missing_count": event_type_match_missing_count,
+        "event_type_match_alias_ratio": event_type_match_alias_ratio,
+        "event_type_match_canonical_or_raw_ratio": event_type_match_canonical_or_raw_ratio,
+        "event_type_match_top_unknown_event_types": event_type_match_top_unknown_event_types,
     }
 
 

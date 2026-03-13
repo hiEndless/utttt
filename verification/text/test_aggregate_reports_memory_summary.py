@@ -94,6 +94,25 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
             },
             "unknown_samples": [{"event_id": "evt-x", "pipeline_mode": "future_mode", "ts_ms": 1700000000000}],
         },
+        {
+            "schema_version": "agent-event-type-match-report-v1",
+            "generated_at_ms": 3800,
+            "summary": {
+                "decision_trace_record_count": 10,
+                "decision_trace_event_count": 6,
+                "match_mode_canonical_or_raw_count": 6,
+                "match_mode_alias_count": 3,
+                "match_mode_empty_count": 1,
+                "match_mode_unknown_count": 0,
+                "missing_match_mode_count": 0,
+                "match_mode_alias_ratio": 0.3,
+                "match_mode_canonical_or_raw_ratio": 0.6,
+            },
+            "top_unknown_event_types": [
+                {"event_type_raw": "my_custom_event", "count": 4},
+                {"event_type_raw": "foo_signal", "count": 2},
+            ],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -135,3 +154,15 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["pipeline_mode_missing_count"] == 0
     assert float(out["pipeline_mode_legacy_ratio"]) == 0.444444
     assert float(out["pipeline_mode_minimal_ratio"]) == 0.555556
+    assert out["event_type_match_report_count"] == 1
+    assert out["event_type_match_alias_count"] == 3
+    assert out["event_type_match_canonical_or_raw_count"] == 6
+    assert out["event_type_match_empty_count"] == 1
+    assert out["event_type_match_unknown_count"] == 0
+    assert out["event_type_match_missing_count"] == 0
+    assert float(out["event_type_match_alias_ratio"]) == 0.3
+    assert float(out["event_type_match_canonical_or_raw_ratio"]) == 0.6
+    top_unknown = list(out.get("event_type_match_top_unknown_event_types") or [])
+    assert top_unknown
+    assert top_unknown[0]["event_type_raw"] == "my_custom_event"
+    assert top_unknown[0]["count"] == 4

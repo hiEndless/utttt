@@ -23,6 +23,8 @@ def test_verify_quick_report_help_contains_pipeline_mode_flag() -> None:
     out = str(proc.stdout or "")
     assert "--with-pipeline-mode-report" in out
     assert "--pipeline-mode-report-path <path>" in out
+    assert "--with-event-type-match-report" in out
+    assert "--event-type-match-report-path <path>" in out
 
 
 def test_verify_quick_report_calls_print_pipeline_mode_summary_script() -> None:

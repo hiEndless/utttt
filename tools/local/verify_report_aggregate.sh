@@ -8,6 +8,7 @@ AGENT_READYZ_PATH='verification/reports/agent_readyz.latest.json'
 DECISION_TRACE_SCHEMA_GUARD_PATH='verification/reports/agent_decision_trace_schema_guard.latest.json'
 PIPELINE_MODE_REPORT_PATH='verification/reports/agent_pipeline_mode.latest.json'
 EXECUTION_PROMPT_REPORT_PATH='verification/reports/execution_prompt_version.latest.json'
+EVENT_TYPE_MATCH_REPORT_PATH='verification/reports/agent_event_type_match.latest.json'
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 COMPACT=0
@@ -16,6 +17,7 @@ WITH_AGENT_READYZ=0
 WITH_DECISION_TRACE_SCHEMA_GUARD=0
 WITH_PIPELINE_MODE_REPORT=0
 WITH_EXECUTION_PROMPT_REPORT=0
+WITH_EVENT_TYPE_MATCH_REPORT=0
 EXTRA_ARGS=()
 
 while (($# > 0)); do
@@ -39,6 +41,8 @@ Options:
   --pipeline-mode-report-path <path> pipeline_mode 报告输出路径（默认 verification/reports/agent_pipeline_mode.latest.json）
   --with-execution-prompt-report  聚合前先生成 execution prompt 版本报告
   --execution-prompt-report-path <path> execution prompt 报告输出路径（默认 verification/reports/execution_prompt_version.latest.json）
+  --with-event-type-match-report  聚合前先生成 event_type 命中报告
+  --event-type-match-report-path <path> event_type 命中报告输出路径（默认 verification/reports/agent_event_type_match.latest.json）
   --agent-readyz-base-url <url>  agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --help, -h                   显示帮助
@@ -81,6 +85,10 @@ USAGE
       WITH_EXECUTION_PROMPT_REPORT=1
       shift
       ;;
+    --with-event-type-match-report)
+      WITH_EVENT_TYPE_MATCH_REPORT=1
+      shift
+      ;;
     --decision-trace-schema-guard-path)
       DECISION_TRACE_SCHEMA_GUARD_PATH="${2:-$DECISION_TRACE_SCHEMA_GUARD_PATH}"
       shift 2
@@ -91,6 +99,10 @@ USAGE
       ;;
     --execution-prompt-report-path)
       EXECUTION_PROMPT_REPORT_PATH="${2:-$EXECUTION_PROMPT_REPORT_PATH}"
+      shift 2
+      ;;
+    --event-type-match-report-path)
+      EVENT_TYPE_MATCH_REPORT_PATH="${2:-$EVENT_TYPE_MATCH_REPORT_PATH}"
       shift 2
       ;;
     --agent-readyz-path)
@@ -132,6 +144,10 @@ fi
 if [[ "$WITH_EXECUTION_PROMPT_REPORT" == "1" ]]; then
   bash tools/local/run_execution_prompt_version_report.sh \
     --output "$EXECUTION_PROMPT_REPORT_PATH"
+fi
+if [[ "$WITH_EVENT_TYPE_MATCH_REPORT" == "1" ]]; then
+  bash tools/local/run_agent_event_type_match_report.sh \
+    --output "$EVENT_TYPE_MATCH_REPORT_PATH"
 fi
 
 ARGS=(--glob "$GLOB" --output "$OUT")

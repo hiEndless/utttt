@@ -69,6 +69,7 @@ bash tools/local/verify_report_aggregate.sh --with-memory-summary --compact
 bash tools/local/verify_report_aggregate.sh --with-agent-readyz --compact
 bash tools/local/verify_report_aggregate.sh --with-decision-trace-schema-guard --compact
 bash tools/local/verify_report_aggregate.sh --with-pipeline-mode-report --compact
+bash tools/local/verify_report_aggregate.sh --with-event-type-match-report --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
@@ -80,6 +81,7 @@ bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
 bash tools/local/aggregate_and_check.sh --with-pipeline-mode-report
+bash tools/local/aggregate_and_check.sh --with-event-type-match-report
 bash tools/local/aggregate_and_check.sh --help
 ```
 
@@ -108,6 +110,7 @@ Notes:
   - `agent_readyz_*`（agent 可用性分级快照：`green/yellow/red`、warning/error 计数）
   - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
   - `pipeline_mode_*`（legacy/minimal 灰度计数与比例快照）
+  - `event_type_match_*`（event type canonical/alias/empty 命中统计与 unknown top 快照）
 
 Check thresholds:
 ```bash
