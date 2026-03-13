@@ -14,3 +14,5 @@ def test_refactor_plan_uses_completed_status_language() -> None:
     assert "不保留兼容壳 workflow" in text
     assert "Phase C（兼容阶段）" not in text
     assert "Phase D（收口阶段）" not in text
+    assert "当前进展补充（已完成能力矩阵）" in text
+    assert "| 能力域 | 已完成能力 | 关键锚点 |" in text
