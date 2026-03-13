@@ -92,6 +92,8 @@ bash tools/local/print_signal_decision_llm_observe_agent_key_trend.sh \
   --agent-keys social_news,onchain,technical,liquidation \
   --recommendation-output verification/reports/agent_signal_decision_llm_observe_agent_key_trend_recommendation.latest.json \
   --prefix nightly
+bash tools/local/print_signal_decision_llm_observe_trend_recommendation_hint.sh \
+  verification/reports/agent_signal_decision_llm_observe_agent_key_trend_recommendation.latest.json
 ```
 
 Inspect recent action_hint cases (optional):

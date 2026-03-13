@@ -95,6 +95,7 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MAX_SIGNAL_DECISION_LLM_OBSERVE_MISSING_LLM_PARSE_STATUS_COUNT" in out
     assert "MIN_SIGNAL_DECISION_LLM_OBSERVE_DECISION_MODE_LLM_COUNT" in out
     assert "MIN_SIGNAL_DECISION_LLM_OBSERVE_LLM_PARSE_STATUS_LLM_OK_COUNT" in out
+    assert "WITH_AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_HINT" in out
     assert "WITH_AGENT_ACTION_HINT_CASES_REPORT" in out
     assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" in out
@@ -132,6 +133,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_signal_decision_llm_observe_summary.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_agent_key_coverage.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_agent_key_trend.sh" in nightly_text
+    assert "tools/local/print_signal_decision_llm_observe_trend_recommendation_hint.sh" in nightly_text
     assert "tools/local/print_signal_decision_llm_observe_aggregate_summary.sh" in nightly_text
     assert "llm_observe_trend_recommendation_status=" in nightly_text
     assert "--with-signal-decision-llm-observe-report" in nightly_text
