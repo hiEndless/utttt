@@ -70,6 +70,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     quick_text = (PROJECT_ROOT / "tools" / "ci" / "verify_quick.sh").read_text(encoding="utf-8")
     assert "tools/local/print_event_type_match_summary.sh" in regression_text
     assert "tools/local/print_event_type_match_summary.sh" in nightly_text
+    assert "tools/local/print_decision_agent_key_summary.sh" in regression_text
+    assert "tools/local/print_decision_agent_key_summary.sh" in nightly_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in regression_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in nightly_text
     assert "tools/local/run_agent_decision_agent_key_report.sh" in regression_text

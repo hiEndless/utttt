@@ -128,6 +128,7 @@ fi
 bash tools/local/aggregate_and_check.sh "${NIGHTLY_ARGS[@]}"
 bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 bash tools/local/print_event_type_match_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
+bash tools/local/print_decision_agent_key_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 bash tools/local/print_action_hint_semantics_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 if [[ "$WITH_AGENT_DECISION_AGENT_KEY_REPORT" == "1" ]]; then
   bash tools/local/run_agent_decision_agent_key_report.sh \
