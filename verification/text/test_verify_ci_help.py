@@ -58,6 +58,7 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "Usage:" in out
     assert "WITH_AGENT_READYZ=1" in out
     assert "WITH_PIPELINE_MODE_REPORT=1" in out
+    assert "WITH_AGENT_CLOSED_LOOP_SMOKE=1" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
 
@@ -66,3 +67,4 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     out = _run_help("tools/local/verify_quick.sh")
     assert "Usage:" in out
     assert "--with-agent-readyz" in out
+    assert "--with-agent-closed-loop-smoke" in out

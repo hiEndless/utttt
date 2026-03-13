@@ -16,6 +16,7 @@ Environment Switches (local debug only):
 Optional Observability:
   WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
   WITH_PIPELINE_MODE_REPORT=1    启用 pipeline_mode 灰度聚合观测（默认关闭）
+  WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -93,6 +94,9 @@ if [[ "${VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL:-0}" == "1" ]]; then
   echo "[warn] skip semantic critical warning guard by VERIFY_QUICK_SKIP_SEMANTIC_CRITICAL=1"
 else
   bash tools/local/check_semantic_critical_warning_guard.sh
+fi
+if [[ "${WITH_AGENT_CLOSED_LOOP_SMOKE:-0}" == "1" ]]; then
+  bash tools/local/check_agent_execution_closed_loop_smoke.sh
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" ]]; then

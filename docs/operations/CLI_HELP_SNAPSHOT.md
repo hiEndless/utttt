@@ -155,6 +155,7 @@ Options:
   --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
   --with-agent-readyz                    启用 agent readyz 聚合观测（默认关闭）
   --with-pipeline-mode-report            启用 pipeline_mode 灰度聚合观测（默认关闭）
+  --with-agent-closed-loop-smoke         启用 agent->execution 三态闭环自检（默认关闭）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
@@ -202,6 +203,7 @@ Environment Switches (local debug only):
 Optional Observability:
   WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
   WITH_PIPELINE_MODE_REPORT=1    启用 pipeline_mode 灰度聚合观测（默认关闭）
+  WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
