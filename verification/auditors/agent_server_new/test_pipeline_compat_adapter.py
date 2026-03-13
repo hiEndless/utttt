@@ -7,6 +7,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.domain.contracts import Confidence, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
+    build_decision_trace_legacy_sections,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
 )
@@ -47,3 +48,5 @@ def test_pipeline_compat_adapter_builds_legacy_stage_outputs_contract() -> None:
     items = build_legacy_stage_outputs(state=out, cross_horizon={"suggested_policy": "no_action"})
     names = [name for name, _ in items]
     assert names == ["intent_resolver", "rule_planner", "horizon_policy_gate", "strategy_gate", "execution_planner"]
+    trace_sections = build_decision_trace_legacy_sections(state=out)
+    assert set(trace_sections.keys()) == {"intent", "rule_plan", "strategy_gate_result", "risk_gate"}

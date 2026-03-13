@@ -14,7 +14,11 @@ from services.agent_server_new.domain.execution_planner import build_execution_p
 from services.agent_server_new.domain.horizon_policy_gate import load_horizon_policy_config_from_env
 from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
-from services.agent_server_new.domain.pipeline_compat_adapter import build_legacy_stage_outputs, build_pipeline_compat_state
+from services.agent_server_new.domain.pipeline_compat_adapter import (
+    build_decision_trace_legacy_sections,
+    build_legacy_stage_outputs,
+    build_pipeline_compat_state,
+)
 from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
 from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
 from services.agent_server_new.domain.signal_decision_agent import (
@@ -444,6 +448,7 @@ class TradeEventWorkflow:
                 )
 
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
+            trace_legacy = build_decision_trace_legacy_sections(state=compat)
             trace = DecisionTrace(
                 event_id=ctx.event_id,
                 exchange=ctx.exchange,
@@ -475,37 +480,10 @@ class TradeEventWorkflow:
                     "event_type_normalized": str(event_type_diag.get("normalized_event_type") or ""),
                     "event_type_match_mode": str(event_type_diag.get("matched") or "empty"),
                 },
-                intent={
-                    "intent": intent.intent,
-                    "direction": intent.direction,
-                    "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
-                    "reasons": list(intent.reasons),
-                },
-                rule_plan={
-                    "intent": {
-                        "intent": rule_plan.intent.intent,
-                        "direction": rule_plan.intent.direction,
-                        "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
-                    },
-                    "sizing": dict(rule_plan.sizing or {}),
-                    "reasons": list(rule_plan.reasons),
-                },
-                strategy_gate_result={
-                    "allowed": bool(hpg_allowed and sg_allowed),
-                    "horizon_reasons": list(hpg_reasons),
-                    "strategy_reasons": list(sg_reasons),
-                    "reasons": [*list(hpg_reasons), *list(sg_reasons)],
-                },
-                risk_gate={
-                    "global_regime": risk_ctx.global_regime,
-                    "cooldown_active": bool(risk_ctx.cooldown_active),
-                    "regime_sources": list(risk_ctx_reasons),
-                    "allow_open": allowance.allow_open,
-                    "allow_add": allowance.allow_add,
-                    "allow_reduce": allowance.allow_reduce,
-                    "allow_exit": allowance.allow_exit,
-                    "reasons": list(allowance.reasons),
-                },
+                intent=dict(trace_legacy.get("intent") or {}),
+                rule_plan=dict(trace_legacy.get("rule_plan") or {}),
+                strategy_gate_result=dict(trace_legacy.get("strategy_gate_result") or {}),
+                risk_gate=dict(trace_legacy.get("risk_gate") or {}),
                 execution_plan={
                     "action": plan.action,
                     "direction": plan.direction,

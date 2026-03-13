@@ -306,3 +306,48 @@ def build_legacy_stage_outputs(
             },
         ),
     ]
+
+
+def build_decision_trace_legacy_sections(
+    *,
+    state: PipelineCompatState,
+) -> Dict[str, Dict[str, Any]]:
+    return {
+        "intent": {
+            "intent": state.intent.intent,
+            "direction": state.intent.direction,
+            "confidence": {
+                "level": state.intent.confidence.level,
+                "score": state.intent.confidence.score,
+            },
+            "reasons": list(state.intent.reasons),
+        },
+        "rule_plan": {
+            "intent": {
+                "intent": state.rule_plan.intent.intent,
+                "direction": state.rule_plan.intent.direction,
+                "confidence": {
+                    "level": state.rule_plan.intent.confidence.level,
+                    "score": state.rule_plan.intent.confidence.score,
+                },
+            },
+            "sizing": dict(state.rule_plan.sizing or {}),
+            "reasons": list(state.rule_plan.reasons),
+        },
+        "strategy_gate_result": {
+            "allowed": bool(state.hpg_allowed and state.sg_allowed),
+            "horizon_reasons": list(state.hpg_reasons),
+            "strategy_reasons": list(state.sg_reasons),
+            "reasons": [*list(state.hpg_reasons), *list(state.sg_reasons)],
+        },
+        "risk_gate": {
+            "global_regime": state.risk_ctx.global_regime,
+            "cooldown_active": bool(state.risk_ctx.cooldown_active),
+            "regime_sources": list(state.risk_ctx_reasons),
+            "allow_open": state.allowance.allow_open,
+            "allow_add": state.allowance.allow_add,
+            "allow_reduce": state.allowance.allow_reduce,
+            "allow_exit": state.allowance.allow_exit,
+            "reasons": list(state.allowance.reasons),
+        },
+    }
