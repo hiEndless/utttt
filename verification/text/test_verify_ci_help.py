@@ -39,6 +39,10 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
     assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
+    assert "WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_SAMPLES_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
@@ -129,6 +133,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/run_agent_decision_agent_key_report.sh" in nightly_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in regression_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in nightly_text
+    assert "tools/local/run_agent_signal_router_baseline_replay.sh" in regression_text
     assert "tools/local/print_signal_decision_quality_summary.sh" in regression_text
     assert "tools/local/print_signal_decision_quality_summary.sh" in nightly_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in regression_text

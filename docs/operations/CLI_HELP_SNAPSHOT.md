@@ -352,6 +352,10 @@ Environment:
   WITH_AGENT_ROUTE_REPLAY_REPORT  是否生成四类来源业务路由回放 artifact（1/0，默认 1）
   AGENT_ROUTE_REPLAY_REPORT_PATH  route replay 报告路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   MAX_ROUTE_REPLAY_MISMATCH_COUNT  route_replay mismatch 计数上限（默认 -1 忽略）
+  WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY  是否执行 signal_router 基线路由回放（1/0，默认 1）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_SAMPLES_PATH  baseline 样本路径（默认 services/agent_server_new/config/signal_router_baseline_samples.json）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH  baseline replay 报告路径（默认 verification/reports/agent_signal_router_baseline_replay.latest.json）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT  baseline replay 是否严格失败（1/0，默认 1）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT  是否生成信号决策回放 artifact（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH  signal decision replay 报告路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT  signal decision replay 每来源最小样本数（默认 10）
