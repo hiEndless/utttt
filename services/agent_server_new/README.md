@@ -250,6 +250,10 @@ signal_event + active_events + MSL
   - 决策提示词配置文件路径（默认：`services/agent_server_new/config/signal_decision_prompt_profiles.json`）
   - 启动时会校验 `agent_key` 与 `focus/checklist/avoid/model_id(可选)` 字段格式，配置非法直接拒绝启动
   - 当 profile 配置 `model_id` 时，会覆盖默认 `AGENT_LLM_MODEL_ID`，实现按事件类型路由到不同信号决策模型
+- `AGENT_SIGNAL_DECISION_LLM_MODE`
+  - LLM 信号判定模式（`hybrid|observe`，默认：`hybrid`）
+  - `hybrid`：LLM 参与主判，解析失败自动 `rule_fallback`
+  - `observe`：仅保留 LLM 观测记录，主判固定走规则（适用于阶段 A 旁路观测）
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`

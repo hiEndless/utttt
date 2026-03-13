@@ -26,6 +26,10 @@ from services.agent_server_new.domain.signal_decision_prompt_profiles import (
     load_signal_decision_prompt_profiles_from_env,
     validate_signal_decision_prompt_profiles,
 )
+from services.agent_server_new.domain.signal_decision_agent import (
+    RoutedHybridSignalDecisionAgent,
+    RoutedRuleBasedSignalDecisionAgent,
+)
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventWorkflow
 from services.agent_server_new.runtime.llm_runtime import load_llm_runtime_from_env
 
@@ -107,6 +111,12 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         raise RuntimeError(f"unsupported AGENT_POSITION_CONTEXT_PROVIDER_MODE={position_context_provider_mode}")
     position_context_provider = HttpExecutionPositionContextProvider.from_env(runtime_profile=runtime_profile)
     llm_runtime = load_llm_runtime_from_env(runtime_profile=runtime_profile)
+    llm_decision_mode = str(os.getenv("AGENT_SIGNAL_DECISION_LLM_MODE", "hybrid") or "hybrid").strip().lower()
+    if llm_decision_mode not in {"hybrid", "observe"}:
+        if runtime_profile in {"prod", "production"}:
+            raise RuntimeError(f"invalid AGENT_SIGNAL_DECISION_LLM_MODE={llm_decision_mode}")
+        logger.warning("invalid AGENT_SIGNAL_DECISION_LLM_MODE=%s; fallback to hybrid", llm_decision_mode)
+        llm_decision_mode = "hybrid"
     llm_observer = None
     if llm_runtime.enabled and llm_runtime.ready:
         if llm_runtime.provider == "openai_compatible":
@@ -172,6 +182,15 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         if runtime_profile in {"prod", "production"}:
             raise RuntimeError(f"invalid signal decision prompt config in production: {exc}") from exc
         raise RuntimeError(f"invalid signal decision prompt config: {exc}") from exc
+    signal_decision_agent = (
+        RoutedHybridSignalDecisionAgent(
+            router_config=signal_router_config,
+        )
+        if llm_observer is not None and llm_decision_mode == "hybrid"
+        else RoutedRuleBasedSignalDecisionAgent(
+            router_config=signal_router_config,
+        )
+    )
     return TradeEventWorkflow(
         market_state=HttpMarketStateProvider.from_env(),
         position_context=position_context_provider,
@@ -190,6 +209,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         legacy_pipeline_enabled=legacy_pipeline_enabled,
         signal_router_config=signal_router_config,
         signal_decision_prompt_profiles=signal_prompt_profiles,
+        signal_decision_agent=signal_decision_agent,
         signal_router_config_source=(
             f"env:{signal_router_config_file}"
             if signal_router_config_file
