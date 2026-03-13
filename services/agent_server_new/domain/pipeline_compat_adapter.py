@@ -22,6 +22,7 @@ from services.agent_server_new.domain.risk_gate_reasons import (
 )
 from services.agent_server_new.domain.rule_planner import build_rule_plan
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
+from services.agent_server_new.observability.decision_trace import DecisionTrace, map_alert_codes_from_contract_warnings
 
 
 @dataclass(frozen=True)
@@ -516,3 +517,77 @@ def build_workflow_bridge_payload(
             "notes": state.plan.notes,
         },
     }
+
+
+def build_decision_trace_payload(
+    *,
+    event_id: str,
+    exchange: str,
+    symbol: str,
+    ts: int,
+    signal_event: Dict[str, Any],
+    msl: Dict[str, Any],
+    key_market_features: Dict[str, Any],
+    signal: Any,
+    signal_decision: SignalDecision,
+    pipeline_mode: str,
+    llm_contract_error_code: str,
+    llm_contract_errors: list[str],
+    router_config_source: str,
+    router_config_version: str,
+    prompt_config_source: str,
+    prompt_config_version: str,
+    event_type_diag: Dict[str, Any],
+    state: PipelineCompatState,
+    llm_observation: Dict[str, Any],
+) -> Dict[str, Any]:
+    contract_warnings = [str(x) for x in list((key_market_features or {}).get("contract_warnings") or []) if x]
+    legacy_sections = build_decision_trace_legacy_sections(state=state)
+    trace = DecisionTrace(
+        event_id=event_id,
+        exchange=exchange,
+        symbol=symbol,
+        ts=ts,
+        event=dict(signal_event or {}),
+        msl=dict(msl or {}),
+        key_features=dict(key_market_features or {}),
+        evidence=dict((key_market_features or {}).get("evidence") or {}),
+        anomalies=dict((key_market_features or {}).get("anomalies") or {}),
+        signal_verdict={
+            "direction": signal.direction,
+            "verdict": signal.verdict,
+            "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
+            "invalidation_reasons": list(signal.invalidation_reasons),
+        },
+        routing={
+            "pipeline_mode": str(pipeline_mode or "legacy"),
+            "decision_agent_key": signal_decision.decision_agent_key,
+            "decision_mode": signal_decision.decision_mode,
+            "llm_parse_status": signal_decision.llm_parse_status,
+            "llm_contract_error_code": str(llm_contract_error_code or ""),
+            "llm_contract_errors": list(llm_contract_errors or []),
+            "router_config_source": str(router_config_source or ""),
+            "router_config_version": str(router_config_version or ""),
+            "prompt_config_source": str(prompt_config_source or ""),
+            "prompt_config_version": str(prompt_config_version or ""),
+            "event_type_raw": str((event_type_diag or {}).get("raw_event_type") or ""),
+            "event_type_normalized": str((event_type_diag or {}).get("normalized_event_type") or ""),
+            "event_type_match_mode": str((event_type_diag or {}).get("matched") or "empty"),
+        },
+        intent=dict(legacy_sections.get("intent") or {}),
+        rule_plan=dict(legacy_sections.get("rule_plan") or {}),
+        strategy_gate_result=dict(legacy_sections.get("strategy_gate_result") or {}),
+        risk_gate=dict(legacy_sections.get("risk_gate") or {}),
+        execution_plan={
+            "action": state.plan.action,
+            "direction": state.plan.direction,
+            "sizing": dict(state.plan.sizing or {}),
+            "notes": state.plan.notes,
+        },
+        llm_observation=dict(llm_observation or {}),
+        memory_metrics=dict((key_market_features or {}).get("memory_observability") or {}),
+        contract_warnings=contract_warnings,
+        alert_codes=map_alert_codes_from_contract_warnings(contract_warnings),
+        tags=["decision_trace"],
+    )
+    return trace.to_dict()

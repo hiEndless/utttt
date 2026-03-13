@@ -150,6 +150,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - execution_decider 请求体（含 `risk_hints` 与 minimal/legacy 判定差异）已下沉适配器，workflow 仅负责参数透传与调用。
 - `workflow_bridge` payload 已下沉适配器统一组装，workflow 只负责阶段输出写入。
 - `SignalDecision` 归一化构建已下沉适配器，workflow 不再内联裁决对象组装规则。
+- `decision_trace` 外壳 payload 组装已下沉适配器，workflow 仅负责参数透传与 schema 校验/写出。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，workflow recorder 已退化为单节点 `workflow_bridge`（编排桥接记录），不再输出 `intent/rule/gate/planner` 业务节点记录。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，不再加载 horizon policy 配置，避免 minimal 路径隐式依赖 legacy 风控初始化。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，透传给 execution 的 `risk_hints.agent_action_hint` 由 `SignalDecision` 语义映射（`accept->add`，其余 `hold`），不再依赖 legacy `ExecutionPlan.action`。

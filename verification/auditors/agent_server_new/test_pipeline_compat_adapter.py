@@ -7,6 +7,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
+    build_decision_trace_payload,
     build_decision_trace_legacy_sections,
     build_execution_decision_payload,
     build_legacy_stage_outputs,
@@ -174,3 +175,52 @@ def test_pipeline_compat_adapter_builds_signal_decision_from_signal() -> None:
     assert out.signal_verdict == "accept"
     assert out.reliability_score == 0.66
     assert out.decision_agent_key == "onchain"
+
+
+def test_pipeline_compat_adapter_builds_decision_trace_payload() -> None:
+    signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+    state = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=signal,
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    )
+    signal_decision = build_signal_decision_from_signal(
+        decision_id="evt-trace-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal=signal,
+        llm_observation={"status": "disabled"},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    trace = build_decision_trace_payload(
+        event_id="evt-trace-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        ts=123,
+        signal_event={"payload": {"event_type": "indicator_signal"}},
+        msl={"summary": "ok"},
+        key_market_features={"features": [], "contract_warnings": []},
+        signal=signal,
+        signal_decision=signal_decision,
+        pipeline_mode="minimal",
+        llm_contract_error_code="",
+        llm_contract_errors=[],
+        router_config_source="runtime",
+        router_config_version="v1",
+        prompt_config_source="runtime",
+        prompt_config_version="v1",
+        event_type_diag={"raw_event_type": "indicator_signal", "normalized_event_type": "market_indicator_signal", "matched": "alias"},
+        state=state,
+        llm_observation={"status": "disabled"},
+    )
+    assert trace["event_id"] == "evt-trace-001"
+    assert trace["routing"]["pipeline_mode"] == "minimal"
+    assert trace["routing"]["decision_agent_key"] == "technical"
+    assert trace["execution_plan"]["action"] == "hold"

@@ -15,7 +15,7 @@ from services.agent_server_new.domain.horizon_policy_gate import load_horizon_po
 from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
 from services.agent_server_new.domain.pipeline_compat_adapter import (
-    build_decision_trace_legacy_sections,
+    build_decision_trace_payload,
     build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
@@ -34,8 +34,6 @@ from services.agent_server_new.domain.signal_decision_context_policy import buil
 from services.agent_server_new.domain.signal_router import normalize_signal_event_type, route_signal_agent_key
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2 as strategy_gate_v2  # noqa: F401
 from services.agent_server_new.experts.signal_evaluator import evaluate_signal
-from services.agent_server_new.observability.decision_trace import DecisionTrace
-from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
 from services.agent_server_new.observability.decision_trace_schema_guard import validate_decision_trace_payload
 from services.agent_server_new.ports.data.active_events_provider import ActiveEventsProvider
 from services.agent_server_new.ports.data.position_context_provider import PositionContextProvider
@@ -442,56 +440,27 @@ class TradeEventWorkflow:
                     ),
                 )
 
-            contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
-            trace_legacy = build_decision_trace_legacy_sections(state=compat)
-            trace = DecisionTrace(
+            trace_payload = build_decision_trace_payload(
                 event_id=ctx.event_id,
                 exchange=ctx.exchange,
                 symbol=ctx.symbol,
                 ts=ctx.timestamp_ms,
-                event=dict(ctx.signal_event),
+                signal_event=dict(ctx.signal_event),
                 msl=ctx.msl.to_llm_dict(),
-                key_features=dict(ctx.key_market_features),
-                evidence=dict((ctx.key_market_features or {}).get("evidence") or {}),
-                anomalies=dict((ctx.key_market_features or {}).get("anomalies") or {}),
-                signal_verdict={
-                    "direction": signal.direction,
-                    "verdict": signal.verdict,
-                    "confidence": {"level": signal.confidence.level, "score": signal.confidence.score},
-                    "invalidation_reasons": list(signal.invalidation_reasons),
-                },
-                routing={
-                    "pipeline_mode": _pipeline_mode(self._legacy_pipeline_enabled),
-                    "decision_agent_key": signal_decision.decision_agent_key,
-                    "decision_mode": signal_decision.decision_mode,
-                    "llm_parse_status": signal_decision.llm_parse_status,
-                    "llm_contract_error_code": _sanitize_llm_contract_error_code(eval_result.llm_contract_error_code),
-                    "llm_contract_errors": _sanitize_llm_contract_errors(eval_result.llm_contract_errors),
-                    "router_config_source": self._signal_router_config_source,
-                    "router_config_version": self._signal_router_config_version,
-                    "prompt_config_source": self._signal_prompt_config_source,
-                    "prompt_config_version": self._signal_prompt_config_version,
-                    "event_type_raw": str(event_type_diag.get("raw_event_type") or ""),
-                    "event_type_normalized": str(event_type_diag.get("normalized_event_type") or ""),
-                    "event_type_match_mode": str(event_type_diag.get("matched") or "empty"),
-                },
-                intent=dict(trace_legacy.get("intent") or {}),
-                rule_plan=dict(trace_legacy.get("rule_plan") or {}),
-                strategy_gate_result=dict(trace_legacy.get("strategy_gate_result") or {}),
-                risk_gate=dict(trace_legacy.get("risk_gate") or {}),
-                execution_plan={
-                    "action": plan.action,
-                    "direction": plan.direction,
-                    "sizing": dict(plan.sizing or {}),
-                    "notes": plan.notes,
-                },
+                key_market_features=dict(ctx.key_market_features),
+                signal=signal,
+                signal_decision=signal_decision,
+                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
+                llm_contract_error_code=_sanitize_llm_contract_error_code(eval_result.llm_contract_error_code),
+                llm_contract_errors=_sanitize_llm_contract_errors(eval_result.llm_contract_errors),
+                router_config_source=self._signal_router_config_source,
+                router_config_version=self._signal_router_config_version,
+                prompt_config_source=self._signal_prompt_config_source,
+                prompt_config_version=self._signal_prompt_config_version,
+                event_type_diag=event_type_diag,
+                state=compat,
                 llm_observation=dict(llm_observation),
-                memory_metrics=dict((ctx.key_market_features or {}).get("memory_observability") or {}),
-                contract_warnings=contract_warnings,
-                alert_codes=map_alert_codes_from_contract_warnings(contract_warnings),
-                tags=["decision_trace"],
             )
-            trace_payload = trace.to_dict()
             if self._decision_trace_schema_validate:
                 valid, errors = validate_decision_trace_payload(trace_payload)
                 if not valid:
