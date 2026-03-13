@@ -35,6 +35,9 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
+    assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
+    assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
+    assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
@@ -56,6 +59,9 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
+    assert "WITH_AGENT_ROUTE_REPLAY_REPORT" in out
+    assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
+    assert "MAX_ROUTE_REPLAY_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
