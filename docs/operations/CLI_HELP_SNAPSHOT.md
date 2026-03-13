@@ -70,6 +70,8 @@ Options:
   --execution-prompt-report-path <path> execution prompt 报告输出路径（默认 verification/reports/execution_prompt_version.latest.json）
   --with-event-type-match-report  聚合前先生成 event_type 命中报告
   --event-type-match-report-path <path> event_type 命中报告输出路径（默认 verification/reports/agent_event_type_match.latest.json）
+  --with-agent-action-hint-semantics-report  聚合前先生成 action_hint 语义映射报告
+  --agent-action-hint-semantics-report-path <path> action_hint 语义映射报告输出路径（默认 verification/reports/agent_action_hint_semantics.latest.json）
   --agent-readyz-base-url <url>  agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --help, -h                   显示帮助
@@ -88,6 +90,7 @@ Options:
   --with-pipeline-mode-report   先生成 pipeline_mode 灰度报告再聚合
   --with-execution-prompt-report  先生成 execution prompt 版本报告再聚合
   --with-event-type-match-report  先生成 event_type 命中报告再聚合
+  --with-agent-action-hint-semantics-report  先生成 action_hint 语义映射报告再聚合
   --summary-path <path>         聚合报告输出路径（默认 verification/reports/summary.latest.json）
   --memory-summary-path <path>  memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
   --agent-readyz-path <path>    agent readyz 报告输出路径（默认 verification/reports/agent_readyz.latest.json）
@@ -99,6 +102,8 @@ Options:
                                execution prompt 报告输出路径（默认 verification/reports/execution_prompt_version.latest.json）
   --event-type-match-report-path <path>
                                event_type 命中报告输出路径（默认 verification/reports/agent_event_type_match.latest.json）
+  --agent-action-hint-semantics-report-path <path>
+                               action_hint 语义映射报告输出路径（默认 verification/reports/agent_action_hint_semantics.latest.json）
   --agent-readyz-base-url <url> agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）

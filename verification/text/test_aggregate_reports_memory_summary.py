@@ -113,6 +113,23 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 {"event_type_raw": "foo_signal", "count": 2},
             ],
         },
+        {
+            "schema_version": "agent-action-hint-semantics-report-v1",
+            "generated_at_ms": 3900,
+            "summary": {
+                "minimal_decision_count": 12,
+                "expected_add_count": 5,
+                "expected_hold_count": 7,
+                "actual_hint_available_count": 10,
+                "missing_actual_hint_count": 2,
+                "match_count": 9,
+                "mismatch_count": 1,
+                "match_ratio_on_available": 0.9,
+            },
+            "mismatch_or_missing_samples": [
+                {"event_id": "evt-err-1", "status": "mismatch"},
+            ],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -166,3 +183,10 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert top_unknown
     assert top_unknown[0]["event_type_raw"] == "my_custom_event"
     assert top_unknown[0]["count"] == 4
+    assert out["action_hint_semantics_report_count"] == 1
+    assert out["action_hint_semantics_minimal_decision_count"] == 12
+    assert out["action_hint_semantics_actual_hint_available_count"] == 10
+    assert out["action_hint_semantics_match_count"] == 9
+    assert out["action_hint_semantics_mismatch_count"] == 1
+    assert out["action_hint_semantics_missing_actual_hint_count"] == 2
+    assert float(out["action_hint_semantics_match_ratio_on_available"]) == 0.9

@@ -50,6 +50,13 @@ bash tools/local/run_agent_event_type_match_report.sh \
 bash tools/local/run_agent_event_type_match_report.sh --help
 ```
 
+Action hint semantics report (optional):
+```bash
+bash tools/local/run_agent_action_hint_semantics_report.sh \
+  --output verification/reports/agent_action_hint_semantics.latest.json
+bash tools/local/run_agent_action_hint_semantics_report.sh --help
+```
+
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
@@ -70,6 +77,7 @@ bash tools/local/verify_report_aggregate.sh --with-agent-readyz --compact
 bash tools/local/verify_report_aggregate.sh --with-decision-trace-schema-guard --compact
 bash tools/local/verify_report_aggregate.sh --with-pipeline-mode-report --compact
 bash tools/local/verify_report_aggregate.sh --with-event-type-match-report --compact
+bash tools/local/verify_report_aggregate.sh --with-agent-action-hint-semantics-report --compact
 bash tools/local/verify_report_aggregate.sh --help
 ```
 
@@ -83,6 +91,7 @@ bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
 bash tools/local/aggregate_and_check.sh --with-pipeline-mode-report
 bash tools/local/aggregate_and_check.sh --with-event-type-match-report
+bash tools/local/aggregate_and_check.sh --with-agent-action-hint-semantics-report
 bash tools/local/aggregate_and_check.sh --help
 ```
 
@@ -112,6 +121,7 @@ Notes:
   - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
   - `pipeline_mode_*`（legacy/minimal 灰度计数与比例快照）
   - `event_type_match_*`（event type canonical/alias/empty 命中统计与 unknown top 快照）
+  - `action_hint_semantics_*`（minimal 语义映射命中率：`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）
 
 Check thresholds:
 ```bash

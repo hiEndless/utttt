@@ -36,6 +36,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "agent-decision-trace-schema-guard-report-v1",
                 "agent-pipeline-mode-report-v1",
                 "agent-event-type-match-report-v1",
+                "agent-action-hint-semantics-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -95,6 +96,9 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     pipeline_mode_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-pipeline-mode-report-v1"]
     event_type_match_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-event-type-match-report-v1"
+    ]
+    action_hint_semantics_reports = [
+        x for x in reports if str(x.get("schema_version") or "") == "agent-action-hint-semantics-report-v1"
     ]
 
     total = len(verification_reports)
@@ -387,6 +391,38 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         )
         event_type_match_top_unknown_event_types = rows_sorted[:10]
 
+    action_hint_semantics_report_count = len(action_hint_semantics_reports)
+    latest_action_hint_semantics_report_path = ""
+    action_hint_semantics_minimal_decision_count = 0
+    action_hint_semantics_actual_hint_available_count = 0
+    action_hint_semantics_match_count = 0
+    action_hint_semantics_mismatch_count = 0
+    action_hint_semantics_missing_actual_hint_count = 0
+    action_hint_semantics_match_ratio_on_available = 0.0
+    if action_hint_semantics_reports:
+        latest_action_hint_semantics = max(
+            action_hint_semantics_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_action_hint_semantics_report_path = str(latest_action_hint_semantics.get("_path") or "")
+        summary = dict(latest_action_hint_semantics.get("summary") or {})
+        action_hint_semantics_minimal_decision_count = _to_int(summary.get("minimal_decision_count"), 0)
+        action_hint_semantics_actual_hint_available_count = _to_int(summary.get("actual_hint_available_count"), 0)
+        action_hint_semantics_match_count = _to_int(summary.get("match_count"), 0)
+        action_hint_semantics_mismatch_count = _to_int(summary.get("mismatch_count"), 0)
+        action_hint_semantics_missing_actual_hint_count = _to_int(summary.get("missing_actual_hint_count"), 0)
+        try:
+            action_hint_semantics_match_ratio_on_available = round(
+                float(summary.get("match_ratio_on_available") or 0.0),
+                6,
+            )
+        except Exception:
+            action_hint_semantics_match_ratio_on_available = 0.0
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -449,6 +485,14 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "event_type_match_alias_ratio": event_type_match_alias_ratio,
         "event_type_match_canonical_or_raw_ratio": event_type_match_canonical_or_raw_ratio,
         "event_type_match_top_unknown_event_types": event_type_match_top_unknown_event_types,
+        "action_hint_semantics_report_count": action_hint_semantics_report_count,
+        "latest_action_hint_semantics_report_path": latest_action_hint_semantics_report_path,
+        "action_hint_semantics_minimal_decision_count": action_hint_semantics_minimal_decision_count,
+        "action_hint_semantics_actual_hint_available_count": action_hint_semantics_actual_hint_available_count,
+        "action_hint_semantics_match_count": action_hint_semantics_match_count,
+        "action_hint_semantics_mismatch_count": action_hint_semantics_mismatch_count,
+        "action_hint_semantics_missing_actual_hint_count": action_hint_semantics_missing_actual_hint_count,
+        "action_hint_semantics_match_ratio_on_available": action_hint_semantics_match_ratio_on_available,
     }
 
 

@@ -8,6 +8,7 @@ WITH_DECISION_TRACE_SCHEMA_GUARD=0
 WITH_PIPELINE_MODE_REPORT=0
 WITH_EXECUTION_PROMPT_REPORT=0
 WITH_EVENT_TYPE_MATCH_REPORT=0
+WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=0
 SUMMARY_PATH="verification/reports/summary.latest.json"
 MEMORY_SUMMARY_PATH="verification/reports/memory_summary.latest.json"
 AGENT_READYZ_PATH="verification/reports/agent_readyz.latest.json"
@@ -15,6 +16,7 @@ DECISION_TRACE_SCHEMA_GUARD_PATH="verification/reports/agent_decision_trace_sche
 PIPELINE_MODE_REPORT_PATH="verification/reports/agent_pipeline_mode.latest.json"
 EXECUTION_PROMPT_REPORT_PATH="verification/reports/execution_prompt_version.latest.json"
 EVENT_TYPE_MATCH_REPORT_PATH="verification/reports/agent_event_type_match.latest.json"
+ACTION_HINT_SEMANTICS_REPORT_PATH="verification/reports/agent_action_hint_semantics.latest.json"
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 COMPACT=1
@@ -35,6 +37,7 @@ Options:
   --with-pipeline-mode-report  quick 后聚合前生成 pipeline_mode 灰度报告
   --with-execution-prompt-report  quick 后聚合前生成 execution prompt 版本报告
   --with-event-type-match-report  quick 后聚合前生成 event_type 命中报告
+  --with-agent-action-hint-semantics-report  quick 后聚合前生成 action_hint 语义映射报告
   --summary-path <path>        聚合输出路径（默认 verification/reports/summary.latest.json）
   --memory-summary-path <path> memory summary 输出路径（默认 verification/reports/memory_summary.latest.json）
   --agent-readyz-path <path>   agent readyz 输出路径（默认 verification/reports/agent_readyz.latest.json）
@@ -42,6 +45,7 @@ Options:
   --pipeline-mode-report-path <path> pipeline_mode 输出路径（默认 verification/reports/agent_pipeline_mode.latest.json）
   --execution-prompt-report-path <path> execution prompt 输出路径（默认 verification/reports/execution_prompt_version.latest.json）
   --event-type-match-report-path <path> event_type 命中报告输出路径（默认 verification/reports/agent_event_type_match.latest.json）
+  --agent-action-hint-semantics-report-path <path> action_hint 语义映射报告输出路径（默认 verification/reports/agent_action_hint_semantics.latest.json）
   --agent-readyz-base-url <url> agent readyz 基础地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --no-compact                 聚合输出使用格式化 JSON（默认 compact）
@@ -78,6 +82,10 @@ USAGE
       WITH_EVENT_TYPE_MATCH_REPORT=1
       shift
       ;;
+    --with-agent-action-hint-semantics-report)
+      WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
+      shift
+      ;;
     --summary-path)
       SUMMARY_PATH="${2:-$SUMMARY_PATH}"
       shift 2
@@ -104,6 +112,10 @@ USAGE
       ;;
     --event-type-match-report-path)
       EVENT_TYPE_MATCH_REPORT_PATH="${2:-$EVENT_TYPE_MATCH_REPORT_PATH}"
+      shift 2
+      ;;
+    --agent-action-hint-semantics-report-path)
+      ACTION_HINT_SEMANTICS_REPORT_PATH="${2:-$ACTION_HINT_SEMANTICS_REPORT_PATH}"
       shift 2
       ;;
     --agent-readyz-base-url)
@@ -170,6 +182,12 @@ if [[ "$WITH_EVENT_TYPE_MATCH_REPORT" == "1" ]]; then
   AGG_ARGS+=(
     --with-event-type-match-report
     --event-type-match-report-path "$EVENT_TYPE_MATCH_REPORT_PATH"
+  )
+fi
+if [[ "$WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT" == "1" ]]; then
+  AGG_ARGS+=(
+    --with-agent-action-hint-semantics-report
+    --agent-action-hint-semantics-report-path "$ACTION_HINT_SEMANTICS_REPORT_PATH"
   )
 fi
 if [[ "$COMPACT" == "1" ]]; then
