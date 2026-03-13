@@ -270,6 +270,9 @@ class ExecutionResult:
                 "policy_version": policy_version,
                 "ruleset_hash": ruleset_hash,
             }
+            agent_prompt_config_version = str(policy_snapshot_raw.get("agent_prompt_config_version") or "").strip()
+            if agent_prompt_config_version:
+                policy_snapshot["agent_prompt_config_version"] = agent_prompt_config_version
         notes = None if notes_raw is None else str(notes_raw).strip() or None
         return cls(
             decision_id=decision_id,

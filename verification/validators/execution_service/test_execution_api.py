@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v21"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v22"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -67,6 +67,36 @@ def test_decide_success() -> None:
     assert isinstance(data.get("policy_snapshot"), dict)
     assert data["policy_snapshot"]["policy_version"]
     assert data["policy_snapshot"]["ruleset_hash"]
+
+
+def test_decide_policy_snapshot_includes_agent_prompt_config_version() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-001-prompt-version",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "long",
+            "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {"suggested_policy": "reduce_risk"},
+            "risk_hints": {
+                "market_fragility": "medium",
+                "prompt_config_version": "f00dbabe1234abcd",
+            },
+            "trace_id": "trace-prompt-version-001",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["policy_snapshot"]["agent_prompt_config_version"] == "f00dbabe1234abcd"
+
+    state_resp = client.get("/internal/execution/debug/state/binance/ETHUSDT?decision_id=dec-001-prompt-version")
+    assert state_resp.status_code == 200
+    state = state_resp.json()
+    assert state["decision_state"]["policy_snapshot"]["agent_prompt_config_version"] == "f00dbabe1234abcd"
 
 
 def test_decide_bad_request() -> None:

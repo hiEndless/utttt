@@ -125,7 +125,10 @@ class ExecutionService:
                 account_state=dict(account_state or {}),
                 risk_policy=dict(risk_policy or {}),
             )
-            policy_snapshot = _build_policy_snapshot(risk_policy)
+            policy_snapshot = _build_policy_snapshot(
+                risk_policy,
+                risk_hints=dict(decision.risk_hints or {}),
+            )
             result = ExecutionResult.from_dict(
                 {
                     **result.to_dict(),
@@ -510,22 +513,30 @@ def _extract_policy_snapshot(result: ExecutionResult) -> Dict[str, str]:
     policy_version = str(snapshot.get("policy_version") or "").strip()
     ruleset_hash = str(snapshot.get("ruleset_hash") or "").strip()
     if policy_version and ruleset_hash:
-        return {
+        out: Dict[str, str] = {
             "policy_version": policy_version,
             "ruleset_hash": ruleset_hash,
         }
+        agent_prompt_config_version = str(snapshot.get("agent_prompt_config_version") or "").strip()
+        if agent_prompt_config_version:
+            out["agent_prompt_config_version"] = agent_prompt_config_version
+        return out
     return {}
 
 
-def _build_policy_snapshot(risk_policy: Mapping[str, Any]) -> Dict[str, str]:
+def _build_policy_snapshot(risk_policy: Mapping[str, Any], *, risk_hints: Mapping[str, Any] | None = None) -> Dict[str, str]:
     """从当前生效风控策略提取可回放的版本快照。"""
 
     policy_version = str((risk_policy or {}).get("policy_version") or "").strip() or "risk-policy-default-v1"
     ruleset_hash = str((risk_policy or {}).get("ruleset_hash") or "").strip() or RULESET_VERSION
-    return {
+    out = {
         "policy_version": policy_version,
         "ruleset_hash": ruleset_hash,
     }
+    agent_prompt_config_version = str((risk_hints or {}).get("prompt_config_version") or "").strip()
+    if agent_prompt_config_version:
+        out["agent_prompt_config_version"] = agent_prompt_config_version
+    return out
 
 
 def _derive_decision_state_source(result: ExecutionResult) -> str:

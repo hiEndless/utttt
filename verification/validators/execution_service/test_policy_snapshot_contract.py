@@ -24,3 +24,4 @@ def test_policy_snapshot_schema_frozen() -> None:
     assert schema.get("required", []) == ["policy_version", "ruleset_hash"]
     assert schema.get("properties", {}).get("policy_version", {}).get("minLength") == 1
     assert schema.get("properties", {}).get("ruleset_hash", {}).get("minLength") == 1
+    assert schema.get("properties", {}).get("agent_prompt_config_version", {}).get("minLength") == 1

@@ -32,7 +32,7 @@
   "ruleset_version": "risk-rules-v1",
   "state_machine_version": "execution-state-machine-v1",
   "idempotency_version": "execution-idempotency-v1",
-  "schema_mapping_version": "execution-schema-mapping-v21",
+  "schema_mapping_version": "execution-schema-mapping-v22",
   "ts": 1760000000000,
   "ts_ms": 1760000000000
 }
@@ -110,7 +110,7 @@
   "execution_action": "hold",
   "reject_reason": "position_limit_reached",
   "applied_risk_rules": ["max_position_limit"],
-  "policy_snapshot": {"policy_version": "risk-policy-default-v1", "ruleset_hash": "risk-rules-v1"},
+  "policy_snapshot": {"policy_version": "risk-policy-default-v1", "ruleset_hash": "risk-rules-v1", "agent_prompt_config_version": "f00dbabe1234abcd"},
   "notes": "当前仓位已达上限"
 }
 ```
@@ -124,7 +124,7 @@
 5. `order_result`: 可选对象（真实下单后回填）
 6. `notes`: 可选字符串（中文解释）
 7. `signal_result`: 可选对象（执行层模拟信号结构，当前默认返回）
-8. `policy_snapshot`: 可选对象（当前生效策略快照：`policy_version/ruleset_hash`）
+8. `policy_snapshot`: 可选对象（当前生效策略快照：`policy_version/ruleset_hash`，可选 `agent_prompt_config_version`）
 9. JSON Schema：`services/execution_service/docs/execution_result.schema.json`
 
 说明：
@@ -345,7 +345,7 @@
   - `source`: 产出状态的服务标识（当前固定 `execution_service`）
   - `state_source`: 状态语义来源（`decision_engine|execution_sink|execution_service`）
   - `trace_id`: 透传的链路追踪 ID（若请求未提供则为 `null`）
-  - `policy_snapshot`: 最近一次裁决生效策略快照（`policy_version/ruleset_hash`）
+  - `policy_snapshot`: 最近一次裁决生效策略快照（`policy_version/ruleset_hash`，可选 `agent_prompt_config_version`）
   - `reconcile_order_id`: 最近一次回执对账的订单号（如有）
   - `reconcile_status_raw`: 最近一次回执原始状态（如有）
 - `confidence_migration`：

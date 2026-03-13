@@ -39,7 +39,7 @@
 6. 进入 `ExecutionDecisionEngine.decide(...)`：
    - 调用 `evaluate_risk_rules(decision, RiskContext(...))`
    - 构造 `signal_result`（含 risk_checks/risk_state/rule_debug/position_simulation 等）
-7. Service 侧补齐 `policy_snapshot`（policy_version/ruleset_hash）
+7. Service 侧补齐 `policy_snapshot`（policy_version/ruleset_hash，可选 agent_prompt_config_version）
 8. （可选）执行下沉 submit：`execution_sink.submit(decision, execution_action)`，并写入 `order_result`
 9. 写入幂等结果缓存（可选开启）
 10. 写入决策状态机终态（decided/submitted/skipped/failed）
@@ -380,7 +380,7 @@ Schema：[execution_result.schema.json](services/execution_service/docs/executio
 | applied_risk_rules | array[string] | Y | 应用到的规则名/标签（审计用途） |
 | order_result | object | N | 执行下沉回执（submit 或 reconcile 的输出） |
 | signal_result | object | N | 风控评估明细（见 8） |
-| policy_snapshot | object | N | 当前策略快照（policy_version/ruleset_hash） |
+| policy_snapshot | object | N | 当前策略快照（policy_version/ruleset_hash，可选 agent_prompt_config_version） |
 | notes | string | N | 中文说明 |
 
 ### 7.2 reject_reason 枚举（冻结）
@@ -411,6 +411,7 @@ Schema：[policy_snapshot.schema.json](services/execution_service/docs/policy_sn
 |---|---|---|
 | policy_version | string | 生效策略版本（缺省 risk-policy-default-v1） |
 | ruleset_hash | string | 规则集 hash/版本（缺省 RULESET_VERSION） |
+| agent_prompt_config_version | string | 可选，透传 agent 侧 decision_prompt 配置版本（来自 risk_hints.prompt_config_version） |
 
 ---
 

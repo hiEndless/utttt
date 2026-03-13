@@ -9,7 +9,7 @@
 ## 当前基线（Latest Only）
 
 1. API 入口：`services/execution_service/docs/api.md`
-2. 契约映射版本：`execution-schema-mapping-v21`
+2. 契约映射版本：`execution-schema-mapping-v22`
 3. 核心输入契约：`decision_intent.schema.json`
 4. 核心输出契约：`execution_result.schema.json`
 5. 对账输出契约：`execution_reconcile_result.schema.json`
@@ -33,6 +33,7 @@
 13. `risk_hints.decision_mode` 新增可选字段（`llm|rule_fallback|rule`），用于标记信号判定来源，便于 execution 侧做质量回溯统计（非 breaking，历史 producer 无需改造）
 14. `risk_hints.llm_parse_status` 新增可选枚举字段（`llm_ok|llm_invalid_payload|llm_status_not_ok|llm_not_provided|rule_only`），用于记录 LLM 判定解析状态，辅助 fallback 根因分析（非 breaking）
 15. `risk_hints.prompt_config_source/prompt_config_version` 新增可选字段（非空字符串），用于追踪 agent 侧 decision_prompt 配置来源与版本，支持跨服务回放定位（非 breaking）
+16. `policy_snapshot.agent_prompt_config_version` 新增可选字段（非空字符串），用于把输入 `risk_hints.prompt_config_version` 回填到执行结果与状态快照，支持“输入版本 -> 输出结果”归因链路（非 breaking）
 
 ## 文档维护规则
 

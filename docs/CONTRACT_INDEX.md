@@ -72,7 +72,7 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v21`
+- `execution_schema_mapping_version: execution-schema-mapping-v22`
 - `decision_intent_canonical_field: decision_confidence`（`confidence` 兼容窗口至 `2026-06-30`，详见 schema/migration）
 - `decision_signal_mode_field: risk_hints.decision_mode`（可选：`llm|rule_fallback|rule`）
 - `decision_llm_parse_status_field: risk_hints.llm_parse_status`（可选枚举：`llm_ok|llm_invalid_payload|llm_status_not_ok|llm_not_provided|rule_only`）

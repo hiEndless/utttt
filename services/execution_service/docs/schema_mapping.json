@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v21",
+  "version": "execution-schema-mapping-v22",
   "last_updated": "2026-03-13",
   "items": [
     {
@@ -335,7 +335,8 @@
       "symbol": "_build_policy_snapshot",
       "fields": [
         "policy_version",
-        "ruleset_hash"
+        "ruleset_hash",
+        "agent_prompt_config_version"
       ],
       "references": [
         {
@@ -346,6 +347,11 @@
         {
           "schema": "services/execution_service/docs/policy_snapshot.schema.json",
           "json_path": "properties.ruleset_hash.minLength",
+          "expected": 1
+        },
+        {
+          "schema": "services/execution_service/docs/policy_snapshot.schema.json",
+          "json_path": "properties.agent_prompt_config_version.minLength",
           "expected": 1
         }
       ]
