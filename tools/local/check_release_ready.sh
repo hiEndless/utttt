@@ -107,34 +107,33 @@ if ((${#ENV_OVERRIDES[@]} > 0)); then
   ENV_OVERRIDES_JSON+="]"
 fi
 
-RECOMMENDATION_ARTIFACT_JSON="$(RECOMMENDATION_PATH="$AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" python3 - <<'PY'
+RECOMMENDATION_ARTIFACT_STATUS="$(bash tools/local/read_agent_signal_decision_recommendation_status.sh "$AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH")"
+RECOMMENDATION_ARTIFACT_JSON="$(RECOMMENDATION_PATH="$AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" RECOMMENDATION_ARTIFACT_STATUS="$RECOMMENDATION_ARTIFACT_STATUS" python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
 path = str(os.environ.get("RECOMMENDATION_PATH") or "").strip()
+normalized_status = str(os.environ.get("RECOMMENDATION_ARTIFACT_STATUS") or "").strip()
 payload = {
     "path": path,
-    "status": "missing",
+    "status": normalized_status or "missing",
     "schema_version": "",
     "recommend_action": "none",
 }
 
 if not path:
-    payload["status"] = "missing"
     print(json.dumps(payload, ensure_ascii=False))
     raise SystemExit(0)
 
 file_path = Path(path)
 if not file_path.exists():
-    payload["status"] = "missing"
     print(json.dumps(payload, ensure_ascii=False))
     raise SystemExit(0)
 
 try:
     data = json.loads(file_path.read_text(encoding="utf-8"))
 except Exception:
-    payload["status"] = "invalid_json"
     print(json.dumps(payload, ensure_ascii=False))
     raise SystemExit(0)
 
@@ -146,12 +145,13 @@ if not recommend_action:
 
 payload["schema_version"] = schema_version
 payload["recommend_action"] = recommend_action
-if schema_version != "agent-signal-decision-replay-trend-recommendation-v1":
-    payload["status"] = "unsupported_schema_version"
-elif status in {"recommend", "hold", "skip"}:
-    payload["status"] = status
-else:
-    payload["status"] = "unknown_status"
+if not payload["status"]:
+    if schema_version != "agent-signal-decision-replay-trend-recommendation-v1":
+        payload["status"] = "unsupported_schema_version"
+    elif status in {"recommend", "hold", "skip"}:
+        payload["status"] = status
+    else:
+        payload["status"] = "unknown_status"
 
 print(json.dumps(payload, ensure_ascii=False))
 PY

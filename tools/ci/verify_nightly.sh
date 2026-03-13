@@ -179,37 +179,7 @@ if [[ "$WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT" == "1" ]]; then
       "$AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH"
   fi
 fi
-RECOMMENDATION_ARTIFACT_STATUS="$(AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH="$AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH" python3 - <<'PY'
-import json
-import os
-from pathlib import Path
-
-path = str(os.environ.get("AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH") or "").strip()
-if not path:
-    print("missing")
-    raise SystemExit(0)
-
-file_path = Path(path)
-if not file_path.exists():
-    print("missing")
-    raise SystemExit(0)
-
-try:
-    payload = json.loads(file_path.read_text(encoding="utf-8"))
-except Exception:
-    print("invalid_json")
-    raise SystemExit(0)
-
-schema_version = str(payload.get("schema_version") or "")
-status = str(payload.get("status") or "").strip()
-if schema_version != "agent-signal-decision-replay-trend-recommendation-v1":
-    print("unsupported_schema_version")
-elif status in {"recommend", "hold", "skip"}:
-    print(status)
-else:
-    print("unknown_status")
-PY
-)"
+RECOMMENDATION_ARTIFACT_STATUS="$(bash tools/local/read_agent_signal_decision_recommendation_status.sh "$AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH")"
 echo "[nightly] recommendation_artifact_status=$RECOMMENDATION_ARTIFACT_STATUS recommendation_report_path=$AGENT_SIGNAL_DECISION_REPLAY_TREND_RECOMMENDATION_REPORT_PATH"
 NIGHTLY_ARGS=(
   --with-pipeline-mode-report
