@@ -21,5 +21,8 @@ def test_decision_trace_semantic_boundary_doc_guard() -> None:
         encoding="utf-8"
     )
     assert "语义快照字段" in contract_doc
+    assert "语义建议字段" in contract_doc
+    assert "sizing" in contract_doc
+    assert "allowance" in contract_doc
     assert "execution_service" in contract_doc
     assert "唯一权威" in contract_doc

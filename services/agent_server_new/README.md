@@ -585,15 +585,15 @@ agent_server_new/
 
 ## 与 `execution_service` 的接口约定
 
-`agent_server_new` 对执行层只输出标准计划，不输出执行细节。
+`agent_server_new` 对执行层只输出语义计划，不输出执行细节。
 
-建议固定为：
+当前约定：
 
 - `ExecutionPlan`
   - action
   - direction
-  - sizing
-  - allowance
+  - sizing（语义建议，可被 execution 侧策略覆盖或忽略）
+  - allowance（语义建议，可被 execution 侧策略覆盖或忽略）
   - confidence
   - notes
   - trace_ref
@@ -605,6 +605,10 @@ agent_server_new/
 - exchange execution
 - fill / reject handling
 - reconciliation
+
+权责边界（冻结）：
+- execution 是风控阻断与最终动作唯一权威。
+- agent 输出中的 `sizing/allowance` 不构成执行层硬约束输入。
 
 决策层不应知道：
 
