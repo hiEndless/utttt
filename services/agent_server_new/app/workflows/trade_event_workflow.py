@@ -331,13 +331,13 @@ class TradeEventWorkflow:
             "raw_content_hash": "",
         }
         llm_result_raw: Optional[Dict[str, Any]] = None
+        routed_agent_key = route_signal_agent_key(
+            signal_event=dict(ctx.signal_event or {}),
+            router_config=self._signal_router_config,
+        )
         if self._llm_observer is not None:
-            llm_agent_key = route_signal_agent_key(
-                signal_event=dict(ctx.signal_event or {}),
-                router_config=self._signal_router_config,
-            )
             llm_ctx = build_llm_observation_context(
-                decision_agent_key=llm_agent_key,
+                decision_agent_key=routed_agent_key,
                 key_market_features=dict(ctx.key_market_features or {}),
                 active_events=list(ctx.active_events or []),
                 prompt_profiles=self._signal_decision_prompt_profiles,
@@ -389,6 +389,7 @@ class TradeEventWorkflow:
                         {"status": "error", "fallback": "rule_engine", "error": str(exc)},
                     )
         eval_result = self._signal_decision_agent.decide(
+            decision_agent_key=routed_agent_key,
             signal_direction=event.signal_direction,
             msl=ctx.msl,
             key_market_features=dict(ctx.key_market_features),

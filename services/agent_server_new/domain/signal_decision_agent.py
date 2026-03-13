@@ -28,6 +28,7 @@ class SignalDecisionAgent(Protocol):
     def decide(
         self,
         *,
+        decision_agent_key: str | None = None,
         signal_direction: str,
         msl: MarketStateMSL,
         key_market_features: Dict[str, Any],
@@ -54,6 +55,7 @@ class RoutedRuleBasedSignalDecisionAgent:
     def decide(
         self,
         *,
+        decision_agent_key: str | None = None,
         signal_direction: str,
         msl: MarketStateMSL,
         key_market_features: Dict[str, Any],
@@ -65,7 +67,7 @@ class RoutedRuleBasedSignalDecisionAgent:
         _ = llm_result
         raw_signal_event = dict(signal_event or {})
         signal_payload = dict(raw_signal_event.get("payload") or raw_signal_event)
-        decision_agent_key = route_signal_agent_key(
+        routed_agent_key = str(decision_agent_key or "").strip().lower() or route_signal_agent_key(
             signal_event={"payload": signal_payload},
             router_config=self._router_config,
         )
@@ -81,7 +83,7 @@ class RoutedRuleBasedSignalDecisionAgent:
         )
         return SignalDecisionEvalResult(
             signal=signal,
-            decision_agent_key=decision_agent_key,
+            decision_agent_key=routed_agent_key,
             decision_mode="rule",
             llm_parse_status="rule_only",
             llm_contract_error_code="",
@@ -145,6 +147,7 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
     def decide(
         self,
         *,
+        decision_agent_key: str | None = None,
         signal_direction: str,
         msl: MarketStateMSL,
         key_market_features: Dict[str, Any],
@@ -153,20 +156,21 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
         position_context: Dict[str, Any],
         llm_result: Dict[str, Any] | None = None,
     ) -> SignalDecisionEvalResult:
-        decision_agent_key = self._route_agent_key(signal_event=signal_event)
+        routed_agent_key = str(decision_agent_key or "").strip().lower() or self._route_agent_key(signal_event=signal_event)
         llm = dict(llm_result or {})
         if str(llm.get("status") or "").strip().lower() == "ok":
             llm_signal, err_code, err_list = self._parse_llm_signal(llm)
             if llm_signal is not None:
                 return SignalDecisionEvalResult(
                     signal=llm_signal,
-                    decision_agent_key=decision_agent_key,
+                    decision_agent_key=routed_agent_key,
                     decision_mode="llm",
                     llm_parse_status="llm_ok",
                     llm_contract_error_code="",
                     llm_contract_errors=[],
                 )
             fallback = super().decide(
+                decision_agent_key=routed_agent_key,
                 signal_direction=signal_direction,
                 msl=msl,
                 key_market_features=key_market_features,
@@ -176,13 +180,14 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
             )
             return SignalDecisionEvalResult(
                 signal=fallback.signal,
-                decision_agent_key=decision_agent_key,
+                decision_agent_key=routed_agent_key,
                 decision_mode="rule_fallback",
                 llm_parse_status="llm_invalid_payload",
                 llm_contract_error_code=str(err_code or "llm_schema_validation_failed"),
                 llm_contract_errors=list(err_list or []),
             )
         fallback = super().decide(
+            decision_agent_key=routed_agent_key,
             signal_direction=signal_direction,
             msl=msl,
             key_market_features=key_market_features,
@@ -192,7 +197,7 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
         )
         return SignalDecisionEvalResult(
             signal=fallback.signal,
-            decision_agent_key=decision_agent_key,
+            decision_agent_key=routed_agent_key,
             decision_mode="rule",
             llm_parse_status="llm_status_not_ok" if llm else "llm_not_provided",
             llm_contract_error_code="",
