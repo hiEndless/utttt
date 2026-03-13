@@ -93,8 +93,11 @@ def test_signal_router_routes_by_event_source_category_alias() -> None:
     ("field_name", "field_value", "expected"),
     [
         ("signal_source_type", "market_indicator", "technical"),
+        ("signal_source_type", "market_indicator_signal", "technical"),
         ("signal_source_type", "onchain_wallet", "onchain"),
+        ("signal_source_type", "onchain_wallet_anomaly", "onchain"),
         ("source_type", "large_liquidation", "liquidation"),
+        ("source_signal_type", "macro_news", "social_news"),
         ("source_signal_type", "social_news", "social_news"),
     ],
 )

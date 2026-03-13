@@ -127,6 +127,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
   - 默认配置文件：`services/agent_server_new/config/signal_router_profiles.json`
   - 环境变量覆盖：`AGENT_SIGNAL_ROUTER_CONFIG_FILE`
   - 事件类型提取优先级：`selected_type` > `selected_event_type` > `event_type` > `type` > `kind` > `signal_type`
+  - 来源类型提取优先级：`source_category` > `event_source_category` > `signal_source_type` > `source_type` > `source_signal_type` > `source.category`
   - 显式路由优先级：`event_type_aliases` 归一化后 `event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
   - 业务 canonical 覆盖：`market_indicator_signal/onchain_wallet_anomaly/large_liquidation/social_news`
   - 业务别名基线已扩展（指标/链上钱包异动/大额清算/社媒新闻），例如 `chain_wallet_anomaly/market_large_liquidation/social_media_hot_news`，作为上游事件命名波动的稳定收敛层。

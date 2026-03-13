@@ -1161,9 +1161,13 @@ def test_trade_event_workflow_minimal_signal_source_type_route_closed_loop():
 
         cases = [
             ("evt-source-type-tech-001", "market_indicator", "technical"),
+            ("evt-source-type-tech-002", "market_indicator_signal", "technical"),
             ("evt-source-type-onchain-001", "onchain_wallet", "onchain"),
+            ("evt-source-type-onchain-002", "onchain_wallet_anomaly", "onchain"),
             ("evt-source-type-liq-001", "large_liquidation", "liquidation"),
+            ("evt-source-type-liq-002", "market_large_liquidation", "liquidation"),
             ("evt-source-type-social-001", "social_news", "social_news"),
+            ("evt-source-type-social-002", "macro_news", "social_news"),
         ]
         for event_id, source_type, expected_agent_key in cases:
             out = await wf.run_with_result(
