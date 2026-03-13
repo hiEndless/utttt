@@ -109,6 +109,16 @@ def _signal_router_config_version(cfg: Dict[str, Any]) -> str:
     return _sha256_text(stable)[:16]
 
 
+def _signal_prompt_profiles_version(cfg: Dict[str, Any]) -> str:
+    if not isinstance(cfg, dict):
+        return ""
+    try:
+        stable = json.dumps(cfg, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    except Exception:
+        return ""
+    return _sha256_text(stable)[:16]
+
+
 def _sanitize_llm_contract_error_code(value: Any) -> str:
     code = str(value or "").strip()
     allowed = {
@@ -233,6 +243,8 @@ class TradeEventWorkflow:
         signal_decision_agent: SignalDecisionAgent | None = None,
         signal_router_config_source: str = "runtime",
         signal_router_config_version: str = "",
+        signal_prompt_config_source: str = "runtime",
+        signal_prompt_config_version: str = "",
     ) -> None:
         self._market_state = market_state
         self._position_context = position_context
@@ -267,6 +279,10 @@ class TradeEventWorkflow:
         self._signal_router_config_source = str(signal_router_config_source or "runtime").strip() or "runtime"
         self._signal_router_config_version = str(signal_router_config_version or "").strip() or _signal_router_config_version(
             self._signal_router_config
+        )
+        self._signal_prompt_config_source = str(signal_prompt_config_source or "runtime").strip() or "runtime"
+        self._signal_prompt_config_version = str(signal_prompt_config_version or "").strip() or _signal_prompt_profiles_version(
+            self._signal_decision_prompt_profiles
         )
 
     async def run(self, event: TradeEventInput) -> ExecutionPlan:
@@ -604,6 +620,8 @@ class TradeEventWorkflow:
                     "llm_contract_errors": _sanitize_llm_contract_errors(eval_result.llm_contract_errors),
                     "router_config_source": self._signal_router_config_source,
                     "router_config_version": self._signal_router_config_version,
+                    "prompt_config_source": self._signal_prompt_config_source,
+                    "prompt_config_version": self._signal_prompt_config_version,
                 },
                 intent={
                     "intent": intent.intent,

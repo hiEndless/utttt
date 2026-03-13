@@ -80,6 +80,8 @@ def _sample_decision_trace() -> Dict[str, Any]:
             "llm_contract_errors": [],
             "router_config_source": "default:services/agent_server_new/config/signal_router_profiles.json",
             "router_config_version": "abc123",
+            "prompt_config_source": "default:services/agent_server_new/config/signal_decision_prompt_profiles.json",
+            "prompt_config_version": "def456",
         },
         "intent": {"intent": "increase"},
         "rule_plan": {"sizing": {"mode": "ratio"}},

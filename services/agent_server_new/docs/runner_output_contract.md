@@ -111,7 +111,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 关键字段：
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/intent/rule_plan/strategy_gate_result/risk_gate/execution_plan`
-- `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version`）
+- `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version/prompt_config_source/prompt_config_version`）
   - `llm_contract_error_code`：`""|llm_raw_content_missing|llm_json_parse_error|llm_json_not_object|llm_schema_validation_failed|llm_confidence_parse_error`
   - `llm_contract_errors`：字符串数组，最多 8 条
 - `llm_observation`（固定语义：`status/provider/model/raw_content_hash`）

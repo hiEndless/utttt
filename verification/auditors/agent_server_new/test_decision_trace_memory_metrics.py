@@ -180,6 +180,8 @@ def test_trade_event_workflow_records_decision_trace_memory_metrics():
         assert routing.get("llm_contract_errors") == []
         assert routing.get("router_config_source") == "runtime"
         assert isinstance(routing.get("router_config_version"), str)
+        assert routing.get("prompt_config_source") == "runtime"
+        assert isinstance(routing.get("prompt_config_version"), str)
         contract_warnings = list(trace_payload.get("contract_warnings") or [])
         assert "state_features_semantic_contract_missing" in contract_warnings
         assert "msl_meta_schema_version_missing" in contract_warnings
@@ -276,6 +278,8 @@ def test_trade_event_workflow_records_decision_trace_llm_observation_hash():
         assert len(list(routing.get("llm_contract_errors") or [])) <= 8
         assert routing.get("router_config_source") == "runtime"
         assert isinstance(routing.get("router_config_version"), str)
+        assert routing.get("prompt_config_source") == "runtime"
+        assert isinstance(routing.get("prompt_config_version"), str)
 
     import pytest
 

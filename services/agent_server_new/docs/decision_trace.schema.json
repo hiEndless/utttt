@@ -73,6 +73,12 @@
         },
         "router_config_version": {
           "type": "string"
+        },
+        "prompt_config_source": {
+          "type": "string"
+        },
+        "prompt_config_version": {
+          "type": "string"
         }
       },
       "required": [
@@ -83,7 +89,9 @@
         "llm_contract_error_code",
         "llm_contract_errors",
         "router_config_source",
-        "router_config_version"
+        "router_config_version",
+        "prompt_config_source",
+        "prompt_config_version"
       ],
       "additionalProperties": true
     },

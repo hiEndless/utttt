@@ -56,6 +56,14 @@ def _signal_router_config_version(cfg: dict) -> str:
     return hashlib.sha256(stable.encode("utf-8")).hexdigest()[:16]
 
 
+def _signal_prompt_config_version(cfg: dict) -> str:
+    try:
+        stable = json.dumps(cfg, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    except Exception:
+        return ""
+    return hashlib.sha256(stable.encode("utf-8")).hexdigest()[:16]
+
+
 def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     """基于环境变量创建可运行的默认工作流。
 
@@ -150,6 +158,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             raise RuntimeError(f"invalid signal router config in production: {exc}") from exc
         raise RuntimeError(f"invalid signal router config: {exc}") from exc
     signal_prompt_profiles = load_signal_decision_prompt_profiles_from_env()
+    signal_prompt_config_file = str(os.getenv("AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE", "") or "").strip()
     try:
         validate_signal_decision_prompt_profiles(signal_prompt_profiles, allowed_agent_keys=_ALLOWED_SIGNAL_AGENT_KEYS)
     except ValueError as exc:
@@ -180,4 +189,10 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
             else "default:services/agent_server_new/config/signal_router_profiles.json"
         ),
         signal_router_config_version=_signal_router_config_version(signal_router_config),
+        signal_prompt_config_source=(
+            f"env:{signal_prompt_config_file}"
+            if signal_prompt_config_file
+            else "default:services/agent_server_new/config/signal_decision_prompt_profiles.json"
+        ),
+        signal_prompt_config_version=_signal_prompt_config_version(signal_prompt_profiles),
     )
