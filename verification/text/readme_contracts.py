@@ -42,3 +42,13 @@ PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = tuple(
         )
     )
 )
+
+README_CONTRACTS_DOCS_REQUIRED_SNIPPETS: dict[Path, tuple[str, ...]] = dict(
+    sorted(
+        {
+            Path("services/agent_server_new/README.md"): PIPELINE_MODE_QUICK_SNIPPETS + ("pipeline_mode_summary",),
+            Path("verification/reports/README.md"): PIPELINE_MODE_QUICK_SNIPPETS,
+        }.items(),
+        key=lambda kv: str(kv[0]),
+    )
+)
