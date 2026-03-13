@@ -86,6 +86,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="最小 event_type_match alias 占比，-1 表示忽略",
     )
     p.add_argument(
+        "--max-action-hint-semantics-mismatch-count",
+        type=int,
+        default=-1,
+        help="最大 action_hint_semantics mismatch 计数，-1 表示忽略",
+    )
+    p.add_argument(
+        "--max-action-hint-semantics-missing-actual-hint-count",
+        type=int,
+        default=-1,
+        help="最大 action_hint_semantics missing_actual_hint 计数，-1 表示忽略",
+    )
+    p.add_argument(
+        "--min-action-hint-semantics-match-ratio",
+        type=float,
+        default=-1.0,
+        help="最小 action_hint_semantics match_ratio_on_available，-1 表示忽略",
+    )
+    p.add_argument(
         "--require-agent-readyz-report",
         action="store_true",
         help="要求 summary 中存在 agent readyz 报告（agent_readyz_report_count > 0）",
@@ -113,6 +131,11 @@ def main(argv: list[str] | None = None) -> int:
     event_type_match_missing_count = _to_int(summary.get("event_type_match_missing_count"), 0)
     event_type_match_unknown_count = _to_int(summary.get("event_type_match_unknown_count"), 0)
     event_type_match_alias_ratio = _to_float(summary.get("event_type_match_alias_ratio"), 0.0)
+    action_hint_semantics_mismatch_count = _to_int(summary.get("action_hint_semantics_mismatch_count"), 0)
+    action_hint_semantics_missing_actual_hint_count = _to_int(
+        summary.get("action_hint_semantics_missing_actual_hint_count"), 0
+    )
+    action_hint_semantics_match_ratio = _to_float(summary.get("action_hint_semantics_match_ratio_on_available"), 0.0)
     if agent_readyz_level not in _LEVEL_ORDER:
         agent_readyz_level = "red"
 
@@ -187,6 +210,31 @@ def main(argv: list[str] | None = None) -> int:
             f"{float(args.min_event_type_match_alias_ratio)} "
             f"(actual={event_type_match_alias_ratio})"
         )
+    if int(args.max_action_hint_semantics_mismatch_count) >= 0 and action_hint_semantics_mismatch_count > int(
+        args.max_action_hint_semantics_mismatch_count
+    ):
+        errors.append(
+            "action_hint_semantics_mismatch_count>"
+            f"{int(args.max_action_hint_semantics_mismatch_count)} "
+            f"(actual={action_hint_semantics_mismatch_count})"
+        )
+    if (
+        int(args.max_action_hint_semantics_missing_actual_hint_count) >= 0
+        and action_hint_semantics_missing_actual_hint_count > int(args.max_action_hint_semantics_missing_actual_hint_count)
+    ):
+        errors.append(
+            "action_hint_semantics_missing_actual_hint_count>"
+            f"{int(args.max_action_hint_semantics_missing_actual_hint_count)} "
+            f"(actual={action_hint_semantics_missing_actual_hint_count})"
+        )
+    if float(args.min_action_hint_semantics_match_ratio) >= 0 and action_hint_semantics_match_ratio < float(
+        args.min_action_hint_semantics_match_ratio
+    ):
+        errors.append(
+            "action_hint_semantics_match_ratio_on_available<"
+            f"{float(args.min_action_hint_semantics_match_ratio)} "
+            f"(actual={action_hint_semantics_match_ratio})"
+        )
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -206,7 +254,10 @@ def main(argv: list[str] | None = None) -> int:
         f"pipeline_mode_missing_count={pipeline_mode_missing_count} "
         f"event_type_match_missing_count={event_type_match_missing_count} "
         f"event_type_match_unknown_count={event_type_match_unknown_count} "
-        f"event_type_match_alias_ratio={event_type_match_alias_ratio}"
+        f"event_type_match_alias_ratio={event_type_match_alias_ratio} "
+        f"action_hint_semantics_mismatch_count={action_hint_semantics_mismatch_count} "
+        f"action_hint_semantics_missing_actual_hint_count={action_hint_semantics_missing_actual_hint_count} "
+        f"action_hint_semantics_match_ratio_on_available={action_hint_semantics_match_ratio}"
     )
     return 0
 

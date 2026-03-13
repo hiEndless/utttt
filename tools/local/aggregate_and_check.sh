@@ -29,6 +29,9 @@ MAX_PIPELINE_MODE_MISSING_COUNT="-1"
 MAX_EVENT_TYPE_MATCH_MISSING_COUNT="-1"
 MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT="-1"
 MIN_EVENT_TYPE_MATCH_ALIAS_RATIO="-1"
+MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT="-1"
+MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT="-1"
+MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO="-1"
 
 while (($# > 0)); do
   case "$1" in
@@ -78,6 +81,12 @@ Options:
                                event_type_match unknown 计数上限（默认 -1 忽略）
   --min-event-type-match-alias-ratio <float>
                                event_type_match alias 占比下限（默认 -1 忽略）
+  --max-action-hint-semantics-mismatch-count <int>
+                               action_hint_semantics mismatch 计数上限（默认 -1 忽略）
+  --max-action-hint-semantics-missing-actual-hint-count <int>
+                               action_hint_semantics missing_actual_hint 计数上限（默认 -1 忽略）
+  --min-action-hint-semantics-match-ratio <float>
+                               action_hint_semantics match_ratio 下限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 USAGE
@@ -191,6 +200,18 @@ USAGE
       MIN_EVENT_TYPE_MATCH_ALIAS_RATIO="${2:-$MIN_EVENT_TYPE_MATCH_ALIAS_RATIO}"
       shift 2
       ;;
+    --max-action-hint-semantics-mismatch-count)
+      MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT="${2:-$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT}"
+      shift 2
+      ;;
+    --max-action-hint-semantics-missing-actual-hint-count)
+      MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT="${2:-$MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT}"
+      shift 2
+      ;;
+    --min-action-hint-semantics-match-ratio)
+      MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO="${2:-$MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO}"
+      shift 2
+      ;;
     --require-agent-readyz-report)
       REQUIRE_AGENT_READYZ_REPORT=1
       shift
@@ -263,6 +284,9 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-event-type-match-missing-count "$MAX_EVENT_TYPE_MATCH_MISSING_COUNT"
     --max-event-type-match-unknown-count "$MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT"
     --min-event-type-match-alias-ratio "$MIN_EVENT_TYPE_MATCH_ALIAS_RATIO"
+    --max-action-hint-semantics-mismatch-count "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT"
+    --max-action-hint-semantics-missing-actual-hint-count "$MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT"
+    --min-action-hint-semantics-match-ratio "$MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO"
   )
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     THRESHOLD_ARGS+=(--require-agent-readyz-report)

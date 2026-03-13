@@ -32,6 +32,9 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MAX_EVENT_TYPE_MATCH_MISSING_COUNT" in out
     assert "MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT" in out
     assert "MIN_EVENT_TYPE_MATCH_ALIAS_RATIO" in out
+    assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
+    assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
+    assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
 
 
 def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
@@ -44,6 +47,9 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MAX_EVENT_TYPE_MATCH_MISSING_COUNT" in out
     assert "MAX_EVENT_TYPE_MATCH_UNKNOWN_COUNT" in out
     assert "MIN_EVENT_TYPE_MATCH_ALIAS_RATIO" in out
+    assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
+    assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
+    assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
 
 
 def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:

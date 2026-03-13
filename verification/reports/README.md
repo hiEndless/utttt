@@ -137,6 +137,9 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-missing-count 0 \
   --max-event-type-match-unknown-count 0 \
   --min-event-type-match-alias-ratio -1 \
+  --max-action-hint-semantics-mismatch-count -1 \
+  --max-action-hint-semantics-missing-actual-hint-count -1 \
+  --min-action-hint-semantics-match-ratio -1 \
   --max-agent-readyz-level yellow \
   --require-agent-readyz-report
 ```
@@ -154,7 +157,10 @@ python3 -m verification.reports.check_thresholds \
   --max-pipeline-mode-missing-count -1 \
   --max-event-type-match-missing-count -1 \
   --max-event-type-match-unknown-count -1 \
-  --min-event-type-match-alias-ratio -1
+  --min-event-type-match-alias-ratio -1 \
+  --max-action-hint-semantics-mismatch-count -1 \
+  --max-action-hint-semantics-missing-actual-hint-count -1 \
+  --min-action-hint-semantics-match-ratio -1
 
 # regression（回归，开始收紧）
 python3 -m verification.reports.check_thresholds \
@@ -170,6 +176,9 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-missing-count -1 \
   --max-event-type-match-unknown-count -1 \
   --min-event-type-match-alias-ratio -1 \
+  --max-action-hint-semantics-mismatch-count -1 \
+  --max-action-hint-semantics-missing-actual-hint-count -1 \
+  --min-action-hint-semantics-match-ratio -1 \
   --require-agent-readyz-report
 
 # nightly（稳定性门禁，默认建议严格）
@@ -187,6 +196,9 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-missing-count 0 \
   --max-event-type-match-unknown-count 0 \
   --min-event-type-match-alias-ratio -1 \
+  --max-action-hint-semantics-mismatch-count 0 \
+  --max-action-hint-semantics-missing-actual-hint-count 0 \
+  --min-action-hint-semantics-match-ratio -1 \
   --require-agent-readyz-report
 ```
 
