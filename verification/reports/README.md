@@ -69,6 +69,10 @@ Signal source route replay report (optional):
 bash tools/local/run_agent_signal_source_route_replay.sh --format json \
   --output verification/reports/agent_signal_source_route_replay.latest.json
 bash tools/local/run_agent_signal_source_route_replay.sh --help
+bash tools/local/run_agent_signal_router_baseline_replay.sh \
+  --format json \
+  --output verification/reports/agent_signal_router_baseline_replay.latest.json
+bash tools/local/run_agent_signal_router_baseline_replay.sh --help
 ```
 
 Signal decision replay report (optional):

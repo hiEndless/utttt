@@ -1,0 +1,70 @@
+[
+  {
+    "case_id": "selected_type_market_indicator",
+    "payload": {
+      "selected_type": "market_indicator_signal"
+    },
+    "expected_agent_key": "technical",
+    "expected_normalized_event_type": "market_indicator_signal",
+    "expected_match_mode": "canonical_or_raw"
+  },
+  {
+    "case_id": "event_type_chain_wallet",
+    "payload": {
+      "event_type": "chain_wallet_anomaly"
+    },
+    "expected_agent_key": "onchain",
+    "expected_normalized_event_type": "onchain_wallet_anomaly",
+    "expected_match_mode": "alias"
+  },
+  {
+    "case_id": "event_type_large_liquidation",
+    "payload": {
+      "event_type": "market_large_liquidation"
+    },
+    "expected_agent_key": "liquidation",
+    "expected_normalized_event_type": "large_liquidation",
+    "expected_match_mode": "alias"
+  },
+  {
+    "case_id": "event_type_social_hot_news",
+    "payload": {
+      "event_type": "social_media_hot_news"
+    },
+    "expected_agent_key": "social_news",
+    "expected_normalized_event_type": "social_news",
+    "expected_match_mode": "alias"
+  },
+  {
+    "case_id": "source_type_market_indicator",
+    "payload": {
+      "event_type": "xfeed_unknown",
+      "signal_source_type": "market_indicator_signal"
+    },
+    "expected_agent_key": "technical"
+  },
+  {
+    "case_id": "source_type_onchain_wallet",
+    "payload": {
+      "event_type": "xfeed_unknown",
+      "signal_source_type": "onchain_wallet_anomaly"
+    },
+    "expected_agent_key": "onchain"
+  },
+  {
+    "case_id": "source_type_large_liquidation",
+    "payload": {
+      "event_type": "xfeed_unknown",
+      "source_type": "market_large_liquidation"
+    },
+    "expected_agent_key": "liquidation"
+  },
+  {
+    "case_id": "source_type_macro_news",
+    "payload": {
+      "event_type": "xfeed_unknown",
+      "source_signal_type": "macro_news"
+    },
+    "expected_agent_key": "social_news"
+  }
+]
