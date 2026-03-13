@@ -1,140 +1,139 @@
 # agent_server_new 重构方案（V2）
 
-更新时间：2026-03-10
+更新时间：2026-03-13
 
 ## 1. 目标
 
-将 `agent_server_new` 收敛为“方向判断与决策编排层”，把仓位与风控最终裁决下沉到 `execution_service`（确定性脚本服务）。
+将 `agent_server_new` 收敛为“单 agent 判定层”：
 
-目标能力边界：
+1. 使用 LLM 基于结构化输入（MSL + 事件证据）判断信号方向是否可信。
+2. 按信号类型路由到对应的信号决策 agent。
+3. 不在 agent 层执行任何仓位/风控/动作阻断。
+4. 风控与最终动作裁决全部下沉到 `execution_service`。
 
-1. 保留：
-- 信号方向判断与解释
-- 多周期冲突建议消费（`cross_horizon.suggested_policy`）
-- 轻量策略门控（HorizonPolicyGate / StrategyGate）
-- 决策可观测（DecisionTrace）
+一句话定义：
 
-2. 下沉：
-- 仓位上限与加仓约束
-- PnL 驱动风控
-- 账户级风险约束
-- 最终执行动作裁决
+> agent 只回答“这个信号是否可信”，execution 才回答“是否允许执行以及如何执行”。
 
 ## 2. 目标架构
 
 ```text
-feature_service
-  -> market_state_engine
-    -> agent_server_new
-      -> execution_service
+event_center_new(selected_event/active_events)
+  + market_state_engine(msl + key_features)
+    -> agent_server_new(signal routing + signal decision)
+      -> execution_service(final risk + final action)
 ```
 
-触发方式（双轨）：
+触发方式（当前冻结）：
 
-1. 主链路：事件中心触发（实时）  
-`event_center_new(signal_event)` -> `agent_server_new`
+1. 主链路：`event_center_new(signal_event)` -> `agent_server_new`
+2. 辅链路：`state_refresh_event` -> `agent_server_new`（巡检/补漏）
 
-2. 辅链路：定时巡检（补漏）  
-`state_refresh_event` -> `agent_server_new`
+## 3. 输入与路由冻结
 
-## 3. 输入上下文（冻结）
-
-当前统一输入结构：
+统一输入结构：
 
 `MSL -> Key Evidence -> Active Events -> Signal Event`
 
 说明：
 
-1. `MSL`：主语境（趋势、阶段、流动性、风险）
-2. `Key Evidence`：按事件类型动态裁剪证据
-3. `Active Events`：背景事件
-4. `Signal Event`：触发事件本体
-5. `Position Context`：下沉到 `execution_service`，不再进入 agent 裁决输入
+1. `MSL`：降噪后的市场语义主语境。
+2. `Signal Event`：触发事件本体（主判对象）。
+3. `Active Events`：背景事件（news/social/onchain/liquidation/technical 等）。
+4. `Position Context`：不进入 agent，完全由 `execution_service` 消费。
 
-补充字段（已落地）：
-- `msl_meta`
-- `msl_bundle`
-- `cross_horizon`（含 `suggested_policy`）
+事件来源约束：
 
-## 4. agent 职责收敛策略
+1. 外部事件（news/social/onchain）不直接绕过事件中心。
+2. 外部事件与结构事件统一经 `event_center_new` 归一后输入 agent（`ec:selected`）。
 
-### 4.1 当前到目标的迁移
+## 4. 单 agent 路由模型
 
-阶段 A（当前）：
-- agent 内仍包含 `IntentResolver/RulePlanner/RiskGate/ExecutionPlanner`
+本层采用“单入口 + 事件类型路由”的多策略单 agent 架构：
 
-阶段 B（目标）：
-- agent 只输出方向与决策解释
-- execution_service 接收方向意图并结合 `Position Context` 做最终执行裁决
+1. 入口：`SignalRouter`
+- 输入：`signal_event.type/source_category`
+- 输出：`agent_key`
 
-### 4.2 推荐中间态
+2. 决策器：`SignalDecisionAgent`
+- 接口统一：`decide(context) -> SignalDecision`
+- 内部按 `agent_key` 选择对应提示词、证据裁剪和判定策略
 
-1. `SignalEvaluator` 保留（语义判断）
-2. `HorizonPolicyGate` 保留（冲突快速收敛）
-3. `IntentResolver` 保留但仅生成轻量意图
-4. `RulePlanner/ExecutionPlanner` 逐步瘦身为“建议”，不做最终风控裁决
+建议初始路由分类：
 
-## 5. HorizonPolicyGate（已完成）
+1. `technical`（指标/结构类信号）
+2. `liquidation`（大额清算/流动性冲击）
+3. `onchain`（链上钱包/资金流异动）
+4. `social_news`（社媒/新闻/宏观语义事件）
+5. `generic`（兜底）
 
-状态：
+## 5. agent 输出契约（收敛方向）
 
-1. 已独立模块化：`agent_server_new/domain/horizon_policy_gate.py`
-2. 已支持配置驱动：
-- `block_on_increase_policies`
-3. 已支持环境变量：
-- `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`（CSV）
-- `AGENT_HORIZON_POLICY_CONFIG_JSON`（JSON）
-
-## 6. 运行与装配（已完成）
-
-1. 默认工厂：
-- `agent_server_new.app.create_trade_event_workflow_from_env`
-
-2. CLI：
-- `python -m services.agent_server_new.main --dry-run`
-
-3. one-shot pipeline smoke：
-- `python -m services.agent_server_new.pipeline_smoke --dry-run`
-- 单进程串联 `market_state_engine -> agent_server_new`
-
-## 7. 与 execution_service 的契约方向
-
-建议 agent 输出给 execution 的对象：
+agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 
 1. `decision_id`
-2. `symbol/exchange`
-3. `direction_intent`（long/short/none）
-4. `confidence`
-5. `explanation_tags`
-6. `cross_horizon_policy`
-7. `risk_hints`（非最终约束）
+2. `exchange`
+3. `symbol`
+4. `signal_direction`
+5. `signal_verdict`（`accept|reject|uncertain`）
+6. `confidence`
+7. `reliability_score`
+8. `reasons`
+9. `evidence_refs`
+10. `llm_observation`
 
-execution_service 最终输出：
+显式禁止在 agent 输出中出现：
 
-1. `execution_action`（add/reduce/hold/exit/skip）
-2. `reject_reason`（如 `position_limit_reached`）
-3. `applied_risk_rules`
-4. `order_result`（如有）
+1. `allow_open/allow_add/allow_reduce/allow_exit`
+2. `risk_constraints`
+3. `sizing`
+4. `execution_action`
+5. `reject_reason`
+
+## 6. execution_service 职责冻结
+
+`execution_service` 成为唯一硬约束与最终动作权威：
+
+1. 仓位上限/加减仓约束
+2. 账户风险/PnL/冷却等风控规则
+3. 最终动作裁决（`add/reduce/hold/exit/skip`）
+4. 下单与回执/对账语义
+
+## 7. workflow 角色重定义
+
+后续 `workflow` 仅用于编排，不承载决策语义：
+
+1. 决策结果入库（trace/event store）
+2. 事后验证（上一轮决策正确性回放）
+3. 统计评估（命中率/不确定率/偏差对账）
+
+若以上需求关闭，可退化为“路由 + 决策”轻执行路径。
 
 ## 8. 分阶段实施计划
 
-1. Phase 1（已完成）：
-- 输入契约收敛（MSL + msl_meta + msl_bundle + cross_horizon）
-- HorizonPolicyGate 落地与配置化
+1. Phase A（契约阶段）
+- 新增并冻结 `SignalDecision` 契约。
+- `agent -> execution` 改为传递语义裁决对象。
+- 文档明确“agent 无风控字段”禁令。
 
-2. Phase 2（进行中）：
-- `agent -> execution_service` 输出契约冻结
-- 把仓位/风控硬规则下沉到 execution
- - 可选 `execution_decider` 已接入 workflow（`AGENT_EXECUTION_ENABLED=true` 时生效）
-- DecisionTrace schema 冻结：新增 `docs/decision_trace.schema.json`，锁定 `llm_observation.status/provider/model/raw_content_hash`
+2. Phase B（实现阶段）
+- `SignalRouter` 落地，按事件类型路由到不同 signal decision agent。
+- `SignalEvaluator` 升级为 LLM 主判（MSL 驱动）。
+- `RulePlanner/RiskGate/ExecutionPlanner` 从主链路移除。
 
-3. Phase 3（待开始）：
-- agent 内 `RulePlanner/ExecutionPlanner` 改为建议层
-- execution_service 成为唯一执行裁决权威
+3. Phase C（兼容阶段）
+- 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。
+- 完成 CLI/API 无破坏迁移。
+
+4. Phase D（收口阶段）
+- 删除 agent 内风控/动作阻断遗留逻辑。
+- execution 成为唯一最终动作裁决路径。
+- 下线旧字段与兼容分支。
 
 ## 9. 验收标准
 
-1. agent 不依赖旧 MSL 字段（已覆盖守卫）
-2. `cross_horizon.suggested_policy` 进入决策链路（已完成）
-3. one-shot pipeline 可跑通（已完成）
-4. execution_service 对仓位与风险有最终裁决权（待完成）
+1. agent 输出只包含 `SignalDecision` 语义字段，无风控执行字段。
+2. 任意输入下，最终动作仅由 `execution_service` 给出。
+3. `news/social/onchain` 与结构事件统一经 `event_center_new` 输入 agent。
+4. 路由后不同类型信号均可稳定产出 `accept/reject/uncertain`。
+5. `DecisionTrace` 可复盘并可用于事后正确性验证。

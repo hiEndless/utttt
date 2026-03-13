@@ -29,6 +29,22 @@ class SignalVerdict:
 
 
 @dataclass(frozen=True)
+class SignalDecision:
+    """信号语义裁决：仅表达信号可信度，不表达执行动作。"""
+
+    decision_id: str
+    exchange: str
+    symbol: str
+    signal_direction: Direction
+    signal_verdict: Literal["accept", "reject", "uncertain"]
+    confidence: Confidence
+    reliability_score: float
+    reasons: List[str] = field(default_factory=list)
+    evidence_refs: List[str] = field(default_factory=list)
+    llm_observation: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class ActionIntent:
     """动作意图：用于把“策略动作语义”与“执行细节/约束”解耦。"""
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan
+from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, SignalDecision
 from services.agent_server_new.domain.execution_planner import build_execution_plan
 from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_gate, load_horizon_policy_config_from_env
 from services.agent_server_new.domain.intent_resolver import resolve_intent
@@ -60,6 +60,7 @@ class WorkflowResult:
     """工作流输出：保留 agent 计划，并附带 execution 最终裁决（如可用）。"""
 
     agent_plan: ExecutionPlan
+    signal_decision: SignalDecision
     execution_result: Optional[Dict[str, Any]] = None
 
 
@@ -290,6 +291,11 @@ class TradeEventWorkflow:
                         "llm_observer",
                         {"status": "error", "fallback": "rule_engine", "error": str(exc)},
                     )
+        signal_decision = _build_signal_decision(
+            event=event,
+            signal=signal,
+            llm_observation=llm_observation,
+        )
 
         if self._recorder:
             await self._recorder.record_agent_output(
@@ -353,6 +359,7 @@ class TradeEventWorkflow:
         if self._execution_decider is not None:
             decision_payload = _build_decision_intent_payload(
                 event=event,
+                signal_decision=signal_decision,
                 plan=plan,
                 cross_horizon=ch,
                 ai_adaptive_enabled=self._ai_adaptive_enabled,
@@ -546,12 +553,13 @@ class TradeEventWorkflow:
                 },
             )
 
-        return WorkflowResult(agent_plan=plan, execution_result=execution_result)
+        return WorkflowResult(agent_plan=plan, signal_decision=signal_decision, execution_result=execution_result)
 
 
 def _build_decision_intent_payload(
     *,
     event: TradeEventInput,
+    signal_decision: SignalDecision,
     plan: ExecutionPlan,
     cross_horizon: Dict[str, str],
     ai_adaptive_enabled: bool = False,
@@ -564,10 +572,10 @@ def _build_decision_intent_payload(
         "score": float(plan.confidence.score or 0.0),
     }
     payload = {
-        "decision_id": str(event.event_id),
-        "exchange": str(event.exchange),
-        "symbol": str(event.symbol),
-        "direction_intent": str(plan.direction or "none"),
+        "decision_id": str(signal_decision.decision_id or event.event_id),
+        "exchange": str(signal_decision.exchange or event.exchange),
+        "symbol": str(signal_decision.symbol or event.symbol),
+        "direction_intent": str(signal_decision.signal_direction or "none"),
         "decision_confidence": dict(decision_confidence),
         "cross_horizon_policy": dict(cross_horizon or {}),
         "risk_hints": {
@@ -575,6 +583,9 @@ def _build_decision_intent_payload(
             "agent_notes": str(plan.notes or ""),
             "decision_confidence": dict(decision_confidence),
             "decision_confidence_source": "agent_execution_plan",
+            "signal_verdict": str(signal_decision.signal_verdict or ""),
+            "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
+            "signal_reasons": list(signal_decision.reasons or []),
         },
     }
     if bool(ai_adaptive_enabled):
@@ -587,6 +598,36 @@ def _build_decision_intent_payload(
         payload["adaptive_profile_version"] = "reserved-v0"
         payload["adaptive_explain"] = {"status": "reserved_only"}
     return payload
+
+
+def _build_signal_decision(
+    *,
+    event: TradeEventInput,
+    signal: Any,
+    llm_observation: Dict[str, Any],
+) -> SignalDecision:
+    verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
+    if verdict not in {"accept", "reject", "uncertain"}:
+        verdict = "uncertain"
+    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
+    if direction not in {"long", "short", "none"}:
+        direction = "none"
+    conf = getattr(signal, "confidence", Confidence(level="low", score=0.0))
+    raw_score = float(getattr(conf, "score", 0.0) or 0.0)
+    reliability_score = max(0.0, min(1.0, raw_score))
+    reasons = [str(x) for x in list(getattr(signal, "invalidation_reasons", []) or []) if str(x)]
+    return SignalDecision(
+        decision_id=str(event.event_id),
+        exchange=str(event.exchange),
+        symbol=str(event.symbol),
+        signal_direction=direction,  # type: ignore[arg-type]
+        signal_verdict=verdict,  # type: ignore[arg-type]
+        confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]
+        reliability_score=reliability_score,
+        reasons=reasons,
+        evidence_refs=[],
+        llm_observation=dict(llm_observation or {}),
+    )
 
 
 def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:

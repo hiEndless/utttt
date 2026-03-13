@@ -154,6 +154,10 @@ def test_trade_event_workflow_run_with_result_returns_execution_result():
             )
         )
         assert out.agent_plan.action == "add"
+        assert out.signal_decision.signal_verdict == "accept"
+        assert out.signal_decision.signal_direction == "long"
+        assert out.signal_decision.decision_id == "evt-result-001"
+        assert out.signal_decision.reliability_score == 0.7
         assert out.execution_result is not None
         assert out.execution_result["execution_action"] == "add"
 
@@ -221,6 +225,9 @@ def test_trade_event_workflow_llm_observer_failed_still_fallbacks_to_rule_plan()
             )
         )
         assert out.agent_plan.action == "add"
+        assert out.signal_decision.signal_verdict == "accept"
+        assert out.signal_decision.signal_direction == "long"
+        assert out.signal_decision.llm_observation["status"] == "error"
         assert out.execution_result is None
 
     import pytest
