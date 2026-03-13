@@ -12,7 +12,7 @@ from typing import Any, Dict
 from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, RiskAllowance, SignalDecision
 from services.agent_server_new.observability.decision_trace import DecisionTrace, map_alert_codes_from_contract_warnings
 
-DECISION_PLAN_NOTES = "minimal_pipeline_semantic_plan"
+SIGNAL_DECISION_PLAN_NOTES = "minimal_pipeline_semantic_plan"
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ def build_decision_plan_state(
             "score": signal.confidence.score,
         },
         "reasons": ["signal_semantic_plan"],
-        "notes": DECISION_PLAN_NOTES,
+        "notes": SIGNAL_DECISION_PLAN_NOTES,
     }
     allowance = RiskAllowance(
         allow_open=True,
@@ -57,7 +57,7 @@ def build_decision_plan_state(
         allowance=allowance,
         confidence=signal.confidence,
         sizing=None,
-        notes=DECISION_PLAN_NOTES,
+        notes=SIGNAL_DECISION_PLAN_NOTES,
     )
     return DecisionPlanState(
         decision_intent_snapshot=decision_intent_snapshot,

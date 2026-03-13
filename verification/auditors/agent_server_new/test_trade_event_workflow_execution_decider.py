@@ -9,6 +9,7 @@ if PROJECT_ROOT not in sys.path:
 from services.agent_server_new.adapters.market_state_http import _build_msl_from_dict
 from services.agent_server_new.app.workflows.trade_event_workflow import TradeEventInput, TradeEventWorkflow
 from services.agent_server_new.domain.contracts import Confidence, SignalVerdict
+from services.agent_server_new.domain.decision_plan_adapter import SIGNAL_DECISION_PLAN_NOTES
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
@@ -218,7 +219,7 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
         assert decider.called is True
         assert decider.payload["decision_id"] == "evt-exec-minimal-001"
         assert decider.payload["risk_hints"]["agent_action_hint"] == "add"
-        assert decider.payload["risk_hints"]["agent_notes"] == "minimal_pipeline_semantic_plan"
+        assert decider.payload["risk_hints"]["agent_notes"] == SIGNAL_DECISION_PLAN_NOTES
         assert decider.payload["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
         assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
