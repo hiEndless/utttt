@@ -12,6 +12,10 @@ from pathlib import Path
 README_CONTRACTS_VERSION = "readme-contracts-v2"
 README_CONTRACTS_BASELINE_PATH = Path("verification/text/readme_contracts_version.baseline")
 README_CONTRACTS_DOC_ANCHOR = f"README_CONTRACTS_VERSION={README_CONTRACTS_VERSION}"
+README_CONTRACTS_SNIPPETS_DOCS: tuple[Path, ...] = (
+    Path("services/agent_server_new/README.md"),
+    Path("verification/reports/README.md"),
+)
 
 PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = (
     "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
