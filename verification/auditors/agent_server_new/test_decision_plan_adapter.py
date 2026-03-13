@@ -1,4 +1,5 @@
 import sys
+from dataclasses import fields
 from pathlib import Path
 
 PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
@@ -7,6 +8,7 @@ if PROJECT_ROOT not in sys.path:
 
 from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
 from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E402
+    DecisionPlanState,
     SIGNAL_DECISION_PLAN_NOTES,
     build_decision_plan_state,
     build_decision_trace_payload,
@@ -21,6 +23,11 @@ from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E4
 
 def _sample_signal() -> SignalVerdict:
     return SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+
+
+def test_decision_plan_state_fields_are_minimal() -> None:
+    names = [f.name for f in fields(DecisionPlanState)]
+    assert names == ["decision_intent_snapshot", "plan"]
 
 
 def test_decision_plan_adapter_minimal_semantic_state() -> None:
