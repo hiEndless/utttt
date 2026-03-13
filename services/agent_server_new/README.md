@@ -321,6 +321,7 @@ signal_event + active_events + MSL
 - 按 jq 过滤：`bash tools/local/tail_agent_events.sh --jq '.agent_name == "decision_trace"'`
 - 友好展示（缩进 JSON）：`bash tools/local/tail_agent_events.sh --pretty`
 - 聚合 decision_trace schema 告警：`bash tools/local/run_agent_decision_trace_schema_report.sh`
+- 聚合 legacy/minimal 灰度占比：`bash tools/local/run_agent_pipeline_mode_report.sh`
 
 ## Memory Observability
 
