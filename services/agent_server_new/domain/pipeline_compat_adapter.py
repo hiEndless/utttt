@@ -441,3 +441,33 @@ def build_execution_decision_payload(
         payload["adaptive_profile_version"] = "reserved-v0"
         payload["adaptive_explain"] = {"status": "reserved_only"}
     return payload
+
+
+def build_workflow_bridge_payload(
+    *,
+    state: PipelineCompatState,
+    signal_decision: SignalDecision,
+    pipeline_mode: str = "minimal",
+) -> Dict[str, Any]:
+    mode = str(pipeline_mode or "minimal").strip().lower() or "minimal"
+    return {
+        "pipeline_mode": mode,
+        "notes": str(state.plan.notes or ""),
+        "decision": {
+            "decision_agent_key": signal_decision.decision_agent_key,
+            "decision_mode": signal_decision.decision_mode,
+            "llm_parse_status": signal_decision.llm_parse_status,
+            "signal_verdict": signal_decision.signal_verdict,
+            "signal_direction": signal_decision.signal_direction,
+            "reliability_score": signal_decision.reliability_score,
+        },
+        "execution_plan": {
+            "action": state.plan.action,
+            "direction": state.plan.direction,
+            "confidence": {
+                "level": state.plan.confidence.level,
+                "score": state.plan.confidence.score,
+            },
+            "notes": state.plan.notes,
+        },
+    }

@@ -20,6 +20,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
     build_symbol_memory_legacy_sections,
+    build_workflow_bridge_payload,
 )
 from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
 from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
@@ -431,24 +432,11 @@ class TradeEventWorkflow:
                 await self._recorder.record_agent_output(
                     event.event_id,
                     "workflow_bridge",
-                    {
-                        "pipeline_mode": "minimal",
-                        "notes": "legacy_pipeline_disabled",
-                        "decision": {
-                            "decision_agent_key": signal_decision.decision_agent_key,
-                            "decision_mode": signal_decision.decision_mode,
-                            "llm_parse_status": signal_decision.llm_parse_status,
-                            "signal_verdict": signal_decision.signal_verdict,
-                            "signal_direction": signal_decision.signal_direction,
-                            "reliability_score": signal_decision.reliability_score,
-                        },
-                        "execution_plan": {
-                            "action": plan.action,
-                            "direction": plan.direction,
-                            "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
-                            "notes": plan.notes,
-                        },
-                    },
+                    build_workflow_bridge_payload(
+                        state=compat,
+                        signal_decision=signal_decision,
+                        pipeline_mode="minimal",
+                    ),
                 )
 
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]

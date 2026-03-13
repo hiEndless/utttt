@@ -12,6 +12,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
     build_symbol_memory_legacy_sections,
+    build_workflow_bridge_payload,
 )
 
 
@@ -119,3 +120,37 @@ def test_pipeline_compat_adapter_builds_execution_decision_payload_modes() -> No
     )
     assert payload_min["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
     assert payload_min["risk_hints"]["agent_action_hint"] == "add"
+
+
+def test_pipeline_compat_adapter_builds_workflow_bridge_payload() -> None:
+    signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+    state = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=signal,
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    )
+    signal_decision = SignalDecision(
+        decision_id="evt-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal_direction="long",
+        signal_verdict="accept",
+        confidence=Confidence(level="high", score=0.82),
+        reliability_score=0.82,
+        reasons=["ok"],
+        evidence_refs=[],
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    payload = build_workflow_bridge_payload(state=state, signal_decision=signal_decision, pipeline_mode="minimal")
+    assert payload["pipeline_mode"] == "minimal"
+    assert payload["decision"]["decision_agent_key"] == "technical"
+    assert payload["execution_plan"]["action"] == "hold"
+    assert payload["execution_plan"]["confidence"] == {"level": "high", "score": 0.82}
