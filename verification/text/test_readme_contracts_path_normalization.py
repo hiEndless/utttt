@@ -28,3 +28,10 @@ def test_get_required_snippets_for_unknown_doc_returns_empty_tuple() -> None:
 def test_get_required_snippets_for_empty_or_dot_path_returns_empty_tuple() -> None:
     assert get_required_snippets_for_doc(Path("")) == ()
     assert get_required_snippets_for_doc(Path(".")) == ()
+
+
+def test_get_required_snippets_for_unknown_doc_prints_debug_when_enabled(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("READMECONTRACT_DEBUG", "1")
+    assert get_required_snippets_for_doc(Path("docs/not_exists.md")) == ()
+    out = capsys.readouterr().out
+    assert "no required snippets configured" in out

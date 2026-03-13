@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 # 版本升级注意：
@@ -55,4 +56,6 @@ def get_required_snippets_for_doc(path: Path) -> tuple[str, ...]:
     for key, snippets in README_CONTRACTS_DOCS_REQUIRED_SNIPPETS.items():
         if _normalize_doc_path(key) == normalized:
             return tuple(snippets)
+    if str(os.getenv("READMECONTRACT_DEBUG", "0")).strip() == "1":
+        print(f"[readme_contracts] no required snippets configured for: {normalized}")
     return ()
