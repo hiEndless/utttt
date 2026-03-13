@@ -67,6 +67,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
+    assert "--status missing" in regression_text
+    assert "--status missing" in nightly_text
 
 
 def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:

@@ -121,6 +121,7 @@ bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --pref
 bash tools/local/print_event_type_match_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 bash tools/local/print_action_hint_semantics_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 if [[ "$WITH_AGENT_ACTION_HINT_CASES_REPORT" == "1" ]]; then
+  AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="verification/reports/agent_action_hint_missing_cases.latest.json"
   bash tools/local/inspect_agent_action_hint_cases.sh \
     --status mismatch \
     --format json \
@@ -128,5 +129,15 @@ if [[ "$WITH_AGENT_ACTION_HINT_CASES_REPORT" == "1" ]]; then
   echo "[nightly] action_hint_cases_report_path=$AGENT_ACTION_HINT_CASES_REPORT_PATH"
   bash tools/local/check_agent_action_hint_cases_guard.sh \
     "$AGENT_ACTION_HINT_CASES_REPORT_PATH" \
-    "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT"
+    "$MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" \
+    mismatch
+  bash tools/local/inspect_agent_action_hint_cases.sh \
+    --status missing \
+    --format json \
+    --output "$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" >/dev/null
+  echo "[nightly] action_hint_missing_cases_report_path=$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH"
+  bash tools/local/check_agent_action_hint_cases_guard.sh \
+    "$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" \
+    "$MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" \
+    missing
 fi

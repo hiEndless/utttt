@@ -238,4 +238,5 @@ Guard action_hint mismatch cases:
 ```bash
 bash tools/local/check_agent_action_hint_cases_guard.sh
 bash tools/local/check_agent_action_hint_cases_guard.sh verification/reports/agent_action_hint_cases.latest.json 0
+bash tools/local/check_agent_action_hint_cases_guard.sh verification/reports/agent_action_hint_missing_cases.latest.json 0 missing
 ```

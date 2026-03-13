@@ -57,3 +57,36 @@ def test_agent_action_hint_cases_guard_fail_when_exceeds_limit(tmp_path: Path) -
     assert result.returncode == 1
     assert "[failed] action_hint cases guard" in result.stdout
     assert "event_id=evt-1" in result.stdout
+
+
+def test_agent_action_hint_cases_guard_supports_missing_status_filter(tmp_path: Path) -> None:
+    report = tmp_path / "agent_action_hint_cases.latest.json"
+    _write_json(
+        report,
+        {
+            "schema_version": "agent-action-hint-cases-v1",
+            "rows": [
+                {"event_id": "evt-missing", "status": "missing", "expected_hint": "hold", "actual_hint": ""},
+                {"event_id": "evt-mismatch", "status": "mismatch", "expected_hint": "hold", "actual_hint": "add"},
+            ],
+        },
+    )
+    pass_result = subprocess.run(
+        ["bash", str(GUARD_SCRIPT), str(report), "1", "missing"],
+        cwd=str(PROJECT_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert pass_result.returncode == 0
+    assert "status=missing" in pass_result.stdout
+
+    fail_result = subprocess.run(
+        ["bash", str(GUARD_SCRIPT), str(report), "0", "missing"],
+        cwd=str(PROJECT_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert fail_result.returncode == 1
+    assert "event_id=evt-missing" in fail_result.stdout
