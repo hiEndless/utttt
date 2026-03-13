@@ -78,6 +78,13 @@ bash tools/local/run_agent_signal_decision_replay_report.sh \
 bash tools/local/run_agent_signal_decision_replay_report.sh --help
 ```
 
+Signal decision LLM observe report (optional):
+```bash
+bash tools/local/run_agent_signal_decision_llm_observe_report.sh \
+  --output verification/reports/agent_signal_decision_llm_observe.latest.json
+bash tools/local/run_agent_signal_decision_llm_observe_report.sh --help
+```
+
 Inspect recent action_hint cases (optional):
 ```bash
 bash tools/local/inspect_agent_action_hint_cases.sh --limit 20
