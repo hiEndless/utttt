@@ -764,11 +764,19 @@ def _build_decision_intent_payload(
 ) -> Dict[str, Any]:
     """把 agent 内部 ExecutionPlan 映射为 execution_service 的 DecisionIntent。"""
 
+    normalized_mode = str(pipeline_mode or "legacy").strip().lower()
+    decision_confidence_source = "agent_execution_plan"
     decision_confidence = {
         "level": str(plan.confidence.level or "low"),
         "score": float(plan.confidence.score or 0.0),
     }
-    normalized_mode = str(pipeline_mode or "legacy").strip().lower()
+    if normalized_mode == "minimal":
+        signal_conf = signal_decision.confidence
+        decision_confidence = {
+            "level": str(signal_conf.level or "low"),
+            "score": float(signal_conf.score or 0.0),
+        }
+        decision_confidence_source = "agent_signal_decision"
     agent_action_hint = str(plan.action or "hold").strip().lower() or "hold"
     if normalized_mode == "minimal":
         verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
@@ -788,7 +796,7 @@ def _build_decision_intent_payload(
             "agent_action_hint": agent_action_hint,
             "agent_notes": str(plan.notes or ""),
             "decision_confidence": dict(decision_confidence),
-            "decision_confidence_source": "agent_execution_plan",
+            "decision_confidence_source": decision_confidence_source,
             "decision_agent_key": str(signal_decision.decision_agent_key or ""),
             "decision_mode": str(signal_decision.decision_mode or "rule"),
             "llm_parse_status": str(signal_decision.llm_parse_status or ""),

@@ -265,6 +265,9 @@ def test_trade_event_workflow_minimal_pipeline_still_calls_execution_decider():
         assert decider.payload["decision_id"] == "evt-exec-minimal-001"
         assert decider.payload["risk_hints"]["agent_action_hint"] == "add"
         assert decider.payload["risk_hints"]["agent_notes"] == "legacy_pipeline_disabled"
+        assert decider.payload["decision_confidence"] == {"level": "medium", "score": 0.7}
+        assert decider.payload["risk_hints"]["decision_confidence"] == {"level": "medium", "score": 0.7}
+        assert decider.payload["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
         assert decider.payload["risk_hints"]["decision_mode"] == "rule"
         assert decider.payload["risk_hints"]["llm_parse_status"] == "rule_only"
         assert decider.payload["risk_hints"]["prompt_config_source"] == "runtime"
