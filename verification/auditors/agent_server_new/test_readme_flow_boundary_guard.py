@@ -14,3 +14,6 @@ def test_readme_freezes_minimal_main_flow_and_historical_flow_label() -> None:
     assert "### 历史链路（已下线）" in text
     assert "IntentResolver -> RulePlanner -> HorizonPolicyGate -> StrategyGate -> RiskGate -> ExecutionPlanner" in text
     assert "### 当前实现（过渡态）" not in text
+    assert "做 signal semantic decision（accept/reject/uncertain）" in text
+    assert "做 intent resolve / rule planning" not in text
+    assert "做 strategy gating / risk gating" not in text

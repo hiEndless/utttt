@@ -29,9 +29,8 @@ data_server
 - consume `signal_event`
 - consume `active_events`
 - consume `MSL`
-- 做 signal evaluation
-- 做 intent resolve / rule planning
-- 做 strategy gating / risk gating
+- 做 signal evaluation + event route
+- 做 signal semantic decision（accept/reject/uncertain）
 - 产出 `ExecutionPlan`
 - 产出 `DecisionTrace`
 
