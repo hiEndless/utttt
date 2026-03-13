@@ -374,6 +374,7 @@ signal_event + active_events + MSL
   - `bash tools/local/run_agent_execution_closed_loop_smoke.sh`
   - 可选：`--result-mode accept|reject|error`（默认 `reject`）
   - 退出码：`0=accept/reject`，`2=error`
+- 三态自检（验返回码约定）：`bash tools/local/check_agent_execution_closed_loop_smoke.sh`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 
