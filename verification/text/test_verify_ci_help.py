@@ -93,10 +93,13 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "WITH_AGENT_CLOSED_LOOP_SMOKE=1" in out
     assert "WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1" in out
     assert "WITH_AGENT_ACTION_HINT_CASES_REPORT=1" in out
+    assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT=1" in out
     assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" in out
+    assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
+    assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
 
 
 def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
@@ -106,5 +109,8 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--with-agent-closed-loop-smoke" in out
     assert "--with-agent-action-hint-semantics-report" in out
     assert "--with-agent-action-hint-cases-report" in out
+    assert "--with-agent-decision-agent-key-report" in out
     assert "--agent-action-hint-cases-report-path <path>" in out
     assert "--agent-action-hint-missing-cases-report-path <path>" in out
+    assert "--agent-decision-agent-key-report-path <path>" in out
+    assert "--max-decision-agent-key-unknown-count <int>" in out

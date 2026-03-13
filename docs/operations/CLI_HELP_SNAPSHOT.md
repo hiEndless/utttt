@@ -172,11 +172,16 @@ Options:
   --with-agent-action-hint-semantics-report
                                           启用 minimal 语义映射聚合观测（默认关闭）
   --with-agent-action-hint-cases-report   生成 action_hint mismatch 回放 artifact（默认关闭）
+  --with-agent-decision-agent-key-report  启用 decision_agent_key 路由分布观测（默认关闭）
   --agent-action-hint-cases-report-path <path>
                                           指定 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   --agent-action-hint-missing-cases-report-path <path>
                                           指定 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
+  --agent-decision-agent-key-report-path <path>
+                                          指定 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
+  --max-decision-agent-key-unknown-count <int>
+                                          设置 decision_agent_key unknown 计数上限（默认 -1 忽略）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
   --agent-readyz-timeout-s <sec>         指定 readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
@@ -228,10 +233,14 @@ Optional Observability:
                                 启用 minimal 语义映射聚合观测（默认关闭）
   WITH_AGENT_ACTION_HINT_CASES_REPORT=1
                                 生成 action_hint mismatch 回放 artifact（默认关闭）
+  WITH_AGENT_DECISION_AGENT_KEY_REPORT=1
+                                启用 decision_agent_key 路由分布观测（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
                                 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
+  AGENT_DECISION_AGENT_KEY_REPORT_PATH
+                                decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -239,6 +248,8 @@ Optional Observability:
                                 pipeline_mode unknown 计数上限（默认 -1 忽略）
   MAX_PIPELINE_MODE_MISSING_COUNT
                                 pipeline_mode 缺失计数上限（默认 -1 忽略）
+  MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT
+                                decision_agent_key unknown 计数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT    是否要求 readyz 报告存在（1/0，默认 0）
   AGENT_READYZ_BASE_URL          agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S         agent readyz 拉取超时秒数（默认 2.0）
