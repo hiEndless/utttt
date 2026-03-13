@@ -10,6 +10,7 @@ WITH_AGENT_CLOSED_LOOP_SMOKE=0
 WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=0
 WITH_AGENT_ACTION_HINT_CASES_REPORT=0
 AGENT_ACTION_HINT_CASES_REPORT_PATH="verification/reports/agent_action_hint_cases.latest.json"
+AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="verification/reports/agent_action_hint_missing_cases.latest.json"
 MAX_AGENT_READYZ_LEVEL="red"
 REQUIRE_AGENT_READYZ_REPORT=0
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
@@ -59,6 +60,10 @@ while (($# > 0)); do
       AGENT_ACTION_HINT_CASES_REPORT_PATH="${2:-$AGENT_ACTION_HINT_CASES_REPORT_PATH}"
       shift 2
       ;;
+    --agent-action-hint-missing-cases-report-path)
+      AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="${2:-$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH}"
+      shift 2
+      ;;
     --max-agent-readyz-level)
       MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
       shift 2
@@ -104,6 +109,8 @@ Options:
   --with-agent-action-hint-cases-report   生成 action_hint mismatch 回放 artifact（默认关闭）
   --agent-action-hint-cases-report-path <path>
                                           指定 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
+  --agent-action-hint-missing-cases-report-path <path>
+                                          指定 action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
@@ -134,6 +141,7 @@ fi
 if [[ "$WITH_AGENT_ACTION_HINT_CASES_REPORT" == "1" ]]; then
   ENV_PREFIX+=(WITH_AGENT_ACTION_HINT_CASES_REPORT=1)
   ENV_PREFIX+=(AGENT_ACTION_HINT_CASES_REPORT_PATH="$AGENT_ACTION_HINT_CASES_REPORT_PATH")
+  ENV_PREFIX+=(AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH")
 fi
 ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
 ENV_PREFIX+=(REQUIRE_AGENT_READYZ_REPORT="$REQUIRE_AGENT_READYZ_REPORT")

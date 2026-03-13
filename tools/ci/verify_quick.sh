@@ -23,6 +23,8 @@ Optional Observability:
                                 生成 action_hint mismatch 回放 artifact（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
+  AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
+                                action_hint missing cases 输出路径（默认 verification/reports/agent_action_hint_missing_cases.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -106,11 +108,17 @@ if [[ "${WITH_AGENT_CLOSED_LOOP_SMOKE:-0}" == "1" ]]; then
 fi
 if [[ "${WITH_AGENT_ACTION_HINT_CASES_REPORT:-0}" == "1" ]]; then
   AGENT_ACTION_HINT_CASES_REPORT_PATH="${AGENT_ACTION_HINT_CASES_REPORT_PATH:-verification/reports/agent_action_hint_cases.latest.json}"
+  AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH="${AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH:-verification/reports/agent_action_hint_missing_cases.latest.json}"
   bash tools/local/inspect_agent_action_hint_cases.sh \
     --status mismatch \
     --format json \
     --output "$AGENT_ACTION_HINT_CASES_REPORT_PATH" >/dev/null
+  bash tools/local/inspect_agent_action_hint_cases.sh \
+    --status missing \
+    --format json \
+    --output "$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" >/dev/null
   echo "[quick] action_hint_cases_report_path=$AGENT_ACTION_HINT_CASES_REPORT_PATH"
+  echo "[quick] action_hint_missing_cases_report_path=$AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" ]]; then
