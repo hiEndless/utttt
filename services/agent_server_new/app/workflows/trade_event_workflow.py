@@ -17,11 +17,10 @@ from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
 from services.agent_server_new.domain.pipeline_compat_adapter import (
     build_decision_trace_payload,
     build_execution_decision_payload,
-    build_legacy_stage_outputs,
     build_pipeline_compat_state,
+    build_recorder_stage_payloads,
     build_signal_decision_from_signal,
     build_symbol_memory_legacy_sections,
-    build_workflow_bridge_payload,
 )
 from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
 from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
@@ -426,20 +425,6 @@ class TradeEventWorkflow:
                     )
 
         if self._recorder:
-            if self._legacy_pipeline_enabled:
-                for stage_name, stage_payload in build_legacy_stage_outputs(state=compat, cross_horizon=ch):
-                    await self._recorder.record_agent_output(event.event_id, stage_name, stage_payload)
-            else:
-                await self._recorder.record_agent_output(
-                    event.event_id,
-                    "workflow_bridge",
-                    build_workflow_bridge_payload(
-                        state=compat,
-                        signal_decision=signal_decision,
-                        pipeline_mode="minimal",
-                    ),
-                )
-
             trace_payload = build_decision_trace_payload(
                 event_id=ctx.event_id,
                 exchange=ctx.exchange,
@@ -461,8 +446,15 @@ class TradeEventWorkflow:
                 state=compat,
                 llm_observation=dict(llm_observation),
             )
+            stage_payloads = build_recorder_stage_payloads(
+                state=compat,
+                signal_decision=signal_decision,
+                pipeline_mode=_pipeline_mode(self._legacy_pipeline_enabled),
+                cross_horizon=ch,
+                decision_trace_payload=trace_payload,
+            )
             if self._decision_trace_schema_validate:
-                valid, errors = validate_decision_trace_payload(trace_payload)
+                valid, errors = validate_decision_trace_payload(stage_payloads.get("decision_trace") or {})
                 if not valid:
                     logger.warning(
                         "decision_trace schema validation failed event_id=%s error_count=%s",
@@ -478,7 +470,8 @@ class TradeEventWorkflow:
                             "errors": list(errors[:10]),
                         },
                     )
-            await self._recorder.record_agent_output(event.event_id, "decision_trace", trace_payload)
+            for stage_name, stage_payload in stage_payloads.items():
+                await self._recorder.record_agent_output(event.event_id, stage_name, stage_payload)
 
         if self._symbol_memory_recorder is not None:
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
@@ -505,6 +498,8 @@ class TradeEventWorkflow:
             )
 
         return WorkflowResult(agent_plan=plan, signal_decision=signal_decision, execution_result=execution_result)
+
+
 def _msl_from_dict(d: Dict[str, Any]) -> MarketStateMSL:
     """兼容旧测试入口，统一委托给 adapter 层单点 MSL 解析器。"""
     return _build_msl_from_dict(dict(d or {}))

@@ -519,6 +519,30 @@ def build_workflow_bridge_payload(
     }
 
 
+def build_recorder_stage_payloads(
+    *,
+    state: PipelineCompatState,
+    signal_decision: SignalDecision,
+    pipeline_mode: str,
+    cross_horizon: Dict[str, str],
+    decision_trace_payload: Dict[str, Any] | None = None,
+) -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
+    mode = str(pipeline_mode or "legacy").strip().lower()
+    if mode == "legacy":
+        for stage_name, stage_payload in build_legacy_stage_outputs(state=state, cross_horizon=cross_horizon):
+            out[stage_name] = dict(stage_payload or {})
+    else:
+        out["workflow_bridge"] = build_workflow_bridge_payload(
+            state=state,
+            signal_decision=signal_decision,
+            pipeline_mode=mode or "minimal",
+        )
+    if isinstance(decision_trace_payload, dict):
+        out["decision_trace"] = dict(decision_trace_payload)
+    return out
+
+
 def build_decision_trace_payload(
     *,
     event_id: str,

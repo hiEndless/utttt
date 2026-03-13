@@ -12,6 +12,7 @@ from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: 
     build_execution_decision_payload,
     build_legacy_stage_outputs,
     build_pipeline_compat_state,
+    build_recorder_stage_payloads,
     build_signal_decision_from_signal,
     build_symbol_memory_legacy_sections,
     build_workflow_bridge_payload,
@@ -224,3 +225,74 @@ def test_pipeline_compat_adapter_builds_decision_trace_payload() -> None:
     assert trace["routing"]["pipeline_mode"] == "minimal"
     assert trace["routing"]["decision_agent_key"] == "technical"
     assert trace["execution_plan"]["action"] == "hold"
+
+
+def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_minimal() -> None:
+    signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+    state = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=signal,
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    )
+    signal_decision = build_signal_decision_from_signal(
+        decision_id="evt-rec-min-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal=signal,
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    out = build_recorder_stage_payloads(
+        state=state,
+        signal_decision=signal_decision,
+        pipeline_mode="minimal",
+        cross_horizon={"suggested_policy": "no_action"},
+        decision_trace_payload={"event_id": "evt-rec-min-001"},
+    )
+    assert set(out.keys()) == {"workflow_bridge", "decision_trace"}
+
+
+def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_legacy() -> None:
+    signal = SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82))
+    state = build_pipeline_compat_state(
+        legacy_pipeline_enabled=False,
+        signal=signal,
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+        horizon_policy_config={},
+    )
+    signal_decision = build_signal_decision_from_signal(
+        decision_id="evt-rec-legacy-001",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal=signal,
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    out = build_recorder_stage_payloads(
+        state=state,
+        signal_decision=signal_decision,
+        pipeline_mode="legacy",
+        cross_horizon={"suggested_policy": "no_action"},
+        decision_trace_payload={"event_id": "evt-rec-legacy-001"},
+    )
+    assert set(out.keys()) == {
+        "intent_resolver",
+        "rule_planner",
+        "horizon_policy_gate",
+        "strategy_gate",
+        "execution_planner",
+        "decision_trace",
+    }
