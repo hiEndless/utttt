@@ -5,6 +5,7 @@ WITH_VERIFICATION_API_SCHEMA_CHECK=0
 SKIP_SEMANTIC_CRITICAL_WARNING_GUARD=0
 SKIP_RELEASE_BASELINE_ALIGNMENT=0
 WITH_AGENT_READYZ=0
+WITH_PIPELINE_MODE_REPORT=0
 MAX_AGENT_READYZ_LEVEL="red"
 REQUIRE_AGENT_READYZ_REPORT=0
 AGENT_READYZ_BASE_URL="${AGENT_BASE_URL:-http://127.0.0.1:9971}"
@@ -32,6 +33,10 @@ while (($# > 0)); do
       ;;
     --with-agent-readyz)
       WITH_AGENT_READYZ=1
+      shift
+      ;;
+    --with-pipeline-mode-report)
+      WITH_PIPELINE_MODE_REPORT=1
       shift
       ;;
     --max-agent-readyz-level)
@@ -72,6 +77,7 @@ Options:
   --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
   --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
   --with-agent-readyz                    启用 agent readyz 聚合观测（默认关闭）
+  --with-pipeline-mode-report            启用 pipeline_mode 灰度聚合观测（默认关闭）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
@@ -89,6 +95,9 @@ if [[ "$SKIP_RELEASE_BASELINE_ALIGNMENT" == "1" ]]; then
 fi
 if [[ "$WITH_AGENT_READYZ" == "1" ]]; then
   ENV_PREFIX+=(WITH_AGENT_READYZ=1)
+fi
+if [[ "$WITH_PIPELINE_MODE_REPORT" == "1" ]]; then
+  ENV_PREFIX+=(WITH_PIPELINE_MODE_REPORT=1)
 fi
 ENV_PREFIX+=(MAX_AGENT_READYZ_LEVEL="$MAX_AGENT_READYZ_LEVEL")
 ENV_PREFIX+=(REQUIRE_AGENT_READYZ_REPORT="$REQUIRE_AGENT_READYZ_REPORT")

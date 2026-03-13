@@ -130,6 +130,7 @@ Options:
   --skip-semantic-critical-warning-guard 跳过 semantic critical warning guard（仅本地调试）
   --skip-release-baseline-alignment      跳过 release baseline 对齐校验（仅本地调试）
   --with-agent-readyz                    启用 agent readyz 聚合观测（默认关闭）
+  --with-pipeline-mode-report            启用 pipeline_mode 灰度聚合观测（默认关闭）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
