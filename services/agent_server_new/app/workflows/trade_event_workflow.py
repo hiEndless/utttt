@@ -349,15 +349,6 @@ class TradeEventWorkflow:
             signal_event=dict(ctx.signal_event or {}),
             cross_horizon=ch,
         )
-        intent = compat.intent
-        rule_plan = compat.rule_plan
-        hpg_allowed = compat.hpg_allowed
-        hpg_reasons = list(compat.hpg_reasons)
-        sg_allowed = compat.sg_allowed
-        sg_reasons = list(compat.sg_reasons)
-        risk_ctx = compat.risk_ctx
-        risk_ctx_reasons = list(compat.risk_ctx_reasons)
-        allowance = compat.allowance
         plan = compat.plan
 
         execution_result: Optional[Dict[str, Any]] = None

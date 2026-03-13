@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 Direction = Literal["long", "short", "none"]
 RiskAction = Literal["add", "reduce", "hold", "exit", "skip"]
-ActionIntentType = Literal["increase", "decrease", "close", "hold", "skip"]
 LLMParseStatus = Literal["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
 LLMContractErrorCode = Literal[
     "",
@@ -54,27 +53,6 @@ class SignalDecision:
     reasons: List[str] = field(default_factory=list)
     evidence_refs: List[str] = field(default_factory=list)
     llm_observation: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class ActionIntent:
-    """动作意图：用于把“策略动作语义”与“执行细节/约束”解耦。"""
-
-    intent: ActionIntentType
-    direction: Direction
-    confidence: Confidence
-    reasons: List[str] = field(default_factory=list)
-    notes: str = ""
-
-
-@dataclass(frozen=True)
-class RulePlan:
-    """规则规划输出：在 intent 之上补齐 sizing 等可执行前的规则化计划。"""
-
-    intent: ActionIntent
-    sizing: Dict[str, Any] = field(default_factory=dict)
-    reasons: List[str] = field(default_factory=list)
-    notes: str = ""
 
 
 @dataclass(frozen=True)

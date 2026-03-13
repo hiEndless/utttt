@@ -34,7 +34,7 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
     )
     assert out.plan.action == "add"
     assert out.plan.direction == "long"
-    assert out.rule_plan.notes == "minimal_pipeline_semantic_plan"
+    assert out.semantic_rule_plan.get("notes") == "minimal_pipeline_semantic_plan"
 
 
 def test_pipeline_compat_adapter_semantic_sections_contract() -> None:

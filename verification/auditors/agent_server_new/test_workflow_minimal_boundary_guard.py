@@ -52,3 +52,11 @@ def test_legacy_domain_modules_removed() -> None:
     ]
     for name in legacy_files:
         assert not (root / name).exists()
+
+
+def test_contracts_no_legacy_intent_rule_types() -> None:
+    path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "domain" / "contracts.py"
+    text = path.read_text(encoding="utf-8")
+    assert "ActionIntentType" not in text
+    assert "class ActionIntent" not in text
+    assert "class RulePlan" not in text

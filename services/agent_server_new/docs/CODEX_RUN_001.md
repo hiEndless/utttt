@@ -28,7 +28,7 @@
 ## B. 契约（Contract）
 
 必须保持不变：
-- 决策输出契约：`agent_server_new/domain/contracts.py` 中 `ExecutionPlan/SignalVerdict/ActionIntent/...` 的字段含义不变
+- 决策输出契约：`agent_server_new/domain/contracts.py` 中 `ExecutionPlan/SignalVerdict` 的字段含义不变
 - `EventContext` 的字段含义不变（可以为了导入修复做最小改动，但不能改字段语义与命名）
 
 允许新增：
@@ -127,4 +127,3 @@ codex 完成本 run 后，需要在回复中给出：
 - 修改/新增文件列表
 - 验收执行结果（每条验收命令的输出摘要）
 - 若新增 tests：说明如何运行
-

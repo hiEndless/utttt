@@ -516,8 +516,7 @@ agent_server_new/
 ### 属于 `agent_server_new`
 
 - `SignalVerdict`
-- `IntentDecision`
-- `RulePlan`
+- `SignalDecision`
 - `ExecutionPlan`
 - `DecisionTrace`
 

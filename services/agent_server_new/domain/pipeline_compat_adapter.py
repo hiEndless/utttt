@@ -3,28 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
+from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, RiskAllowance, SignalDecision
 from services.agent_server_new.observability.decision_trace import DecisionTrace, map_alert_codes_from_contract_warnings
 
 
 @dataclass(frozen=True)
 class PipelineCompatState:
-    intent: ActionIntent
-    rule_plan: RulePlan
-    hpg_allowed: bool
-    hpg_reasons: list[str]
-    sg_allowed: bool
-    sg_reasons: list[str]
-    risk_ctx: "SemanticRiskSnapshot"
-    risk_ctx_reasons: list[str]
+    semantic_intent: Dict[str, Any]
+    semantic_rule_plan: Dict[str, Any]
+    semantic_strategy_gate_result: Dict[str, Any]
+    semantic_risk_gate: Dict[str, Any]
     allowance: RiskAllowance
     plan: ExecutionPlan
-
-
-@dataclass(frozen=True)
-class SemanticRiskSnapshot:
-    global_regime: str
-    cooldown_active: bool
 
 
 def build_pipeline_compat_state(
@@ -39,20 +29,22 @@ def build_pipeline_compat_state(
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     direction = str(getattr(signal, "direction", "") or "none").strip().lower()
     is_accept = verdict == "accept" and direction in {"long", "short"}
-    intent = ActionIntent(
-        intent="increase" if is_accept else "hold",
-        direction=direction if is_accept else "none",
-        confidence=signal.confidence,
-        reasons=["signal_semantic_plan"],
-        notes="minimal_pipeline_semantic_plan",
-    )
-    rule_plan = RulePlan(
-        intent=intent,
-        sizing={},
-        reasons=["signal_semantic_plan"],
-        notes="minimal_pipeline_semantic_plan",
-    )
-    risk_ctx = SemanticRiskSnapshot(global_regime="normal", cooldown_active=False)
+    semantic_intent = {
+        "intent": "increase" if is_accept else "hold",
+        "direction": direction if is_accept else "none",
+        "confidence": {
+            "level": signal.confidence.level,
+            "score": signal.confidence.score,
+        },
+        "reasons": ["signal_semantic_plan"],
+        "notes": "minimal_pipeline_semantic_plan",
+    }
+    semantic_rule_plan = {
+        "intent": dict(semantic_intent),
+        "sizing": {},
+        "reasons": ["signal_semantic_plan"],
+        "notes": "minimal_pipeline_semantic_plan",
+    }
     allowance = RiskAllowance(
         allow_open=True,
         allow_add=True,
@@ -69,14 +61,24 @@ def build_pipeline_compat_state(
         notes="minimal_pipeline_semantic_plan",
     )
     return PipelineCompatState(
-        intent=intent,
-        rule_plan=rule_plan,
-        hpg_allowed=True,
-        hpg_reasons=["legacy_removed"],
-        sg_allowed=True,
-        sg_reasons=["legacy_removed"],
-        risk_ctx=risk_ctx,
-        risk_ctx_reasons=["execution_service_final_authority"],
+        semantic_intent=semantic_intent,
+        semantic_rule_plan=semantic_rule_plan,
+        semantic_strategy_gate_result={
+            "allowed": True,
+            "horizon_reasons": ["legacy_removed"],
+            "strategy_reasons": ["legacy_removed"],
+            "reasons": ["legacy_removed", "legacy_removed"],
+        },
+        semantic_risk_gate={
+            "global_regime": "normal",
+            "cooldown_active": False,
+            "regime_sources": ["execution_service_final_authority"],
+            "allow_open": allowance.allow_open,
+            "allow_add": allowance.allow_add,
+            "allow_reduce": allowance.allow_reduce,
+            "allow_exit": allowance.allow_exit,
+            "reasons": list(allowance.reasons),
+        },
         allowance=allowance,
         plan=plan,
     )
@@ -95,43 +97,10 @@ def build_decision_trace_semantic_sections(
             "risk_gate": {},
         }
     return {
-        "intent": {
-            "intent": state.intent.intent,
-            "direction": state.intent.direction,
-            "confidence": {
-                "level": state.intent.confidence.level,
-                "score": state.intent.confidence.score,
-            },
-            "reasons": list(state.intent.reasons),
-        },
-        "rule_plan": {
-            "intent": {
-                "intent": state.rule_plan.intent.intent,
-                "direction": state.rule_plan.intent.direction,
-                "confidence": {
-                    "level": state.rule_plan.intent.confidence.level,
-                    "score": state.rule_plan.intent.confidence.score,
-                },
-            },
-            "sizing": dict(state.rule_plan.sizing or {}),
-            "reasons": list(state.rule_plan.reasons),
-        },
-        "strategy_gate_result": {
-            "allowed": bool(state.hpg_allowed and state.sg_allowed),
-            "horizon_reasons": list(state.hpg_reasons),
-            "strategy_reasons": list(state.sg_reasons),
-            "reasons": [*list(state.hpg_reasons), *list(state.sg_reasons)],
-        },
-        "risk_gate": {
-            "global_regime": state.risk_ctx.global_regime,
-            "cooldown_active": bool(state.risk_ctx.cooldown_active),
-            "regime_sources": list(state.risk_ctx_reasons),
-            "allow_open": state.allowance.allow_open,
-            "allow_add": state.allowance.allow_add,
-            "allow_reduce": state.allowance.allow_reduce,
-            "allow_exit": state.allowance.allow_exit,
-            "reasons": list(state.allowance.reasons),
-        },
+        "intent": dict(state.semantic_intent or {}),
+        "rule_plan": dict(state.semantic_rule_plan or {}),
+        "strategy_gate_result": dict(state.semantic_strategy_gate_result or {}),
+        "risk_gate": dict(state.semantic_risk_gate or {}),
     }
 
 
@@ -142,15 +111,7 @@ def build_symbol_memory_semantic_sections(
 ) -> Dict[str, Dict[str, Any]]:
     return {
         "cross_horizon_policy": dict(cross_horizon or {}),
-        "intent": {
-            "intent": state.intent.intent,
-            "direction": state.intent.direction,
-            "confidence": {
-                "level": state.intent.confidence.level,
-                "score": state.intent.confidence.score,
-            },
-            "reasons": list(state.intent.reasons),
-        },
+        "intent": dict(state.semantic_intent or {}),
         "plan": {
             "action": state.plan.action,
             "direction": state.plan.direction,
