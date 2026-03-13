@@ -297,6 +297,7 @@ signal_event + active_events + MSL
 
 ### 本地灰度观测最短命令
 
+- CI 一键组合（含路由观测守卫）：`WITH_AGENT_ROUTING_GUARDS=1 bash tools/ci/verify_quick.sh`
 - 最短链路：`bash tools/local/verify_quick.sh --with-pipeline-mode-report`
 - 若需同时观测可用性：`bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz`
 - 业务路由回放（四类来源最小闭环）：`bash tools/local/run_agent_signal_source_route_replay.sh`
