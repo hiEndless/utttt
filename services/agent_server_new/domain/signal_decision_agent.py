@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Literal, Protocol
 
 from services.market_state_engine.src.contracts import MarketStateMSL
@@ -20,6 +20,8 @@ class SignalDecisionEvalResult:
     decision_agent_key: str
     decision_mode: Literal["llm", "rule_fallback", "rule"] = "rule"
     llm_parse_status: LLMParseStatus = "rule_only"
+    llm_contract_error_code: str = ""
+    llm_contract_errors: List[str] = field(default_factory=list)
 
 
 class SignalDecisionAgent(Protocol):
@@ -82,6 +84,8 @@ class RoutedRuleBasedSignalDecisionAgent:
             decision_agent_key=decision_agent_key,
             decision_mode="rule",
             llm_parse_status="rule_only",
+            llm_contract_error_code="",
+            llm_contract_errors=[],
         )
 
 
@@ -103,35 +107,39 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
             return "medium"
         return "low"
 
-    def _parse_llm_signal(self, llm_result: Dict[str, Any]) -> SignalVerdict | None:
+    def _parse_llm_signal(self, llm_result: Dict[str, Any]) -> tuple[SignalVerdict | None, str, List[str]]:
         data = dict(llm_result or {})
         raw = data.get("raw_content")
         if not isinstance(raw, str) or not raw.strip():
-            return None
+            return None, "llm_raw_content_missing", ["missing raw_content"]
         try:
             parsed = json.loads(raw)
         except Exception:
-            return None
+            return None, "llm_json_parse_error", ["raw_content is not valid json"]
         if not isinstance(parsed, dict):
-            return None
-        ok, _errors = validate_llm_signal_decision_payload(parsed)
+            return None, "llm_json_not_object", ["raw_content must be a json object"]
+        ok, errors = validate_llm_signal_decision_payload(parsed)
         if not ok:
-            return None
+            return None, "llm_schema_validation_failed", list(errors[:8])
         verdict = str(parsed.get("signal_verdict") or "").strip().lower()
         direction = str(parsed.get("signal_direction") or "").strip().lower()
         raw_score = parsed.get("confidence_score")
         try:
             score = float(raw_score)
         except Exception:
-            return None
+            return None, "llm_confidence_parse_error", ["confidence_score parse failed"]
         reasons_raw = parsed.get("reasons")
         reasons = [str(x).strip() for x in list(reasons_raw or []) if str(x).strip()]
-        return SignalVerdict(
-            direction=direction,  # type: ignore[arg-type]
-            verdict=verdict,  # type: ignore[arg-type]
-            confidence=Confidence(level=self._score_to_level(score), score=score),
-            invalidation_reasons=reasons,
-            notes="llm_signal_decision",
+        return (
+            SignalVerdict(
+                direction=direction,  # type: ignore[arg-type]
+                verdict=verdict,  # type: ignore[arg-type]
+                confidence=Confidence(level=self._score_to_level(score), score=score),
+                invalidation_reasons=reasons,
+                notes="llm_signal_decision",
+            ),
+            "",
+            [],
         )
 
     def decide(
@@ -148,13 +156,15 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
         decision_agent_key = self._route_agent_key(signal_event=signal_event)
         llm = dict(llm_result or {})
         if str(llm.get("status") or "").strip().lower() == "ok":
-            llm_signal = self._parse_llm_signal(llm)
+            llm_signal, err_code, err_list = self._parse_llm_signal(llm)
             if llm_signal is not None:
                 return SignalDecisionEvalResult(
                     signal=llm_signal,
                     decision_agent_key=decision_agent_key,
                     decision_mode="llm",
                     llm_parse_status="llm_ok",
+                    llm_contract_error_code="",
+                    llm_contract_errors=[],
                 )
             fallback = super().decide(
                 signal_direction=signal_direction,
@@ -169,6 +179,8 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
                 decision_agent_key=decision_agent_key,
                 decision_mode="rule_fallback",
                 llm_parse_status="llm_invalid_payload",
+                llm_contract_error_code=str(err_code or "llm_schema_validation_failed"),
+                llm_contract_errors=list(err_list or []),
             )
         fallback = super().decide(
             signal_direction=signal_direction,
@@ -183,4 +195,6 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
             decision_agent_key=decision_agent_key,
             decision_mode="rule",
             llm_parse_status="llm_status_not_ok" if llm else "llm_not_provided",
+            llm_contract_error_code="",
+            llm_contract_errors=[],
         )

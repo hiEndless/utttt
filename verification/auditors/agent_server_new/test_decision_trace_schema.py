@@ -72,6 +72,8 @@ def _sample_decision_trace() -> Dict[str, Any]:
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",
+            "llm_contract_error_code": "",
+            "llm_contract_errors": [],
             "router_config_source": "default:services/agent_server_new/config/signal_router_profiles.json",
             "router_config_version": "abc123",
         },

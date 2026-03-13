@@ -47,6 +47,8 @@ def test_routed_rule_based_signal_decision_agent_routes_and_evaluates():
     assert out.decision_agent_key == "social_news"
     assert out.decision_mode == "rule"
     assert out.llm_parse_status == "rule_only"
+    assert out.llm_contract_error_code == ""
+    assert out.llm_contract_errors == []
     assert out.signal.verdict in {"accept", "reject", "uncertain"}
 
 
@@ -72,6 +74,8 @@ def test_routed_hybrid_signal_decision_agent_uses_llm_when_valid():
     assert out.decision_agent_key == "onchain"
     assert out.decision_mode == "llm"
     assert out.llm_parse_status == "llm_ok"
+    assert out.llm_contract_error_code == ""
+    assert out.llm_contract_errors == []
     assert out.signal.direction == "short"
     assert out.signal.verdict == "accept"
 
@@ -95,6 +99,8 @@ def test_routed_hybrid_signal_decision_agent_fallbacks_to_rule_when_llm_invalid(
     assert out.decision_agent_key == "onchain"
     assert out.decision_mode == "rule_fallback"
     assert out.llm_parse_status == "llm_invalid_payload"
+    assert out.llm_contract_error_code == "llm_schema_validation_failed"
+    assert len(out.llm_contract_errors) >= 1
     assert out.signal.verdict in {"accept", "reject", "uncertain"}
 
 
@@ -119,6 +125,8 @@ def test_routed_hybrid_signal_decision_agent_rejects_out_of_range_score():
     )
     assert out.decision_mode == "rule_fallback"
     assert out.llm_parse_status == "llm_invalid_payload"
+    assert out.llm_contract_error_code == "llm_schema_validation_failed"
+    assert len(out.llm_contract_errors) >= 1
 
 
 def test_routed_hybrid_signal_decision_agent_rejects_unknown_fields():
@@ -142,3 +150,5 @@ def test_routed_hybrid_signal_decision_agent_rejects_unknown_fields():
     )
     assert out.decision_mode == "rule_fallback"
     assert out.llm_parse_status == "llm_invalid_payload"
+    assert out.llm_contract_error_code == "llm_schema_validation_failed"
+    assert len(out.llm_contract_errors) >= 1

@@ -132,6 +132,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - 主判入口已抽象为 `SignalDecisionAgent`（当前默认实现为 `RoutedRuleBasedSignalDecisionAgent`），workflow 不再直接调用 `evaluate_signal`，为后续替换 LLM 判定实现留出无侵入插槽。
 - 当启用 `llm_observer` 时，默认主判实现已切换为 `RoutedHybridSignalDecisionAgent`：优先消费 LLM 判定，解析失败自动 `rule_fallback`；并透传 `decision_mode(llm|rule_fallback|rule)` 到 execution `risk_hints`。
 - `DecisionTrace.routing` 已补充 `decision_mode/llm_parse_status`，用于回放时快速区分“LLM 直接判定”与“LLM 失败回退规则”的链路占比。
+- `DecisionTrace.routing` 已补充 `llm_contract_error_code/llm_contract_errors`，用于细分 `llm_invalid_payload` 的失败类型并支持离线统计。
 - `RoutedHybridSignalDecisionAgent` 已启用严格 LLM 输出契约校验（JSON 对象 + 白名单字段 + 枚举/范围/类型校验），不合法 payload 统一回落 `rule_fallback`。
   - 契约文件：`services/agent_server_new/docs/llm_signal_decision.schema.json`
 

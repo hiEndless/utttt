@@ -25,6 +25,8 @@ def _build_trace(*, llm_observation):  # noqa: ANN001
             "decision_agent_key": "technical",
             "decision_mode": "rule",
             "llm_parse_status": "rule_only",
+            "llm_contract_error_code": "",
+            "llm_contract_errors": [],
             "router_config_source": "runtime",
             "router_config_version": "",
         },
