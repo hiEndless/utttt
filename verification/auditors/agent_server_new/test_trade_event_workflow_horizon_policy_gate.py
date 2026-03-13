@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import sys
 from pathlib import Path
 
@@ -99,36 +100,5 @@ def test_trade_event_workflow_horizon_wait_confirmation_no_longer_blocks_signal_
 
 
 def test_trade_event_workflow_horizon_config_argument_is_ignored_in_minimal_pipeline():
-    async def _run(monkeypatch):  # noqa: ANN001
-        import services.agent_server_new.app.workflows.trade_event_workflow as mod
-
-        monkeypatch.setattr(
-            mod,
-            "evaluate_signal",
-            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
-        )
-        wf = TradeEventWorkflow(
-            market_state=_MarketState("wait_confirmation", "short_long_trend_conflict"),
-            position_context=_Position(),
-            active_events=_Events(),
-            recorder=None,
-            horizon_policy_config={"block_on_increase_policies": ["wait_confirmation"]},
-        )
-        out = await wf.run(
-            TradeEventInput(
-                event_id="evt-002",
-                exchange="binance",
-                symbol="ETHUSDT",
-                signal_direction="long",
-                payload={"event_type": "indicator_signal"},
-            )
-        )
-        assert out.action == "add"
-
-    import pytest
-
-    monkeypatch = pytest.MonkeyPatch()
-    try:
-        asyncio.run(_run(monkeypatch))
-    finally:
-        monkeypatch.undo()
+    sig = inspect.signature(TradeEventWorkflow.__init__)
+    assert "horizon_policy_config" not in set(sig.parameters.keys())

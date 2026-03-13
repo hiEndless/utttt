@@ -147,7 +147,6 @@ class TradeEventWorkflow:
         memory_dedup_key: str = "event_id",
         ai_adaptive_enabled: bool = False,
         ai_adaptive_mode: str = "observe",
-        horizon_policy_config: Optional[Dict[str, Any]] = None,  # noqa: ARG002
         signal_router_config: Optional[Dict[str, Any]] = None,
         signal_decision_prompt_profiles: Optional[Dict[str, Dict[str, Any]]] = None,
         signal_decision_agent: SignalDecisionAgent | None = None,
@@ -347,7 +346,6 @@ class TradeEventWorkflow:
             active_events=list(ctx.active_events),
             signal_event=dict(ctx.signal_event or {}),
             cross_horizon=ch,
-            horizon_policy_config={},
         )
         intent = compat.intent
         rule_plan = compat.rule_plan

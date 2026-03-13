@@ -22,7 +22,6 @@ def _sample_state_and_decision():
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     decision = build_signal_decision_from_signal(
         decision_id="evt-stage-guard-001",

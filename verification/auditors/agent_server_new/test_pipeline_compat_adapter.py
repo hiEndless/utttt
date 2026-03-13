@@ -31,7 +31,6 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     assert out.plan.action == "add"
     assert out.plan.direction == "long"
@@ -46,7 +45,6 @@ def test_pipeline_compat_adapter_semantic_sections_contract() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     trace_sections = build_decision_trace_semantic_sections(state=out)
     assert set(trace_sections.keys()) == {"intent", "rule_plan", "strategy_gate_result", "risk_gate"}
@@ -77,7 +75,6 @@ def test_pipeline_compat_adapter_builds_execution_decision_payload() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     ).plan
     payload = build_execution_decision_payload(
         default_decision_id="evt-default",
@@ -99,7 +96,6 @@ def test_pipeline_compat_adapter_builds_workflow_bridge_payload() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     signal_decision = SignalDecision(
         decision_id="evt-001",
@@ -130,7 +126,6 @@ def test_pipeline_compat_adapter_builds_decision_trace_payload() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     signal_decision = build_signal_decision_from_signal(
         decision_id="evt-trace-001",
@@ -175,7 +170,6 @@ def test_pipeline_compat_adapter_builds_recorder_stage_payloads_for_minimal() ->
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     signal_decision = build_signal_decision_from_signal(
         decision_id="evt-rec-min-001",
@@ -206,7 +200,6 @@ def test_pipeline_compat_adapter_builds_symbol_memory_record_payload() -> None:
         active_events=[],
         signal_event={},
         cross_horizon={},
-        horizon_policy_config={},
     )
     payload = build_symbol_memory_record_payload(
         ts=123,

@@ -11,6 +11,7 @@ def test_trade_event_workflow_no_legacy_gate_dependency() -> None:
     text = path.read_text(encoding="utf-8")
     forbidden_tokens = [
         "legacy_pipeline_enabled",
+        "horizon_policy_config",
         "resolve_intent",
         "build_rule_plan",
         "strategy_gate_v2",

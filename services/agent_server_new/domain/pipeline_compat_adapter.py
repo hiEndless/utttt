@@ -35,7 +35,6 @@ def build_pipeline_compat_state(
     active_events: list[Dict[str, Any]],  # noqa: ARG001
     signal_event: Dict[str, Any],  # noqa: ARG001
     cross_horizon: Dict[str, str],  # noqa: ARG001
-    horizon_policy_config: Dict[str, Any],  # noqa: ARG001
 ) -> PipelineCompatState:
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     direction = str(getattr(signal, "direction", "") or "none").strip().lower()
