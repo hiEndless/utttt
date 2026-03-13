@@ -17,3 +17,9 @@ def test_readme_has_frozen_main_flow_acceptance_checklist() -> None:
     assert "唯一权威" in text
     assert "这只是过渡方案" not in text
     assert "还需要继续收窄" not in text
+    assert "## 架构收敛清单" in text
+    assert "### 已完成项" in text
+    assert "### 待优化项" in text
+    assert "### 第一阶段：逻辑剥离" not in text
+    assert "### 第二阶段：依赖反转" not in text
+    assert "### 第三阶段：物理拆分" not in text

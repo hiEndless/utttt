@@ -620,39 +620,20 @@ agent_server_new/
 5. `ExecutionPlan.sizing/allowance` 仅为语义建议字段，execution 可覆盖或忽略。
 6. 最终风控阻断与执行动作以 `execution_service` 返回为唯一权威。
 
-## 迁移清单
+## 架构收敛清单
 
-### 第一阶段：逻辑剥离
+### 已完成项
 
-1. 明确 `market_state_engine.py` 只是临时托管在本服务
-2. 禁止新增任何 raw structure -> MSL 的新逻辑到决策层 workflow
-3. 把 `domain/contracts.py` 中状态层对象和决策层对象分开
+1. workflow 主链路固定为 `SignalEvaluator -> SignalRouter -> SignalDecisionAgent -> ExecutionPlan`。
+2. 兼容开关与兼容壳已下线，`pipeline_mode` 固定为 `minimal`。
+3. `intent/rule/strategy/risk/horizon/execution_planner` 已降级为历史域模块，并由守卫禁止回流主链路。
+4. `DecisionTrace` 语义快照边界已冻结，最终风控与执行动作以 `execution_service` 为唯一权威。
 
-### 第二阶段：依赖反转
+### 待优化项
 
-1. 新增 `ports/market_state.py`
-2. 工作流通过 port 获取：
-   - `MSL`
-   - `key_features`
-   - `anomaly_flags`
-3. 删除 workflow 对兼容市场结构模块的直接依赖
-
-### 第三阶段：物理拆分
-
-1. 把 `domain/market_state_engine.py` 搬到新服务
-2. 把 `domain/msl.py` 搬到新服务
-3. 把 raw structure / market state adapter 下沉到独立状态层服务
-4. `agent_server_new` 只保留 `market_state` port 和 adapter client
-
-## 当前版本相对目标架构的问题
-
-当前版本最大的偏差有三个：
-
-1. `MarketStateEngine` 仍在 `agent_server_new` 内
-2. 部分状态层 contract 仍和决策层 contract 混在一起
-3. workflow 还承担了部分状态组装责任
-
-这些属于已识别技术债项，按上文迁移清单持续收敛。
+1. 继续推进 `domain/contracts.py` 的状态层与决策层对象边界拆分。
+2. 评估并推进 `market_state` 相关历史兼容代码的物理迁移与清理。
+3. 持续收敛 `ContextBuilder` 责任，保持仅做轻量上下文组装。
 
 ## 收敛后的定义
 
