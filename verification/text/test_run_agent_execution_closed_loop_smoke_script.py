@@ -24,6 +24,7 @@ def test_run_agent_execution_closed_loop_smoke_help() -> None:
     out = str(proc.stdout or "")
     assert "--event-type <type>" in out
     assert "--signal-direction <dir>" in out
+    assert "--result-mode <mode>" in out
     assert "execution_action/reject_reason" in out
 
 
@@ -43,3 +44,17 @@ def test_run_agent_execution_closed_loop_smoke_output() -> None:
     assert payload["reject_reason"] == "risk_limit_blocked"
     assert payload["decision_agent_key"] == "technical"
 
+
+def test_run_agent_execution_closed_loop_smoke_output_error_mode() -> None:
+    proc = subprocess.run(
+        ["bash", str(SCRIPT_PATH), "--result-mode", "error"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    payload = json.loads(str(proc.stdout or "").strip())
+    assert payload["execution_status"] == "error"
+    assert payload["execution_action"] == ""
+    assert payload["reject_reason"] == ""

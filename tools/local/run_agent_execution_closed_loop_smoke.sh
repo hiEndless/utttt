@@ -5,6 +5,7 @@ EVENT_TYPE="indicator_signal"
 SIGNAL_DIRECTION="long"
 EXCHANGE="binance"
 SYMBOL="ETHUSDT"
+RESULT_MODE="reject"
 
 print_help() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Options:
   --signal-direction <dir>     信号方向（默认 long）
   --exchange <name>            交易所（默认 binance）
   --symbol <name>              交易对（默认 ETHUSDT）
+  --result-mode <mode>         execution 结果模式（accept|reject|error，默认 reject）
   --help, -h                   显示帮助
 
 Description:
@@ -46,6 +48,10 @@ while (($# > 0)); do
       SYMBOL="${2:-$SYMBOL}"
       shift 2
       ;;
+    --result-mode)
+      RESULT_MODE="${2:-$RESULT_MODE}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1" >&2
       print_help
@@ -60,7 +66,7 @@ else
   PY_BIN=python3
 fi
 
-"$PY_BIN" - "$EVENT_TYPE" "$SIGNAL_DIRECTION" "$EXCHANGE" "$SYMBOL" <<'PY'
+"$PY_BIN" - "$EVENT_TYPE" "$SIGNAL_DIRECTION" "$EXCHANGE" "$SYMBOL" "$RESULT_MODE" <<'PY'
 from __future__ import annotations
 
 import asyncio
@@ -75,10 +81,13 @@ from services.agent_server_new.domain.signal_decision_agent import SignalDecisio
 from services.agent_server_new.ports.market_state import MarketStateSnapshot
 
 
-if len(sys.argv) != 5:
-    raise SystemExit("usage: <event_type> <signal_direction> <exchange> <symbol>")
+if len(sys.argv) != 6:
+    raise SystemExit("usage: <event_type> <signal_direction> <exchange> <symbol> <result_mode>")
 
-event_type, signal_direction, exchange, symbol = [str(x) for x in sys.argv[1:5]]
+event_type, signal_direction, exchange, symbol, result_mode = [str(x) for x in sys.argv[1:6]]
+result_mode = result_mode.strip().lower()
+if result_mode not in {"accept", "reject", "error"}:
+    raise SystemExit("result_mode must be one of: accept|reject|error")
 
 
 def _sample_msl(sym: str) -> dict:
@@ -136,6 +145,10 @@ class _SignalDecisionAgent:
 class _ExecutionDecider:
     async def decide(self, payload):  # noqa: ANN001
         _ = payload
+        if result_mode == "accept":
+            return {"execution_action": "add", "reject_reason": None}
+        if result_mode == "error":
+            raise RuntimeError("execution unavailable")
         return {"execution_action": "hold", "reject_reason": "risk_limit_blocked"}
 
 
@@ -149,7 +162,7 @@ async def _run() -> dict:
         legacy_pipeline_enabled=False,
         signal_decision_agent=_SignalDecisionAgent(),
     )
-    out = await wf.run_with_result(
+    wf_out = await wf.run_with_result(
         TradeEventInput(
             event_id="evt-smoke-closed-loop-001",
             exchange=exchange,
@@ -158,20 +171,25 @@ async def _run() -> dict:
             payload={"event_type": event_type},
         )
     )
-    execution_result = dict(out.execution_result or {})
-    return {
+    execution_result = dict(wf_out.execution_result or {})
+    payload = {
         "event_id": "evt-smoke-closed-loop-001",
         "exchange": exchange,
         "symbol": symbol,
-        "signal_verdict": str(out.signal_decision.signal_verdict),
-        "signal_direction": str(out.signal_decision.signal_direction),
-        "decision_agent_key": str(out.signal_decision.decision_agent_key),
+        "result_mode": result_mode,
+        "signal_verdict": str(wf_out.signal_decision.signal_verdict),
+        "signal_direction": str(wf_out.signal_decision.signal_direction),
+        "decision_agent_key": str(wf_out.signal_decision.decision_agent_key),
         "execution_action": str(execution_result.get("execution_action") or ""),
         "reject_reason": str(execution_result.get("reject_reason") or ""),
-        "signal_decision": asdict(out.signal_decision),
+        "signal_decision": asdict(wf_out.signal_decision),
     }
+    if wf_out.execution_result is None:
+        payload["execution_status"] = "error"
+    else:
+        payload["execution_status"] = "ok"
+    return payload
 
 
 print(json.dumps(asyncio.run(_run()), ensure_ascii=False))
 PY
-
