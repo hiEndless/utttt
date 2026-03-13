@@ -6,7 +6,8 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.agent_server_new.domain.contracts import Confidence, SignalDecision, SignalVerdict  # noqa: E402
-from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
+from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E402
+    DECISION_PLAN_NOTES,
     build_decision_trace_payload,
     build_execution_decision_payload,
     build_pipeline_compat_state,
@@ -33,7 +34,7 @@ def test_pipeline_compat_adapter_minimal_semantic_state() -> None:
     )
     assert out.plan.action == "add"
     assert out.plan.direction == "long"
-    assert dict(out.memory_intent or {}).get("notes") == "minimal_pipeline_semantic_plan"
+    assert dict(out.memory_intent or {}).get("notes") == DECISION_PLAN_NOTES
 
 
 def test_pipeline_compat_adapter_symbol_memory_sections_contract() -> None:

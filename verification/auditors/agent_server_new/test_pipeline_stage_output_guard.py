@@ -6,7 +6,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from services.agent_server_new.domain.contracts import Confidence, SignalVerdict  # noqa: E402
-from services.agent_server_new.domain.pipeline_compat_adapter import (  # noqa: E402
+from services.agent_server_new.domain.decision_plan_adapter import (  # noqa: E402
     build_pipeline_compat_state,
     build_recorder_stage_payloads,
     build_signal_decision_from_signal,

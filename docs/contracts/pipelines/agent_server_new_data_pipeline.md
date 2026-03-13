@@ -462,7 +462,7 @@ features 列表在 candidates 之前会**强制注入**：
 - 最终阻断与动作权威在 `execution_service`
 
 实现：
-- [pipeline_compat_adapter.py](services/agent_server_new/domain/pipeline_compat_adapter.py)
+- [decision_plan_adapter.py](services/agent_server_new/domain/decision_plan_adapter.py)
 - [trade_event_workflow.py](services/agent_server_new/app/workflows/trade_event_workflow.py)
 
 ### 7.8 execution_decider（可选）：ExecutionPlan -> execution_service DecisionIntent

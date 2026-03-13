@@ -128,7 +128,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 | 路由与输入归一 | `SignalRouter` 落地；事件类型/来源类型优先级与 alias/canonical 路由生效 | `signal_router_profiles.json`、`test_signal_router_event_type_boundary_guard.py` |
 | LLM 判定与降噪 | 路由驱动证据裁剪；`decision_prompt` 配置化；`RoutedHybridSignalDecisionAgent` 契约校验与失败回退 | `signal_decision_prompt_profiles.json`、`llm_signal_decision.schema.json` |
 | workflow 主链路 | 主链路固定 `signal_decision -> execution_decider`；不再加载 legacy planner/gate；阶段输出固定为 `workflow_bridge+decision_trace` | `trade_event_workflow.py`、`test_pipeline_stage_output_guard.py` |
-| execution 接口边界 | `risk_hints` 透传 `decision_mode/llm_parse_status/prompt_config_*`；`decision_confidence_source=agent_signal_decision`；`ExecutionPlan.sizing/allowance` 仅语义建议 | `pipeline_compat_adapter.py`、`runner_output_contract.md` |
+| execution 接口边界 | `risk_hints` 透传 `decision_mode/llm_parse_status/prompt_config_*`；`decision_confidence_source=agent_signal_decision`；`ExecutionPlan.sizing/allowance` 仅语义建议 | `decision_plan_adapter.py`、`runner_output_contract.md` |
 | trace 与可观测性 | `DecisionTrace.routing` 完整记录路由/LLM 判定信息；`llm_contract_error_code` 枚举与 `llm_contract_errors<=8` 收敛 | `decision_trace.schema.json`、`test_decision_trace_semantic_boundary_guard.py` |
 | 兼容层下线与守卫 | 兼容开关已删除；legacy 域模块降级为 deprecated；workflow 防回流 import 与文档边界守卫已就位 | `test_workflow_minimal_boundary_guard.py`、`test_refactor_plan_status_guard.py` |
 
