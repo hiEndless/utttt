@@ -23,6 +23,7 @@ Options:
 Description:
   运行最小 agent->execution 闭环 smoke（固定 stub provider），输出：
   signal_verdict/signal_direction/execution_action/reject_reason。
+  退出码约定：0=闭环完成（accept/reject），2=execution 异常（error）。
 USAGE
 }
 
@@ -190,6 +191,8 @@ async def _run() -> dict:
         payload["execution_status"] = "ok"
     return payload
 
-
-print(json.dumps(asyncio.run(_run()), ensure_ascii=False))
+result = asyncio.run(_run())
+print(json.dumps(result, ensure_ascii=False))
+if str(result.get("execution_status") or "") == "error":
+    raise SystemExit(2)
 PY

@@ -53,7 +53,7 @@ def test_run_agent_execution_closed_loop_smoke_output_error_mode() -> None:
         text=True,
         check=False,
     )
-    assert proc.returncode == 0
+    assert proc.returncode == 2
     payload = json.loads(str(proc.stdout or "").strip())
     assert payload["execution_status"] == "error"
     assert payload["execution_action"] == ""
