@@ -1,0 +1,21 @@
+{
+  "default_agent_key": "generic",
+  "rules": [
+    {
+      "agent_key": "liquidation",
+      "keywords": ["liquidation", "liq", "squeeze", "forced_liq"]
+    },
+    {
+      "agent_key": "onchain",
+      "keywords": ["onchain", "whale", "nansen", "glassnode", "arkham", "chain"]
+    },
+    {
+      "agent_key": "social_news",
+      "keywords": ["news", "social", "macro", "twitter", "reddit", "coindesk", "reuters", "bloomberg"]
+    },
+    {
+      "agent_key": "technical",
+      "keywords": ["indicator", "technical", "signal", "strategy", "orderbook", "funding"]
+    }
+  ]
+}

@@ -123,6 +123,9 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 
 当前进展补充：
 - `SignalRouter` 已在代码中落地（`technical/liquidation/onchain/social_news/generic`）。
+- `SignalRouter` 已支持配置驱动映射：
+  - 默认配置文件：`services/agent_server_new/config/signal_router_profiles.json`
+  - 环境变量覆盖：`AGENT_SIGNAL_ROUTER_CONFIG_FILE`
 - `TradeEventWorkflow` 已输出 `SignalDecision`，并把 `decision_agent_key` 透传到 execution payload 的 `risk_hints`。
 
 3. Phase C（兼容阶段）
