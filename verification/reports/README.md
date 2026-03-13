@@ -57,6 +57,13 @@ bash tools/local/run_agent_action_hint_semantics_report.sh \
 bash tools/local/run_agent_action_hint_semantics_report.sh --help
 ```
 
+Inspect recent action_hint cases (optional):
+```bash
+bash tools/local/inspect_agent_action_hint_cases.sh --limit 20
+bash tools/local/inspect_agent_action_hint_cases.sh --status mismatch
+bash tools/local/inspect_agent_action_hint_cases.sh --help
+```
+
 Release gate summary (optional, for release audit):
 ```bash
 bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
