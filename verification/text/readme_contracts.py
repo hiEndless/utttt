@@ -21,6 +21,10 @@ README_CONTRACTS_SNIPPETS_DOCS: tuple[Path, ...] = tuple(
         key=lambda p: str(p),
     )
 )
+README_CONTRACTS_DOC_LABELS: dict[Path, str] = {
+    Path("services/agent_server_new/README.md"): "agent_server_new_readme",
+    Path("verification/reports/README.md"): "verification_reports_readme",
+}
 README_SNIPPET_OVERRIDES: dict[Path, tuple[str, ...]] = dict(
     sorted(
         {

@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from verification.text.readme_contracts import (
     PIPELINE_MODE_QUICK_SNIPPETS,
+    README_CONTRACTS_DOC_LABELS,
     README_CONTRACTS_SNIPPETS_DOCS,
     README_SNIPPET_OVERRIDES,
     README_CONTRACTS_VERSION,
@@ -24,7 +25,8 @@ def test_readme_contains_pipeline_mode_quick_paths(readme_relpath: str) -> None:
     override = README_SNIPPET_OVERRIDES.get(Path(readme_relpath))
     required_snippets = PIPELINE_MODE_QUICK_SNIPPETS + (override or ())
     for snippet in required_snippets:
-        assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {readme_relpath}: {snippet}"
+        label = README_CONTRACTS_DOC_LABELS.get(Path(readme_relpath), readme_relpath)
+        assert snippet in text, f"[{README_CONTRACTS_VERSION}] missing snippet in {label}: {snippet}"
 
 
 def test_readme_snippet_overrides_reference_known_docs() -> None:
@@ -41,7 +43,8 @@ def test_readme_contracts_doc_list_is_sorted() -> None:
 def test_readme_contracts_docs_exist() -> None:
     for relpath in README_CONTRACTS_SNIPPETS_DOCS:
         full_path = PROJECT_ROOT / relpath
-        assert full_path.is_file(), f"missing readme file: {relpath}"
+        label = README_CONTRACTS_DOC_LABELS.get(relpath, relpath)
+        assert full_path.is_file(), f"missing readme file: {label}"
 
 
 def test_readme_snippet_overrides_are_sorted() -> None:
