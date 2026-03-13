@@ -9,23 +9,14 @@ from typing import Any, Dict, Optional
 
 from services.market_state_engine.src.contracts import MarketStateMSL
 
-from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
-from services.agent_server_new.domain.execution_planner import build_execution_plan
-from services.agent_server_new.domain.horizon_policy_gate import horizon_policy_gate, load_horizon_policy_config_from_env
-from services.agent_server_new.domain.intent_resolver import resolve_intent
+from services.agent_server_new.domain.contracts import Confidence, ExecutionPlan, SignalDecision
+from services.agent_server_new.domain.execution_planner import build_execution_plan as build_execution_plan  # noqa: F401
+from services.agent_server_new.domain.horizon_policy_gate import load_horizon_policy_config_from_env
+from services.agent_server_new.domain.intent_resolver import resolve_intent as resolve_intent  # noqa: F401
 from services.agent_server_new.domain.msl_parser import _build_msl_from_dict
-from services.agent_server_new.domain.risk_gate import RiskGateContext, risk_gate
-from services.agent_server_new.domain.risk_gate_reasons import (
-    RISK_GATE_REASON_DEFAULT_NORMAL,
-    RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT,
-    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH,
-    RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM,
-    RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH,
-    RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE,
-    risk_gate_reason_active_event,
-    risk_gate_reason_portfolio_risk_state,
-)
-from services.agent_server_new.domain.rule_planner import build_rule_plan
+from services.agent_server_new.domain.pipeline_compat_adapter import build_pipeline_compat_state
+from services.agent_server_new.domain.risk_gate import risk_gate as risk_gate  # noqa: F401
+from services.agent_server_new.domain.rule_planner import build_rule_plan as build_rule_plan  # noqa: F401
 from services.agent_server_new.domain.signal_decision_agent import (
     RoutedHybridSignalDecisionAgent,
     RoutedRuleBasedSignalDecisionAgent,
@@ -33,7 +24,7 @@ from services.agent_server_new.domain.signal_decision_agent import (
 )
 from services.agent_server_new.domain.signal_decision_context_policy import build_llm_observation_context
 from services.agent_server_new.domain.signal_router import normalize_signal_event_type, route_signal_agent_key
-from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
+from services.agent_server_new.domain.strategy_gate import strategy_gate_v2 as strategy_gate_v2  # noqa: F401
 from services.agent_server_new.experts.signal_evaluator import evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
 from services.agent_server_new.observability.decision_trace import map_alert_codes_from_contract_warnings
@@ -72,20 +63,6 @@ class WorkflowResult:
     execution_result: Optional[Dict[str, Any]] = None
 
 
-@dataclass(frozen=True)
-class _PipelineCompatState:
-    intent: ActionIntent
-    rule_plan: RulePlan
-    hpg_allowed: bool
-    hpg_reasons: list[str]
-    sg_allowed: bool
-    sg_reasons: list[str]
-    risk_ctx: RiskGateContext
-    risk_ctx_reasons: list[str]
-    allowance: RiskAllowance
-    plan: ExecutionPlan
-
-
 def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[str, str]:
     feats = list((key_market_features or {}).get("features") or [])
     for item in feats:
@@ -97,13 +74,6 @@ def _extract_cross_horizon_policy(key_market_features: Dict[str, Any]) -> Dict[s
             "policy_reason": str(value.get("policy_reason") or "insufficient_evidence"),
         }
     return {"suggested_policy": "no_action", "policy_reason": "insufficient_evidence"}
-
-
-def _to_float(value: Any, default: float = 0.0) -> float:
-    try:
-        return float(value)
-    except Exception:
-        return float(default)
 
 
 def _sha256_text(value: Any) -> str:
@@ -160,189 +130,6 @@ def _sanitize_llm_contract_errors(values: Any, *, limit: int = 8) -> list[str]:
 
 def _pipeline_mode(legacy_pipeline_enabled: bool) -> str:
     return "legacy" if bool(legacy_pipeline_enabled) else "minimal"
-
-
-def _derive_global_regime(
-    *,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-) -> tuple[str, list[str]]:
-    regime_rank = {"normal": 0, "elevated": 1, "critical": 2}
-    regime = "normal"
-    reasons: list[str] = []
-
-    def _raise(next_regime: str, reason: str) -> None:
-        nonlocal regime
-        if reason and reason not in reasons:
-            reasons.append(reason)
-        if regime_rank.get(next_regime, 0) > regime_rank.get(regime, 0):
-            regime = next_regime
-
-    portfolio_risk = dict((position_context or {}).get("portfolio_risk") or {})
-    position_risk_state = str(portfolio_risk.get("risk_state") or "normal").strip().lower()
-    if position_risk_state == "frozen":
-        _raise("critical", risk_gate_reason_portfolio_risk_state(position_risk_state))
-    elif position_risk_state in {"reduce_only", "warn"}:
-        _raise("elevated", risk_gate_reason_portfolio_risk_state(position_risk_state))
-
-    if msl.market_fragility == "high":
-        _raise("critical", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_HIGH)
-    elif msl.market_fragility == "medium":
-        _raise("elevated", RISK_GATE_REASON_MSL_MARKET_FRAGILITY_MEDIUM)
-    if str(msl.volatility.volatility_regime or "unknown") == "high":
-        _raise("elevated", RISK_GATE_REASON_MSL_VOLATILITY_REGIME_HIGH)
-    if msl.horizon_alignment == "conflict":
-        _raise("elevated", RISK_GATE_REASON_MSL_HORIZON_ALIGNMENT_CONFLICT)
-
-    for item in list(active_events or []):
-        evt = dict(item or {})
-        evt_type = str(evt.get("type") or "").strip().lower()
-        score = _to_float(evt.get("score"), 0.0)
-        if evt_type in {"liquidation_cluster", "forced_liquidation", "exchange_risk"} and score >= 0.8:
-            _raise("critical", risk_gate_reason_active_event(evt_type, "critical"))
-        elif evt_type in {"volatility_spike", "funding_extreme", "basis_dislocation"} and score >= 0.7:
-            _raise("elevated", risk_gate_reason_active_event(evt_type, "elevated"))
-
-    if not reasons:
-        reasons.append(RISK_GATE_REASON_DEFAULT_NORMAL)
-    return regime, reasons
-
-
-def _derive_risk_gate_context(
-    *,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-) -> tuple[RiskGateContext, list[str]]:
-    pos = dict((position_context or {}).get("current_position") or {})
-    cooldown_seconds_left = int(pos.get("cooldown_seconds_left") or 0)
-    global_regime, reasons = _derive_global_regime(
-        msl=msl,
-        position_context=position_context,
-        active_events=active_events,
-    )
-    if cooldown_seconds_left > 0 and RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE not in reasons:
-        reasons.append(RISK_GATE_REASON_POSITION_COOLDOWN_ACTIVE)
-    return RiskGateContext(
-        global_regime=global_regime,
-        cooldown_active=(cooldown_seconds_left > 0),
-    ), reasons
-
-
-def _build_pipeline_compat_state(
-    *,
-    legacy_pipeline_enabled: bool,
-    signal: Any,
-    msl: MarketStateMSL,
-    position_context: Dict[str, Any],
-    active_events: list[Dict[str, Any]],
-    signal_event: Dict[str, Any],
-    cross_horizon: Dict[str, str],
-    horizon_policy_config: Dict[str, Any],
-) -> _PipelineCompatState:
-    # 中文注释：legacy 决策链路集中为兼容层，workflow 主干只消费统一 state。
-    if legacy_pipeline_enabled:
-        intent = resolve_intent(signal=signal, msl=msl, position_context=position_context)
-        rule_plan = build_rule_plan(intent=intent, msl=msl, position_context=position_context)
-        hpg = horizon_policy_gate(
-            suggested_policy=str(cross_horizon.get("suggested_policy") or "no_action"),
-            policy_reason=str(cross_horizon.get("policy_reason") or "insufficient_evidence"),
-            intent=str(intent.intent),
-            config=horizon_policy_config,
-        )
-        sg = strategy_gate_v2(
-            msl=msl,
-            signal=signal,
-            intent=intent,
-            rule_plan=rule_plan,
-            position_context=position_context,
-            signal_event=signal_event,
-        )
-        risk_ctx, risk_ctx_reasons = _derive_risk_gate_context(
-            msl=msl,
-            position_context=position_context,
-            active_events=active_events,
-        )
-        allowance = risk_gate(risk_ctx)
-        hpg_allowed = bool(hpg.allowed)
-        hpg_reasons = list(hpg.reasons)
-        sg_allowed = bool(sg.allowed)
-        sg_reasons = list(sg.reasons)
-        if not hpg_allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"horizon_policy_gate_blocked: {','.join(hpg_reasons)}",
-            )
-        elif not sg_allowed:
-            plan = ExecutionPlan(
-                action="skip",
-                direction="none",
-                allowance=allowance,
-                confidence=signal.confidence,
-                sizing=None,
-                notes=f"strategy_gate_blocked: {','.join(sg_reasons)}",
-            )
-        else:
-            plan = build_execution_plan(rule_plan=rule_plan, allowance=allowance, risk_constraints={})
-        return _PipelineCompatState(
-            intent=intent,
-            rule_plan=rule_plan,
-            hpg_allowed=hpg_allowed,
-            hpg_reasons=hpg_reasons,
-            sg_allowed=sg_allowed,
-            sg_reasons=sg_reasons,
-            risk_ctx=risk_ctx,
-            risk_ctx_reasons=risk_ctx_reasons,
-            allowance=allowance,
-            plan=plan,
-        )
-
-    intent = ActionIntent(
-        intent="hold",
-        direction="none",
-        confidence=signal.confidence,
-        reasons=["legacy_pipeline_disabled"],
-        notes="legacy_pipeline_disabled",
-    )
-    rule_plan = RulePlan(
-        intent=intent,
-        sizing={},
-        reasons=["legacy_pipeline_disabled"],
-        notes="legacy_pipeline_disabled",
-    )
-    risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
-    allowance = RiskAllowance(
-        allow_open=True,
-        allow_add=True,
-        allow_reduce=True,
-        allow_exit=True,
-        reasons=["legacy_pipeline_disabled"],
-    )
-    plan = ExecutionPlan(
-        action="hold",
-        direction="none",
-        allowance=allowance,
-        confidence=signal.confidence,
-        sizing=None,
-        notes="legacy_pipeline_disabled",
-    )
-    return _PipelineCompatState(
-        intent=intent,
-        rule_plan=rule_plan,
-        hpg_allowed=True,
-        hpg_reasons=["legacy_pipeline_disabled"],
-        sg_allowed=True,
-        sg_reasons=["legacy_pipeline_disabled"],
-        risk_ctx=risk_ctx,
-        risk_ctx_reasons=["legacy_pipeline_disabled"],
-        allowance=allowance,
-        plan=plan,
-    )
 
 
 class TradeEventWorkflow:
@@ -562,7 +349,7 @@ class TradeEventWorkflow:
 
         ch = _extract_cross_horizon_policy(dict(ctx.key_market_features or {}))
         position_ctx = dict(ctx.position_context or {})
-        compat = _build_pipeline_compat_state(
+        compat = build_pipeline_compat_state(
             legacy_pipeline_enabled=self._legacy_pipeline_enabled,
             signal=signal,
             msl=ctx.msl,
@@ -571,6 +358,11 @@ class TradeEventWorkflow:
             signal_event=dict(ctx.signal_event or {}),
             cross_horizon=ch,
             horizon_policy_config=self._horizon_policy_config,
+            resolve_intent_fn=resolve_intent,
+            build_rule_plan_fn=build_rule_plan,
+            strategy_gate_fn=strategy_gate_v2,
+            risk_gate_fn=risk_gate,
+            build_execution_plan_fn=build_execution_plan,
         )
         intent = compat.intent
         rule_plan = compat.rule_plan
