@@ -267,6 +267,7 @@ signal_event + active_events + MSL
 1. 测试环境先设置 `AGENT_LEGACY_PIPELINE_ENABLED=false`，观察 `decision_trace.routing.pipeline_mode` 是否稳定为 `minimal`。
 2. 对比 execution 裁决结果（拒绝率/执行动作分布）与 legacy 模式差异。
 3. 生产灰度按 symbol 白名单逐步扩大，确认无回归后再考虑默认切换。
+4. minimal 模式下 recorder 仅保留 `workflow_bridge` 编排记录，不再输出 `intent/rule/gate/planner` 业务节点。
 
 ### 本地灰度观测最短命令
 

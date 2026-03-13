@@ -538,63 +538,86 @@ class TradeEventWorkflow:
                 logger.warning("执行层裁决失败 event_id=%s err=%s", event.event_id, exc)
 
         if self._recorder:
-            await self._recorder.record_agent_output(
-                event.event_id,
-                "intent_resolver",
-                {
-                    "intent": intent.intent,
-                    "direction": intent.direction,
-                    "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
-                    "reasons": list(intent.reasons),
-                    "notes": intent.notes,
-                },
-            )
-
-            await self._recorder.record_agent_output(
-                event.event_id,
-                "rule_planner",
-                {
-                    "intent": {
-                        "intent": rule_plan.intent.intent,
-                        "direction": rule_plan.intent.direction,
-                        "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
+            if self._legacy_pipeline_enabled:
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "intent_resolver",
+                    {
+                        "intent": intent.intent,
+                        "direction": intent.direction,
+                        "confidence": {"level": intent.confidence.level, "score": intent.confidence.score},
+                        "reasons": list(intent.reasons),
+                        "notes": intent.notes,
                     },
-                    "sizing": dict(rule_plan.sizing or {}),
-                    "reasons": list(rule_plan.reasons),
-                    "notes": rule_plan.notes,
-                },
-            )
+                )
 
-            await self._recorder.record_agent_output(
-                event.event_id,
-                "horizon_policy_gate",
-                {"allowed": hpg_allowed, "reasons": list(hpg_reasons), "cross_horizon": dict(ch)},
-            )
-
-            await self._recorder.record_agent_output(
-                event.event_id,
-                "strategy_gate",
-                {"allowed": sg_allowed, "reasons": list(sg_reasons)},
-            )
-
-            await self._recorder.record_agent_output(
-                event.event_id,
-                "execution_planner",
-                {
-                    "action": plan.action,
-                    "direction": plan.direction,
-                    "sizing": dict(plan.sizing or {}),
-                    "allowance": {
-                        "allow_open": plan.allowance.allow_open,
-                        "allow_add": plan.allowance.allow_add,
-                        "allow_reduce": plan.allowance.allow_reduce,
-                        "allow_exit": plan.allowance.allow_exit,
-                        "reasons": list(plan.allowance.reasons),
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "rule_planner",
+                    {
+                        "intent": {
+                            "intent": rule_plan.intent.intent,
+                            "direction": rule_plan.intent.direction,
+                            "confidence": {"level": rule_plan.intent.confidence.level, "score": rule_plan.intent.confidence.score},
+                        },
+                        "sizing": dict(rule_plan.sizing or {}),
+                        "reasons": list(rule_plan.reasons),
+                        "notes": rule_plan.notes,
                     },
-                    "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
-                    "notes": plan.notes,
-                },
-            )
+                )
+
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "horizon_policy_gate",
+                    {"allowed": hpg_allowed, "reasons": list(hpg_reasons), "cross_horizon": dict(ch)},
+                )
+
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "strategy_gate",
+                    {"allowed": sg_allowed, "reasons": list(sg_reasons)},
+                )
+
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "execution_planner",
+                    {
+                        "action": plan.action,
+                        "direction": plan.direction,
+                        "sizing": dict(plan.sizing or {}),
+                        "allowance": {
+                            "allow_open": plan.allowance.allow_open,
+                            "allow_add": plan.allowance.allow_add,
+                            "allow_reduce": plan.allowance.allow_reduce,
+                            "allow_exit": plan.allowance.allow_exit,
+                            "reasons": list(plan.allowance.reasons),
+                        },
+                        "confidence": {"level": plan.confidence.level, "score": plan.confidence.score},
+                        "notes": plan.notes,
+                    },
+                )
+            else:
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "workflow_bridge",
+                    {
+                        "pipeline_mode": "minimal",
+                        "notes": "legacy_pipeline_disabled",
+                        "decision": {
+                            "decision_agent_key": signal_decision.decision_agent_key,
+                            "decision_mode": signal_decision.decision_mode,
+                            "llm_parse_status": signal_decision.llm_parse_status,
+                            "signal_verdict": signal_decision.signal_verdict,
+                            "signal_direction": signal_decision.signal_direction,
+                            "reliability_score": signal_decision.reliability_score,
+                        },
+                        "execution_plan": {
+                            "action": plan.action,
+                            "direction": plan.direction,
+                            "notes": plan.notes,
+                        },
+                    },
+                )
 
             contract_warnings = [str(x) for x in list((ctx.key_market_features or {}).get("contract_warnings") or []) if x]
             trace = DecisionTrace(

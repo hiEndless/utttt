@@ -551,6 +551,13 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
         assert trace_payload
         routing = dict(trace_payload.get("routing") or {})
         assert routing.get("pipeline_mode") == "minimal"
+        names = [name for _, name, _ in wf._recorder.outputs]  # noqa: SLF001
+        assert "workflow_bridge" in names
+        assert "intent_resolver" not in names
+        assert "rule_planner" not in names
+        assert "horizon_policy_gate" not in names
+        assert "strategy_gate" not in names
+        assert "execution_planner" not in names
 
     import pytest
 
