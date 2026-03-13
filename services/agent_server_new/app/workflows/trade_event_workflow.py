@@ -25,6 +25,7 @@ from services.agent_server_new.domain.risk_gate_reasons import (
     risk_gate_reason_portfolio_risk_state,
 )
 from services.agent_server_new.domain.rule_planner import build_rule_plan
+from services.agent_server_new.domain.signal_router import route_signal_agent_key
 from services.agent_server_new.domain.strategy_gate import strategy_gate_v2
 from services.agent_server_new.experts.signal_evaluator import ExpertContext, evaluate_signal
 from services.agent_server_new.observability.decision_trace import DecisionTrace
@@ -583,6 +584,7 @@ def _build_decision_intent_payload(
             "agent_notes": str(plan.notes or ""),
             "decision_confidence": dict(decision_confidence),
             "decision_confidence_source": "agent_execution_plan",
+            "decision_agent_key": str(signal_decision.decision_agent_key or ""),
             "signal_verdict": str(signal_decision.signal_verdict or ""),
             "signal_reliability_score": float(signal_decision.reliability_score or 0.0),
             "signal_reasons": list(signal_decision.reasons or []),
@@ -606,6 +608,9 @@ def _build_signal_decision(
     signal: Any,
     llm_observation: Dict[str, Any],
 ) -> SignalDecision:
+    decision_agent_key = route_signal_agent_key(
+        signal_event={"payload": dict(event.payload or {})},
+    )
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
         verdict = "uncertain"
@@ -620,6 +625,7 @@ def _build_signal_decision(
         decision_id=str(event.event_id),
         exchange=str(event.exchange),
         symbol=str(event.symbol),
+        decision_agent_key=decision_agent_key,
         signal_direction=direction,  # type: ignore[arg-type]
         signal_verdict=verdict,  # type: ignore[arg-type]
         confidence=Confidence(level=str(conf.level or "low"), score=raw_score),  # type: ignore[arg-type]

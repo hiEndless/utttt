@@ -35,6 +35,7 @@ class SignalDecision:
     decision_id: str
     exchange: str
     symbol: str
+    decision_agent_key: str
     signal_direction: Direction
     signal_verdict: Literal["accept", "reject", "uncertain"]
     confidence: Confidence

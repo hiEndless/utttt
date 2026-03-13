@@ -121,6 +121,10 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - `SignalEvaluator` 升级为 LLM 主判（MSL 驱动）。
 - `RulePlanner/RiskGate/ExecutionPlanner` 从主链路移除。
 
+当前进展补充：
+- `SignalRouter` 已在代码中落地（`technical/liquidation/onchain/social_news/generic`）。
+- `TradeEventWorkflow` 已输出 `SignalDecision`，并把 `decision_agent_key` 透传到 execution payload 的 `risk_hints`。
+
 3. Phase C（兼容阶段）
 - 保留旧 `TradeEventWorkflow` 作为兼容壳，仅做转发，不再执行业务风控。
 - 完成 CLI/API 无破坏迁移。
