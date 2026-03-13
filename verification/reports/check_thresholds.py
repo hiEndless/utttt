@@ -86,6 +86,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="最小 event_type_match alias 占比，-1 表示忽略",
     )
     p.add_argument(
+        "--max-decision-agent-key-unknown-count",
+        type=int,
+        default=-1,
+        help="最大 decision_agent_key unknown 计数，-1 表示忽略",
+    )
+    p.add_argument(
         "--max-action-hint-semantics-mismatch-count",
         type=int,
         default=-1,
@@ -131,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
     event_type_match_missing_count = _to_int(summary.get("event_type_match_missing_count"), 0)
     event_type_match_unknown_count = _to_int(summary.get("event_type_match_unknown_count"), 0)
     event_type_match_alias_ratio = _to_float(summary.get("event_type_match_alias_ratio"), 0.0)
+    decision_agent_key_unknown_count = _to_int(summary.get("decision_agent_key_unknown_count"), 0)
     action_hint_semantics_mismatch_count = _to_int(summary.get("action_hint_semantics_mismatch_count"), 0)
     action_hint_semantics_missing_actual_hint_count = _to_int(
         summary.get("action_hint_semantics_missing_actual_hint_count"), 0
@@ -210,6 +217,14 @@ def main(argv: list[str] | None = None) -> int:
             f"{float(args.min_event_type_match_alias_ratio)} "
             f"(actual={event_type_match_alias_ratio})"
         )
+    if int(args.max_decision_agent_key_unknown_count) >= 0 and decision_agent_key_unknown_count > int(
+        args.max_decision_agent_key_unknown_count
+    ):
+        errors.append(
+            "decision_agent_key_unknown_count>"
+            f"{int(args.max_decision_agent_key_unknown_count)} "
+            f"(actual={decision_agent_key_unknown_count})"
+        )
     if int(args.max_action_hint_semantics_mismatch_count) >= 0 and action_hint_semantics_mismatch_count > int(
         args.max_action_hint_semantics_mismatch_count
     ):
@@ -255,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
         f"event_type_match_missing_count={event_type_match_missing_count} "
         f"event_type_match_unknown_count={event_type_match_unknown_count} "
         f"event_type_match_alias_ratio={event_type_match_alias_ratio} "
+        f"decision_agent_key_unknown_count={decision_agent_key_unknown_count} "
         f"action_hint_semantics_mismatch_count={action_hint_semantics_mismatch_count} "
         f"action_hint_semantics_missing_actual_hint_count={action_hint_semantics_missing_actual_hint_count} "
         f"action_hint_semantics_match_ratio_on_available={action_hint_semantics_match_ratio}"

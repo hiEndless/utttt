@@ -273,6 +273,52 @@ def test_check_thresholds_fails_when_event_type_match_exceeds_limit(tmp_path: Pa
     assert code == 1
 
 
+def test_check_thresholds_passes_when_decision_agent_key_unknown_within_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "decision_agent_key_unknown_count": 1,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-decision-agent-key-unknown-count",
+            "1",
+        ]
+    )
+    assert code == 0
+
+
+def test_check_thresholds_fails_when_decision_agent_key_unknown_exceeds_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "decision_agent_key_unknown_count": 2,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-decision-agent-key-unknown-count",
+            "1",
+        ]
+    )
+    assert code == 1
+
+
 def test_check_thresholds_passes_when_action_hint_semantics_within_limit(tmp_path: Path) -> None:
     summary = {
         "report_count": 1,
