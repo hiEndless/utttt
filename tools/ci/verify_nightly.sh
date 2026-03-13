@@ -84,6 +84,7 @@ echo "[nightly] MAX_EVENT_TYPE_MATCH_MISSING_COUNT=$MAX_EVENT_TYPE_MATCH_MISSING
 NIGHTLY_ARGS=(
   --with-pipeline-mode-report
   --with-event-type-match-report
+  --with-agent-action-hint-semantics-report
   --with-agent-readyz
   --summary-path "$SUMMARY_PATH"
   --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
@@ -103,3 +104,4 @@ fi
 bash tools/local/aggregate_and_check.sh "${NIGHTLY_ARGS[@]}"
 bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
 bash tools/local/print_event_type_match_summary.sh --summary "$SUMMARY_PATH" --prefix nightly
+bash tools/local/print_action_hint_semantics_summary.sh --summary "$SUMMARY_PATH" --prefix nightly

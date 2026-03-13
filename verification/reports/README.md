@@ -206,3 +206,8 @@ Print event_type match summary from aggregate report:
 ```bash
 bash tools/local/print_event_type_match_summary.sh --summary verification/reports/summary.latest.json --prefix quick
 ```
+
+Print action_hint semantics summary from aggregate report:
+```bash
+bash tools/local/print_action_hint_semantics_summary.sh --summary verification/reports/summary.latest.json --prefix quick
+```
