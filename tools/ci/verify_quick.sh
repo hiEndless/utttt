@@ -19,6 +19,10 @@ Optional Observability:
   WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
   WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
                                 启用 minimal 语义映射聚合观测（默认关闭）
+  WITH_AGENT_ACTION_HINT_CASES_REPORT=1
+                                生成 action_hint mismatch 回放 artifact（默认关闭）
+  AGENT_ACTION_HINT_CASES_REPORT_PATH
+                                action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -99,6 +103,14 @@ else
 fi
 if [[ "${WITH_AGENT_CLOSED_LOOP_SMOKE:-0}" == "1" ]]; then
   bash tools/local/check_agent_execution_closed_loop_smoke.sh
+fi
+if [[ "${WITH_AGENT_ACTION_HINT_CASES_REPORT:-0}" == "1" ]]; then
+  AGENT_ACTION_HINT_CASES_REPORT_PATH="${AGENT_ACTION_HINT_CASES_REPORT_PATH:-verification/reports/agent_action_hint_cases.latest.json}"
+  bash tools/local/inspect_agent_action_hint_cases.sh \
+    --status mismatch \
+    --format json \
+    --output "$AGENT_ACTION_HINT_CASES_REPORT_PATH" >/dev/null
+  echo "[quick] action_hint_cases_report_path=$AGENT_ACTION_HINT_CASES_REPORT_PATH"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" ]]; then

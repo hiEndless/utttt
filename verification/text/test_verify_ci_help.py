@@ -35,6 +35,8 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
+    assert "WITH_AGENT_ACTION_HINT_CASES_REPORT" in out
+    assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
 
 
 def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
@@ -50,15 +52,21 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT" in out
     assert "MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT" in out
     assert "MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO" in out
+    assert "WITH_AGENT_ACTION_HINT_CASES_REPORT" in out
+    assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
 
 
 def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     regression_text = (PROJECT_ROOT / "tools" / "ci" / "verify_regression.sh").read_text(encoding="utf-8")
     nightly_text = (PROJECT_ROOT / "tools" / "ci" / "verify_nightly.sh").read_text(encoding="utf-8")
+    quick_text = (PROJECT_ROOT / "tools" / "ci" / "verify_quick.sh").read_text(encoding="utf-8")
     assert "tools/local/print_event_type_match_summary.sh" in regression_text
     assert "tools/local/print_event_type_match_summary.sh" in nightly_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in regression_text
     assert "tools/local/print_action_hint_semantics_summary.sh" in nightly_text
+    assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
+    assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
+    assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
 
 
 def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
@@ -68,6 +76,8 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "WITH_PIPELINE_MODE_REPORT=1" in out
     assert "WITH_AGENT_CLOSED_LOOP_SMOKE=1" in out
     assert "WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1" in out
+    assert "WITH_AGENT_ACTION_HINT_CASES_REPORT=1" in out
+    assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
 
@@ -78,3 +88,5 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--with-agent-readyz" in out
     assert "--with-agent-closed-loop-smoke" in out
     assert "--with-agent-action-hint-semantics-report" in out
+    assert "--with-agent-action-hint-cases-report" in out
+    assert "--agent-action-hint-cases-report-path <path>" in out

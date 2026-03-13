@@ -169,6 +169,9 @@ Options:
   --with-agent-closed-loop-smoke         启用 agent->execution 三态闭环自检（默认关闭）
   --with-agent-action-hint-semantics-report
                                           启用 minimal 语义映射聚合观测（默认关闭）
+  --with-agent-action-hint-cases-report   生成 action_hint mismatch 回放 artifact（默认关闭）
+  --agent-action-hint-cases-report-path <path>
+                                          指定 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --require-agent-readyz-report          要求存在 readyz 报告（默认关闭）
   --agent-readyz-base-url <url>          指定 readyz 地址（默认 AGENT_BASE_URL 或 http://127.0.0.1:9971）
@@ -219,6 +222,10 @@ Optional Observability:
   WITH_AGENT_CLOSED_LOOP_SMOKE=1 启用 agent->execution 三态闭环自检（默认关闭）
   WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=1
                                 启用 minimal 语义映射聚合观测（默认关闭）
+  WITH_AGENT_ACTION_HINT_CASES_REPORT=1
+                                生成 action_hint mismatch 回放 artifact（默认关闭）
+  AGENT_ACTION_HINT_CASES_REPORT_PATH
+                                action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -258,6 +265,8 @@ Environment:
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 1）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 1）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.90）
+  WITH_AGENT_ACTION_HINT_CASES_REPORT  是否生成 action_hint mismatch 回放 artifact（1/0，默认 0）
+  AGENT_ACTION_HINT_CASES_REPORT_PATH  action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
   AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
@@ -287,6 +296,8 @@ Environment:
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 0）
   MAX_ACTION_HINT_SEMANTICS_MISSING_ACTUAL_HINT_COUNT  action_hint_semantics missing_actual_hint 计数上限（默认 0）
   MIN_ACTION_HINT_SEMANTICS_MATCH_RATIO  action_hint_semantics match_ratio 下限（默认 0.95）
+  WITH_AGENT_ACTION_HINT_CASES_REPORT  是否生成 action_hint mismatch 回放 artifact（1/0，默认 0）
+  AGENT_ACTION_HINT_CASES_REPORT_PATH  action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
   AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
