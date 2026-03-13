@@ -46,6 +46,13 @@ def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     assert "MIN_EVENT_TYPE_MATCH_ALIAS_RATIO" in out
 
 
+def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
+    regression_text = (PROJECT_ROOT / "tools" / "ci" / "verify_regression.sh").read_text(encoding="utf-8")
+    nightly_text = (PROJECT_ROOT / "tools" / "ci" / "verify_nightly.sh").read_text(encoding="utf-8")
+    assert "tools/local/print_event_type_match_summary.sh" in regression_text
+    assert "tools/local/print_event_type_match_summary.sh" in nightly_text
+
+
 def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     out = _run_help("tools/ci/verify_quick.sh")
     assert "Usage:" in out

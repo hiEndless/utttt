@@ -104,3 +104,4 @@ if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
 fi
 bash tools/local/aggregate_and_check.sh "${REGRESSION_ARGS[@]}"
 bash tools/local/print_pipeline_mode_summary.sh --summary "$SUMMARY_PATH" --prefix regression
+bash tools/local/print_event_type_match_summary.sh --summary "$SUMMARY_PATH" --prefix regression

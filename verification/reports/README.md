@@ -190,3 +190,8 @@ Verification API execution confidence summary:
 ```bash
 curl -s http://127.0.0.1:9970/internal/verification/reports/execution-confidence | jq
 ```
+
+Print event_type match summary from aggregate report:
+```bash
+bash tools/local/print_event_type_match_summary.sh --summary verification/reports/summary.latest.json --prefix quick
+```
