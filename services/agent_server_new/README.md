@@ -233,7 +233,8 @@ signal_event + active_events + MSL
 - `AGENT_AI_ADAPTIVE_MODE`
   - 预留模式（`observe|recommend|bounded_apply`，默认：`observe`）
 - `AGENT_LEGACY_PIPELINE_ENABLED`
-  - 是否启用 legacy planner/gate 链路（默认：`false`）
+  - 迁移兼容开关：是否临时启用 legacy planner/gate 链路（默认：`false`）
+  - 仅用于回滚窗口与迁移排障，常态环境保持 `false`
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
   - minimal 链路下 `ExecutionPlan.confidence` 与 `SignalDecision.confidence` 保持一致，便于执行层与回放统一判读
   - 若设为 `false`，必须同时设置 `AGENT_EXECUTION_ENABLED=true`（保证 decision->execution 闭环，所有环境一致）

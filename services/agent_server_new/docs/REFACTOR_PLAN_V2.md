@@ -154,6 +154,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - recorder 阶段输出已统一为适配器的 `stage->payload` 映射，workflow 仅循环写出并保留 schema guard。
 - 已增加阶段输出冻结守卫：`verification/auditors/agent_server_new/test_pipeline_stage_output_guard.py`，防止新增 legacy 专属输出键。
 - symbol memory 记录 payload 也已下沉适配器统一组装，workflow 仅负责 recorder 调用。
+- `AGENT_LEGACY_PIPELINE_ENABLED` 已明确为迁移兼容开关，并新增默认值/文档守卫，约束常态环境保持 `false`。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，workflow recorder 已退化为单节点 `workflow_bridge`（编排桥接记录），不再输出 `intent/rule/gate/planner` 业务节点记录。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，不再加载 horizon policy 配置，避免 minimal 路径隐式依赖 legacy 风控初始化。
 - 当 `AGENT_LEGACY_PIPELINE_ENABLED=false` 时，透传给 execution 的 `risk_hints.agent_action_hint` 由 `SignalDecision` 语义映射（`accept->add`，其余 `hold`），不再依赖 legacy `ExecutionPlan.action`。
