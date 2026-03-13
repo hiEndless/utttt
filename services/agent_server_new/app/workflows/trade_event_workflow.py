@@ -506,7 +506,7 @@ class TradeEventWorkflow:
                 action="hold",
                 direction="none",
                 allowance=allowance,
-                confidence=signal.confidence,
+                confidence=Confidence(level="low", score=0.0),
                 sizing=None,
                 notes="legacy_pipeline_disabled",
             )

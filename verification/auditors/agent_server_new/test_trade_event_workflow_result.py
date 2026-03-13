@@ -542,6 +542,9 @@ def test_trade_event_workflow_can_disable_legacy_pipeline_path():
             )
         )
         assert out.agent_plan.action == "hold"
+        assert out.agent_plan.direction == "none"
+        assert out.agent_plan.confidence.level == "low"
+        assert out.agent_plan.confidence.score == 0.0
         assert out.agent_plan.notes == "legacy_pipeline_disabled"
         trace_payload = {}
         for _, name, payload in wf._recorder.outputs:  # noqa: SLF001

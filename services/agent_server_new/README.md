@@ -271,6 +271,7 @@ signal_event + active_events + MSL
 5. minimal 模式下不会加载 `horizon policy` 配置，避免运行时仍耦合 legacy 业务链路。
 6. minimal 模式下 `risk_hints.agent_action_hint` 由信号语义映射（`accept -> add`，`reject/uncertain -> hold`），不再跟随 legacy plan action。
 7. minimal 模式下 `decision_confidence` 改由 `SignalDecision.confidence` 直出，`decision_confidence_source=agent_signal_decision`。
+8. minimal 模式下 `WorkflowResult.agent_plan` 仅作占位（固定 `hold/none + low(0.0)`），业务应消费 `signal_decision` 与 execution 结果。
 
 ### 本地灰度观测最短命令
 
