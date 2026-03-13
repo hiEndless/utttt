@@ -26,12 +26,14 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "Usage:" in out
     assert "pipeline semantic terms doc guard" in out
     assert "MAX_AGENT_READYZ_LEVEL" in out
+    assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
 
 
 def test_verify_nightly_help_contains_legacy_confidence_env() -> None:
     out = _run_help("tools/ci/verify_nightly.sh")
     assert "Usage:" in out
     assert "MAX_LEGACY_CONFIDENCE_RATIO" in out
+    assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
 
 
 def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:

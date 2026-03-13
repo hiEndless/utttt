@@ -11,6 +11,7 @@ Description:
 
 Environment:
   MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 red）
+  MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS  decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
   AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
@@ -63,15 +64,18 @@ echo "[regression 12/13] semantic warning budget"
 bash tools/local/check_semantic_warning_budget.sh
 echo "[regression 13/13] aggregate and check"
 MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
+MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:--1}"
 REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-1}"
 AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
 echo "[regression] MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+echo "[regression] MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
 REGRESSION_ARGS=(
   --with-agent-readyz
   --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
   --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
   --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
+  --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
 )
 if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
   REGRESSION_ARGS+=(--require-agent-readyz-report)

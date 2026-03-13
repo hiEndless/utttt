@@ -191,6 +191,7 @@ Description:
 
 Environment:
   MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 red）
+  MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS  decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
   AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
@@ -211,6 +212,7 @@ Description:
 Environment:
   MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
   MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 yellow）
+  MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS  decision_trace schema guard invalid 记录数上限（默认 0）
   REQUIRE_AGENT_READYZ_REPORT   是否要求 readyz 报告存在（1/0，默认 1）
   AGENT_READYZ_BASE_URL         agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S        agent readyz 拉取超时秒数（默认 2.0）
