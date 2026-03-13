@@ -77,6 +77,7 @@ One-shot local pipeline (optional include memory summary):
 ```bash
 bash tools/local/verify_quick.sh --with-pipeline-mode-report
 bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz
+WITH_AGENT_CLOSED_LOOP_SMOKE=1 bash tools/ci/verify_quick.sh
 bash tools/local/aggregate_and_check.sh --with-memory-summary
 bash tools/local/aggregate_and_check.sh --with-agent-readyz
 bash tools/local/aggregate_and_check.sh --with-decision-trace-schema-guard
