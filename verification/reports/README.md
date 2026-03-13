@@ -50,6 +50,13 @@ bash tools/local/run_agent_event_type_match_report.sh \
 bash tools/local/run_agent_event_type_match_report.sh --help
 ```
 
+Decision agent key route report (optional):
+```bash
+bash tools/local/run_agent_decision_agent_key_report.sh \
+  --output verification/reports/agent_decision_agent_key.latest.json
+bash tools/local/run_agent_decision_agent_key_report.sh --help
+```
+
 Action hint semantics report (optional):
 ```bash
 bash tools/local/run_agent_action_hint_semantics_report.sh \
