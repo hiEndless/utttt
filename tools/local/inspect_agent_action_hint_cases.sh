@@ -5,6 +5,7 @@ INPUT_PATH="${AGENT_EVENT_RECORDER_JSONL_PATH:-verification/reports/agent_server
 LIMIT=20
 STATUS="all"
 FORMAT="table"
+OUTPUT_PATH=""
 
 print_help() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Options:
   --limit <n>      输出最近事件条数（默认 20）
   --status <type>  过滤状态（all|ok|mismatch|missing，默认 all）
   --format <type>  输出格式（table|json，默认 table）
+  --output <path>  输出文件路径（仅 format=json 时生效）
   --help, -h       显示帮助
 
 Description:
@@ -46,6 +48,10 @@ while (($# > 0)); do
       FORMAT="${2:-$FORMAT}"
       shift 2
       ;;
+    --output)
+      OUTPUT_PATH="${2:-$OUTPUT_PATH}"
+      shift 2
+      ;;
     *)
       echo "[失败] 不支持的参数: $1"
       print_help
@@ -60,7 +66,7 @@ else
   PY_BIN=python3
 fi
 
-"$PY_BIN" - "$INPUT_PATH" "$LIMIT" "$STATUS" "$FORMAT" <<'PY'
+"$PY_BIN" - "$INPUT_PATH" "$LIMIT" "$STATUS" "$FORMAT" "$OUTPUT_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -68,8 +74,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-if len(sys.argv) != 5:
-    raise SystemExit("usage: <input_path> <limit> <status> <format>")
+if len(sys.argv) != 6:
+    raise SystemExit("usage: <input_path> <limit> <status> <format> <output_path>")
 
 input_path = Path(sys.argv[1])
 try:
@@ -82,6 +88,9 @@ if status_filter not in {"all", "ok", "mismatch", "missing"}:
 output_format = str(sys.argv[4] or "table").strip().lower()
 if output_format not in {"table", "json"}:
     raise SystemExit("[failed] --format must be one of: table|json")
+output_path = str(sys.argv[5] or "").strip()
+if output_path and output_format != "json":
+    raise SystemExit("[failed] --output requires --format json")
 
 
 def _normalize_direction(value: Any) -> str:
@@ -163,20 +172,24 @@ for event_id, item in decision_rows.items():
 rows_sorted = sorted(rows, key=lambda x: int(x.get("ts_ms") or 0), reverse=True)[:limit]
 
 if output_format == "json":
-    print(
-        json.dumps(
-            {
-                "schema_version": "agent-action-hint-cases-v1",
-                "input_path": str(input_path),
-                "status_filter": status_filter,
-                "limit": int(limit),
-                "count": len(rows_sorted),
-                "rows": rows_sorted,
-            },
-            ensure_ascii=False,
-            indent=2,
-        )
+    rendered = json.dumps(
+        {
+            "schema_version": "agent-action-hint-cases-v1",
+            "input_path": str(input_path),
+            "status_filter": status_filter,
+            "limit": int(limit),
+            "count": len(rows_sorted),
+            "rows": rows_sorted,
+        },
+        ensure_ascii=False,
+        indent=2,
     )
+    if output_path:
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(rendered + "\n", encoding="utf-8")
+        print(f"[ok] wrote {out}")
+    print(rendered)
 else:
     print("event_id\tverdict\tdirection\texpected_hint\tactual_hint\tstatus")
     for row in rows_sorted:

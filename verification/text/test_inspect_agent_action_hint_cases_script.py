@@ -26,6 +26,7 @@ def test_inspect_agent_action_hint_cases_help() -> None:
     assert "--limit <n>" in out
     assert "--status <type>" in out
     assert "--format <type>" in out
+    assert "--output <path>" in out
 
 
 def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path) -> None:
@@ -111,3 +112,28 @@ def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path
     rows_out = list(payload.get("rows") or [])
     assert payload.get("count") == len(rows_out)
     assert len(rows_out) == 2
+
+    out_path = tmp_path / "cases.latest.json"
+    json_file_proc = subprocess.run(
+        [
+            "bash",
+            str(SCRIPT_PATH),
+            "--input",
+            str(input_path),
+            "--status",
+            "mismatch",
+            "--format",
+            "json",
+            "--output",
+            str(out_path),
+        ],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert json_file_proc.returncode == 0
+    assert out_path.exists()
+    saved = json.loads(out_path.read_text(encoding="utf-8"))
+    assert saved.get("status_filter") == "mismatch"
+    assert int(saved.get("count") or 0) == 1
