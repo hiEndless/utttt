@@ -314,11 +314,11 @@ HTTP 适配器：
 在 ContextBuilder 的证据裁剪逻辑中，会尝试从 payload 读取：
 
 - `event_type` / `type` / `kind`：用于选择裁剪 profile（liquidation/macro_sentiment/indicator_signal/generic）
-- `event_ts_ms / ts_ms / timestamp_ms / ts / generated_at_ms / timestamp`：用于 freshness 判断（strategy_gate_v2）
+- `event_ts_ms / ts_ms / timestamp_ms / ts / generated_at_ms / timestamp`：用于信号时间语义与可追溯字段补全
 
 实现：
 - profile 选择：[context_builder.py](services/agent_server_new/app/context_builder.py#L115-L124)
-- ts 提取：[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L77-L100)
+- ts 处理：[active_events_redis.py](services/agent_server_new/adapters/active_events_redis.py)
 
 ---
 
@@ -434,90 +434,36 @@ features 列表在 candidates 之前会**强制注入**：
 
 实现：[signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L11-L74)
 
-### 7.2 intent_resolver：SignalVerdict + MSL + PositionContext -> ActionIntent
+### 7.2 signal_router：signal_event -> decision_agent_key
 
-核心规则（当前实现）：
-- 信号 reject：无仓位则 hold；有仓位则 decrease
-- msl.anomalies 包含 liquidity_vacuum：hold
-- msl.market_fragility=high 或 horizon_alignment=conflict：hold
-- 信号 uncertain：有仓位倾向 decrease，否则 hold
-- 信号 accept 且方向与 MSL direction_bias 冲突：hold
-- market_phase=distribution/contraction：hold
-- 否则 increase（direction=long/short）
+核心行为（当前实现）：
+- 基于 `event_type/source_type/type/kind` 做 canonical 归一与 alias 匹配
+- 路由到 `technical/liquidation/onchain/social_news/generic` 等决策 agent key
+- 路由配置由 `signal_router_profiles.json` 驱动，并记录配置来源与版本
 
-实现：[intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L10-L112)
+实现：[signal_router.py](services/agent_server_new/domain/signal_router.py)
 
-### 7.3 rule_planner：ActionIntent + MSL -> RulePlan（sizing 规则化）
+### 7.3 signal_decision_agent：SignalVerdict + MSL + evidence -> SignalDecision
 
-sizing 输出字段（当前实现约定）：
+核心行为（当前实现）：
+- 先执行规则判定（`SignalEvaluator`），再按是否有 `llm_observer` 走 rule-only 或 hybrid
+- hybrid 模式下按路由 key 注入 prompt profile，调用 LLM 并做 schema 校验
+- 当 LLM payload 不可用/不合法时自动回退规则结果，并写入 `llm_parse_status/llm_contract_error_code`
 
-| intent.intent | sizing.mode | sizing 字段 |
-|---|---|---|
-| increase | ratio | order_size_ratio, entry_type |
-| decrease | ratio | partial_exit_ratio, entry_type |
-| close | full | entry_type |
-| hold | ratio（可选） | partial_exit_ratio（仅高脆弱时轻减） |
+实现：
+- [signal_decision_agent.py](services/agent_server_new/domain/signal_decision_agent.py)
+- [llm_signal_decision_schema_guard.py](services/agent_server_new/domain/llm_signal_decision_schema_guard.py)
 
-实现：[rule_planner.py](services/agent_server_new/domain/rule_planner.py#L10-L61)
+### 7.4 workflow_decider：SignalDecision -> ExecutionPlan（语义建议）
 
-### 7.4 horizon_policy_gate：cross_horizon -> GateResult
+核心行为（当前实现）：
+- 将 `SignalDecision` 映射为 `ExecutionPlan`（`add/reduce/hold/skip` 语义动作）
+- `sizing/allowance` 仅作为语义建议快照，不承载 execution 最终风控语义
+- 最终阻断与动作权威在 `execution_service`
 
-输入来自 `key_market_features.features` 的 `cross_horizon.value`：
-
-| 字段 | 类型 | 典型枚举（来自状态层） |
-|---|---|---|
-| suggested_policy | string | follow_long_term / wait_confirmation / reduce_risk / no_action |
-| policy_reason | string | 状态层生成的原因码（实现内为字符串） |
-
-提取逻辑：[trade_event_workflow.py](services/agent_server_new/app/workflows/trade_event_workflow.py#L52-L63)
-
-门控逻辑（默认配置）：
-- 当 intent=increase 且 suggested_policy in {wait_confirmation, reduce_risk} 时阻断
-- 阻断原因码主码来自单源常量：`horizon_policy_wait_confirmation | horizon_policy_reduce_risk | horizon_policy_blocked`
-- 策略原因统一标准标签：`policy_reason:<code>`
-
-实现：[horizon_policy_gate.py](services/agent_server_new/domain/horizon_policy_gate.py#L57-L69)
-原因码单源：[horizon_policy_reasons.py](services/agent_server_new/domain/horizon_policy_reasons.py)
-
-### 7.5 strategy_gate_v2：语义门控
-
-关键阻断点（当前实现）：
-- signal_stale：`msl.ts - signal_event_ts > 10min`
-- fragility_high_block_increase：高脆弱性禁止 increase
-- direction_bias_mismatch：MSL 方向偏置与信号方向冲突
-- liquidity_vacuum：结构风险阻断
-- horizon_conflict：跨周期冲突阻断 increase
-
-原因码单源（防漂移）：[strategy_gate_reasons.py](services/agent_server_new/domain/strategy_gate_reasons.py)
-
-实现：[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L47-L84)
-
-### 7.6 risk_gate：RiskGateContext -> RiskAllowance
-
-RiskGateContext 枚举：
-- global_regime：normal/elevated/critical
-- cooldown_active：bool
-
-当 global_regime=critical 或 cooldown_active=true 时：不允许 open/add，仅允许 reduce/exit。
-
-实现：[risk_gate.py](services/agent_server_new/domain/risk_gate.py#L9-L42)
-原因码单源（`decision_trace.risk_gate.regime_sources`）：[risk_gate_reasons.py](services/agent_server_new/domain/risk_gate_reasons.py)
-
-### 7.7 execution_planner：RulePlan + RiskAllowance -> ExecutionPlan
-
-动作映射：
-
-| ActionIntentType | RiskAction |
-|---|---|
-| increase | add |
-| decrease | reduce |
-| close | exit |
-| hold | hold |
-| skip | skip |
-
-若 allowance 不允许对应动作，会降级为 hold，并降低 confidence。
-
-实现：[execution_planner.py](services/agent_server_new/domain/execution_planner.py#L8-L72)
+实现：
+- [pipeline_compat_adapter.py](services/agent_server_new/domain/pipeline_compat_adapter.py)
+- [trade_event_workflow.py](services/agent_server_new/app/workflows/trade_event_workflow.py)
 
 ### 7.8 execution_decider（可选）：ExecutionPlan -> execution_service DecisionIntent
 
@@ -574,15 +520,12 @@ SignalVerdict：
 
 来源：[domain/contracts.py](services/agent_server_new/domain/contracts.py#L12-L29)
 
-### 8.3 ActionIntent / RulePlan / RiskAllowance / ExecutionPlan
-
-ActionIntentType（动作意图）：
-- increase / decrease / close / hold / skip
+### 8.3 SignalDecision / ExecutionPlan / 兼容快照字段
 
 RiskAction（执行动作）：
 - add / reduce / hold / exit / skip
 
-RiskAllowance：
+RiskAllowance（兼容快照）：
 
 | 字段 | 类型 | 含义 |
 |---|---|---|
@@ -600,7 +543,7 @@ ExecutionPlan：
 | direction | Direction | 方向 |
 | allowance | RiskAllowance | 风控许可 |
 | confidence | Confidence | 置信度 |
-| sizing | object\|null | sizing（由 rule_planner 产出并可被约束合并） |
+| sizing | object\|null | 语义 sizing 建议（execution 可覆盖或忽略） |
 | notes | string | 说明 |
 
 来源：[domain/contracts.py](services/agent_server_new/domain/contracts.py#L31-L72)
@@ -615,13 +558,13 @@ ExecutionPlan：
 
 | 字段 | 用途 | 读取位置（示例） |
 |---|---|---|
-| msl.anomalies | 结构风险标签（liquidation_cluster/liquidity_vacuum 等） | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L35-L48)、[intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L31-L39)、[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L48-L67) |
-| msl.horizon_alignment | 跨周期冲突门控 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L45-L46)、[intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L50-L57)、[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L69-L70) |
+| msl.anomalies | 结构风险标签（liquidation_cluster/liquidity_vacuum 等） | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L35-L48) |
+| msl.horizon_alignment | 跨周期一致性参考 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L45-L46) |
 | msl.regime | 过渡期处理（uncertain/hold） | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L59-L66) |
-| msl.market_fragility | 脆弱性门控与 sizing 调整 | [intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L41-L48)、[rule_planner.py](services/agent_server_new/domain/rule_planner.py#L33-L39)、[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L59-L61) |
-| msl.direction_bias | 信号方向一致性检查 | [intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L86-L94)、[strategy_gate.py](services/agent_server_new/domain/strategy_gate.py#L62-L65) |
-| msl.market_phase | 风险阶段下的扩张抑制 | [intent_resolver.py](services/agent_server_new/domain/intent_resolver.py#L96-L103) |
-| msl.volatility.volatility_regime | sizing 调整与减仓比例 | [rule_planner.py](services/agent_server_new/domain/rule_planner.py#L30-L39)、[rule_planner.py](services/agent_server_new/domain/rule_planner.py#L45-L48) |
+| msl.market_fragility | 脆弱性参考特征 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py) |
+| msl.direction_bias | 信号方向一致性参考 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py) |
+| msl.market_phase | 市场阶段语义参考 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py) |
+| msl.volatility.volatility_regime | 波动语义参考 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py) |
 | msl.liquidity.liquidity_risk + msl.positioning.crowding | 结构风险组合判定 | [signal_evaluator.py](services/agent_server_new/experts/signal_evaluator.py#L43-L44) |
 
 ### 8.4.2 关键枚举（来自 MSL schema）
@@ -655,8 +598,8 @@ ExecutionPlan：
 | msl | object | `msl.to_llm_dict()` 输出 |
 | key_features | object | key_market_features（包含裁剪 features 列表） |
 | evidence/anomalies | object | 从 key_market_features 拿的 evidence/anomalies（通常来自 state_features） |
-| signal_verdict/intent/rule_plan | object | 各阶段关键输出摘要 |
-| strategy_gate_result/risk_gate/execution_plan | object | 门控与计划摘要（其中 strategy_gate_result 包含 `horizon_reasons/strategy_reasons/reasons`） |
+| signal_verdict/intent/rule_plan | object | 兼容语义快照（由 adapter 生成） |
+| strategy_gate_result/risk_gate/execution_plan | object | 兼容语义快照与计划摘要（不代表 execution 最终风控裁决） |
 | llm_observation | object | LLM 旁路观察摘要（`status/provider/model/raw_content_hash`，失败或禁用也会输出固定语义） |
 | memory_metrics | object | memory_observability |
 | tags | array[string] | 标签（当前固定含 decision_trace） |
@@ -721,16 +664,7 @@ Redis backend 额外变量（节选）：
 
 来源：[bootstrap.py](services/agent_server_new/app/bootstrap.py#L54-L99) 与 [symbol_memory_redis.py](services/agent_server_new/adapters/symbol_memory_redis.py#L32-L74)
 
-### 10.5 跨周期门控配置
-
-| 变量 | 默认值 | 含义 |
-|---|---|---|
-| AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE | ""（默认逻辑为 wait_confirmation,reduce_risk） | increase 时阻断的 suggested_policy 列表（CSV） |
-| AGENT_HORIZON_POLICY_CONFIG_JSON | "" | JSON 覆盖配置 |
-
-来源：[horizon_policy_gate.py](services/agent_server_new/domain/horizon_policy_gate.py#L22-L45)
-
-### 10.6 AI adaptive（保留字段）
+### 10.5 AI adaptive（保留字段）
 
 | 变量 | 默认值 | 含义 |
 |---|---|---|
