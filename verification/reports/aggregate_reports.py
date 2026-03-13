@@ -33,6 +33,7 @@ def _load_reports(pattern: str) -> List[Dict[str, Any]]:
                 "execution-confidence-metrics-v1",
                 "agent-readyz-report-v1",
                 "agent-decision-trace-schema-guard-report-v1",
+                "agent-pipeline-mode-report-v1",
             } and "confidence_migration_metrics" not in data:
                 continue
             data["_path"] = str(p)
@@ -86,6 +87,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     decision_trace_schema_guard_reports = [
         x for x in reports if str(x.get("schema_version") or "") == "agent-decision-trace-schema-guard-report-v1"
     ]
+    pipeline_mode_reports = [x for x in reports if str(x.get("schema_version") or "") == "agent-pipeline-mode-report-v1"]
 
     total = len(verification_reports)
     passed = 0
@@ -268,6 +270,38 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         decision_trace_schema_guard_invalid_records = _to_int(summary.get("invalid_guard_records"), 0)
         decision_trace_schema_guard_affected_event_count = _to_int(summary.get("affected_event_count"), 0)
 
+    pipeline_mode_report_count = len(pipeline_mode_reports)
+    latest_pipeline_mode_report_path = ""
+    pipeline_mode_legacy_count = 0
+    pipeline_mode_minimal_count = 0
+    pipeline_mode_unknown_count = 0
+    pipeline_mode_missing_count = 0
+    pipeline_mode_legacy_ratio = 0.0
+    pipeline_mode_minimal_ratio = 0.0
+    if pipeline_mode_reports:
+        latest_pipeline_mode = max(
+            pipeline_mode_reports,
+            key=lambda x: max(
+                _to_int(x.get("generated_at_ms"), 0),
+                _to_int(x.get("ts_ms"), 0),
+                _to_int(x.get("ts"), 0),
+            ),
+        )
+        latest_pipeline_mode_report_path = str(latest_pipeline_mode.get("_path") or "")
+        summary = dict(latest_pipeline_mode.get("summary") or {})
+        pipeline_mode_legacy_count = _to_int(summary.get("legacy_count"), 0)
+        pipeline_mode_minimal_count = _to_int(summary.get("minimal_count"), 0)
+        pipeline_mode_unknown_count = _to_int(summary.get("unknown_count"), 0)
+        pipeline_mode_missing_count = _to_int(summary.get("missing_pipeline_mode_count"), 0)
+        try:
+            pipeline_mode_legacy_ratio = round(float(summary.get("legacy_ratio") or 0.0), 6)
+        except Exception:
+            pipeline_mode_legacy_ratio = 0.0
+        try:
+            pipeline_mode_minimal_ratio = round(float(summary.get("minimal_ratio") or 0.0), 6)
+        except Exception:
+            pipeline_mode_minimal_ratio = 0.0
+
     return {
         "schema_version": "verification-report-aggregate-v1",
         "verification_report_count": total,
@@ -306,6 +340,14 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "latest_decision_trace_schema_guard_report_path": latest_decision_trace_schema_guard_report_path,
         "decision_trace_schema_guard_invalid_records": decision_trace_schema_guard_invalid_records,
         "decision_trace_schema_guard_affected_event_count": decision_trace_schema_guard_affected_event_count,
+        "pipeline_mode_report_count": pipeline_mode_report_count,
+        "latest_pipeline_mode_report_path": latest_pipeline_mode_report_path,
+        "pipeline_mode_legacy_count": pipeline_mode_legacy_count,
+        "pipeline_mode_minimal_count": pipeline_mode_minimal_count,
+        "pipeline_mode_unknown_count": pipeline_mode_unknown_count,
+        "pipeline_mode_missing_count": pipeline_mode_missing_count,
+        "pipeline_mode_legacy_ratio": pipeline_mode_legacy_ratio,
+        "pipeline_mode_minimal_ratio": pipeline_mode_minimal_ratio,
     }
 
 

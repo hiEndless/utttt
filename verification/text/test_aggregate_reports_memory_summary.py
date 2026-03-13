@@ -79,6 +79,21 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
                 {"event_id": "evt-1", "hits": 2, "max_error_count": 3}
             ],
         },
+        {
+            "schema_version": "agent-pipeline-mode-report-v1",
+            "generated_at_ms": 3700,
+            "summary": {
+                "decision_trace_record_count": 10,
+                "decision_trace_event_count": 6,
+                "legacy_count": 4,
+                "minimal_count": 5,
+                "unknown_count": 1,
+                "missing_pipeline_mode_count": 0,
+                "legacy_ratio": 0.444444,
+                "minimal_ratio": 0.555556,
+            },
+            "unknown_samples": [{"event_id": "evt-x", "pipeline_mode": "future_mode", "ts_ms": 1700000000000}],
+        },
     ]
     out = build_summary(reports)
     assert out["report_count"] == 1
@@ -113,3 +128,10 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["decision_trace_schema_guard_report_count"] == 1
     assert out["decision_trace_schema_guard_invalid_records"] == 2
     assert out["decision_trace_schema_guard_affected_event_count"] == 1
+    assert out["pipeline_mode_report_count"] == 1
+    assert out["pipeline_mode_legacy_count"] == 4
+    assert out["pipeline_mode_minimal_count"] == 5
+    assert out["pipeline_mode_unknown_count"] == 1
+    assert out["pipeline_mode_missing_count"] == 0
+    assert float(out["pipeline_mode_legacy_ratio"]) == 0.444444
+    assert float(out["pipeline_mode_minimal_ratio"]) == 0.555556
