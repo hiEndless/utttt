@@ -23,8 +23,10 @@ fi
 echo "[docs 6/13] contract bundle regression tests"
 ./venv/bin/pytest -q verification/validators/contracts/test_contract_change_bundle_guard.py
 
-echo "[docs 7/13] agent readme pipeline_mode quick path doc guard"
-./venv/bin/pytest -q verification/text/test_agent_readme_pipeline_mode_quick_path.py
+echo "[docs 7/13] readme pipeline_mode quick path doc guards"
+./venv/bin/pytest -q \
+  verification/text/test_agent_readme_pipeline_mode_quick_path.py \
+  verification/text/test_verification_reports_readme_pipeline_mode_quick_path.py
 
 echo "[docs 8/13] new_arch guards help snapshot guard"
 bash tools/local/check_new_arch_guards_help_snapshot_guard.sh
