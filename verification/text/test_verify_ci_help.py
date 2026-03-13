@@ -168,6 +168,7 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/check_agent_decision_agent_key_report_guard.sh" in nightly_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in quick_text
     assert "tools/local/print_route_replay_summary.sh" in quick_text
+    assert "tools/local/run_agent_signal_router_baseline_replay.sh" in quick_text
     assert "tools/local/run_agent_signal_decision_replay_report.sh" in quick_text
     assert "tools/local/print_signal_decision_quality_summary.sh" in quick_text
     assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
@@ -189,11 +190,15 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "WITH_AGENT_ACTION_HINT_CASES_REPORT=1" in out
     assert "WITH_AGENT_DECISION_AGENT_KEY_REPORT=1" in out
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT=1" in out
+    assert "WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY=1" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1" in out
     assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
     assert "AGENT_ROUTE_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_SAMPLES_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH" in out
+    assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
     assert "MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" in out

@@ -271,6 +271,8 @@ Optional Observability:
                                 启用 decision_agent_key 路由分布观测（默认关闭）
   WITH_AGENT_ROUTE_REPLAY_REPORT=1
                                 启用四类来源业务路由回放观测（默认关闭）
+  WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY=1
+                                启用 signal_router 基线路由回放观测（默认关闭）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1
                                 启用信号决策结果回放观测（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
@@ -281,6 +283,12 @@ Optional Observability:
                                 decision_agent_key 报告输出路径（默认 verification/reports/agent_decision_agent_key.latest.json）
   AGENT_ROUTE_REPLAY_REPORT_PATH
                                 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_SAMPLES_PATH
+                                signal_router baseline 样本路径（默认 services/agent_server_new/config/signal_router_baseline_samples.json）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH
+                                signal_router baseline replay 报告输出路径（默认 verification/reports/agent_signal_router_baseline_replay.latest.json）
+  AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT
+                                signal_router baseline replay 是否严格失败（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
                                 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT
