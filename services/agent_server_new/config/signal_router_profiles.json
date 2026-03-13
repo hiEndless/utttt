@@ -1,5 +1,23 @@
 {
   "default_agent_key": "generic",
+  "event_type_routes": {
+    "indicator_signal": "technical",
+    "market_indicator_signal": "technical",
+    "wallet_alert": "onchain",
+    "onchain_wallet_anomaly": "onchain",
+    "forced_liquidation_cluster": "liquidation",
+    "large_liquidation": "liquidation",
+    "macro_news": "social_news",
+    "social_news": "social_news"
+  },
+  "source_category_routes": {
+    "technical": "technical",
+    "onchain": "onchain",
+    "liquidation": "liquidation",
+    "news": "social_news",
+    "social": "social_news",
+    "macro": "social_news"
+  },
   "rules": [
     {
       "agent_key": "liquidation",

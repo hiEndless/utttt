@@ -335,3 +335,30 @@ def test_create_trade_event_workflow_from_env_prod_rejects_invalid_signal_router
         assert False, "expected RuntimeError when prod signal router config is invalid"
     except RuntimeError as exc:
         assert "invalid signal router config in production" in str(exc)
+
+
+def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_event_type_routes(monkeypatch, tmp_path):
+    import json
+
+    bad = tmp_path / "bad_router_event_type_routes.json"
+    bad.write_text(
+        json.dumps(
+            {
+                "default_agent_key": "generic",
+                "event_type_routes": {"macro_news": "custom_unknown"},
+                "rules": [
+                    {"agent_key": "social_news", "keywords": ["news"]},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", str(bad))
+    import services.agent_server_new.app.bootstrap as mod
+
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    try:
+        create_trade_event_workflow_from_env()
+        assert False, "expected RuntimeError when event_type_routes contains invalid agent_key"
+    except RuntimeError as exc:
+        assert "invalid signal router config" in str(exc)

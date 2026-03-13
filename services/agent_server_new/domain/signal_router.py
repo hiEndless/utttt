@@ -9,6 +9,24 @@ from typing import Any, Dict, List
 
 _DEFAULT_ROUTER_CONFIG = {
     "default_agent_key": "generic",
+    "event_type_routes": {
+        "indicator_signal": "technical",
+        "market_indicator_signal": "technical",
+        "wallet_alert": "onchain",
+        "onchain_wallet_anomaly": "onchain",
+        "forced_liquidation_cluster": "liquidation",
+        "large_liquidation": "liquidation",
+        "macro_news": "social_news",
+        "social_news": "social_news",
+    },
+    "source_category_routes": {
+        "technical": "technical",
+        "onchain": "onchain",
+        "liquidation": "liquidation",
+        "news": "social_news",
+        "social": "social_news",
+        "macro": "social_news",
+    },
     "rules": [
         {"agent_key": "liquidation", "keywords": ["liquidation", "liq", "squeeze", "forced_liq"]},
         {"agent_key": "onchain", "keywords": ["onchain", "whale", "nansen", "glassnode", "arkham", "chain"]},
@@ -38,8 +56,33 @@ def _load_router_config(path: str) -> Dict[str, Any]:
         return dict(_DEFAULT_ROUTER_CONFIG)
     rules = parsed.get("rules")
     default_agent_key = str(parsed.get("default_agent_key") or "generic").strip().lower() or "generic"
+    raw_event_type_routes = parsed.get("event_type_routes")
+    raw_source_category_routes = parsed.get("source_category_routes")
     if not isinstance(rules, list):
-        return {"default_agent_key": default_agent_key, "rules": list(_DEFAULT_ROUTER_CONFIG["rules"])}
+        return {
+            "default_agent_key": default_agent_key,
+            "event_type_routes": dict(_DEFAULT_ROUTER_CONFIG["event_type_routes"]),
+            "source_category_routes": dict(_DEFAULT_ROUTER_CONFIG["source_category_routes"]),
+            "rules": list(_DEFAULT_ROUTER_CONFIG["rules"]),
+        }
+    event_type_routes: Dict[str, str] = {}
+    if isinstance(raw_event_type_routes, dict):
+        for k, v in raw_event_type_routes.items():
+            key = str(k or "").strip().lower()
+            value = str(v or "").strip().lower()
+            if key and value:
+                event_type_routes[key] = value
+    if not event_type_routes:
+        event_type_routes = {}
+    source_category_routes: Dict[str, str] = {}
+    if isinstance(raw_source_category_routes, dict):
+        for k, v in raw_source_category_routes.items():
+            key = str(k or "").strip().lower()
+            value = str(v or "").strip().lower()
+            if key and value:
+                source_category_routes[key] = value
+    if not source_category_routes:
+        source_category_routes = {}
     normalized_rules: List[Dict[str, Any]] = []
     for item in list(rules):
         if not isinstance(item, dict):
@@ -53,7 +96,12 @@ def _load_router_config(path: str) -> Dict[str, Any]:
         normalized_rules.append({"agent_key": agent_key, "keywords": keywords})
     if not normalized_rules:
         normalized_rules = list(_DEFAULT_ROUTER_CONFIG["rules"])
-    return {"default_agent_key": default_agent_key, "rules": normalized_rules}
+    return {
+        "default_agent_key": default_agent_key,
+        "event_type_routes": event_type_routes,
+        "source_category_routes": source_category_routes,
+        "rules": normalized_rules,
+    }
 
 
 def reset_signal_router_cache() -> None:
@@ -71,7 +119,7 @@ def validate_signal_router_config(
     *,
     allowed_agent_keys: set[str] | None = None,
 ) -> None:
-    """校验路由配置：空规则、未知 agent_key、重复关键词。"""
+    """校验路由配置：未知 agent_key、映射字段格式、重复关键词冲突。"""
     if not isinstance(cfg, dict):
         raise ValueError("signal_router config 必须是对象")
     default_agent_key = str(cfg.get("default_agent_key") or "").strip().lower()
@@ -80,9 +128,30 @@ def validate_signal_router_config(
     rules = cfg.get("rules")
     if not isinstance(rules, list) or not rules:
         raise ValueError("signal_router.rules 必须是非空数组")
+    event_type_routes = cfg.get("event_type_routes")
+    if event_type_routes is not None and not isinstance(event_type_routes, dict):
+        raise ValueError("signal_router.event_type_routes 必须是对象")
+    source_category_routes = cfg.get("source_category_routes")
+    if source_category_routes is not None and not isinstance(source_category_routes, dict):
+        raise ValueError("signal_router.source_category_routes 必须是对象")
     allowed = set([x.strip().lower() for x in list(allowed_agent_keys or set()) if str(x).strip()])
     if allowed and default_agent_key not in allowed:
         raise ValueError(f"signal_router.default_agent_key 非法: {default_agent_key}")
+    for field_name, mapping in (
+        ("event_type_routes", event_type_routes),
+        ("source_category_routes", source_category_routes),
+    ):
+        if not isinstance(mapping, dict):
+            continue
+        for raw_key, raw_value in mapping.items():
+            key = str(raw_key or "").strip().lower()
+            value = str(raw_value or "").strip().lower()
+            if not key:
+                raise ValueError(f"signal_router.{field_name} 不能包含空键")
+            if not value:
+                raise ValueError(f"signal_router.{field_name}[{key}] 不能为空")
+            if allowed and value not in allowed:
+                raise ValueError(f"signal_router.{field_name}[{key}] 非法: {value}")
     keyword_owner: Dict[str, str] = {}
     for idx, item in enumerate(list(rules)):
         if not isinstance(item, dict):
@@ -105,10 +174,16 @@ def validate_signal_router_config(
 
 
 def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[str, Any] | None = None) -> str:
-    """按事件类型/来源类别路由信号决策 agent（配置驱动）。"""
+    """按事件类型/来源类别路由信号决策 agent（显式映射优先，关键词兜底）。"""
     payload = dict((signal_event or {}).get("payload") or {})
-    event_type = str(payload.get("event_type") or payload.get("type") or payload.get("kind") or "").strip().lower()
-    source_category = str(payload.get("source_category") or "").strip().lower()
+    event_type = str(
+        payload.get("event_type")
+        or payload.get("type")
+        or payload.get("kind")
+        or payload.get("signal_type")
+        or ""
+    ).strip().lower()
+    source_category = str(payload.get("source_category") or payload.get("event_source_category") or "").strip().lower()
     source_obj = payload.get("source")
     source_name = ""
     if isinstance(source_obj, dict):
@@ -120,6 +195,14 @@ def route_signal_agent_key(*, signal_event: Dict[str, Any], router_config: Dict[
 
     text = " ".join([event_type, source_category, source_name]).strip()
     cfg = dict(router_config or load_signal_router_config_from_env())
+    event_type_routes = dict(cfg.get("event_type_routes") or {})
+    source_category_routes = dict(cfg.get("source_category_routes") or {})
+    event_route = str(event_type_routes.get(event_type) or "").strip().lower()
+    if event_route:
+        return event_route
+    source_route = str(source_category_routes.get(source_category) or "").strip().lower()
+    if source_route:
+        return source_route
     rules = list(cfg.get("rules") or [])
     for item in rules:
         agent_key = str((item or {}).get("agent_key") or "").strip().lower()

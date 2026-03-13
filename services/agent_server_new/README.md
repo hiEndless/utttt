@@ -235,6 +235,9 @@ signal_event + active_events + MSL
 - `AGENT_LEGACY_PIPELINE_ENABLED`
   - 是否启用 legacy planner/gate 链路（默认：`true`）
   - `false` 时跳过 `Intent/Rule/Horizon/Strategy/Risk/ExecutionPlanner`，走最小链路并输出 `ExecutionPlan(action=hold)`
+- `AGENT_SIGNAL_ROUTER_CONFIG_FILE`
+  - 信号路由配置文件路径（默认：`services/agent_server_new/config/signal_router_profiles.json`）
+  - 路由优先级：`event_type_routes` > `source_category_routes` > `rules.keywords` > `default_agent_key`
 - `AGENT_HORIZON_POLICY_BLOCK_ON_INCREASE`
   - HorizonPolicyGate 阻断策略列表（CSV）
 - `AGENT_HORIZON_POLICY_CONFIG_JSON`

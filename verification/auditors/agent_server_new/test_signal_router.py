@@ -38,12 +38,35 @@ def test_signal_router_routes_generic_when_unknown() -> None:
     assert key == "generic"
 
 
+def test_signal_router_prefers_event_type_route_over_keywords() -> None:
+    key = route_signal_agent_key(
+        signal_event={"payload": {"event_type": "onchain_wallet_anomaly", "source_category": "social"}}
+    )
+    assert key == "onchain"
+
+
+def test_signal_router_routes_by_source_category_when_event_type_unknown() -> None:
+    key = route_signal_agent_key(
+        signal_event={"payload": {"event_type": "custom_unknown_type", "source_category": "liquidation"}}
+    )
+    assert key == "liquidation"
+
+
+def test_signal_router_routes_by_event_source_category_alias() -> None:
+    key = route_signal_agent_key(
+        signal_event={"payload": {"type": "custom_unknown_type", "event_source_category": "social"}}
+    )
+    assert key == "social_news"
+
+
 def test_signal_router_supports_custom_config(tmp_path) -> None:  # noqa: ANN001
     custom = tmp_path / "router.json"
     custom.write_text(
         json.dumps(
             {
                 "default_agent_key": "generic",
+                "event_type_routes": {"wallet_alert": "wallet_watch"},
+                "source_category_routes": {"onchain": "wallet_watch"},
                 "rules": [
                     {"agent_key": "wallet_watch", "keywords": ["wallet", "whale_alert"]},
                     {"agent_key": "technical", "keywords": ["indicator"]},
@@ -110,6 +133,24 @@ def test_signal_router_validate_rejects_unknown_agent_key() -> None:
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "agent_key 非法" in str(exc)
+
+
+def test_signal_router_validate_rejects_unknown_agent_key_in_event_type_routes() -> None:
+    cfg = {
+        "default_agent_key": "generic",
+        "event_type_routes": {"macro_news": "custom_unknown"},
+        "rules": [
+            {"agent_key": "social_news", "keywords": ["news"]},
+        ],
+    }
+    try:
+        validate_signal_router_config(
+            cfg,
+            allowed_agent_keys={"technical", "liquidation", "onchain", "social_news", "generic"},
+        )
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "event_type_routes[macro_news] 非法" in str(exc)
 
 
 def test_signal_router_validate_rejects_empty_rules() -> None:
