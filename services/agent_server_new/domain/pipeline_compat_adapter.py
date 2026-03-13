@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 from services.agent_server_new.domain.contracts import ActionIntent, Confidence, ExecutionPlan, RiskAllowance, RulePlan, SignalDecision
-from services.agent_server_new.domain.risk_gate import RiskGateContext
 from services.agent_server_new.observability.decision_trace import DecisionTrace, map_alert_codes_from_contract_warnings
 
 
@@ -16,10 +15,16 @@ class PipelineCompatState:
     hpg_reasons: list[str]
     sg_allowed: bool
     sg_reasons: list[str]
-    risk_ctx: RiskGateContext
+    risk_ctx: "SemanticRiskSnapshot"
     risk_ctx_reasons: list[str]
     allowance: RiskAllowance
     plan: ExecutionPlan
+
+
+@dataclass(frozen=True)
+class SemanticRiskSnapshot:
+    global_regime: str
+    cooldown_active: bool
 
 
 def build_pipeline_compat_state(
@@ -48,7 +53,7 @@ def build_pipeline_compat_state(
         reasons=["signal_semantic_plan"],
         notes="minimal_pipeline_semantic_plan",
     )
-    risk_ctx = RiskGateContext(global_regime="normal", cooldown_active=False)
+    risk_ctx = SemanticRiskSnapshot(global_regime="normal", cooldown_active=False)
     allowance = RiskAllowance(
         allow_open=True,
         allow_add=True,
