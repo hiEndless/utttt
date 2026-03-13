@@ -424,11 +424,8 @@ signal_event + active_events + MSL
 - decision workflow orchestration
 - expert prompt building
 - structured expert outputs
-- intent resolution
-- rule planning
-- strategy gating
-- risk gating
-- execution planning
+- signal semantic decision (accept/reject/uncertain)
+- event-type routing to decision agent
 - decision trace / explainability
 
 ### 不应该保留在 `agent_server_new` 的能力
@@ -451,12 +448,9 @@ agent_server_new/
     workflows/
       trade_event_workflow.py
   domain/
-    contracts.py             # SignalVerdict / Intent / RulePlan / ExecutionPlan / DecisionTrace contract refs
-    intent_resolver.py
-    rule_planner.py
-    strategy_gate.py
-    risk_gate.py
-    execution_planner.py
+    contracts.py             # SignalVerdict / SignalDecision / ExecutionPlan / DecisionTrace contract refs
+    signal_router.py
+    signal_decision_agent.py
   experts/
     base/
     signal_evaluator.py
@@ -497,13 +491,18 @@ agent_server_new/
 - 它们的核心职责是从 `market_structure/raw features` 生成状态摘要
 - 这属于状态层，不属于决策层
 
-以下文件应继续保留在 `agent_server_new`：
+以下文件为历史域模块（非 workflow 主链路依赖），仅用于语义快照兼容与回放，不参与执行风控裁决：
 
 - `domain/intent_resolver.py`
 - `domain/rule_planner.py`
 - `domain/strategy_gate.py`
 - `domain/risk_gate.py`
 - `domain/execution_planner.py`
+
+以下文件是当前主链路核心：
+
+- `domain/signal_router.py`
+- `domain/signal_decision_agent.py`
 - `experts/signal_evaluator.py`
 - `observability/decision_trace.py`
 - `app/workflows/trade_event_workflow.py`

@@ -128,7 +128,7 @@ def _sanitize_llm_contract_errors(values: Any, *, limit: int = 8) -> list[str]:
 
 
 class TradeEventWorkflow:
-    """示例工作流：load context -> call expert -> rule planner -> risk gate -> execution planner -> persist。"""
+    """示例工作流：load context -> signal decision -> execution decider -> persist。"""
 
     def __init__(
         self,

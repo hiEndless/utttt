@@ -142,17 +142,16 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 - `TradeEventWorkflow` 已透传 `prompt_config_source/prompt_config_version` 到 execution `risk_hints`，用于跨服务回放追踪提示词配置。
 - `DecisionTrace` 已增加 `routing` 观测块，记录 `decision_agent_key/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`，用于回放时定位路由与提示词配置漂移。
 - workflow 已统一“先路由后判定”：同一个 `decision_agent_key` 同时用于 LLM 观测上下文与 `SignalDecisionAgent.decide`，避免重复路由造成潜在漂移。
-- workflow 已新增 `pipeline_compat_state` 兼容层适配（集中 legacy gate 中间态），主干聚焦 `signal_decision -> decision_intent_payload -> execution_decider`，为后续下线 legacy 分支做结构准备。
-- 兼容层实现已下沉到 `services/agent_server_new/domain/pipeline_compat_adapter.py`，workflow 不再内联 gate 组合细节。
-- legacy 阶段录制输出（intent/rule/horizon/strategy/execution_planner）也已由适配器统一组装，workflow 仅负责写出。
-- decision_trace 的 legacy 专属片段（intent/rule_plan/strategy_gate_result/risk_gate）已改由适配器组装，workflow 只保留 trace 外壳拼装。
-- symbol memory 写入中的 legacy 片段（cross_horizon_policy/intent/plan）已下沉适配器，workflow 仅透传组装结果。
-- execution_decider 请求体（含 `risk_hints` 与 minimal/legacy 判定差异）已下沉适配器，workflow 仅负责参数透传与调用。
+- workflow 主链路已收敛到 `signal_decision -> execution_decider`，不再加载 legacy planner/gate。
+- 语义适配实现统一下沉到 `services/agent_server_new/domain/pipeline_compat_adapter.py`，workflow 仅负责编排与透传。
+- `intent/rule_plan/strategy_gate_result/risk_gate` 作为 `DecisionTrace` 语义快照统一由适配器组装，用于回放解释。
+- symbol memory 写入中的语义快照（`cross_horizon_policy/intent/plan`）已下沉适配器，workflow 仅透传组装结果。
+- execution_decider 请求体已下沉适配器，workflow 仅负责参数透传与调用。
 - `workflow_bridge` payload 已下沉适配器统一组装，workflow 只负责阶段输出写入。
 - `SignalDecision` 归一化构建已下沉适配器，workflow 不再内联裁决对象组装规则。
 - `decision_trace` 外壳 payload 组装已下沉适配器，workflow 仅负责参数透传与 schema 校验/写出。
 - recorder 阶段输出已统一为适配器的 `stage->payload` 映射，workflow 仅循环写出并保留 schema guard。
-- 已增加阶段输出冻结守卫：`verification/auditors/agent_server_new/test_pipeline_stage_output_guard.py`，防止新增 legacy 专属输出键。
+- 已增加阶段输出冻结守卫：`verification/auditors/agent_server_new/test_pipeline_stage_output_guard.py`，防止主链路输出回流 legacy 节点键。
 - symbol memory 记录 payload 也已下沉适配器统一组装，workflow 仅负责 recorder 调用。
 - legacy 兼容开关已移除，workflow 固定为 minimal 语义链路。
 - workflow recorder 固定输出 `workflow_bridge`（编排桥接记录）与 `decision_trace`，不再输出 `intent/rule/gate/planner` 业务节点记录。
