@@ -173,6 +173,7 @@ REGRESSION_ARGS=(
   --with-pipeline-mode-report
   --with-event-type-match-report
   --with-agent-action-hint-semantics-report
+  --with-signal-decision-llm-observe-report
   --with-agent-readyz
   --summary-path "$SUMMARY_PATH"
   --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
@@ -199,6 +200,7 @@ bash tools/local/print_event_type_match_summary.sh --summary "$SUMMARY_PATH" --p
 bash tools/local/print_decision_agent_key_summary.sh --summary "$SUMMARY_PATH" --prefix regression
 bash tools/local/print_route_replay_summary.sh --summary "$SUMMARY_PATH" --prefix regression
 bash tools/local/print_action_hint_semantics_summary.sh --summary "$SUMMARY_PATH" --prefix regression
+bash tools/local/print_signal_decision_llm_observe_aggregate_summary.sh --summary "$SUMMARY_PATH" --prefix regression
 if [[ "$WITH_AGENT_DECISION_AGENT_KEY_REPORT" == "1" ]]; then
   bash tools/local/run_agent_decision_agent_key_report.sh \
     --output "$AGENT_DECISION_AGENT_KEY_REPORT_PATH" >/dev/null
