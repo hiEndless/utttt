@@ -161,3 +161,55 @@ def test_check_thresholds_fails_when_decision_trace_schema_guard_exceeds_limit(t
         ]
     )
     assert code == 1
+
+
+def test_check_thresholds_passes_when_pipeline_mode_counts_within_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "pipeline_mode_unknown_count": 1,
+        "pipeline_mode_missing_count": 0,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-pipeline-mode-unknown-count",
+            "1",
+            "--max-pipeline-mode-missing-count",
+            "0",
+        ]
+    )
+    assert code == 0
+
+
+def test_check_thresholds_fails_when_pipeline_mode_counts_exceed_limit(tmp_path: Path) -> None:
+    summary = {
+        "report_count": 1,
+        "failed": 0,
+        "pass_rate": 1.0,
+        "semantic_error_count": 0,
+        "semantic_warning_count": 0,
+        "execution_legacy_confidence_usage_ratio": 0.0,
+        "pipeline_mode_unknown_count": 2,
+        "pipeline_mode_missing_count": 1,
+    }
+    path = tmp_path / "summary.json"
+    path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+    code = main(
+        [
+            "--summary",
+            str(path),
+            "--max-pipeline-mode-unknown-count",
+            "1",
+            "--max-pipeline-mode-missing-count",
+            "0",
+        ]
+    )
+    assert code == 1

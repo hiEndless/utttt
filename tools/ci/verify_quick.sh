@@ -15,9 +15,14 @@ Environment Switches (local debug only):
 
 Optional Observability:
   WITH_AGENT_READYZ=1            启用 agent readyz 聚合观测（默认关闭）
+  WITH_PIPELINE_MODE_REPORT=1    启用 pipeline_mode 灰度聚合观测（默认关闭）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
+  MAX_PIPELINE_MODE_UNKNOWN_COUNT
+                                pipeline_mode unknown 计数上限（默认 -1 忽略）
+  MAX_PIPELINE_MODE_MISSING_COUNT
+                                pipeline_mode 缺失计数上限（默认 -1 忽略）
   REQUIRE_AGENT_READYZ_REPORT    是否要求 readyz 报告存在（1/0，默认 0）
   AGENT_READYZ_BASE_URL          agent readyz 地址（默认 http://127.0.0.1:9971）
   AGENT_READYZ_TIMEOUT_S         agent readyz 拉取超时秒数（默认 2.0）
@@ -88,21 +93,33 @@ else
   bash tools/local/check_semantic_critical_warning_guard.sh
 fi
 
-if [[ "${WITH_AGENT_READYZ:-0}" == "1" ]]; then
+if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" ]]; then
   MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:--1}"
+  MAX_PIPELINE_MODE_UNKNOWN_COUNT="${MAX_PIPELINE_MODE_UNKNOWN_COUNT:--1}"
+  MAX_PIPELINE_MODE_MISSING_COUNT="${MAX_PIPELINE_MODE_MISSING_COUNT:--1}"
   REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-0}"
   AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
   AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
-  echo "[quick] WITH_AGENT_READYZ=1 MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
+  echo "[quick] WITH_AGENT_READYZ=${WITH_AGENT_READYZ:-0} WITH_PIPELINE_MODE_REPORT=${WITH_PIPELINE_MODE_REPORT:-0} MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
   echo "[quick] MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
+  echo "[quick] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_COUNT MAX_PIPELINE_MODE_MISSING_COUNT=$MAX_PIPELINE_MODE_MISSING_COUNT"
   QUICK_ARGS=(
-    --with-agent-readyz
-    --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
-    --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
     --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
     --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
+    --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"
+    --max-pipeline-mode-missing-count "$MAX_PIPELINE_MODE_MISSING_COUNT"
   )
+  if [[ "${WITH_AGENT_READYZ:-0}" == "1" ]]; then
+    QUICK_ARGS+=(
+      --with-agent-readyz
+      --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
+      --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
+    )
+  fi
+  if [[ "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" ]]; then
+    QUICK_ARGS+=(--with-pipeline-mode-report)
+  fi
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     QUICK_ARGS+=(--require-agent-readyz-report)
   fi

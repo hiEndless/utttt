@@ -56,6 +56,18 @@ def _build_parser() -> argparse.ArgumentParser:
         help="最大 decision_trace schema guard invalid 记录数，-1 表示忽略",
     )
     p.add_argument(
+        "--max-pipeline-mode-unknown-count",
+        type=int,
+        default=-1,
+        help="最大 pipeline_mode unknown 计数，-1 表示忽略",
+    )
+    p.add_argument(
+        "--max-pipeline-mode-missing-count",
+        type=int,
+        default=-1,
+        help="最大 pipeline_mode 缺失计数，-1 表示忽略",
+    )
+    p.add_argument(
         "--require-agent-readyz-report",
         action="store_true",
         help="要求 summary 中存在 agent readyz 报告（agent_readyz_report_count > 0）",
@@ -78,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
     decision_trace_schema_guard_invalid_records = _to_int(
         summary.get("decision_trace_schema_guard_invalid_records"), 0
     )
+    pipeline_mode_unknown_count = _to_int(summary.get("pipeline_mode_unknown_count"), 0)
+    pipeline_mode_missing_count = _to_int(summary.get("pipeline_mode_missing_count"), 0)
     if agent_readyz_level not in _LEVEL_ORDER:
         agent_readyz_level = "red"
 
@@ -112,6 +126,22 @@ def main(argv: list[str] | None = None) -> int:
             f"{int(args.max_decision_trace_schema_guard_invalid_records)} "
             f"(actual={decision_trace_schema_guard_invalid_records})"
         )
+    if int(args.max_pipeline_mode_unknown_count) >= 0 and pipeline_mode_unknown_count > int(
+        args.max_pipeline_mode_unknown_count
+    ):
+        errors.append(
+            "pipeline_mode_unknown_count>"
+            f"{int(args.max_pipeline_mode_unknown_count)} "
+            f"(actual={pipeline_mode_unknown_count})"
+        )
+    if int(args.max_pipeline_mode_missing_count) >= 0 and pipeline_mode_missing_count > int(
+        args.max_pipeline_mode_missing_count
+    ):
+        errors.append(
+            "pipeline_mode_missing_count>"
+            f"{int(args.max_pipeline_mode_missing_count)} "
+            f"(actual={pipeline_mode_missing_count})"
+        )
 
     if errors:
         print("[failed] verification thresholds not satisfied")
@@ -126,7 +156,9 @@ def main(argv: list[str] | None = None) -> int:
         f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio} "
         f"agent_readyz_report_count={agent_readyz_report_count} "
         f"agent_readyz_status_level={agent_readyz_level} "
-        f"decision_trace_schema_guard_invalid_records={decision_trace_schema_guard_invalid_records}"
+        f"decision_trace_schema_guard_invalid_records={decision_trace_schema_guard_invalid_records} "
+        f"pipeline_mode_unknown_count={pipeline_mode_unknown_count} "
+        f"pipeline_mode_missing_count={pipeline_mode_missing_count}"
     )
     return 0
 

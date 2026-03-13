@@ -18,6 +18,8 @@ MAX_LEGACY_CONFIDENCE_RATIO="-1"
 MAX_AGENT_READYZ_LEVEL="red"
 REQUIRE_AGENT_READYZ_REPORT=0
 MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="-1"
+MAX_PIPELINE_MODE_UNKNOWN_COUNT="-1"
+MAX_PIPELINE_MODE_MISSING_COUNT="-1"
 
 while (($# > 0)); do
   case "$1" in
@@ -48,6 +50,10 @@ Options:
                                agent readyz 最大允许状态级别（默认 red）
   --max-decision-trace-schema-guard-invalid-records <int>
                                decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
+  --max-pipeline-mode-unknown-count <int>
+                               pipeline_mode unknown 计数上限（默认 -1 忽略）
+  --max-pipeline-mode-missing-count <int>
+                               pipeline_mode 缺失计数上限（默认 -1 忽略）
   --require-agent-readyz-report 要求存在 agent readyz 报告（默认关闭）
   --help, -h                    显示帮助
 USAGE
@@ -117,6 +123,14 @@ USAGE
       MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${2:-$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS}"
       shift 2
       ;;
+    --max-pipeline-mode-unknown-count)
+      MAX_PIPELINE_MODE_UNKNOWN_COUNT="${2:-$MAX_PIPELINE_MODE_UNKNOWN_COUNT}"
+      shift 2
+      ;;
+    --max-pipeline-mode-missing-count)
+      MAX_PIPELINE_MODE_MISSING_COUNT="${2:-$MAX_PIPELINE_MODE_MISSING_COUNT}"
+      shift 2
+      ;;
     --require-agent-readyz-report)
       REQUIRE_AGENT_READYZ_REPORT=1
       shift
@@ -166,6 +180,8 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
     --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
     --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
+    --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"
+    --max-pipeline-mode-missing-count "$MAX_PIPELINE_MODE_MISSING_COUNT"
   )
   if [[ "$REQUIRE_AGENT_READYZ_REPORT" == "1" ]]; then
     THRESHOLD_ARGS+=(--require-agent-readyz-report)
