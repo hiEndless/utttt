@@ -92,6 +92,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="最大 decision_agent_key unknown 计数，-1 表示忽略",
     )
     p.add_argument(
+        "--max-route-replay-mismatch-count",
+        type=int,
+        default=-1,
+        help="最大 route_replay mismatch 计数，-1 表示忽略",
+    )
+    p.add_argument(
         "--max-action-hint-semantics-mismatch-count",
         type=int,
         default=-1,
@@ -143,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         summary.get("action_hint_semantics_missing_actual_hint_count"), 0
     )
     action_hint_semantics_match_ratio = _to_float(summary.get("action_hint_semantics_match_ratio_on_available"), 0.0)
+    route_replay_mismatch_count = _to_int(summary.get("route_replay_mismatch_count"), 0)
     if agent_readyz_level not in _LEVEL_ORDER:
         agent_readyz_level = "red"
 
@@ -225,6 +232,14 @@ def main(argv: list[str] | None = None) -> int:
             f"{int(args.max_decision_agent_key_unknown_count)} "
             f"(actual={decision_agent_key_unknown_count})"
         )
+    if int(args.max_route_replay_mismatch_count) >= 0 and route_replay_mismatch_count > int(
+        args.max_route_replay_mismatch_count
+    ):
+        errors.append(
+            "route_replay_mismatch_count>"
+            f"{int(args.max_route_replay_mismatch_count)} "
+            f"(actual={route_replay_mismatch_count})"
+        )
     if int(args.max_action_hint_semantics_mismatch_count) >= 0 and action_hint_semantics_mismatch_count > int(
         args.max_action_hint_semantics_mismatch_count
     ):
@@ -274,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
         f"action_hint_semantics_mismatch_count={action_hint_semantics_mismatch_count} "
         f"action_hint_semantics_missing_actual_hint_count={action_hint_semantics_missing_actual_hint_count} "
         f"action_hint_semantics_match_ratio_on_available={action_hint_semantics_match_ratio}"
+        f"route_replay_mismatch_count={route_replay_mismatch_count}"
     )
     return 0
 

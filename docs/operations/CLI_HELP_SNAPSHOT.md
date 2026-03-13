@@ -126,6 +126,8 @@ Options:
                                event_type_match alias 占比下限（默认 -1 忽略）
   --max-decision-agent-key-unknown-count <int>
                                decision_agent_key unknown 计数上限（默认 -1 忽略）
+  --max-route-replay-mismatch-count <int>
+                               route_replay mismatch 计数上限（默认 -1 忽略）
   --max-action-hint-semantics-mismatch-count <int>
                                action_hint_semantics mismatch 计数上限（默认 -1 忽略）
   --max-action-hint-semantics-missing-actual-hint-count <int>

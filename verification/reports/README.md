@@ -165,6 +165,7 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-unknown-count 0 \
   --min-event-type-match-alias-ratio -1 \
   --max-decision-agent-key-unknown-count 0 \
+  --max-route-replay-mismatch-count 0 \
   --max-action-hint-semantics-mismatch-count -1 \
   --max-action-hint-semantics-missing-actual-hint-count -1 \
   --min-action-hint-semantics-match-ratio -1 \
@@ -187,6 +188,7 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-unknown-count -1 \
   --min-event-type-match-alias-ratio -1 \
   --max-decision-agent-key-unknown-count -1 \
+  --max-route-replay-mismatch-count -1 \
   --max-action-hint-semantics-mismatch-count -1 \
   --max-action-hint-semantics-missing-actual-hint-count -1 \
   --min-action-hint-semantics-match-ratio -1
@@ -206,6 +208,7 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-unknown-count -1 \
   --min-event-type-match-alias-ratio -1 \
   --max-decision-agent-key-unknown-count -1 \
+  --max-route-replay-mismatch-count -1 \
   --max-action-hint-semantics-mismatch-count 1 \
   --max-action-hint-semantics-missing-actual-hint-count 1 \
   --min-action-hint-semantics-match-ratio 0.90 \
@@ -227,6 +230,7 @@ python3 -m verification.reports.check_thresholds \
   --max-event-type-match-unknown-count 0 \
   --min-event-type-match-alias-ratio -1 \
   --max-decision-agent-key-unknown-count 0 \
+  --max-route-replay-mismatch-count 0 \
   --max-action-hint-semantics-mismatch-count 0 \
   --max-action-hint-semantics-missing-actual-hint-count 0 \
   --min-action-hint-semantics-match-ratio 0.95 \
