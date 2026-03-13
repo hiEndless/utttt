@@ -47,3 +47,8 @@ def test_readme_snippet_override_values_are_sorted() -> None:
     for path, snippets in README_SNIPPET_OVERRIDES.items():
         ordered = list(snippets)
         assert ordered == sorted(ordered), f"override snippets not sorted for {path}: {ordered}"
+
+
+def test_pipeline_mode_snippets_are_sorted() -> None:
+    ordered = list(PIPELINE_MODE_QUICK_SNIPPETS)
+    assert ordered == sorted(ordered), f"PIPELINE_MODE_QUICK_SNIPPETS not sorted: {ordered}"

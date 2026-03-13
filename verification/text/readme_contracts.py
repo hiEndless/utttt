@@ -30,7 +30,11 @@ README_SNIPPET_OVERRIDES: dict[Path, tuple[str, ...]] = dict(
     )
 )
 
-PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = (
-    "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
-    "bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz",
+PIPELINE_MODE_QUICK_SNIPPETS: tuple[str, ...] = tuple(
+    sorted(
+        (
+            "bash tools/local/verify_quick.sh --with-pipeline-mode-report",
+            "bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz",
+        )
+    )
 )
