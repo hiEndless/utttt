@@ -680,3 +680,43 @@ def test_trade_event_workflow_minimal_mode_skips_horizon_policy_config_loading()
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_minimal_business_closed_loop_example():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="high", score=0.82)),
+        )
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=_ExecutionDecider(),
+            recorder=None,
+            legacy_pipeline_enabled=False,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-minimal-closed-loop-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.signal_decision.signal_verdict == "accept"
+        assert out.signal_decision.signal_direction == "long"
+        assert out.execution_result is not None
+        assert out.execution_result.get("execution_action") == "add"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()
