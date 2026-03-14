@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReleaseReadyReportV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "failed_step",
+    "message",
+    "steps",
+    "start_ts_ms",
+    "end_ts_ms"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "release-ready-report-v1"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed", "unknown"]
+    },
+    "failed_step": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "steps": {
+      "type": "object",
+      "required": [
+        "verify_quick",
+        "single_path_release_gate",
+        "new_arch_guards_quick",
+        "release_triage_block_guard",
+        "release_baseline_alignment"
+      ],
+      "properties": {
+        "verify_quick": {
+          "type": "string",
+          "enum": ["pending", "passed", "failed", "skipped"]
+        },
+        "single_path_release_gate": {
+          "type": "string",
+          "enum": ["pending", "passed", "failed", "skipped"]
+        },
+        "new_arch_guards_quick": {
+          "type": "string",
+          "enum": ["pending", "passed", "failed", "skipped"]
+        },
+        "release_triage_block_guard": {
+          "type": "string",
+          "enum": ["pending", "passed", "failed", "skipped"]
+        },
+        "release_baseline_alignment": {
+          "type": "string",
+          "enum": ["pending", "passed", "failed", "skipped"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "start_ts_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "end_ts_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

@@ -8,6 +8,7 @@ Schema:
 - `verification_report_aggregate_v1.schema.json`
 - `agent_readyz_report_v1.schema.json`
 - `release_gate_summary_v1.schema.json`
+- `release_ready_report_v1.schema.json`
 
 Example:
 ```bash
@@ -118,6 +119,12 @@ bash tools/local/check_release_ready.sh --print-summary-only --summary-format js
 AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH=verification/reports/agent_signal_decision_replay_recommendation.latest.json \
   bash tools/local/check_release_ready.sh --print-summary-only --summary-format json
 bash tools/local/check_release_ready.sh --print-summary-only
+```
+
+Release ready structured report (optional, for release audit):
+```bash
+bash tools/local/check_release_ready.sh
+cat verification/reports/release_ready.latest.json
 ```
 
 Aggregate reports:
