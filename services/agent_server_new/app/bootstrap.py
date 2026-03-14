@@ -78,7 +78,7 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     - position_context: 由 AGENT_POSITION_CONTEXT_PROVIDER_MODE 控制（默认 http）
     - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 redis）
       - Redis 初始化失败默认抛错；仅当 AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true 且非生产环境才回退 null provider
-    - execution_decider: 按环境变量 AGENT_EXECUTION_ENABLED 决定是否启用
+    - execution_decider: 默认启用；生产环境强制启用（AGENT_EXECUTION_ENABLED 必须为 true）
     """
     runtime_profile = str(os.getenv("AGENT_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     active_events_provider_mode = str(os.getenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis") or "redis").strip().lower()
@@ -135,6 +135,8 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         )
 
     execution_enabled = _env_bool("AGENT_EXECUTION_ENABLED", "true")
+    if runtime_profile in {"prod", "production"} and not execution_enabled:
+        raise RuntimeError("production profile requires AGENT_EXECUTION_ENABLED=true")
     event_recorder_mode = str(os.getenv("AGENT_EVENT_RECORDER_MODE", "none") or "none").strip().lower()
     recorder = None
     if event_recorder_mode == "jsonl":
