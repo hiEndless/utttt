@@ -104,6 +104,8 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
     assert summary["accept_count"] == 1
     assert summary["reject_count"] == 1
     assert summary["uncertain_count"] == 1
+    assert summary["noncanonical_none_count"] == 2
+    assert "none_count" not in summary
     assert summary["decision_mode_rule_count"] == 1
     assert summary["decision_mode_llm_count"] == 1
     assert summary["decision_mode_rule_fallback_count"] == 1

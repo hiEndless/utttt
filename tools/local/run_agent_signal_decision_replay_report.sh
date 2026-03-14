@@ -186,7 +186,7 @@ summary = {
     "uncertain_count": int(verdict_counter.get("uncertain", 0)),
     "long_count": int(direction_counter.get("long", 0)),
     "short_count": int(direction_counter.get("short", 0)),
-    "none_count": int(direction_counter.get("none", 0)),
+    "noncanonical_none_count": int(direction_counter.get("none", 0)),
     "decision_mode_llm_count": int(decision_mode_counter.get("llm", 0)),
     "decision_mode_rule_fallback_count": int(decision_mode_counter.get("rule_fallback", 0)),
     "decision_mode_rule_count": int(decision_mode_counter.get("rule", 0)),
