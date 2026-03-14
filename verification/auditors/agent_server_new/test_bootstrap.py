@@ -5,7 +5,6 @@ PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
 from services.agent_server_new.adapters.llm_agno import AgnoLLMObserver
@@ -19,6 +18,10 @@ from services.agent_server_new.domain.signal_decision_agent import (
 )
 
 
+class _FakeRedisActiveEventsProvider:
+    pass
+
+
 def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch):
     monkeypatch.setenv("AGENT_MARKET_STATE_BASE_URL", "http://localhost:8300")
     monkeypatch.setenv("AGENT_MARKET_STATE_TIMEOUT_S", "9")
@@ -27,11 +30,11 @@ def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._market_state, HttpMarketStateProvider)  # noqa: SLF001
     assert isinstance(wf._position_context, HttpExecutionPositionContextProvider)  # noqa: SLF001
-    assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
+    assert isinstance(wf._active_events, _FakeRedisActiveEventsProvider)  # noqa: SLF001
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
     assert wf._symbol_memory_provider is None  # noqa: SLF001
     assert wf._symbol_memory_recorder is None  # noqa: SLF001
@@ -52,34 +55,16 @@ def test_create_trade_event_workflow_from_env_forbid_stub_position_context(monke
 def test_create_trade_event_workflow_from_env_enables_active_events_redis(monkeypatch):
     import services.agent_server_new.app.bootstrap as mod
 
-    class _FakeRedisActiveEventsProvider:
-        pass
-
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._active_events.__class__.__name__ == "_FakeRedisActiveEventsProvider"  # noqa: SLF001
 
 
-def test_create_trade_event_workflow_from_env_fallbacks_to_null_when_active_events_redis_failed(monkeypatch):
+def test_create_trade_event_workflow_from_env_redis_failed_raises(monkeypatch):
     import services.agent_server_new.app.bootstrap as mod
 
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
-    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "true")
-
-    def _raise() -> object:
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
-    wf = create_trade_event_workflow_from_env()
-    assert isinstance(wf._active_events, NullActiveEventsProvider)  # noqa: SLF001
-
-
-def test_create_trade_event_workflow_from_env_redis_failed_without_fallback_raises(monkeypatch):
-    import services.agent_server_new.app.bootstrap as mod
-
-    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
-    monkeypatch.setenv("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "false")
 
     def _raise() -> object:
         raise RuntimeError("boom")
@@ -87,9 +72,9 @@ def test_create_trade_event_workflow_from_env_redis_failed_without_fallback_rais
     monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", _raise)
     try:
         create_trade_event_workflow_from_env()
-        assert False, "expected RuntimeError when redis provider init fails and null fallback is disabled"
+        assert False, "expected RuntimeError when redis provider init fails"
     except RuntimeError as exc:
-        assert "AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true" in str(exc)
+        assert "failed to initialize redis active events provider" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_forbid_stub_active_events(monkeypatch):
@@ -125,7 +110,7 @@ def test_create_trade_event_workflow_from_env_prod_forbid_redis_fallback(monkeyp
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when redis provider init fails in prod profile"
     except RuntimeError as exc:
-        assert "failed to initialize redis active events provider in production" in str(exc)
+        assert "failed to initialize redis active events provider" in str(exc)
 
 
 def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypatch):
@@ -135,7 +120,7 @@ def test_create_trade_event_workflow_from_env_enables_execution_decider(monkeypa
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
 
@@ -150,7 +135,7 @@ def test_create_trade_event_workflow_from_env_execution_retry_config(monkeypatch
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._execution_decider, HttpExecutionDecisionProvider)  # noqa: SLF001
     assert wf._execution_decider._retry_max == 2  # noqa: SLF001
@@ -164,7 +149,7 @@ def test_create_trade_event_workflow_from_env_enables_jsonl_event_recorder(monke
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._recorder, JsonlEventRecorder)  # noqa: SLF001
 
@@ -187,7 +172,7 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_inmemory(mon
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._symbol_memory_provider, InMemorySymbolMemoryAdapter)  # noqa: SLF001
     assert isinstance(wf._symbol_memory_recorder, InMemorySymbolMemoryAdapter)  # noqa: SLF001
@@ -205,7 +190,7 @@ def test_create_trade_event_workflow_from_env_enables_symbol_memory_redis(monkey
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_ENABLED", "true")
     monkeypatch.setenv("AGENT_SYMBOL_MEMORY_BACKEND", "redis")
     monkeypatch.setattr(mod, "create_memory_redis_client_from_env", lambda redis_url=None: _FakeRedis())  # noqa: ARG005
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
 
     wf = create_trade_event_workflow_from_env()
     assert wf._symbol_memory_provider.__class__.__name__ == "RedisSymbolMemoryAdapter"  # noqa: SLF001
@@ -234,7 +219,7 @@ def test_create_trade_event_workflow_from_env_prod_llm_enabled_accepts_api_key_e
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf is not None
 
@@ -247,7 +232,7 @@ def test_create_trade_event_workflow_from_env_enable_llm_observer_wiring(monkeyp
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._llm_observer is not None  # noqa: SLF001
     assert isinstance(wf._signal_decision_agent, RoutedHybridSignalDecisionAgent)  # noqa: SLF001
@@ -262,7 +247,7 @@ def test_create_trade_event_workflow_from_env_enable_agno_llm_observer_wiring(mo
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert isinstance(wf._llm_observer, AgnoLLMObserver)  # noqa: SLF001
     assert isinstance(wf._signal_decision_agent, RoutedHybridSignalDecisionAgent)  # noqa: SLF001
@@ -277,7 +262,7 @@ def test_create_trade_event_workflow_from_env_llm_observe_mode_keeps_rule_agent(
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._llm_observer is not None  # noqa: SLF001
     assert isinstance(wf._signal_decision_agent, RoutedRuleBasedSignalDecisionAgent)  # noqa: SLF001
@@ -288,7 +273,7 @@ def test_create_trade_event_workflow_from_env_disable_decision_trace_schema_vali
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._decision_trace_schema_validate is False  # noqa: SLF001
 
@@ -300,7 +285,7 @@ def test_create_trade_event_workflow_from_env_allows_execution_disabled(monkeypa
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     wf = create_trade_event_workflow_from_env()
     assert wf._execution_decider is None  # noqa: SLF001
 
@@ -312,7 +297,7 @@ def test_create_trade_event_workflow_from_env_prod_requires_execution_enabled(mo
 
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when prod disables execution decider"
@@ -339,7 +324,7 @@ def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_conf
     monkeypatch.setenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", str(bad))
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when signal router config is invalid"
@@ -367,7 +352,7 @@ def test_create_trade_event_workflow_from_env_prod_rejects_invalid_signal_router
     monkeypatch.setenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis")
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when prod signal router config is invalid"
@@ -394,7 +379,7 @@ def test_create_trade_event_workflow_from_env_rejects_invalid_signal_router_even
     monkeypatch.setenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", str(bad))
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when event_type_routes contains invalid agent_key"
@@ -418,7 +403,7 @@ def test_create_trade_event_workflow_from_env_rejects_invalid_signal_prompt_conf
     monkeypatch.setenv("AGENT_SIGNAL_DECISION_PROMPT_CONFIG_FILE", str(bad))
     import services.agent_server_new.app.bootstrap as mod
 
-    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: NullActiveEventsProvider())
+    monkeypatch.setattr(mod.RedisActiveEventsProvider, "from_env", lambda: _FakeRedisActiveEventsProvider())
     try:
         create_trade_event_workflow_from_env()
         assert False, "expected RuntimeError when signal decision prompt config is invalid"

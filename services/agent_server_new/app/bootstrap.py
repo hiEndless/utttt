@@ -6,7 +6,6 @@ import logging
 import os
 
 from services.agent_server_new.adapters.active_events_redis import RedisActiveEventsProvider
-from services.agent_server_new.adapters.active_events_null import NullActiveEventsProvider
 from services.agent_server_new.adapters.execution_service_http import HttpExecutionDecisionProvider
 from services.agent_server_new.adapters.event_recorder_jsonl import JsonlEventRecorder
 from services.agent_server_new.adapters.llm_agno import AgnoLLMObserver
@@ -77,31 +76,19 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     - market_state: HttpMarketStateProvider.from_env()
     - position_context: 由 AGENT_POSITION_CONTEXT_PROVIDER_MODE 控制（默认 http）
     - active_events: 由 AGENT_ACTIVE_EVENTS_PROVIDER_MODE 控制（默认 redis）
-      - Redis 初始化失败默认抛错；仅当 AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true 且非生产环境才回退 null provider
+      - Redis 初始化失败直接抛错，禁止静默降级
     - execution_decider: 默认启用；生产环境强制启用（AGENT_EXECUTION_ENABLED 必须为 true）
     """
     runtime_profile = str(os.getenv("AGENT_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
     active_events_provider_mode = str(os.getenv("AGENT_ACTIVE_EVENTS_PROVIDER_MODE", "redis") or "redis").strip().lower()
-    allow_null_fallback = _env_bool("AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK", "false")
     if runtime_profile in {"prod", "production"} and active_events_provider_mode != "redis":
         raise RuntimeError("production profile requires AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis")
 
-    active_events_provider = NullActiveEventsProvider()
     if active_events_provider_mode == "redis":
         try:
             active_events_provider = RedisActiveEventsProvider.from_env()
         except Exception as exc:
-            if runtime_profile in {"prod", "production"}:
-                raise RuntimeError("failed to initialize redis active events provider in production") from exc
-            if allow_null_fallback:
-                # 中文注释：仅在显式允许时，非生产环境才降级为 null provider，避免静默丢失事件背景。
-                logger.warning("active_events redis provider init failed, fallback to null provider: %s", exc)
-                active_events_provider = NullActiveEventsProvider()
-            else:
-                raise RuntimeError(
-                    "failed to initialize redis active events provider; "
-                    "set AGENT_ACTIVE_EVENTS_ALLOW_NULL_FALLBACK=true to allow null fallback in non-production"
-                ) from exc
+            raise RuntimeError("failed to initialize redis active events provider") from exc
     else:
         raise RuntimeError(f"unsupported AGENT_ACTIVE_EVENTS_PROVIDER_MODE={active_events_provider_mode}")
 
