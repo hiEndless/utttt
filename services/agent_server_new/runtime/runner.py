@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 from typing import Any, Dict, Optional, Sequence
 
 from services.agent_server_new.app import create_trade_event_workflow_from_env
@@ -109,6 +110,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.dry_run:
         print(f"初始化成功: workflow={wf.__class__.__name__} exchange={args.exchange} symbol={args.symbol}")
         return 0
+    runtime_profile = str(os.getenv("AGENT_RUNTIME_PROFILE", "dev") or "dev").strip().lower()
+    if runtime_profile in {"prod", "production"} and not bool(args.use_execution_result):
+        print("运行失败: production profile requires --use-execution-result")
+        return 2
 
     payload = _parse_payload(args.payload_json)
     return asyncio.run(

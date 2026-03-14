@@ -130,3 +130,25 @@ def test_runner_fail_on_execution_reject(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "执行完成[execution]" in out
     assert code == 2
+
+
+def test_runner_prod_requires_use_execution_result(monkeypatch, capsys):
+    monkeypatch.setattr(runner, "create_trade_event_workflow_from_env", lambda: _FakeWorkflow())
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    code = runner.main(
+        [
+            "--event-id",
+            "evt-005",
+            "--exchange",
+            "binance",
+            "--symbol",
+            "ETHUSDT",
+            "--signal-direction",
+            "long",
+            "--payload-json",
+            '{"event_type":"manual_signal"}',
+        ]
+    )
+    out = capsys.readouterr().out
+    assert "requires --use-execution-result" in out
+    assert code == 2

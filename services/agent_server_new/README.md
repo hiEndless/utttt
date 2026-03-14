@@ -312,6 +312,7 @@ signal_event + active_events + MSL
   - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
   - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --print-json`
   - `python -m services.agent_server_new.main --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result --fail-on-execution-reject`
+  - `prod` 档位强制要求携带 `--use-execution-result`，否则 runner 直接非 0 退出
 
 ## HTTP Runtime (Production Probe)
 
