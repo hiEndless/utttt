@@ -42,6 +42,7 @@ def test_legacy_domain_modules_removed() -> None:
     legacy_files = [
         "intent_resolver.py",
         "rule_planner.py",
+        "risk.py",
         "strategy_gate.py",
         "strategy_gate_reasons.py",
         "risk_gate.py",
