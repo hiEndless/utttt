@@ -318,6 +318,19 @@ def test_execution_result_v1_parse_success() -> None:
     assert data["reject_reason"] == "position_limit_reached"
 
 
+def test_execution_result_normalizes_order_result_none_direction_to_neutral() -> None:
+    payload = {
+        "decision_id": "dec-001-normalize",
+        "execution_action": "hold",
+        "reject_reason": None,
+        "applied_risk_rules": [],
+        "order_result": {"direction_intent": "none"},
+    }
+    result = ExecutionResult.from_dict(payload)
+    data = result.to_dict()
+    assert data["order_result"]["direction_intent"] == "neutral"
+
+
 def test_execution_result_v1_reject_invalid_action() -> None:
     payload = {
         "decision_id": "dec-001",

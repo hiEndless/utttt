@@ -152,6 +152,10 @@ execution_service/
   - `bash tools/local/run_execution_prompt_version_report.sh`
 - 指定输入文件（离线重跑）：
   - `bash tools/local/run_execution_prompt_version_report.sh --input /tmp/confidence_metrics.json`
+- direction_intent 残留报表（统计 `none` 残留）：
+  - `bash tools/local/run_execution_direction_intent_residual_report.sh --input verification/reports/execution_results.latest.jsonl`
+- direction_intent 残留守卫（默认要求 `none_count=0`）：
+  - `bash tools/local/check_execution_direction_intent_residual_guard.sh`
 
 ## 运行模式
 

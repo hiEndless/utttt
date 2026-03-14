@@ -26,6 +26,13 @@ def _normalize_direction_intent(value: Any) -> str:
     return direction
 
 
+def _normalize_order_result(payload: Mapping[str, Any]) -> Dict[str, Any]:
+    out = dict(payload or {})
+    if "direction_intent" in out:
+        out["direction_intent"] = _normalize_direction_intent(out.get("direction_intent"))
+    return out
+
+
 def _validate_alternative_source_summary(summary: Mapping[str, Any]) -> None:
     for key in _ALT_REQUIRED_KEYS:
         if key not in summary:
@@ -262,7 +269,7 @@ class ExecutionResult:
         reject_reason = None if reject_reason_raw is None else str(reject_reason_raw).strip()
         if order_result_raw is not None and not isinstance(order_result_raw, dict):
             raise ValueError("order_result 必须是对象")
-        order_result = None if order_result_raw is None else dict(order_result_raw)
+        order_result = None if order_result_raw is None else _normalize_order_result(order_result_raw)
         if signal_result_raw is not None and not isinstance(signal_result_raw, dict):
             raise ValueError("signal_result 必须是对象")
         signal_result = None if signal_result_raw is None else dict(signal_result_raw)
@@ -301,7 +308,7 @@ class ExecutionResult:
             "applied_risk_rules": self.applied_risk_rules,
         }
         if self.order_result is not None:
-            data["order_result"] = self.order_result
+            data["order_result"] = _normalize_order_result(self.order_result)
         if self.signal_result is not None:
             data["signal_result"] = self.signal_result
         if self.policy_snapshot is not None:

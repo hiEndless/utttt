@@ -47,6 +47,17 @@ class _FlakySink:
         }
 
 
+class _LegacyDirectionSink:
+    async def submit(self, decision, execution_action):  # noqa: ANN001
+        return {
+            "submitted": True,
+            "order_id": "mock-legacy-direction-001",
+            "decision_id": decision.decision_id,
+            "execution_action": execution_action,
+            "direction_intent": "none",
+        }
+
+
 def _payload() -> dict:
     return {
         "decision_id": "dec-submit-001",
@@ -113,3 +124,16 @@ def test_submit_retry_then_success() -> None:
     assert out.order_result["order_id"] == "mock-retry-001"
     assert out.order_result["order_status"] == out.order_result["status"] == "submitted"
     assert out.order_result["retry_meta"]["attempts"] == 2
+
+
+def test_submit_order_result_normalizes_legacy_none_direction_intent() -> None:
+    service = ExecutionService(
+        position_provider=StubPositionStateProvider(),
+        account_provider=StubAccountStateProvider(),
+        risk_policy_provider=StubRiskPolicyProvider(),
+        execution_sink=_LegacyDirectionSink(),  # type: ignore[arg-type]
+        submit_enabled=True,
+    )
+    out = asyncio.run(service.decide(_payload()))
+    assert isinstance(out.order_result, dict)
+    assert out.order_result["direction_intent"] == "neutral"

@@ -639,6 +639,9 @@ def _infer_sink_mode(execution_sink: Any) -> str:
 
 def _normalize_order_result_payload(payload: Dict[str, Any], *, execution_sink: Any) -> Dict[str, Any]:
     out = dict(payload or {})
+    direction_intent = str(out.get("direction_intent") or "").strip().lower()
+    if direction_intent == "none":
+        out["direction_intent"] = "neutral"
     sink_mode = str(out.get("mode") or "").strip().lower() or _infer_sink_mode(execution_sink)
     out["mode"] = sink_mode
     out["sink_mode"] = sink_mode
