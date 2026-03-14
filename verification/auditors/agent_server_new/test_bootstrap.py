@@ -22,6 +22,12 @@ class _FakeRedisActiveEventsProvider:
     pass
 
 
+def test_create_trade_event_workflow_from_env_bootstrap_not_expose_null_active_events_provider():
+    import services.agent_server_new.app.bootstrap as mod
+
+    assert hasattr(mod, "NullActiveEventsProvider") is False
+
+
 def test_create_trade_event_workflow_from_env_wires_default_adapters(monkeypatch):
     monkeypatch.setenv("AGENT_MARKET_STATE_BASE_URL", "http://localhost:8300")
     monkeypatch.setenv("AGENT_MARKET_STATE_TIMEOUT_S", "9")
