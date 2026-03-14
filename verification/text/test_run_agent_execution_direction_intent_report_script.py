@@ -77,8 +77,8 @@ def test_run_agent_execution_direction_intent_report_aggregate(tmp_path: Path) -
     assert summary.get("direction_intent_total") == 3
     assert summary.get("long_count") == 1
     assert summary.get("neutral_count") == 1
-    assert summary.get("none_count") == 1
+    assert summary.get("noncanonical_none_count") == 1
     assert summary.get("invalid_count") == 0
-    none_samples = list(report.get("none_samples") or [])
-    assert len(none_samples) == 1
-    assert none_samples[0]["event_id"] == "evt-2"
+    noncanonical_none_samples = list(report.get("noncanonical_none_samples") or [])
+    assert len(noncanonical_none_samples) == 1
+    assert noncanonical_none_samples[0]["event_id"] == "evt-2"

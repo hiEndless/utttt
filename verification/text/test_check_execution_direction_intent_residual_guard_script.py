@@ -12,16 +12,18 @@ if str(PROJECT_ROOT) not in sys.path:
 SCRIPT_PATH = PROJECT_ROOT / "tools" / "local" / "check_execution_direction_intent_residual_guard.sh"
 
 
-def _write_report(path: Path, *, total: int, none_count: int) -> None:
+def _write_report(path: Path, *, total: int, noncanonical_none_count: int) -> None:
     path.write_text(
         json.dumps(
             {
                 "schema_version": "execution-direction-intent-residual-report-v1",
                 "summary": {
                     "direction_intent_total": total,
-                    "none_count": none_count,
+                    "noncanonical_none_count": noncanonical_none_count,
                 },
-                "none_examples": [{"line_no": 2, "event_id": "dec-2", "path": "$.order_result.direction_intent", "value": "none"}],
+                "noncanonical_none_examples": [
+                    {"line_no": 2, "event_id": "dec-2", "path": "$.order_result.direction_intent", "value": "none"}
+                ],
             },
             ensure_ascii=False,
         ),
@@ -45,7 +47,7 @@ def test_check_execution_direction_intent_residual_guard_help() -> None:
 
 def test_check_execution_direction_intent_residual_guard_pass(tmp_path: Path) -> None:
     report_path = tmp_path / "execution_direction_report.json"
-    _write_report(report_path, total=10, none_count=0)
+    _write_report(report_path, total=10, noncanonical_none_count=0)
     proc = subprocess.run(
         ["bash", str(SCRIPT_PATH), str(report_path), "0", "1"],
         cwd=str(PROJECT_ROOT),
@@ -59,7 +61,7 @@ def test_check_execution_direction_intent_residual_guard_pass(tmp_path: Path) ->
 
 def test_check_execution_direction_intent_residual_guard_fail(tmp_path: Path) -> None:
     report_path = tmp_path / "execution_direction_report.json"
-    _write_report(report_path, total=10, none_count=2)
+    _write_report(report_path, total=10, noncanonical_none_count=2)
     proc = subprocess.run(
         ["bash", str(SCRIPT_PATH), str(report_path), "0", "1"],
         cwd=str(PROJECT_ROOT),
@@ -70,12 +72,12 @@ def test_check_execution_direction_intent_residual_guard_fail(tmp_path: Path) ->
     assert proc.returncode == 1
     out = str(proc.stdout or "")
     assert "[failed] execution direction_intent residual guard" in out
-    assert "none_count=2" in out
+    assert "noncanonical_none_count=2" in out
 
 
 def test_check_execution_direction_intent_residual_guard_skip_on_low_sample(tmp_path: Path) -> None:
     report_path = tmp_path / "execution_direction_report.json"
-    _write_report(report_path, total=0, none_count=0)
+    _write_report(report_path, total=0, noncanonical_none_count=0)
     proc = subprocess.run(
         ["bash", str(SCRIPT_PATH), str(report_path), "0", "5"],
         cwd=str(PROJECT_ROOT),

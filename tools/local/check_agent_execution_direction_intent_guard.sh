@@ -80,24 +80,27 @@ if not isinstance(summary, dict):
     raise SystemExit(3)
 
 total = int(summary.get("direction_intent_total") or 0)
-none_count = int(summary.get("none_count") or 0)
+noncanonical_none_count = int(summary.get("noncanonical_none_count") or 0)
 invalid_count = int(summary.get("invalid_count") or 0)
 
 if total < max(0, min_total):
     print("[skip] agent execution direction_intent guard: insufficient samples")
-    print(f"[info] report={report_path} total={total} min_total={min_total} none={none_count} invalid={invalid_count}")
+    print(
+        f"[info] report={report_path} total={total} min_total={min_total} "
+        f"noncanonical_none={noncanonical_none_count} invalid={invalid_count}"
+    )
     raise SystemExit(0)
 
-if none_count > max_none or invalid_count > max_invalid:
+if noncanonical_none_count > max_none or invalid_count > max_invalid:
     print("[failed] agent execution direction_intent guard")
     print(
-        f"[info] report={report_path} total={total} none={none_count} max_none={max_none} "
+        f"[info] report={report_path} total={total} noncanonical_none={noncanonical_none_count} max_none={max_none} "
         f"invalid={invalid_count} max_invalid={max_invalid}"
     )
-    for item in list(payload.get("none_samples") or [])[:10]:
+    for item in list(payload.get("noncanonical_none_samples") or [])[:10]:
         if isinstance(item, dict):
             print(
-                f"- none_sample line_no={int(item.get('line_no') or 0)} "
+                f"- noncanonical_none_sample line_no={int(item.get('line_no') or 0)} "
                 f"event_id={str(item.get('event_id') or '')} direction_intent={str(item.get('direction_intent') or '')}"
             )
     for item in list(payload.get("invalid_samples") or [])[:10]:
@@ -110,7 +113,7 @@ if none_count > max_none or invalid_count > max_invalid:
 
 print("[passed] agent execution direction_intent guard")
 print(
-    f"[info] report={report_path} total={total} none={none_count} max_none={max_none} "
+    f"[info] report={report_path} total={total} noncanonical_none={noncanonical_none_count} max_none={max_none} "
     f"invalid={invalid_count} max_invalid={max_invalid}"
 )
 PY

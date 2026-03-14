@@ -93,11 +93,11 @@ lines = input_path.read_text(encoding="utf-8").splitlines() if input_path.is_fil
 record_count = 0
 total = 0
 neutral_count = 0
-none_count = 0
+noncanonical_none_count = 0
 long_count = 0
 short_count = 0
 invalid_count = 0
-none_examples: list[dict[str, object]] = []
+noncanonical_none_examples: list[dict[str, object]] = []
 
 for idx, raw in enumerate(lines, start=1):
     text = str(raw or "").strip()
@@ -119,9 +119,9 @@ for idx, raw in enumerate(lines, start=1):
         if value == "neutral":
             neutral_count += 1
         elif value == "none":
-            none_count += 1
-            if len(none_examples) < sample_limit:
-                none_examples.append(
+            noncanonical_none_count += 1
+            if len(noncanonical_none_examples) < sample_limit:
+                noncanonical_none_examples.append(
                     {
                         "line_no": idx,
                         "event_id": event_id,
@@ -140,12 +140,12 @@ summary = {
     "record_count": int(record_count),
     "direction_intent_total": int(total),
     "neutral_count": int(neutral_count),
-    "none_count": int(none_count),
+    "noncanonical_none_count": int(noncanonical_none_count),
     "long_count": int(long_count),
     "short_count": int(short_count),
     "invalid_count": int(invalid_count),
-    "none_ratio": round(float(none_count) / float(max(1, total)), 6),
-    "recommend_action": "migrate_none_producers" if none_count > 0 else "none",
+    "noncanonical_none_ratio": round(float(noncanonical_none_count) / float(max(1, total)), 6),
+    "recommend_action": "migrate_noncanonical_none_producers" if noncanonical_none_count > 0 else "none",
 }
 
 report = {
@@ -153,7 +153,7 @@ report = {
     "generated_at_ms": int(time.time() * 1000),
     "input_path": str(input_path),
     "summary": summary,
-    "none_examples": none_examples,
+    "noncanonical_none_examples": noncanonical_none_examples,
 }
 
 output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -161,6 +161,6 @@ output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", 
 print(f"[ok] wrote {output_path}")
 print(
     f"[info] total={summary['direction_intent_total']} neutral={summary['neutral_count']} "
-    f"none={summary['none_count']} long={summary['long_count']} short={summary['short_count']} invalid={summary['invalid_count']}"
+    f"noncanonical_none={summary['noncanonical_none_count']} long={summary['long_count']} short={summary['short_count']} invalid={summary['invalid_count']}"
 )
 PY

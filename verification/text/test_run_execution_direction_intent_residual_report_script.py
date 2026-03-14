@@ -53,10 +53,10 @@ def test_run_execution_direction_intent_residual_report_aggregate(tmp_path: Path
     assert summary.get("record_count") == 3
     assert summary.get("direction_intent_total") == 3
     assert summary.get("neutral_count") == 1
-    assert summary.get("none_count") == 1
+    assert summary.get("noncanonical_none_count") == 1
     assert summary.get("long_count") == 1
     assert summary.get("short_count") == 0
-    assert summary.get("recommend_action") == "migrate_none_producers"
-    examples = list(report.get("none_examples") or [])
+    assert summary.get("recommend_action") == "migrate_noncanonical_none_producers"
+    examples = list(report.get("noncanonical_none_examples") or [])
     assert len(examples) == 1
     assert examples[0]["path"].endswith("order_result.direction_intent")

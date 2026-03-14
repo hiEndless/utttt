@@ -76,7 +76,7 @@ except Exception:
 rows = input_path.read_text(encoding="utf-8").splitlines() if input_path.is_file() else []
 direction_counter: Counter[str] = Counter()
 record_count = 0
-none_samples: list[dict[str, object]] = []
+noncanonical_none_samples: list[dict[str, object]] = []
 invalid_samples: list[dict[str, object]] = []
 
 for idx, raw in enumerate(rows, start=1):
@@ -95,8 +95,8 @@ for idx, raw in enumerate(rows, start=1):
     direction = str(payload.get("direction_intent") or "").strip().lower() or "missing"
     direction_counter[direction] += 1
     record_count += 1
-    if direction == "none" and len(none_samples) < sample_limit:
-        none_samples.append(
+    if direction == "none" and len(noncanonical_none_samples) < sample_limit:
+        noncanonical_none_samples.append(
             {
                 "line_no": idx,
                 "event_id": str(row.get("event_id") or ""),
@@ -119,11 +119,11 @@ summary = {
     "long_count": int(direction_counter.get("long", 0)),
     "short_count": int(direction_counter.get("short", 0)),
     "neutral_count": int(direction_counter.get("neutral", 0)),
-    "none_count": int(direction_counter.get("none", 0)),
+    "noncanonical_none_count": int(direction_counter.get("none", 0)),
     "invalid_count": int(
         sum(v for k, v in direction_counter.items() if k not in {"long", "short", "neutral", "none"})
     ),
-    "none_ratio": round(float(direction_counter.get("none", 0)) / float(max(1, total)), 6),
+    "noncanonical_none_ratio": round(float(direction_counter.get("none", 0)) / float(max(1, total)), 6),
 }
 
 report = {
@@ -134,7 +134,7 @@ report = {
     "direction_intent_counts": [
         {"direction_intent": k, "count": int(v)} for k, v in sorted(direction_counter.items(), key=lambda kv: (-kv[1], kv[0]))
     ],
-    "none_samples": none_samples,
+    "noncanonical_none_samples": noncanonical_none_samples,
     "invalid_samples": invalid_samples,
 }
 
@@ -144,6 +144,6 @@ print(f"[ok] wrote {output_path}")
 print(
     f"[info] request_count={summary['execution_decider_request_count']} total={summary['direction_intent_total']} "
     f"long={summary['long_count']} short={summary['short_count']} neutral={summary['neutral_count']} "
-    f"none={summary['none_count']} invalid={summary['invalid_count']}"
+    f"noncanonical_none={summary['noncanonical_none_count']} invalid={summary['invalid_count']}"
 )
 PY

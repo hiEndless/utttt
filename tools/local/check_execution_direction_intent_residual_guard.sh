@@ -7,7 +7,7 @@ Usage:
   bash tools/local/check_execution_direction_intent_residual_guard.sh [report_json] [max_none] [min_total]
 
 Description:
-  校验 execution direction_intent 残留报告中的 none_count 是否超过阈值。
+  校验 execution direction_intent 残留报告中的 noncanonical_none_count 是否超过阈值。
 
 Args:
   report_json  报告路径（默认 verification/reports/execution_direction_intent_residual.latest.json）
@@ -15,7 +15,7 @@ Args:
   min_total    最小样本量（默认 1；样本不足时仅提示并通过）
 
 Failure Codes:
-  exit 1  none_count 超过阈值
+  exit 1  noncanonical_none_count 超过阈值
   exit 2  输入文件缺失或不可读
   exit 3  报告解析失败
 EOF
@@ -80,17 +80,23 @@ if not isinstance(summary, dict):
     raise SystemExit(3)
 
 total = int(summary.get("direction_intent_total") or 0)
-none_count = int(summary.get("none_count") or 0)
+noncanonical_none_count = int(summary.get("noncanonical_none_count") or 0)
 
 if total < max(0, min_total):
     print("[skip] execution direction_intent residual guard: insufficient samples")
-    print(f"[info] report={report_path} total={total} min_total={min_total} none_count={none_count} max_none={max_none}")
+    print(
+        f"[info] report={report_path} total={total} min_total={min_total} "
+        f"noncanonical_none_count={noncanonical_none_count} max_none={max_none}"
+    )
     raise SystemExit(0)
 
-if none_count > max_none:
+if noncanonical_none_count > max_none:
     print("[failed] execution direction_intent residual guard")
-    print(f"[info] report={report_path} total={total} none_count={none_count} max_none={max_none}")
-    for item in list(report.get("none_examples") or [])[:10]:
+    print(
+        f"[info] report={report_path} total={total} "
+        f"noncanonical_none_count={noncanonical_none_count} max_none={max_none}"
+    )
+    for item in list(report.get("noncanonical_none_examples") or [])[:10]:
         if not isinstance(item, dict):
             continue
         print(
@@ -101,5 +107,8 @@ if none_count > max_none:
     raise SystemExit(1)
 
 print("[passed] execution direction_intent residual guard")
-print(f"[info] report={report_path} total={total} none_count={none_count} max_none={max_none}")
+print(
+    f"[info] report={report_path} total={total} "
+    f"noncanonical_none_count={noncanonical_none_count} max_none={max_none}"
+)
 PY
