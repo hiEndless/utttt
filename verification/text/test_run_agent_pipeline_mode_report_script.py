@@ -36,7 +36,7 @@ def test_run_agent_pipeline_mode_report_aggregate(tmp_path: Path) -> None:
             "record_type": "agent_output",
             "event_id": "evt-1",
             "agent_name": "decision_trace",
-            "payload": {"routing": {"pipeline_mode": "legacy"}},
+            "payload": {"routing": {"pipeline_mode": "deprecated_mode"}},
         },
         {
             "ts_ms": 1710000000002,
@@ -64,7 +64,7 @@ def test_run_agent_pipeline_mode_report_aggregate(tmp_path: Path) -> None:
             "record_type": "agent_output",
             "event_id": "evt-5",
             "agent_name": "other_agent",
-            "payload": {"routing": {"pipeline_mode": "legacy"}},
+            "payload": {"routing": {"pipeline_mode": "deprecated_mode"}},
         },
     ]
     input_path.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in rows) + "\n", encoding="utf-8")
@@ -88,5 +88,5 @@ def test_run_agent_pipeline_mode_report_aggregate(tmp_path: Path) -> None:
     assert summary["missing_pipeline_mode_count"] == 1
     assert summary["minimal_ratio"] == 0.333333
     assert len(report["unknown_samples"]) == 2
-    assert report["unknown_samples"][0]["pipeline_mode"] == "legacy"
+    assert report["unknown_samples"][0]["pipeline_mode"] == "deprecated_mode"
     assert report["unknown_samples"][1]["pipeline_mode"] == "future_mode"

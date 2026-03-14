@@ -55,9 +55,9 @@ def test_run_agent_action_hint_semantics_report_aggregate(tmp_path: Path) -> Non
         {
             "ts_ms": 1710000002004,
             "record_type": "agent_output",
-            "event_id": "evt-legacy",
+            "event_id": "evt-nonminimal",
             "agent_name": "decision_trace",
-            "payload": {"routing": {"pipeline_mode": "legacy"}, "signal_verdict": {"verdict": "accept", "direction": "long"}},
+            "payload": {"routing": {"pipeline_mode": "deprecated_mode"}, "signal_verdict": {"verdict": "accept", "direction": "long"}},
         },
         {
             "ts_ms": 1710000002005,

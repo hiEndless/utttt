@@ -7,7 +7,7 @@ Usage:
   bash tools/local/check_agent_execution_direction_intent_guard.sh [report_json] [max_none] [max_invalid] [min_total]
 
 Description:
-  校验 agent->execution 请求体 direction_intent 是否出现 legacy none 或非法值。
+  校验 agent->execution 请求体 direction_intent 是否出现非规范 none 或非法值。
 
 Args:
   report_json  报告路径（默认 verification/reports/agent_execution_direction_intent.latest.json）

@@ -18,7 +18,7 @@ Options:
 
 Description:
   统计 agent 侧 execution_decider_request 请求体中的 direction_intent 分布，
-  用于上线前阻断 legacy none 残留。
+  用于上线前阻断非规范 none 残留。
 USAGE
 }
 

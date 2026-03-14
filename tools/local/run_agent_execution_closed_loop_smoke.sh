@@ -160,7 +160,6 @@ async def _run() -> dict:
         active_events=_Events(),
         execution_decider=_ExecutionDecider(),
         recorder=None,
-        legacy_pipeline_enabled=False,
         signal_decision_agent=_SignalDecisionAgent(),
     )
     wf_out = await wf.run_with_result(

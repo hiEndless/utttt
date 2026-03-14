@@ -154,7 +154,6 @@ async def _run() -> tuple[list[dict[str, object]], bool]:
         active_events=_Events(),
         execution_decider=_ExecutionDecider(),
         recorder=None,
-        legacy_pipeline_enabled=False,
     )
     cases = [
         ("market_indicator", "technical"),

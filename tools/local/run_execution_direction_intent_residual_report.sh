@@ -17,7 +17,7 @@ Options:
   --help, -h       显示帮助
 
 Description:
-  扫描 execution 回放 JSONL 中全部 direction_intent 字段，统计 canonical(neutral) 与 legacy(none) 分布，
+  扫描 execution 回放 JSONL 中全部 direction_intent 字段，统计 canonical(neutral) 与非规范(none) 分布，
   输出 none 残留计数与样例路径，便于灰度期守卫阻断。
 USAGE
 }
