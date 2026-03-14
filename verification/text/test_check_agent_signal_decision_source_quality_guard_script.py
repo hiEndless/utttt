@@ -67,3 +67,33 @@ def test_signal_decision_source_quality_guard_skip_when_disabled(tmp_path: Path)
     )
     assert result.returncode == 0
     assert "[skip] signal decision source quality guard disabled" in result.stdout
+
+
+def test_signal_decision_source_quality_guard_global_ratio_pass(tmp_path: Path) -> None:
+    report = tmp_path / "agent_signal_decision_replay.latest.json"
+    _write_json(report, _base_report())
+    result = subprocess.run(
+        ["bash", str(GUARD_SCRIPT), str(report), "10", "-1", "-1", "-1", "-1", "0.30", "0.30"],
+        cwd=str(PROJECT_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert "[passed] global decision_mode_llm_ratio=0.400000" in result.stdout
+    assert "[passed] global llm_ok_ratio=0.400000" in result.stdout
+
+
+def test_signal_decision_source_quality_guard_global_ratio_fail(tmp_path: Path) -> None:
+    report = tmp_path / "agent_signal_decision_replay.latest.json"
+    _write_json(report, _base_report())
+    result = subprocess.run(
+        ["bash", str(GUARD_SCRIPT), str(report), "10", "-1", "-1", "-1", "-1", "0.50", "0.50"],
+        cwd=str(PROJECT_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1
+    assert "global decision_mode_llm_ratio=0.400000 < min_ratio=0.500000" in result.stdout
+    assert "global llm_ok_ratio=0.400000 < min_ratio=0.500000" in result.stdout

@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash tools/local/check_agent_signal_decision_source_quality_guard.sh [report_json] [min_source_count] [min_market_indicator_llm_ok_ratio] [min_onchain_wallet_llm_ok_ratio] [min_large_liquidation_llm_ok_ratio] [min_social_news_llm_ok_ratio]
+  bash tools/local/check_agent_signal_decision_source_quality_guard.sh [report_json] [min_source_count] [min_market_indicator_llm_ok_ratio] [min_onchain_wallet_llm_ok_ratio] [min_large_liquidation_llm_ok_ratio] [min_social_news_llm_ok_ratio] [min_global_decision_mode_llm_ratio] [min_global_llm_ok_ratio]
 
 Description:
   读取 signal_decision_replay 报告，按来源检查 llm_ok 占比是否达到下限阈值。
@@ -17,6 +17,8 @@ Args:
   min_onchain_wallet_llm_ok_ratio      onchain_wallet 的 llm_ok 比例下限（默认 -1 忽略）
   min_large_liquidation_llm_ok_ratio   large_liquidation 的 llm_ok 比例下限（默认 -1 忽略）
   min_social_news_llm_ok_ratio         social_news 的 llm_ok 比例下限（默认 -1 忽略）
+  min_global_decision_mode_llm_ratio   全局 decision_mode=llm 比例下限（默认 -1 忽略）
+  min_global_llm_ok_ratio              全局 llm_ok 比例下限（默认 -1 忽略）
 
 Failure Codes:
   exit 1  任一来源 llm_ok 比例低于阈值（阻断）
@@ -42,13 +44,15 @@ MIN_MARKET_INDICATOR_RATIO_RAW="${3:--1}"
 MIN_ONCHAIN_WALLET_RATIO_RAW="${4:--1}"
 MIN_LARGE_LIQUIDATION_RATIO_RAW="${5:--1}"
 MIN_SOCIAL_NEWS_RATIO_RAW="${6:--1}"
+MIN_GLOBAL_DECISION_MODE_LLM_RATIO_RAW="${7:--1}"
+MIN_GLOBAL_LLM_OK_RATIO_RAW="${8:--1}"
 
 if ! test -r "$REPORT_PATH"; then
   echo "[failed] signal decision replay report not readable: $REPORT_PATH"
   exit 2
 fi
 
-"$PY_BIN" - <<'PY' "$REPORT_PATH" "$MIN_SOURCE_COUNT_RAW" "$MIN_MARKET_INDICATOR_RATIO_RAW" "$MIN_ONCHAIN_WALLET_RATIO_RAW" "$MIN_LARGE_LIQUIDATION_RATIO_RAW" "$MIN_SOCIAL_NEWS_RATIO_RAW"
+"$PY_BIN" - <<'PY' "$REPORT_PATH" "$MIN_SOURCE_COUNT_RAW" "$MIN_MARKET_INDICATOR_RATIO_RAW" "$MIN_ONCHAIN_WALLET_RATIO_RAW" "$MIN_LARGE_LIQUIDATION_RATIO_RAW" "$MIN_SOCIAL_NEWS_RATIO_RAW" "$MIN_GLOBAL_DECISION_MODE_LLM_RATIO_RAW" "$MIN_GLOBAL_LLM_OK_RATIO_RAW"
 from __future__ import annotations
 
 import json
@@ -62,6 +66,8 @@ min_market_indicator_ratio_raw = str(sys.argv[3] or "-1").strip()
 min_onchain_wallet_ratio_raw = str(sys.argv[4] or "-1").strip()
 min_large_liquidation_ratio_raw = str(sys.argv[5] or "-1").strip()
 min_social_news_ratio_raw = str(sys.argv[6] or "-1").strip()
+min_global_decision_mode_llm_ratio_raw = str(sys.argv[7] or "-1").strip()
+min_global_llm_ok_ratio_raw = str(sys.argv[8] or "-1").strip()
 
 
 def _to_int(value: str, default: int) -> int:
@@ -85,8 +91,10 @@ thresholds = {
     "large_liquidation": _to_float(min_large_liquidation_ratio_raw, -1.0),
     "social_news": _to_float(min_social_news_ratio_raw, -1.0),
 }
+min_global_decision_mode_llm_ratio = _to_float(min_global_decision_mode_llm_ratio_raw, -1.0)
+min_global_llm_ok_ratio = _to_float(min_global_llm_ok_ratio_raw, -1.0)
 
-if max(thresholds.values()) < 0:
+if max([*thresholds.values(), min_global_decision_mode_llm_ratio, min_global_llm_ok_ratio]) < 0:
     print("[skip] signal decision source quality guard disabled (all thresholds < 0)")
     raise SystemExit(0)
 
@@ -150,6 +158,63 @@ for src, min_ratio in thresholds.items():
             f"[passed] source={src} llm_ok_ratio={ratio:.6f} "
             f"min_ratio={min_ratio:.6f} total={total} llm_ok={llm_ok}"
         )
+
+decision_mode_llm_count = 0
+decision_mode_rows = list(report.get("decision_mode_counts") or [])
+if not decision_mode_rows:
+    source_mode_rows = list(report.get("source_decision_mode_counts") or [])
+    aggregated_mode_counts: dict[str, int] = defaultdict(int)
+    for row in source_mode_rows:
+        if not isinstance(row, dict):
+            continue
+        mode = str(row.get("decision_mode") or "").strip().lower()
+        if not mode:
+            continue
+        aggregated_mode_counts[mode] += max(0, int(row.get("count") or 0))
+    decision_mode_rows = [
+        {"decision_mode": key, "count": value} for key, value in aggregated_mode_counts.items()
+    ]
+
+for row in decision_mode_rows:
+    if not isinstance(row, dict):
+        continue
+    mode = str(row.get("decision_mode") or "").strip().lower()
+    if mode != "llm":
+        continue
+    decision_mode_llm_count += max(0, int(row.get("count") or 0))
+
+global_total = int(sum(total_counts.values()))
+global_llm_ok = int(sum(llm_ok_counts.values()))
+global_decision_mode_llm_ratio = 0.0 if global_total <= 0 else float(decision_mode_llm_count) / float(global_total)
+global_llm_ok_ratio = 0.0 if global_total <= 0 else float(global_llm_ok) / float(global_total)
+
+if min_global_decision_mode_llm_ratio >= 0:
+    if global_decision_mode_llm_ratio < min_global_decision_mode_llm_ratio:
+        errors.append(
+            f"global decision_mode_llm_ratio={global_decision_mode_llm_ratio:.6f} "
+            f"< min_ratio={min_global_decision_mode_llm_ratio:.6f} total={global_total} decision_mode_llm={decision_mode_llm_count}"
+        )
+    else:
+        print(
+            f"[passed] global decision_mode_llm_ratio={global_decision_mode_llm_ratio:.6f} "
+            f"min_ratio={min_global_decision_mode_llm_ratio:.6f} total={global_total} decision_mode_llm={decision_mode_llm_count}"
+        )
+else:
+    print("[skip] global decision_mode_llm_ratio threshold disabled")
+
+if min_global_llm_ok_ratio >= 0:
+    if global_llm_ok_ratio < min_global_llm_ok_ratio:
+        errors.append(
+            f"global llm_ok_ratio={global_llm_ok_ratio:.6f} "
+            f"< min_ratio={min_global_llm_ok_ratio:.6f} total={global_total} llm_ok={global_llm_ok}"
+        )
+    else:
+        print(
+            f"[passed] global llm_ok_ratio={global_llm_ok_ratio:.6f} "
+            f"min_ratio={min_global_llm_ok_ratio:.6f} total={global_total} llm_ok={global_llm_ok}"
+        )
+else:
+    print("[skip] global llm_ok_ratio threshold disabled")
 
 if errors:
     print("[failed] signal decision source quality guard")

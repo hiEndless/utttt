@@ -330,6 +330,10 @@ Optional Observability:
                                 large_liquidation 的 llm_ok 比例下限（默认 -1 忽略）
   MIN_SOCIAL_NEWS_LLM_OK_RATIO
                                 social_news 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO
+                                全局 decision_mode=llm 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO
+                                全局 llm_ok 比例下限（默认 -1 忽略）
   MAX_AGENT_READYZ_LEVEL         readyz 最大允许级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS
                                 decision_trace schema guard invalid 记录数上限（默认 -1 忽略）
@@ -395,6 +399,8 @@ Environment:
   MIN_ONCHAIN_WALLET_LLM_OK_RATIO  onchain_wallet 的 llm_ok 比例下限（默认 -1 忽略）
   MIN_LARGE_LIQUIDATION_LLM_OK_RATIO  large_liquidation 的 llm_ok 比例下限（默认 -1 忽略）
   MIN_SOCIAL_NEWS_LLM_OK_RATIO  social_news 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO  全局 decision_mode=llm 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO  全局 llm_ok 比例下限（默认 -1 忽略）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_HINT  是否输出 recommendation 发布候选提示（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH  recommendation 报告路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
   MAX_ACTION_HINT_SEMANTICS_MISMATCH_COUNT  action_hint_semantics mismatch 计数上限（默认 1）
@@ -451,6 +457,8 @@ Environment:
   MIN_ONCHAIN_WALLET_LLM_OK_RATIO  onchain_wallet 的 llm_ok 比例下限（默认 -1 忽略）
   MIN_LARGE_LIQUIDATION_LLM_OK_RATIO  large_liquidation 的 llm_ok 比例下限（默认 -1 忽略）
   MIN_SOCIAL_NEWS_LLM_OK_RATIO  social_news 的 llm_ok 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO  全局 decision_mode=llm 比例下限（默认 -1 忽略）
+  MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO  全局 llm_ok 比例下限（默认 -1 忽略）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND  是否输出 signal decision replay 趋势摘要（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_TREND_GLOB  趋势输入 glob（默认 verification/reports/agent_signal_decision_replay*.json）
   AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS  趋势窗口天数（默认 7）

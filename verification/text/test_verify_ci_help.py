@@ -55,6 +55,8 @@ def test_verify_regression_help_contains_pipeline_semantic_terms_guard() -> None
     assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
     assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
     assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_HINT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND" not in out
@@ -98,6 +100,8 @@ def test_verify_nightly_help_contains_agent_threshold_env() -> None:
     assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
     assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
     assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_TREND" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_GLOB" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_TREND_DAYS" in out
@@ -217,6 +221,8 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
     assert "MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" in out
     assert "MIN_SOCIAL_NEWS_LLM_OK_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_DECISION_MODE_LLM_RATIO" in out
+    assert "MIN_SIGNAL_DECISION_GLOBAL_LLM_OK_RATIO" in out
     assert "MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS" in out
     assert "MAX_PIPELINE_MODE_UNKNOWN_COUNT" in out
     assert "MAX_DECISION_AGENT_KEY_UNKNOWN_COUNT" in out
