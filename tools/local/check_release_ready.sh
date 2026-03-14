@@ -61,6 +61,7 @@ if [[ "$SUMMARY_FORMAT" != "text" && "$SUMMARY_FORMAT" != "json" ]]; then
 fi
 
 MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
+WITH_AGENT_SINGLE_PATH_RELEASE_GATE="${WITH_AGENT_SINGLE_PATH_RELEASE_GATE:-1}"
 QUICK_WITH_AGENT_READYZ="${WITH_AGENT_READYZ:-0}"
 QUICK_MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-red}"
 QUICK_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:--1}"
@@ -240,13 +241,20 @@ fi
 echo "[1/4] verify_quick"
 bash tools/ci/verify_quick.sh
 
-echo "[2/4] new_arch_guards_full --quick"
+if [[ "$WITH_AGENT_SINGLE_PATH_RELEASE_GATE" == "1" ]]; then
+  echo "[2/5] single_path_release_gate"
+  bash tools/local/check_agent_single_path_release_gate.sh
+else
+  echo "[2/5] single_path_release_gate (skip by WITH_AGENT_SINGLE_PATH_RELEASE_GATE=0)"
+fi
+
+echo "[3/5] new_arch_guards_full --quick"
 bash tools/ci/new_arch_guards_full.sh --quick
 
-echo "[3/4] release triage block guard"
+echo "[4/5] release triage block guard"
 bash tools/local/check_release_triage_block_guard.sh
 
-echo "[4/4] release baseline alignment --check-origin"
+echo "[5/5] release baseline alignment --check-origin"
 bash tools/local/check_release_baseline_alignment.sh --check-origin
 
 echo "[通过] release ready 检查完成。"
