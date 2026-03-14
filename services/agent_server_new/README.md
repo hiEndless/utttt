@@ -397,6 +397,8 @@ signal_event + active_events + MSL
 - 三态自检（验返回码约定）：`bash tools/local/check_agent_execution_closed_loop_smoke.sh`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long`
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
+- 上线前单路径发布 gate（readyz + execution healthz + prod runner）：
+  - `bash tools/local/check_agent_single_path_release_gate.sh`
 
 ## Contract Guards
 
