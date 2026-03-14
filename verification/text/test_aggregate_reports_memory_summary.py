@@ -206,7 +206,7 @@ def test_build_summary_includes_memory_high_risk_symbols() -> None:
     assert out["execution_confidence_only_requests"] == 2
     assert out["execution_decision_confidence_requests"] == 8
     assert out["execution_confidence_alias_mismatch_rejections"] == 1
-    assert float(out["execution_legacy_confidence_usage_ratio"]) == 0.2
+    assert float(out["execution_confidence_only_ratio"]) == 0.2
     assert out["agent_readyz_report_count"] == 1
     assert out["agent_readyz_ok"] is False
     assert out["agent_readyz_status_level"] == "red"

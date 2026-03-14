@@ -198,7 +198,7 @@ def create_app(*, report_dir: str = "verification/reports", validate_summary_sch
             )
 
         denom = latest_metrics["confidence_only_requests"] + latest_metrics["decision_confidence_requests"]
-        legacy_ratio = 0.0 if denom <= 0 else round(float(latest_metrics["confidence_only_requests"]) / float(denom), 6)
+        confidence_only_ratio = 0.0 if denom <= 0 else round(float(latest_metrics["confidence_only_requests"]) / float(denom), 6)
 
         trend: List[Dict[str, Any]] = []
         for item in confidence_reports[: int(trend_size)]:
@@ -220,7 +220,7 @@ def create_app(*, report_dir: str = "verification/reports", validate_summary_sch
                     "confidence_alias_mismatch_rejections": _safe_int(
                         metrics_raw.get("confidence_alias_mismatch_rejections"), 0
                     ),
-                    "legacy_confidence_usage_ratio": trend_ratio,
+                    "confidence_only_ratio": trend_ratio,
                 }
             )
 
@@ -230,7 +230,7 @@ def create_app(*, report_dir: str = "verification/reports", validate_summary_sch
             "latest_report_id": latest_report_id,
             "latest_ts_ms": latest_ts_ms,
             "metrics": latest_metrics,
-            "legacy_confidence_usage_ratio": legacy_ratio,
+            "confidence_only_ratio": confidence_only_ratio,
             "trend": trend,
             "trend_size": int(trend_size),
         }

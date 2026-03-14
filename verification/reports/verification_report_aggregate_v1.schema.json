@@ -28,7 +28,7 @@
     "execution_confidence_only_requests",
     "execution_decision_confidence_requests",
     "execution_confidence_alias_mismatch_rejections",
-    "execution_legacy_confidence_usage_ratio",
+    "execution_confidence_only_ratio",
     "agent_readyz_report_count",
     "latest_agent_readyz_report_path",
     "agent_readyz_ok",
@@ -206,7 +206,7 @@
       "type": "integer",
       "minimum": 0
     },
-    "execution_legacy_confidence_usage_ratio": {
+    "execution_confidence_only_ratio": {
       "type": "number",
       "minimum": 0,
       "maximum": 1

@@ -72,7 +72,7 @@ def test_check_thresholds_fails_when_agent_readyz_level_exceeds_limit(tmp_path: 
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "agent_readyz_report_count": 1,
         "agent_readyz_status_level": "red",
     }
@@ -96,7 +96,7 @@ def test_check_thresholds_fails_when_require_agent_readyz_report_but_missing(tmp
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "agent_readyz_report_count": 0,
     }
     path = tmp_path / "summary.json"
@@ -118,7 +118,7 @@ def test_check_thresholds_passes_when_decision_trace_schema_guard_within_limit(t
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "decision_trace_schema_guard_invalid_records": 1,
     }
     path = tmp_path / "summary.json"
@@ -141,7 +141,7 @@ def test_check_thresholds_fails_when_decision_trace_schema_guard_exceeds_limit(t
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "decision_trace_schema_guard_invalid_records": 2,
     }
     path = tmp_path / "summary.json"
@@ -164,7 +164,7 @@ def test_check_thresholds_passes_when_pipeline_mode_counts_within_limit(tmp_path
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "pipeline_mode_unknown_count": 1,
         "pipeline_mode_missing_count": 0,
     }
@@ -190,7 +190,7 @@ def test_check_thresholds_fails_when_pipeline_mode_counts_exceed_limit(tmp_path:
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "pipeline_mode_unknown_count": 2,
         "pipeline_mode_missing_count": 1,
     }
@@ -216,7 +216,7 @@ def test_check_thresholds_passes_when_event_type_match_within_limit(tmp_path: Pa
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "event_type_match_missing_count": 0,
         "event_type_match_unknown_count": 1,
         "event_type_match_alias_ratio": 0.2,
@@ -245,7 +245,7 @@ def test_check_thresholds_fails_when_event_type_match_exceeds_limit(tmp_path: Pa
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "event_type_match_missing_count": 1,
         "event_type_match_unknown_count": 2,
         "event_type_match_alias_ratio": 0.05,
@@ -274,7 +274,7 @@ def test_check_thresholds_fails_when_route_replay_mismatch_exceeds_limit(tmp_pat
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "route_replay_mismatch_count": 2,
     }
     path = tmp_path / "summary.json"
@@ -296,7 +296,7 @@ def test_check_thresholds_passes_when_decision_agent_key_unknown_within_limit(tm
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "decision_agent_key_unknown_count": 1,
     }
     path = tmp_path / "summary.json"
@@ -319,7 +319,7 @@ def test_check_thresholds_fails_when_decision_agent_key_unknown_exceeds_limit(tm
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "decision_agent_key_unknown_count": 2,
     }
     path = tmp_path / "summary.json"
@@ -342,7 +342,7 @@ def test_check_thresholds_passes_when_action_hint_semantics_within_limit(tmp_pat
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "action_hint_semantics_mismatch_count": 1,
         "action_hint_semantics_missing_actual_hint_count": 2,
         "action_hint_semantics_match_ratio_on_available": 0.9,
@@ -371,7 +371,7 @@ def test_check_thresholds_fails_when_action_hint_semantics_exceeds_limit(tmp_pat
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "action_hint_semantics_mismatch_count": 2,
         "action_hint_semantics_missing_actual_hint_count": 3,
         "action_hint_semantics_match_ratio_on_available": 0.6,
@@ -400,7 +400,7 @@ def test_check_thresholds_passes_when_signal_decision_llm_observe_within_limit(t
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "signal_decision_llm_observe_missing_decision_mode_count": 1,
         "signal_decision_llm_observe_missing_llm_parse_status_count": 1,
         "signal_decision_llm_observe_decision_mode_llm_count": 3,
@@ -432,7 +432,7 @@ def test_check_thresholds_fails_when_signal_decision_llm_observe_exceeds_limit(t
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.0,
+        "execution_confidence_only_ratio": 0.0,
         "signal_decision_llm_observe_missing_decision_mode_count": 2,
         "signal_decision_llm_observe_missing_llm_parse_status_count": 3,
         "signal_decision_llm_observe_decision_mode_llm_count": 1,

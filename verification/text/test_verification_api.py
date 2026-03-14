@@ -126,7 +126,7 @@ def test_verification_api_execution_confidence_summary_empty(tmp_path: Path) -> 
     body = resp.json()
     assert body.get("schema_version") == "execution-confidence-summary-v1"
     assert int(body.get("report_count") or 0) == 0
-    assert float(body.get("legacy_confidence_usage_ratio") or 0.0) == 0.0
+    assert float(body.get("confidence_only_ratio") or 0.0) == 0.0
     assert body.get("trend") == []
 
 
@@ -165,8 +165,8 @@ def test_verification_api_execution_confidence_summary_with_trend(tmp_path: Path
     assert int(body.get("report_count") or 0) == 2
     assert body.get("latest_report_id") == "exec-conf-2.json"
     assert int(body.get("latest_ts_ms") or 0) == 2000
-    assert float(body.get("legacy_confidence_usage_ratio") or 0.0) == 0.2
+    assert float(body.get("confidence_only_ratio") or 0.0) == 0.2
     trend = list(body.get("trend") or [])
     assert len(trend) == 2
     assert trend[0]["report_id"] == "exec-conf-2.json"
-    assert float(trend[0]["legacy_confidence_usage_ratio"]) == 0.2
+    assert float(trend[0]["confidence_only_ratio"]) == 0.2

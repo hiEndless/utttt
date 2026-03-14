@@ -227,7 +227,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
     execution_confidence_only_requests = 0
     execution_decision_confidence_requests = 0
     execution_confidence_alias_mismatch_rejections = 0
-    execution_legacy_confidence_usage_ratio = 0.0
+    execution_confidence_only_ratio = 0.0
     if execution_confidence_reports:
         latest_execution_confidence = max(
             execution_confidence_reports,
@@ -245,7 +245,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
             metrics.get("confidence_alias_mismatch_rejections"), 0
         )
         denom = execution_confidence_only_requests + execution_decision_confidence_requests
-        execution_legacy_confidence_usage_ratio = 0.0 if denom <= 0 else round(
+        execution_confidence_only_ratio = 0.0 if denom <= 0 else round(
             float(execution_confidence_only_requests) / float(denom), 6
         )
 
@@ -582,7 +582,7 @@ def build_summary(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
         "execution_confidence_only_requests": execution_confidence_only_requests,
         "execution_decision_confidence_requests": execution_decision_confidence_requests,
         "execution_confidence_alias_mismatch_rejections": execution_confidence_alias_mismatch_rejections,
-        "execution_legacy_confidence_usage_ratio": execution_legacy_confidence_usage_ratio,
+        "execution_confidence_only_ratio": execution_confidence_only_ratio,
         "execution_prompt_report_count": execution_prompt_report_count,
         "latest_execution_prompt_report_path": latest_execution_prompt_report_path,
         "execution_prompt_tracked_requests_total": execution_prompt_tracked_requests_total,
