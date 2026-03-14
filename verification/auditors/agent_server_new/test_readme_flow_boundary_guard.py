@@ -24,3 +24,6 @@ def test_readme_freezes_minimal_main_flow_and_historical_flow_label() -> None:
     assert "consume `signal_event`" not in text
     assert "consume `active_events`" not in text
     assert "consume `MSL`" not in text
+    assert "### 本地灰度观测最短命令" not in text
+    assert "灰度推进阶段" not in text
+    assert "### 本地常态观测最短命令" in text

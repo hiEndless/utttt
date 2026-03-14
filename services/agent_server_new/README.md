@@ -282,7 +282,7 @@ signal_event + active_events + MSL
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_llm_accept_valid_direction_maps_action_hint_add`
 - `./venv/bin/pytest -q verification/auditors/agent_server_new/test_trade_event_workflow_result.py::test_trade_event_workflow_minimal_llm_accept_none_direction_maps_action_hint_hold`
 
-### 本地灰度观测最短命令
+### 本地常态观测最短命令
 
 - CI 一键组合（含路由观测守卫）：`WITH_AGENT_ROUTING_GUARDS=1 bash tools/ci/verify_quick.sh`
 - 最短链路：`bash tools/local/verify_quick.sh --with-pipeline-mode-report`
@@ -292,7 +292,7 @@ signal_event + active_events + MSL
 - 以 JSON 输出并落盘：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --output verification/reports/agent_signal_source_route_replay.latest.json`
 - 仅观测不阻断（路由不匹配仍返回 0）：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --strict 0`
 - 关键日志行：`[quick] pipeline_mode_summary minimal=... unknown=... missing=... minimal_ratio=...`
-- 判读建议：`unknown` 与 `missing` 应长期收敛到 `0`；灰度推进阶段 `minimal_ratio` 应随范围扩大而稳定上升。
+- 判读建议：`unknown` 与 `missing` 应长期收敛到 `0`；常态运行下 `minimal_ratio` 应稳定维持在接近 `1`。
 
 ### MarketState 语义告警（非阻断）
 
