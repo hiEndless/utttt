@@ -370,6 +370,8 @@ signal_event + active_events + MSL
 - 聚合决策路由命中分布（technical/onchain/liquidation/social_news/generic/unknown）：`bash tools/local/run_agent_decision_agent_key_report.sh`
 - 聚合 minimal 语义映射命中率（`accept/add`、`reject|uncertain/hold`、`accept+neutral/hold`）：`bash tools/local/run_agent_action_hint_semantics_report.sh`
 - 回放信号决策语义结果（source->agent + verdict/direction/mode）：`bash tools/local/run_agent_signal_decision_replay_report.sh`
+- 回放 agent->execution 请求体方向分布（阻断 `direction_intent=none`）：`bash tools/local/run_agent_execution_direction_intent_report.sh`
+- agent->execution 请求体方向守卫：`bash tools/local/check_agent_execution_direction_intent_guard.sh`
 - 若 execution 调用失败，recorder 会新增 `agent_name=execution_decider` 且 `status=error` 的结构化记录，便于快速排查。
 - 若 execution 正常返回 `reject_reason`，视为业务拒绝结果（非系统故障），会保留原始 execution payload 供回放定位。
 - 若 `verification/reports` 下存在该报表，`verification/reports/aggregate_reports.py` 会附带输出 `pipeline_mode_*` 与 `event_type_match_*` 汇总字段。

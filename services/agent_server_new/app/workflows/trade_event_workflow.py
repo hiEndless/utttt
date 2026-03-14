@@ -363,6 +363,12 @@ class TradeEventWorkflow:
                 ai_adaptive_enabled=self._ai_adaptive_enabled,
                 ai_adaptive_mode=self._ai_adaptive_mode,
             )
+            if self._recorder:
+                await self._recorder.record_agent_output(
+                    event.event_id,
+                    "execution_decider_request",
+                    dict(decision_payload),
+                )
             direction_intent = str(decision_payload.get("direction_intent") or "").strip().lower()
             if direction_intent not in {"long", "short", "neutral"}:
                 logger.warning(
