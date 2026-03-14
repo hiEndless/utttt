@@ -54,6 +54,20 @@ def test_legacy_domain_modules_removed() -> None:
         assert not (root / name).exists()
 
 
+def test_compat_package_removed() -> None:
+    compat_root = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "compat"
+    assert not compat_root.exists()
+
+
+def test_no_compat_imports_in_agent_server_new() -> None:
+    root = Path(PROJECT_ROOT) / "services" / "agent_server_new"
+    for py_file in root.rglob("*.py"):
+        text = py_file.read_text(encoding="utf-8")
+        assert "services.agent_server_new.compat" not in text
+        assert "from .compat" not in text
+        assert "from services.agent_server_new import compat" not in text
+
+
 def test_contracts_no_legacy_intent_rule_types() -> None:
     path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "domain" / "contracts.py"
     text = path.read_text(encoding="utf-8")

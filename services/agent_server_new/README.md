@@ -478,7 +478,6 @@ agent_server_new/
 说明（主链路）：
 
 - `domain/market_state_engine.py` 不应长期保留在这里
-- `compat/market_structure.py` 只允许作为过渡兼容层
 - `ports` 只描述输入输出，不描述 Redis/HTTP 细节
 
 ## 需要搬走的文件与能力
