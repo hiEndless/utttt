@@ -151,12 +151,18 @@ def create_router() -> APIRouter:
     @router.get("/readyz")
     async def readyz(response: Response) -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
+        runtime_profile = _env_str("AGENT_RUNTIME_PROFILE", "dev").lower()
         checks: Dict[str, Any] = {}
         errors: list[str] = []
         warnings: list[str] = []
-        strict_upstream = _env_bool("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
+        strict_default = "true" if runtime_profile in {"prod", "production"} else "false"
+        strict_upstream = _env_bool("AGENT_READY_CHECK_UPSTREAM_STRICT", strict_default)
+        if runtime_profile in {"prod", "production"}:
+            strict_upstream = True
         check_market_state = _env_bool("AGENT_READY_CHECK_MARKET_STATE", "true")
         check_execution_service = _env_bool("AGENT_READY_CHECK_EXECUTION_SERVICE", "true")
+        if runtime_profile in {"prod", "production"}:
+            check_execution_service = True
         check_active_events_redis = _env_bool("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "true")
         check_event_recorder = _env_bool("AGENT_READY_CHECK_EVENT_RECORDER", "true")
         timeout_s = float(_env_str("AGENT_READY_CHECK_TIMEOUT_S", "1.5") or "1.5")
@@ -226,7 +232,6 @@ def create_router() -> APIRouter:
                 if not disk_ok:
                     (errors if strict_upstream else warnings).append("event_recorder_low_disk")
 
-        runtime_profile = _env_str("AGENT_RUNTIME_PROFILE", "dev").lower()
         if runtime_profile in {"prod", "production"} and not execution_enabled:
             warnings.append("execution_decider_disabled_in_production")
 

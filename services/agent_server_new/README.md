@@ -324,14 +324,16 @@ signal_event + active_events + MSL
   - 若 bootstrap 异常消息含 `[错误码]` 前缀，`errors` 会透传该稳定错误码
   - 响应包含 `status_level`：`green`（无告警）/`yellow`（仅 warning）/`red`（存在 error）
   - `prod` 档位强制要求 `AGENT_EXECUTION_ENABLED=true`；否则 bootstrap 直接失败并返回 `503`
+  - `prod` 档位强制 `AGENT_READY_CHECK_UPSTREAM_STRICT=true`
+  - `prod` 档位强制执行 `execution_service` 健康检查（不允许通过关闭 `AGENT_READY_CHECK_EXECUTION_SERVICE` 跳过）
   - 可选上游检查（默认开启 market_state / redis）：
     - `AGENT_READY_CHECK_MARKET_STATE=true|false`
-    - `AGENT_READY_CHECK_EXECUTION_SERVICE=true|false`（仅 `AGENT_EXECUTION_ENABLED=true` 时执行，默认跳过）
+    - `AGENT_READY_CHECK_EXECUTION_SERVICE=true|false`（dev 可关闭；prod 会被强制开启）
     - `AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS=true|false`
     - `AGENT_READY_CHECK_EVENT_RECORDER=true|false`
     - `AGENT_READY_CHECK_EVENT_RECORDER_MIN_FREE_BYTES=104857600`
     - `AGENT_READY_CHECK_TIMEOUT_S=1.5`
-    - `AGENT_READY_CHECK_UPSTREAM_STRICT=true|false`（`false` 时记 warning，不阻断 ready；`true` 时转为 error 并返回 `503`）
+    - `AGENT_READY_CHECK_UPSTREAM_STRICT=true|false`（dev 默认 `false`；prod 强制 `true`）
 
 ## Memory Summary Runner
 

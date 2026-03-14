@@ -186,6 +186,48 @@ def test_http_readyz_execution_error_in_strict_mode(monkeypatch) -> None:  # noq
     assert "execution_service_unreachable" in list(body.get("errors") or [])
 
 
+def test_http_readyz_prod_defaults_to_strict_for_execution_check(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
+    monkeypatch.delenv("AGENT_READY_CHECK_UPSTREAM_STRICT", raising=False)
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EXECUTION_SERVICE", "true")
+    monkeypatch.setattr(mod, "_check_execution_service_healthz", lambda timeout_s: (False, {"error": "down"}))
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["ok"] is False
+    assert "execution_service_unreachable" in list(body.get("errors") or [])
+
+
+def test_http_readyz_prod_forces_execution_check_even_when_disabled(monkeypatch) -> None:  # noqa: ANN001
+    import services.agent_server_new.app.http_app as mod
+
+    monkeypatch.setenv("AGENT_RUNTIME_PROFILE", "prod")
+    monkeypatch.setenv("AGENT_EXECUTION_ENABLED", "true")
+    monkeypatch.setenv("AGENT_READY_CHECK_UPSTREAM_STRICT", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_MARKET_STATE", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_ACTIVE_EVENTS_REDIS", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EVENT_RECORDER", "false")
+    monkeypatch.setenv("AGENT_READY_CHECK_EXECUTION_SERVICE", "false")
+    monkeypatch.setattr(mod, "_check_execution_service_healthz", lambda timeout_s: (False, {"error": "down"}))
+    monkeypatch.setattr(mod, "create_trade_event_workflow_from_env", lambda: object())
+    app = create_app()
+    client = TestClient(app)
+    resp = client.get("/internal/agent/readyz")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["ok"] is False
+    assert "execution_service_unreachable" in list(body.get("errors") or [])
+
+
 def test_http_readyz_low_disk_warning_in_non_strict_mode(monkeypatch) -> None:  # noqa: ANN001
     import services.agent_server_new.app.http_app as mod
 
