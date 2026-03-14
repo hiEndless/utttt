@@ -50,7 +50,7 @@ def test_run_agent_action_hint_semantics_report_aggregate(tmp_path: Path) -> Non
             "record_type": "agent_output",
             "event_id": "evt-3",
             "agent_name": "decision_trace",
-            "payload": {"routing": {"pipeline_mode": "minimal"}, "signal_verdict": {"verdict": "accept", "direction": "none"}},
+            "payload": {"routing": {"pipeline_mode": "minimal"}, "signal_verdict": {"verdict": "accept", "direction": "neutral"}},
         },
         {
             "ts_ms": 1710000002004,

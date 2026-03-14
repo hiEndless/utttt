@@ -23,8 +23,6 @@ class DecisionPlanState:
 
 def _normalize_signal_direction(value: Any) -> str:
     direction = str(value or "").strip().lower()
-    if direction == "none":
-        direction = "neutral"
     return direction if direction in {"long", "short", "neutral"} else "neutral"
 
 

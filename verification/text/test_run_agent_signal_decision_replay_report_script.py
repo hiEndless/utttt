@@ -55,7 +55,7 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
             "agent_name": "decision_trace",
             "payload": {
                 "event": {"signal_source_type": "social_news"},
-                "signal_verdict": {"verdict": "reject", "direction": "none"},
+                "signal_verdict": {"verdict": "reject", "direction": "neutral"},
                 "routing": {
                     "decision_agent_key": "social_news",
                     "decision_mode": "llm",
@@ -71,7 +71,7 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
             "agent_name": "decision_trace",
             "payload": {
                 "event": {"signal_source_type": "onchain_wallet"},
-                "signal_verdict": {"verdict": "uncertain", "direction": "none"},
+                "signal_verdict": {"verdict": "uncertain", "direction": "neutral"},
                 "routing": {
                     "decision_agent_key": "generic",
                     "decision_mode": "rule_fallback",
@@ -104,7 +104,7 @@ def test_run_agent_signal_decision_replay_report_aggregate(tmp_path: Path) -> No
     assert summary["accept_count"] == 1
     assert summary["reject_count"] == 1
     assert summary["uncertain_count"] == 1
-    assert summary["noncanonical_none_count"] == 2
+    assert summary["noncanonical_none_count"] == 0
     assert "none_count" not in summary
     assert summary["decision_mode_rule_count"] == 1
     assert summary["decision_mode_llm_count"] == 1

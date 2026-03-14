@@ -176,6 +176,31 @@ def test_routed_hybrid_signal_decision_agent_reports_json_parse_error():
     assert len(out.llm_contract_errors) >= 1
 
 
+def test_routed_hybrid_signal_decision_agent_rejects_noncanonical_none_direction():
+    agent = RoutedHybridSignalDecisionAgent(
+        router_config={
+            "default_agent_key": "generic",
+            "rules": [{"agent_key": "onchain", "keywords": ["onchain"]}],
+        }
+    )
+    out = agent.decide(
+        signal_direction="long",
+        msl=_build_msl_from_dict(_sample_msl()),
+        key_market_features={},
+        active_events=[],
+        signal_event={"event_type": "onchain_wallet_alert"},
+        position_context={},
+        llm_result={
+            "status": "ok",
+            "raw_content": "{\"signal_verdict\":\"accept\",\"signal_direction\":\"none\",\"confidence_score\":0.8,\"reasons\":[]}",
+        },
+    )
+    assert out.decision_mode == "rule_fallback"
+    assert out.llm_parse_status == "llm_invalid_payload"
+    assert out.llm_contract_error_code == "llm_schema_validation_failed"
+    assert len(out.llm_contract_errors) >= 1
+
+
 def test_routed_hybrid_signal_decision_agent_honors_workflow_routed_agent_key():
     agent = RoutedHybridSignalDecisionAgent(
         router_config={

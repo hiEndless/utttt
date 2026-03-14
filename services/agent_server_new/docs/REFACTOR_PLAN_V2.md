@@ -84,7 +84,7 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 
 字段补充约束：
 - `signal_direction` 规范值：`long|short|neutral`
-- 兼容窗口：若上游/LLM 返回非规范 `none`，在 agent 域内统一归一为 `neutral`
+- 规范约束：上游/LLM 仅允许 `long|short|neutral`，非规范 `none` 直接走无效载荷回退与守卫告警
 
 显式禁止在 agent 输出中出现：
 

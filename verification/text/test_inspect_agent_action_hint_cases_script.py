@@ -51,7 +51,7 @@ def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path
             "record_type": "agent_output",
             "event_id": "evt-missing",
             "agent_name": "decision_trace",
-            "payload": {"routing": {"pipeline_mode": "minimal"}, "signal_verdict": {"verdict": "accept", "direction": "none"}},
+            "payload": {"routing": {"pipeline_mode": "minimal"}, "signal_verdict": {"verdict": "accept", "direction": "neutral"}},
         },
         {
             "ts_ms": 1710000002201,
