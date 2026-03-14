@@ -164,8 +164,6 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
     memory_recent_ttl_ms = _env_int("AGENT_SYMBOL_MEMORY_CONTEXT_TTL_MS", 86_400_000, min_value=0)
     memory_dedup_key = str(os.getenv("AGENT_SYMBOL_MEMORY_CONTEXT_DEDUP_KEY", "event_id") or "event_id").strip() or "event_id"
     decision_trace_schema_validate = _env_bool("AGENT_DECISION_TRACE_SCHEMA_VALIDATE", "true")
-    ai_adaptive_enabled = _env_bool("AGENT_AI_ADAPTIVE_ENABLED", "false")
-    ai_adaptive_mode = str(os.getenv("AGENT_AI_ADAPTIVE_MODE", "observe") or "observe").strip().lower()
     signal_router_config_file = str(os.getenv("AGENT_SIGNAL_ROUTER_CONFIG_FILE", "") or "").strip()
     signal_router_config = load_signal_router_config_from_env()
     try:
@@ -204,8 +202,6 @@ def create_trade_event_workflow_from_env() -> TradeEventWorkflow:
         memory_recent_topk=memory_recent_topk,
         memory_recent_ttl_ms=memory_recent_ttl_ms,
         memory_dedup_key=memory_dedup_key,
-        ai_adaptive_enabled=ai_adaptive_enabled,
-        ai_adaptive_mode=ai_adaptive_mode,
         signal_router_config=signal_router_config,
         signal_decision_prompt_profiles=signal_prompt_profiles,
         signal_decision_agent=signal_decision_agent,

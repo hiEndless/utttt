@@ -145,7 +145,7 @@ def test_trade_event_workflow_calls_execution_decider():
         monkeypatch.undo()
 
 
-def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_fields():
+def test_trade_event_workflow_calls_execution_decider_without_ai_adaptive_reserved_fields():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -162,8 +162,6 @@ def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_
             active_events=_Events(),
             execution_decider=decider,
             recorder=None,
-            ai_adaptive_enabled=True,
-            ai_adaptive_mode="recommend",
         )
         out = await wf.run(
             TradeEventInput(
@@ -176,9 +174,10 @@ def test_trade_event_workflow_calls_execution_decider_with_ai_adaptive_reserved_
         )
         assert out.action == "add"
         assert decider.called is True
-        assert decider.payload["execution_hint"]["adaptive_mode"] == "recommend"
-        assert decider.payload["adaptive_profile_version"] == "reserved-v0"
-        assert decider.payload["adaptive_explain"]["status"] == "reserved_only"
+        assert "execution_hint" not in decider.payload
+        assert "adaptive_profile" not in decider.payload
+        assert "adaptive_profile_version" not in decider.payload
+        assert "adaptive_explain" not in decider.payload
 
     import pytest
 

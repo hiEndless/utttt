@@ -145,8 +145,6 @@ class TradeEventWorkflow:
         memory_recent_topk: int = 5,
         memory_recent_ttl_ms: int = 24 * 60 * 60 * 1000,
         memory_dedup_key: str = "event_id",
-        ai_adaptive_enabled: bool = False,
-        ai_adaptive_mode: str = "observe",
         signal_router_config: Optional[Dict[str, Any]] = None,
         signal_decision_prompt_profiles: Optional[Dict[str, Dict[str, Any]]] = None,
         signal_decision_agent: SignalDecisionAgent | None = None,
@@ -167,9 +165,6 @@ class TradeEventWorkflow:
         self._memory_recent_topk = max(1, int(memory_recent_topk))
         self._memory_recent_ttl_ms = max(0, int(memory_recent_ttl_ms))
         self._memory_dedup_key = str(memory_dedup_key or "event_id").strip() or "event_id"
-        self._ai_adaptive_enabled = bool(ai_adaptive_enabled)
-        mode = str(ai_adaptive_mode or "observe").strip().lower()
-        self._ai_adaptive_mode = mode if mode in {"observe", "recommend", "bounded_apply"} else "observe"
         self._signal_router_config = dict(signal_router_config or {})
         self._signal_decision_prompt_profiles = dict(signal_decision_prompt_profiles or {})
         self._signal_decision_agent = signal_decision_agent or (
@@ -360,8 +355,6 @@ class TradeEventWorkflow:
                 cross_horizon=ch,
                 prompt_config_source=self._signal_prompt_config_source,
                 prompt_config_version=self._signal_prompt_config_version,
-                ai_adaptive_enabled=self._ai_adaptive_enabled,
-                ai_adaptive_mode=self._ai_adaptive_mode,
             )
             if self._recorder:
                 await self._recorder.record_agent_output(

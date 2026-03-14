@@ -128,8 +128,6 @@ def build_execution_decision_payload(
     cross_horizon: Dict[str, str],
     prompt_config_source: str = "",
     prompt_config_version: str = "",
-    ai_adaptive_enabled: bool = False,
-    ai_adaptive_mode: str = "observe",
 ) -> Dict[str, Any]:
     signal_conf = signal_decision.confidence
     decision_confidence_source = "agent_signal_decision"
@@ -163,15 +161,6 @@ def build_execution_decision_payload(
             "signal_reasons": list(signal_decision.reasons or []),
         },
     }
-    if bool(ai_adaptive_enabled):
-        payload["execution_hint"] = {
-            "mode": "reserved",
-            "adaptive_mode": str(ai_adaptive_mode or "observe"),
-            "apply_scope": "none",
-        }
-        payload["adaptive_profile"] = {}
-        payload["adaptive_profile_version"] = "reserved-v0"
-        payload["adaptive_explain"] = {"status": "reserved_only"}
     return payload
 
 
