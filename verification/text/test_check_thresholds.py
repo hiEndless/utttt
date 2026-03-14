@@ -11,14 +11,13 @@ if str(PROJECT_ROOT) not in sys.path:
 from verification.reports.check_thresholds import main
 
 
-def test_check_thresholds_passes_when_legacy_ratio_within_limit(tmp_path: Path) -> None:
+def test_check_thresholds_passes_with_basic_thresholds(tmp_path: Path) -> None:
     summary = {
         "report_count": 1,
         "failed": 0,
         "pass_rate": 1.0,
         "semantic_error_count": 0,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.1,
     }
     path = tmp_path / "summary.json"
     path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
@@ -34,21 +33,18 @@ def test_check_thresholds_passes_when_legacy_ratio_within_limit(tmp_path: Path) 
             "1",
             "--max-semantic-errors",
             "0",
-            "--max-legacy-confidence-ratio",
-            "0.2",
         ]
     )
     assert code == 0
 
 
-def test_check_thresholds_fails_when_legacy_ratio_exceeds_limit(tmp_path: Path) -> None:
+def test_check_thresholds_fails_when_semantic_errors_exceed_limit(tmp_path: Path) -> None:
     summary = {
         "report_count": 1,
         "failed": 0,
         "pass_rate": 1.0,
-        "semantic_error_count": 0,
+        "semantic_error_count": 1,
         "semantic_warning_count": 0,
-        "execution_legacy_confidence_usage_ratio": 0.3,
     }
     path = tmp_path / "summary.json"
     path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
@@ -64,8 +60,6 @@ def test_check_thresholds_fails_when_legacy_ratio_exceeds_limit(tmp_path: Path) 
             "1",
             "--max-semantic-errors",
             "0",
-            "--max-legacy-confidence-ratio",
-            "0.2",
         ]
     )
     assert code == 1

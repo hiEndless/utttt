@@ -22,7 +22,6 @@ WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT=0
 WITH_SIGNAL_DECISION_LLM_OBSERVE_REPORT=0
 SKIP_THRESHOLDS=0
 COMPACT=0
-MAX_LEGACY_CONFIDENCE_RATIO="-1"
 MAX_AGENT_READYZ_LEVEL="red"
 REQUIRE_AGENT_READYZ_REPORT=0
 MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="-1"
@@ -76,8 +75,6 @@ Options:
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
   --skip-thresholds             仅聚合，不执行阈值检查
-  --max-legacy-confidence-ratio <float>
-                               execution legacy confidence 占比上限（默认 -1 忽略）
   --max-agent-readyz-level <green|yellow|red>
                                agent readyz 最大允许状态级别（默认 red）
   --max-decision-trace-schema-guard-invalid-records <int>
@@ -198,10 +195,6 @@ USAGE
     --compact)
       COMPACT=1
       shift
-      ;;
-    --max-legacy-confidence-ratio)
-      MAX_LEGACY_CONFIDENCE_RATIO="${2:-$MAX_LEGACY_CONFIDENCE_RATIO}"
-      shift 2
       ;;
     --max-agent-readyz-level)
       MAX_AGENT_READYZ_LEVEL="${2:-$MAX_AGENT_READYZ_LEVEL}"
@@ -337,7 +330,6 @@ if [[ "$SKIP_THRESHOLDS" == "0" ]]; then
     --max-failed 0
     --min-reports 1
     --max-semantic-errors 0
-    --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
     --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
     --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
     --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"

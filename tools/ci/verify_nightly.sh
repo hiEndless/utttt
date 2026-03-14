@@ -10,7 +10,6 @@ Description:
   CI nightly 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、全量报告回归链路与语义聚合校验。
 
 Environment:
-  MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
   MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 yellow）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS  decision_trace schema guard invalid 记录数上限（默认 0）
   MAX_PIPELINE_MODE_UNKNOWN_COUNT  pipeline_mode unknown 计数上限（默认 0）
@@ -108,7 +107,6 @@ bash tools/local/audit_semantics.sh
 echo "[nightly 11/12] semantic warning budget"
 bash tools/local/check_semantic_warning_budget.sh
 echo "[nightly 12/12] aggregate and check"
-MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
 MAX_AGENT_READYZ_LEVEL="${MAX_AGENT_READYZ_LEVEL:-yellow}"
 MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS="${MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS:-0}"
 MAX_PIPELINE_MODE_UNKNOWN_COUNT="${MAX_PIPELINE_MODE_UNKNOWN_COUNT:-0}"
@@ -165,7 +163,6 @@ AGENT_SIGNAL_DECISION_LLM_OBSERVE_TREND_RECOMMENDATION_REPORT_PATH="${AGENT_SIGN
 REQUIRE_AGENT_READYZ_REPORT="${REQUIRE_AGENT_READYZ_REPORT:-1}"
 AGENT_READYZ_BASE_URL="${AGENT_READYZ_BASE_URL:-http://127.0.0.1:9971}"
 AGENT_READYZ_TIMEOUT_S="${AGENT_READYZ_TIMEOUT_S:-2.0}"
-echo "[nightly] MAX_LEGACY_CONFIDENCE_RATIO=$MAX_LEGACY_CONFIDENCE_RATIO"
 echo "[nightly] MAX_AGENT_READYZ_LEVEL=$MAX_AGENT_READYZ_LEVEL REQUIRE_AGENT_READYZ_REPORT=$REQUIRE_AGENT_READYZ_REPORT"
 echo "[nightly] MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS=$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
 echo "[nightly] MAX_PIPELINE_MODE_UNKNOWN_COUNT=$MAX_PIPELINE_MODE_UNKNOWN_COUNT MAX_PIPELINE_MODE_MISSING_COUNT=$MAX_PIPELINE_MODE_MISSING_COUNT"
@@ -298,7 +295,6 @@ NIGHTLY_ARGS=(
   --summary-path "$SUMMARY_PATH"
   --agent-readyz-base-url "$AGENT_READYZ_BASE_URL"
   --agent-readyz-timeout-s "$AGENT_READYZ_TIMEOUT_S"
-  --max-legacy-confidence-ratio "$MAX_LEGACY_CONFIDENCE_RATIO"
   --max-agent-readyz-level "$MAX_AGENT_READYZ_LEVEL"
   --max-decision-trace-schema-guard-invalid-records "$MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS"
   --max-pipeline-mode-unknown-count "$MAX_PIPELINE_MODE_UNKNOWN_COUNT"

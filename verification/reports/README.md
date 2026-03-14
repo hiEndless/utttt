@@ -183,7 +183,7 @@ bash tools/local/aggregate_and_check.sh --skip-thresholds --compact
 Notes:
 - Aggregator ingests both verification suite reports (`verification-report-v1/v2`)
   and semantic audit reports (`semantic-audit-v1`), symbol memory summary reports (`symbol-memory-summary-run-v1`),
-  and agent readyz reports (`agent-readyz-report-v1`), pipeline_mode reports (`agent-pipeline-mode-report-v1`).
+  and agent readyz reports (`agent-readyz-report-v1`), pipeline_mode reports (`agent-pipeline-mode-report-v2`).
 - Release gate summary (`release-gate-summary-v1`) is generated independently by
   `tools/local/check_release_ready.sh` and recommended for release check records；
   摘要内会附带 `recommendation_artifact`（路径、status、schema_version、recommend_action）用于发布审计。
@@ -192,10 +192,10 @@ Notes:
   - `semantic_audit_count/semantic_error_count/semantic_warning_count`
   - `memory_summary_run_count/memory_high_risk_symbol_count/memory_top_risk_score/memory_high_risk_symbols`
   - `memory_alert_code_count/memory_top_alert_codes`（告警码维度 TopN 与受影响 symbol 集合）
-  - `execution_confidence_*`（execution 迁移指标快照与 `execution_legacy_confidence_usage_ratio`）
+  - `execution_confidence_*`（execution 迁移指标快照）
   - `agent_readyz_*`（agent 可用性分级快照：`green/yellow/red`、warning/error 计数）
   - `decision_trace_schema_guard_*`（decision trace 运行时 schema 校验告警汇总）
-  - `pipeline_mode_*`（legacy/minimal 灰度计数与比例快照）
+  - `pipeline_mode_*`（minimal/unknown/missing 计数与比例快照）
   - `event_type_match_*`（event type canonical/alias/empty 命中统计与 unknown top 快照）
   - `decision_agent_key_*`（technical/onchain/liquidation/social_news/generic/unknown 分布与核心四类覆盖率）
   - `action_hint_semantics_*`（minimal 语义映射命中率：`accept/add`、`reject|uncertain/hold`、`accept+none/hold`）
@@ -277,7 +277,6 @@ python3 -m verification.reports.check_thresholds \
   --max-failed 0 \
   --min-reports 1 \
   --max-semantic-errors 0 \
-  --max-legacy-confidence-ratio 0.05 \
   --max-agent-readyz-level yellow \
   --max-decision-trace-schema-guard-invalid-records 0 \
   --max-pipeline-mode-unknown-count 0 \

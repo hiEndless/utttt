@@ -39,7 +39,6 @@ bash tools/local/check_release_ready_help_snapshot_guard.sh
   NIGHTLY_MAX_AGENT_READYZ_LEVEL     nightly 默认 readyz 最大级别（默认 yellow）
   NIGHTLY_MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS nightly 默认 decision_trace schema guard invalid 上限（默认 0）
   NIGHTLY_REQUIRE_AGENT_READYZ_REPORT nightly 默认是否要求 readyz 报告（默认 1）
-  MAX_LEGACY_CONFIDENCE_RATIO        nightly confidence 占比阈值（默认 0.05）
   AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH recommendation 报告路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
 
 参数:

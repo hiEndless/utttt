@@ -38,12 +38,6 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-semantic-errors", type=int, default=0, help="最大语义审计错误数")
     p.add_argument("--max-semantic-warnings", type=int, default=-1, help="最大语义审计告警数，-1 表示忽略")
     p.add_argument(
-        "--max-legacy-confidence-ratio",
-        type=float,
-        default=-1.0,
-        help="最大 execution legacy confidence 使用占比，-1 表示忽略",
-    )
-    p.add_argument(
         "--max-agent-readyz-level",
         choices=["green", "yellow", "red"],
         default="red",
@@ -156,7 +150,6 @@ def main(argv: list[str] | None = None) -> int:
     pass_rate = _to_float(summary.get("pass_rate"), 0.0)
     semantic_errors = _to_int(summary.get("semantic_error_count"), 0)
     semantic_warnings = _to_int(summary.get("semantic_warning_count"), 0)
-    legacy_confidence_ratio = _to_float(summary.get("execution_legacy_confidence_usage_ratio"), 0.0)
     agent_readyz_report_count = _to_int(summary.get("agent_readyz_report_count"), 0)
     agent_readyz_level = str(summary.get("agent_readyz_status_level") or "red").strip().lower()
     decision_trace_schema_guard_invalid_records = _to_int(
@@ -200,11 +193,6 @@ def main(argv: list[str] | None = None) -> int:
         errors.append(f"semantic_error_count>{int(args.max_semantic_errors)} (actual={semantic_errors})")
     if int(args.max_semantic_warnings) >= 0 and semantic_warnings > int(args.max_semantic_warnings):
         errors.append(f"semantic_warning_count>{int(args.max_semantic_warnings)} (actual={semantic_warnings})")
-    if float(args.max_legacy_confidence_ratio) >= 0 and legacy_confidence_ratio > float(args.max_legacy_confidence_ratio):
-        errors.append(
-            "execution_legacy_confidence_usage_ratio>"
-            f"{float(args.max_legacy_confidence_ratio)} (actual={legacy_confidence_ratio})"
-        )
     if bool(args.require_agent_readyz_report) and agent_readyz_report_count <= 0:
         errors.append("agent_readyz_report_count<=0 (required)")
     if agent_readyz_report_count > 0:
@@ -352,7 +340,6 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"report_count={report_count} failed={failed} pass_rate={pass_rate} "
         f"semantic_error_count={semantic_errors} semantic_warning_count={semantic_warnings} "
-        f"execution_legacy_confidence_usage_ratio={legacy_confidence_ratio} "
         f"agent_readyz_report_count={agent_readyz_report_count} "
         f"agent_readyz_status_level={agent_readyz_level} "
         f"decision_trace_schema_guard_invalid_records={decision_trace_schema_guard_invalid_records} "

@@ -113,8 +113,6 @@ Options:
   --agent-readyz-timeout-s <sec> agent readyz 拉取超时秒数（默认 AGENT_READYZ_TIMEOUT_S 或 2.0）
   --compact                     生成紧凑 JSON（透传给 aggregate_reports --compact）
   --skip-thresholds             仅聚合，不执行阈值检查
-  --max-legacy-confidence-ratio <float>
-                               execution legacy confidence 占比上限（默认 -1 忽略）
   --max-agent-readyz-level <green|yellow|red>
                                agent readyz 最大允许状态级别（默认 red）
   --max-decision-trace-schema-guard-invalid-records <int>
@@ -191,6 +189,8 @@ Options:
   --with-agent-route-replay-report        启用四类来源业务路由回放观测（默认关闭）
   --with-agent-signal-decision-replay-report
                                           启用信号决策结果回放观测（默认关闭）
+  --with-agent-execution-direction-intent-guard
+                                          启用 agent->execution 请求体方向守卫（默认关闭）
   --agent-action-hint-cases-report-path <path>
                                           指定 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   --agent-action-hint-missing-cases-report-path <path>
@@ -201,6 +201,8 @@ Options:
                                           指定 route replay 报告输出路径（默认 verification/reports/agent_signal_source_route_replay.latest.json）
   --agent-signal-decision-replay-report-path <path>
                                           指定 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  --agent-execution-direction-intent-report-path <path>
+                                          指定 agent execution direction_intent 报告输出路径（默认 verification/reports/agent_execution_direction_intent.latest.json）
   --agent-signal-decision-replay-min-source-count <int>
                                           指定 signal decision replay 每来源最小样本数（默认 10）
   --max-market-indicator-rule-fallback-ratio <float>
@@ -211,6 +213,12 @@ Options:
                                           指定 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
   --max-social-news-rule-fallback-ratio <float>
                                           指定 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
+  --max-agent-execution-direction-intent-none-count <int>
+                                          设置 agent->execution 请求体 none 计数上限（默认 0）
+  --max-agent-execution-direction-intent-invalid-count <int>
+                                          设置 agent->execution 请求体 invalid 计数上限（默认 0）
+  --agent-execution-direction-intent-min-total <int>
+                                          设置 agent->execution 请求体方向最小样本量（默认 1）
   --max-agent-readyz-level <level>       设置 readyz 最大允许级别（默认 red）
   --max-decision-agent-key-unknown-count <int>
                                           设置 decision_agent_key unknown 计数上限（默认 -1 忽略）
@@ -276,6 +284,8 @@ Optional Observability:
                                 启用 signal_router 基线路由回放观测（默认关闭）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1
                                 启用信号决策结果回放观测（默认关闭）
+  WITH_AGENT_EXECUTION_DIRECTION_INTENT_GUARD=1
+                                启用 agent->execution 请求体方向守卫（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
@@ -292,6 +302,8 @@ Optional Observability:
                                 signal_router baseline replay 是否严格失败（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
                                 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH
+                                agent->execution 请求体方向报告输出路径（默认 verification/reports/agent_execution_direction_intent.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT
                                 signal decision replay 每来源最小样本数（默认 10）
   MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO
@@ -302,6 +314,12 @@ Optional Observability:
                                 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO
                                 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT
+                                agent->execution 请求体 none 计数上限（默认 0）
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT
+                                agent->execution 请求体 invalid 计数上限（默认 0）
+  AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL
+                                agent->execution 请求体方向最小样本量（默认 1）
   MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT
                                 signal decision source quality 每来源最小样本数（默认 10）
   MIN_MARKET_INDICATOR_LLM_OK_RATIO
@@ -403,7 +421,6 @@ Description:
   CI nightly 验证入口。执行结构与文档快照守卫、pipeline semantic terms doc guard、全量报告回归链路与语义聚合校验。
 
 Environment:
-  MAX_LEGACY_CONFIDENCE_RATIO   execution legacy confidence 占比上限（默认 0.05）
   MAX_AGENT_READYZ_LEVEL        agent readyz 最大允许级别（默认 yellow）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS  decision_trace schema guard invalid 记录数上限（默认 0）
   MAX_PIPELINE_MODE_UNKNOWN_COUNT  pipeline_mode unknown 计数上限（默认 0）
