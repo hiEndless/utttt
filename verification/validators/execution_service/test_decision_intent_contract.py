@@ -114,6 +114,22 @@ def test_decision_intent_v1_reject_invalid_direction() -> None:
         assert "direction_intent" in str(exc)
 
 
+def test_decision_intent_v1_accepts_neutral_alias_and_normalizes_to_none() -> None:
+    payload = {
+        "decision_id": "dec-001-neutral",
+        "exchange": "binance",
+        "account_id": "main",
+        "symbol": "ETHUSDT",
+        "direction_intent": "neutral",
+        "confidence": {"level": "medium", "score": 0.66},
+        "decision_confidence": {"level": "medium", "score": 0.66},
+        "cross_horizon_policy": {},
+        "risk_hints": {},
+    }
+    decision = DecisionIntent.from_dict(payload)
+    assert decision.direction_intent == "none"
+
+
 def test_decision_intent_default_account_id_main() -> None:
     payload = {
         "decision_id": "dec-003",

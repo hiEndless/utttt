@@ -122,6 +122,28 @@ def test_decide_bad_request() -> None:
     assert response.status_code == 400
 
 
+def test_decide_accepts_neutral_direction_alias() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/internal/execution/decide",
+        json={
+            "decision_id": "dec-001-neutral",
+            "exchange": "binance",
+            "account_id": "main",
+            "symbol": "ETHUSDT",
+            "direction_intent": "neutral",
+            "confidence": {"level": "medium", "score": 0.66},
+            "decision_confidence": {"level": "medium", "score": 0.66},
+            "cross_horizon_policy": {},
+            "risk_hints": {},
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["decision_id"] == "dec-001-neutral"
+    assert data["execution_action"] in {"add", "reduce", "hold", "exit", "skip"}
+
+
 def test_decide_rejects_invalid_alternative_source_summary_provider_state() -> None:
     client = TestClient(create_app())
     response = client.post(

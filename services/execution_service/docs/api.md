@@ -79,7 +79,7 @@
 2. `exchange`: 非空字符串
 3. `account_id`: 非空字符串（当前默认建议 `main`）
 4. `symbol`: 非空字符串
-5. `direction_intent`: `long | short | none`
+5. `direction_intent`: 规范值 `long | short | none`（兼容输入 `neutral`，运行时归一为 `none`）
 6. `decision_confidence.level`: `low | medium | high`
 7. `decision_confidence.score`: `[0, 1]` 浮点数
 8. `confidence`: 可选兼容字段（deprecated，若仅提供该字段，运行时会回填到 `decision_confidence`；兼容窗口目标截止 `2026-06-30`）

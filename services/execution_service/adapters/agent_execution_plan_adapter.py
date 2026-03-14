@@ -85,6 +85,8 @@ def adapt_agent_execution_plan_to_decision_intent(
     """把 agent 输出的最小 ExecutionPlan 语义映射到 DecisionIntent v1。"""
 
     direction = str(plan.get("direction", "none")).strip().lower()
+    if direction == "neutral":
+        direction = "none"
     decision_conf_raw = plan.get("decision_confidence")
     legacy_conf_raw = plan.get("confidence")
     confidence = decision_conf_raw or legacy_conf_raw or {"level": "low", "score": 0.0}

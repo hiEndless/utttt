@@ -18,6 +18,14 @@ _ALT_PROVIDER_STATES = get_alternative_source_provider_states_from_schema()
 _ALT_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
+def _normalize_direction_intent(value: Any) -> str:
+    direction = str(value or "").strip().lower()
+    if direction == "neutral":
+        # 兼容窗口：agent 侧已规范为 neutral，这里归一到 execution canonical none。
+        return "none"
+    return direction
+
+
 def _validate_alternative_source_summary(summary: Mapping[str, Any]) -> None:
     for key in _ALT_REQUIRED_KEYS:
         if key not in summary:
@@ -112,7 +120,7 @@ class DecisionIntent:
         exchange = str(payload.get("exchange", "")).strip()
         account_id = str(payload.get("account_id", "")).strip() or "main"
         symbol = str(payload.get("symbol", "")).strip()
-        direction = str(payload.get("direction_intent", "")).strip().lower()
+        direction = _normalize_direction_intent(payload.get("direction_intent", ""))
         if not decision_id:
             raise ValueError("decision_id 不能为空")
         if not exchange:
@@ -120,7 +128,7 @@ class DecisionIntent:
         if not symbol:
             raise ValueError("symbol 不能为空")
         if direction not in {"long", "short", "none"}:
-            raise ValueError("direction_intent 必须是 long/short/none")
+            raise ValueError("direction_intent 必须是 long/short/none（兼容输入 neutral）")
 
         confidence_raw = payload.get("confidence")
         decision_confidence_raw = payload.get("decision_confidence")
