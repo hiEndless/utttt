@@ -21,3 +21,4 @@ def test_verify_quick_help_includes_verification_api_schema_option() -> None:
     out = str(proc.stdout or "")
     assert "--with-verification-api-schema-check" in out
     assert "--with-pipeline-mode-report" in out
+    assert "--with-agent-execution-direction-intent-guard" in out

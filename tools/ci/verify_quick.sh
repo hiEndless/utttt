@@ -30,6 +30,8 @@ Optional Observability:
                                 启用 signal_router 基线路由回放观测（默认关闭）
   WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1
                                 启用信号决策结果回放观测（默认关闭）
+  WITH_AGENT_EXECUTION_DIRECTION_INTENT_GUARD=1
+                                启用 agent->execution 请求体方向守卫（默认关闭）
   AGENT_ACTION_HINT_CASES_REPORT_PATH
                                 action_hint cases 输出路径（默认 verification/reports/agent_action_hint_cases.latest.json）
   AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH
@@ -46,6 +48,8 @@ Optional Observability:
                                 signal_router baseline replay 是否严格失败（1/0，默认 1）
   AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH
                                 signal decision replay 报告输出路径（默认 verification/reports/agent_signal_decision_replay.latest.json）
+  AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH
+                                agent->execution 请求体方向报告输出路径（默认 verification/reports/agent_execution_direction_intent.latest.json）
   AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT
                                 signal decision replay 每来源最小样本数（默认 10）
   MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO
@@ -56,6 +60,12 @@ Optional Observability:
                                 large_liquidation 的 rule_fallback 比例上限（默认 -1 忽略）
   MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO
                                 social_news 的 rule_fallback 比例上限（默认 -1 忽略）
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT
+                                agent->execution 请求体 none 计数上限（默认 0）
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT
+                                agent->execution 请求体 invalid 计数上限（默认 0）
+  AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL
+                                agent->execution 请求体方向最小样本量（默认 1）
   MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT
                                 signal decision source quality 每来源最小样本数（默认 10）
   MIN_MARKET_INDICATOR_LLM_OK_RATIO
@@ -236,6 +246,20 @@ if [[ "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then
     "$MIN_ONCHAIN_WALLET_LLM_OK_RATIO" \
     "$MIN_LARGE_LIQUIDATION_LLM_OK_RATIO" \
     "$MIN_SOCIAL_NEWS_LLM_OK_RATIO"
+fi
+if [[ "${WITH_AGENT_EXECUTION_DIRECTION_INTENT_GUARD:-0}" == "1" ]]; then
+  AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH="${AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH:-verification/reports/agent_execution_direction_intent.latest.json}"
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT="${MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT:-0}"
+  MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT="${MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT:-0}"
+  AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL="${AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL:-1}"
+  bash tools/local/run_agent_execution_direction_intent_report.sh \
+    --output "$AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH" >/dev/null
+  echo "[quick] agent_execution_direction_intent_report_path=$AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH"
+  bash tools/local/check_agent_execution_direction_intent_guard.sh \
+    "$AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH" \
+    "$MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT" \
+    "$MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT" \
+    "$AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL"
 fi
 
 if [[ "${WITH_AGENT_READYZ:-0}" == "1" || "${WITH_PIPELINE_MODE_REPORT:-0}" == "1" || "${WITH_AGENT_ACTION_HINT_SEMANTICS_REPORT:-0}" == "1" || "${WITH_AGENT_DECISION_AGENT_KEY_REPORT:-0}" == "1" || "${WITH_AGENT_ROUTE_REPLAY_REPORT:-0}" == "1" || "${WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY:-0}" == "1" || "${WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT:-0}" == "1" ]]; then

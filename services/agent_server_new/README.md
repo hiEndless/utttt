@@ -293,6 +293,7 @@ signal_event + active_events + MSL
 - CI 一键组合（含路由观测守卫）：`WITH_AGENT_ROUTING_GUARDS=1 bash tools/ci/verify_quick.sh`
 - 最短链路：`bash tools/local/verify_quick.sh --with-pipeline-mode-report`
 - 若需同时观测可用性：`bash tools/local/verify_quick.sh --with-pipeline-mode-report --with-agent-readyz`
+- 若需同时阻断 agent->execution 方向漂移：`bash tools/local/verify_quick.sh --with-agent-execution-direction-intent-guard`
 - 业务路由回放（四类来源最小闭环）：`bash tools/local/run_agent_signal_source_route_replay.sh`
 - 以 JSON 输出并落盘：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --output verification/reports/agent_signal_source_route_replay.latest.json`
 - 仅观测不阻断（路由不匹配仍返回 0）：`bash tools/local/run_agent_signal_source_route_replay.sh --format json --strict 0`

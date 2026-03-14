@@ -174,6 +174,8 @@ def test_verify_regression_and_nightly_call_event_type_summary_script() -> None:
     assert "tools/local/print_signal_decision_replay_summary.sh" in quick_text
     assert "tools/local/check_agent_signal_decision_replay_guard.sh" in quick_text
     assert "tools/local/check_agent_signal_decision_source_quality_guard.sh" in quick_text
+    assert "tools/local/run_agent_execution_direction_intent_report.sh" in quick_text
+    assert "tools/local/check_agent_execution_direction_intent_guard.sh" in quick_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in regression_text
     assert "tools/local/inspect_agent_action_hint_cases.sh" in nightly_text
     assert "--status missing" in regression_text
@@ -193,6 +195,7 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "WITH_AGENT_ROUTE_REPLAY_REPORT=1" in out
     assert "WITH_AGENT_SIGNAL_ROUTER_BASELINE_REPLAY=1" in out
     assert "WITH_AGENT_SIGNAL_DECISION_REPLAY_REPORT=1" in out
+    assert "WITH_AGENT_EXECUTION_DIRECTION_INTENT_GUARD=1" in out
     assert "AGENT_ACTION_HINT_CASES_REPORT_PATH" in out
     assert "AGENT_ACTION_HINT_MISSING_CASES_REPORT_PATH" in out
     assert "AGENT_DECISION_AGENT_KEY_REPORT_PATH" in out
@@ -201,11 +204,15 @@ def test_verify_quick_help_contains_optional_agent_readyz_env() -> None:
     assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_REPORT_PATH" in out
     assert "AGENT_SIGNAL_ROUTER_BASELINE_REPLAY_STRICT" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_REPORT_PATH" in out
+    assert "AGENT_EXECUTION_DIRECTION_INTENT_REPORT_PATH" in out
     assert "AGENT_SIGNAL_DECISION_REPLAY_MIN_SOURCE_COUNT" in out
     assert "MAX_MARKET_INDICATOR_RULE_FALLBACK_RATIO" in out
     assert "MAX_ONCHAIN_WALLET_RULE_FALLBACK_RATIO" in out
     assert "MAX_LARGE_LIQUIDATION_RULE_FALLBACK_RATIO" in out
     assert "MAX_SOCIAL_NEWS_RULE_FALLBACK_RATIO" in out
+    assert "MAX_AGENT_EXECUTION_DIRECTION_INTENT_NONE_COUNT" in out
+    assert "MAX_AGENT_EXECUTION_DIRECTION_INTENT_INVALID_COUNT" in out
+    assert "AGENT_EXECUTION_DIRECTION_INTENT_MIN_TOTAL" in out
     assert "MIN_SIGNAL_DECISION_SOURCE_QUALITY_MIN_SOURCE_COUNT" in out
     assert "MIN_MARKET_INDICATOR_LLM_OK_RATIO" in out
     assert "MIN_ONCHAIN_WALLET_LLM_OK_RATIO" in out
@@ -228,15 +235,20 @@ def test_verify_local_quick_help_contains_agent_readyz_options() -> None:
     assert "--with-agent-decision-agent-key-report" in out
     assert "--with-agent-route-replay-report" in out
     assert "--with-agent-signal-decision-replay-report" in out
+    assert "--with-agent-execution-direction-intent-guard" in out
     assert "--agent-action-hint-cases-report-path <path>" in out
     assert "--agent-action-hint-missing-cases-report-path <path>" in out
     assert "--agent-decision-agent-key-report-path <path>" in out
     assert "--agent-route-replay-report-path <path>" in out
     assert "--agent-signal-decision-replay-report-path <path>" in out
+    assert "--agent-execution-direction-intent-report-path <path>" in out
     assert "--agent-signal-decision-replay-min-source-count <int>" in out
     assert "--max-market-indicator-rule-fallback-ratio <float>" in out
     assert "--max-onchain-wallet-rule-fallback-ratio <float>" in out
     assert "--max-large-liquidation-rule-fallback-ratio <float>" in out
     assert "--max-social-news-rule-fallback-ratio <float>" in out
+    assert "--max-agent-execution-direction-intent-none-count <int>" in out
+    assert "--max-agent-execution-direction-intent-invalid-count <int>" in out
+    assert "--agent-execution-direction-intent-min-total <int>" in out
     assert "--max-decision-agent-key-unknown-count <int>" in out
     assert "--max-route-replay-mismatch-count <int>" in out
