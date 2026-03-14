@@ -84,9 +84,9 @@ def adapt_agent_execution_plan_to_decision_intent(
 ) -> Dict[str, Any]:
     """把 agent 输出的最小 ExecutionPlan 语义映射到 DecisionIntent v1。"""
 
-    direction = str(plan.get("direction", "none")).strip().lower()
-    if direction == "neutral":
-        direction = "none"
+    direction = str(plan.get("direction", "neutral")).strip().lower()
+    if direction == "none":
+        direction = "neutral"
     decision_conf_raw = plan.get("decision_confidence")
     legacy_conf_raw = plan.get("confidence")
     confidence = decision_conf_raw or legacy_conf_raw or {"level": "low", "score": 0.0}
@@ -116,7 +116,7 @@ def adapt_agent_execution_plan_to_decision_intent(
         "decision_id": decision_id,
         "exchange": exchange,
         "symbol": symbol,
-        "direction_intent": direction if direction in {"long", "short", "none"} else "none",
+        "direction_intent": direction if direction in {"long", "short", "neutral"} else "neutral",
         "decision_confidence": dict(confidence),
         "cross_horizon_policy": dict(cross_horizon_policy or {}),
         "risk_hints": risk_hints,

@@ -10,7 +10,7 @@ from contracts.schemas.alternative_source_summary_contract import (
 )
 
 
-DirectionIntent = Literal["long", "short", "none"]
+DirectionIntent = Literal["long", "short", "neutral"]
 ConfidenceLevel = Literal["low", "medium", "high"]
 ExecutionAction = Literal["add", "reduce", "hold", "exit", "skip"]
 _ALT_SOURCES = get_alternative_source_names()
@@ -20,9 +20,9 @@ _ALT_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 def _normalize_direction_intent(value: Any) -> str:
     direction = str(value or "").strip().lower()
-    if direction == "neutral":
-        # 兼容窗口：agent 侧已规范为 neutral，这里归一到 execution canonical none。
-        return "none"
+    if direction == "none":
+        # 兼容窗口：历史 producer 仍可能发送 none，这里归一到 execution canonical neutral。
+        return "neutral"
     return direction
 
 
@@ -127,8 +127,8 @@ class DecisionIntent:
             raise ValueError("exchange 不能为空")
         if not symbol:
             raise ValueError("symbol 不能为空")
-        if direction not in {"long", "short", "none"}:
-            raise ValueError("direction_intent 必须是 long/short/none（兼容输入 neutral）")
+        if direction not in {"long", "short", "neutral"}:
+            raise ValueError("direction_intent 必须是 long/short/neutral（兼容输入 none）")
 
         confidence_raw = payload.get("confidence")
         decision_confidence_raw = payload.get("decision_confidence")

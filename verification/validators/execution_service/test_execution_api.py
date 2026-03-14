@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v22"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v23"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -122,7 +122,7 @@ def test_decide_bad_request() -> None:
     assert response.status_code == 400
 
 
-def test_decide_accepts_neutral_direction_alias() -> None:
+def test_decide_accepts_none_direction_alias() -> None:
     client = TestClient(create_app())
     response = client.post(
         "/internal/execution/decide",
@@ -131,7 +131,7 @@ def test_decide_accepts_neutral_direction_alias() -> None:
             "exchange": "binance",
             "account_id": "main",
             "symbol": "ETHUSDT",
-            "direction_intent": "neutral",
+            "direction_intent": "none",
             "confidence": {"level": "medium", "score": 0.66},
             "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},

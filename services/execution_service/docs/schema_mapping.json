@@ -1,6 +1,6 @@
 {
-  "version": "execution-schema-mapping-v22",
-  "last_updated": "2026-03-13",
+  "version": "execution-schema-mapping-v23",
+  "last_updated": "2026-03-14",
   "items": [
     {
       "name": "DecisionIntent",
@@ -511,7 +511,7 @@
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",
           "json_path": "properties.direction_intent.enum",
-          "expected": ["long", "short", "none"]
+          "expected": ["long", "short", "neutral", "none"]
         },
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",

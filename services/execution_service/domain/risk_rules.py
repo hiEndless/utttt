@@ -307,7 +307,7 @@ def evaluate_risk_rules(
             hit_rule="dual_side_hedge_mode",
         )
 
-    if direction == "none":
+    if direction == "neutral":
         return _finalize(
             execution_action="hold",
             reject_reason=None,
