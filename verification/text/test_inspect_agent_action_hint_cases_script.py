@@ -82,7 +82,7 @@ def test_inspect_agent_action_hint_cases_output_and_status_filter(tmp_path: Path
     assert "event_id\tverdict\tdirection\texpected_hint\tactual_hint\tstatus" in out_all
     assert "evt-ok\taccept\tlong\tadd\tadd\tok" in out_all
     assert "evt-mismatch\treject\tlong\thold\tadd\tmismatch" in out_all
-    assert "evt-missing\taccept\tnone\thold\t\tmissing" in out_all
+    assert "evt-missing\taccept\tneutral\thold\t\tmissing" in out_all
 
     mismatch_proc = subprocess.run(
         ["bash", str(SCRIPT_PATH), "--input", str(input_path), "--status", "mismatch"],

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal, Optional
 
 
-Direction = Literal["long", "short", "none"]
+Direction = Literal["long", "short", "neutral"]
 RiskAction = Literal["add", "reduce", "hold", "exit", "skip"]
 LLMParseStatus = Literal["llm_ok", "llm_invalid_payload", "llm_status_not_ok", "llm_not_provided", "rule_only"]
 LLMContractErrorCode = Literal[

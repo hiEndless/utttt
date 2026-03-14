@@ -127,6 +127,8 @@ class RoutedHybridSignalDecisionAgent(RoutedRuleBasedSignalDecisionAgent):
             return None, "llm_schema_validation_failed", list(errors[:8])
         verdict = str(parsed.get("signal_verdict") or "").strip().lower()
         direction = str(parsed.get("signal_direction") or "").strip().lower()
+        if direction == "none":
+            direction = "neutral"
         raw_score = parsed.get("confidence_score")
         try:
             score = float(raw_score)

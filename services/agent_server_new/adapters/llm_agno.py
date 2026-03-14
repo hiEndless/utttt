@@ -89,7 +89,7 @@ class AgnoLLMObserver:
                 "You are a market signal validator.\n"
                 "Return JSON object only.\n"
                 "Required keys: signal_verdict, signal_direction, confidence_score, reasons.\n"
-                "signal_verdict must be one of: accept, reject.\n"
+                "signal_verdict must be one of: accept, reject, uncertain.\n"
                 "signal_direction must be one of: long, short, neutral.\n"
                 "confidence_score must be a float in [0,1].\n"
                 f"focus={focus}; task={task or 'validate_signal'}; checklist={checklist_text}; avoid={avoid_text}."

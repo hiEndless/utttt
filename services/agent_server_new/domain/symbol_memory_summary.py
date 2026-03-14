@@ -34,7 +34,7 @@ def build_symbol_memory_summary(
     if window > 0 and len(records) > window:
         records = records[-window:]
 
-    signal_direction_count = {"long": 0, "short": 0, "none": 0}
+    signal_direction_count = {"long": 0, "short": 0, "neutral": 0}
     signal_verdict_count = {"accept": 0, "reject": 0, "uncertain": 0}
     plan_action_count: Dict[str, int] = {}
     contract_warning_count = 0
@@ -45,11 +45,13 @@ def build_symbol_memory_summary(
         signal = _safe_dict(rec.get("signal"))
         plan = _safe_dict(rec.get("plan"))
         warnings = [str(x) for x in list(rec.get("contract_warnings") or []) if str(x or "").strip()]
-        direction = str(signal.get("direction") or "none").strip().lower()
+        direction = str(signal.get("direction") or "neutral").strip().lower()
+        if direction == "none":
+            direction = "neutral"
         verdict = str(signal.get("verdict") or "uncertain").strip().lower()
         action = str(plan.get("action") or "hold").strip().lower()
         if direction not in signal_direction_count:
-            direction = "none"
+            direction = "neutral"
         if verdict not in signal_verdict_count:
             verdict = "uncertain"
         signal_direction_count[direction] += 1
@@ -91,10 +93,18 @@ def build_symbol_memory_summary(
         "window_size": int(max(1, window)),
         "last_decision_ts": _to_int(latest.get("ts"), now),
         "last_event_id": str(latest.get("event_id") or ""),
-        "last_signal_direction": str(latest_signal.get("direction") or "none"),
+        "last_signal_direction": (
+            "neutral"
+            if str(latest_signal.get("direction") or "neutral").strip().lower() == "none"
+            else str(latest_signal.get("direction") or "neutral")
+        ),
         "last_signal_verdict": str(latest_signal.get("verdict") or "unknown"),
         "last_plan_action": str(latest_plan.get("action") or "hold"),
-        "last_plan_direction": str(latest_plan.get("direction") or "none"),
+        "last_plan_direction": (
+            "neutral"
+            if str(latest_plan.get("direction") or "neutral").strip().lower() == "none"
+            else str(latest_plan.get("direction") or "neutral")
+        ),
         "signal_direction_count": signal_direction_count,
         "signal_verdict_count": signal_verdict_count,
         "plan_action_count": plan_action_count,

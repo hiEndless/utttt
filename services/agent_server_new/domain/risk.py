@@ -56,14 +56,14 @@ def decide_action(
         if allowance.allow_reduce:
             return ExecutionPlan(
                 action="reduce",
-                direction="none",
+                direction="neutral",
                 allowance=allowance,
                 confidence=signal.confidence,
                 notes="信号被否定：优先风险降低。",
             )
         return ExecutionPlan(
             action="hold",
-            direction="none",
+            direction="neutral",
             allowance=allowance,
             confidence=signal.confidence,
             notes="信号被否定：但不允许减仓，保持观望。",
@@ -73,14 +73,14 @@ def decide_action(
         if allowance.allow_reduce:
             return ExecutionPlan(
                 action="reduce",
-                direction="none",
+                direction="neutral",
                 allowance=allowance,
                 confidence=Confidence(level="low", score=min(signal.confidence.score, 0.45)),
                 notes="信号不确定：默认防御性减仓。",
             )
         return ExecutionPlan(
             action="hold",
-            direction="none",
+            direction="neutral",
             allowance=allowance,
             confidence=Confidence(level="low", score=min(signal.confidence.score, 0.45)),
             notes="信号不确定：保持观望。",
@@ -105,9 +105,8 @@ def decide_action(
 
     return ExecutionPlan(
         action="hold",
-        direction="none",
+        direction="neutral",
         allowance=allowance,
         confidence=signal.confidence,
         notes="默认保护：保持观望。",
     )
-

@@ -1,6 +1,6 @@
 # runner 输出契约（JSON）
 
-更新时间：2026-03-13
+更新时间：2026-03-14
 
 语义说明：`ExecutionPlan` 属于 agent 语义输出，不等价于 execution 最终动作；最终风控与动作以 execution 返回为准。
 
@@ -46,7 +46,7 @@ Schema 文件：
 {
   "source": "agent",
   "action": "hold",
-  "direction": "none",
+  "direction": "neutral",
   "notes": "..."
 }
 ```
@@ -113,6 +113,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 关键字段：
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/execution_plan`
+- `signal_verdict.direction` 规范值：`long|short|neutral`（兼容输入 legacy `none`，记录侧统一为 `neutral`）
 - `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`）
   - `pipeline_mode` 固定为 `minimal`
   - `llm_contract_error_code`：`""|llm_raw_content_missing|llm_json_parse_error|llm_json_not_object|llm_schema_validation_failed|llm_confidence_parse_error`

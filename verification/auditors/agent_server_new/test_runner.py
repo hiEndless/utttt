@@ -13,7 +13,7 @@ class _FakeWorkflow:
     async def run(self, event):  # noqa: ANN001
         class _Plan:
             action = "skip"
-            direction = "none"
+            direction = "neutral"
             notes = "ok"
 
         _ = event

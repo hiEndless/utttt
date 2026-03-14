@@ -26,7 +26,7 @@ def evaluate_signal(
 ) -> SignalVerdict:
     """用 MSL 做主语境，用关键特征做证据补充的规则评估。"""
 
-    direction = "none"
+    direction = "neutral"
     if str(signal_direction).lower() in ("long", "buy"):
         direction = "long"
     elif str(signal_direction).lower() in ("short", "sell"):
@@ -49,7 +49,7 @@ def evaluate_signal(
 
     if invalidation:
         return SignalVerdict(
-            direction="none",
+            direction="neutral",
             verdict="reject",
             confidence=Confidence(level="medium", score=0.6),
             invalidation_reasons=invalidation,

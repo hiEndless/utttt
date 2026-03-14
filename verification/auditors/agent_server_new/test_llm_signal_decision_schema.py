@@ -64,7 +64,7 @@ def test_llm_signal_decision_schema_samples() -> None:
 
     good = {
         "signal_verdict": "accept",
-        "signal_direction": "long",
+        "signal_direction": "neutral",
         "confidence_score": 0.81,
         "reasons": ["breakout_confirmed"],
     }
@@ -72,7 +72,7 @@ def test_llm_signal_decision_schema_samples() -> None:
 
     bad_unknown = {
         "signal_verdict": "accept",
-        "signal_direction": "long",
+        "signal_direction": "none",
         "confidence_score": 0.81,
         "foo": "bar",
     }
@@ -80,7 +80,7 @@ def test_llm_signal_decision_schema_samples() -> None:
 
     bad_score = {
         "signal_verdict": "accept",
-        "signal_direction": "long",
+        "signal_direction": "neutral",
         "confidence_score": 1.2,
     }
     assert not _validate(schema, bad_score)

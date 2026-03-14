@@ -21,6 +21,13 @@ class DecisionPlanState:
     plan: ExecutionPlan
 
 
+def _normalize_signal_direction(value: Any) -> str:
+    direction = str(value or "").strip().lower()
+    if direction == "none":
+        direction = "neutral"
+    return direction if direction in {"long", "short", "neutral"} else "neutral"
+
+
 def build_decision_plan_state(
     *,
     signal: Any,
@@ -31,11 +38,11 @@ def build_decision_plan_state(
     cross_horizon: Dict[str, str],  # noqa: ARG001
 ) -> DecisionPlanState:
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
-    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
+    direction = _normalize_signal_direction(getattr(signal, "direction", ""))
     is_accept = verdict == "accept" and direction in {"long", "short"}
     decision_intent_snapshot = {
         "intent": "increase" if is_accept else "hold",
-        "direction": direction if is_accept else "none",
+        "direction": direction if is_accept else "neutral",
         "confidence": {
             "level": signal.confidence.level,
             "score": signal.confidence.score,
@@ -52,7 +59,7 @@ def build_decision_plan_state(
     )
     plan = ExecutionPlan(
         action="add" if is_accept else "hold",
-        direction=direction if is_accept else "none",
+        direction=direction if is_accept else "neutral",
         allowance=allowance,
         confidence=signal.confidence,
         sizing=None,
@@ -131,13 +138,14 @@ def build_execution_decision_payload(
         "score": float(signal_conf.score or 0.0),
     }
     verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
-    direction = str(signal_decision.signal_direction or "none").strip().lower()
+    direction = _normalize_signal_direction(signal_decision.signal_direction)
     agent_action_hint = "add" if verdict == "accept" and direction in {"long", "short"} else "hold"
+    execution_direction_intent = direction if direction in {"long", "short"} else "none"
     payload = {
         "decision_id": str(signal_decision.decision_id or default_decision_id),
         "exchange": str(signal_decision.exchange or default_exchange),
         "symbol": str(signal_decision.symbol or default_symbol),
-        "direction_intent": str(signal_decision.signal_direction or "none"),
+        "direction_intent": execution_direction_intent,
         "decision_confidence": dict(decision_confidence),
         "cross_horizon_policy": dict(cross_horizon or {}),
         "risk_hints": {
@@ -181,9 +189,7 @@ def build_signal_decision_from_signal(
     verdict = str(getattr(signal, "verdict", "") or "uncertain").strip().lower()
     if verdict not in {"accept", "reject", "uncertain"}:
         verdict = "uncertain"
-    direction = str(getattr(signal, "direction", "") or "none").strip().lower()
-    if direction not in {"long", "short", "none"}:
-        direction = "none"
+    direction = _normalize_signal_direction(getattr(signal, "direction", ""))
     mode = str(decision_mode or "rule").strip().lower()
     if mode not in {"llm", "rule_fallback", "rule"}:
         mode = "rule"

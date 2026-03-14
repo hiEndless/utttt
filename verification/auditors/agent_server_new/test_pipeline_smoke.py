@@ -25,7 +25,7 @@ def test_pipeline_smoke_run_once():
         )
     )
     assert out["action"] in {"add", "reduce", "hold", "exit", "skip"}
-    assert out["direction"] in {"long", "short", "none"}
+    assert out["direction"] in {"long", "short", "neutral"}
     assert out["source"] == "agent"
 
 
@@ -39,5 +39,5 @@ def test_pipeline_smoke_run_once_use_execution_result_fallback():
         )
     )
     assert out["action"] in {"add", "reduce", "hold", "exit", "skip"}
-    assert out["direction"] in {"long", "short", "none"}
+    assert out["direction"] in {"long", "short", "neutral"}
     assert out["source"] in {"execution", "agent_fallback"}

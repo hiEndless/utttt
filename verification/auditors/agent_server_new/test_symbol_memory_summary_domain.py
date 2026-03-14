@@ -12,7 +12,7 @@ def test_build_symbol_memory_summary_counts_and_bias():
     raw = [
         {"ts": 1000, "event_id": "e1", "signal": {"direction": "long", "verdict": "accept"}, "plan": {"action": "add", "direction": "long"}},
         {"ts": 1100, "event_id": "e2", "signal": {"direction": "long", "verdict": "accept"}, "plan": {"action": "add", "direction": "long"}},
-        {"ts": 1200, "event_id": "e3", "signal": {"direction": "short", "verdict": "reject"}, "plan": {"action": "hold", "direction": "none"}},
+        {"ts": 1200, "event_id": "e3", "signal": {"direction": "short", "verdict": "reject"}, "plan": {"action": "hold", "direction": "neutral"}},
     ]
     out = build_symbol_memory_summary(
         exchange="binance",
@@ -44,7 +44,7 @@ def test_build_symbol_memory_summary_contract_warnings_aggregate():
             "ts": 1100,
             "event_id": "e2",
             "signal": {"direction": "short", "verdict": "reject"},
-            "plan": {"action": "hold", "direction": "none"},
+            "plan": {"action": "hold", "direction": "neutral"},
             "contract_warnings": ["msl_meta_schema_version_missing", "state_features_semantic_contract_missing"],
         },
         {

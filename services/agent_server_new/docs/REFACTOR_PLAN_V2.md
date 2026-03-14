@@ -1,6 +1,6 @@
 # agent_server_new 重构方案（V2）
 
-更新时间：2026-03-13
+更新时间：2026-03-14
 
 ## 1. 目标
 
@@ -81,6 +81,10 @@ agent 只输出语义裁决对象 `SignalDecision`，不输出执行动作：
 8. `reasons`
 9. `evidence_refs`
 10. `llm_observation`
+
+字段补充约束：
+- `signal_direction` 规范值：`long|short|neutral`
+- 兼容窗口：若上游/LLM 返回 legacy `none`，在 agent 域内统一归一为 `neutral`
 
 显式禁止在 agent 输出中出现：
 

@@ -54,7 +54,7 @@ def test_runner_output_schema_samples() -> None:
     samples = [
         {"source": "execution", "action": "reduce", "reason": "position_limit_reached", "notes": "x"},
         {"source": "agent_fallback", "action": "add", "direction": "long", "notes": "x"},
-        {"source": "agent", "action": "hold", "direction": "none", "notes": "x"},
+        {"source": "agent", "action": "hold", "direction": "neutral", "notes": "x"},
     ]
     for payload in samples:
         assert _validate(schema, payload)

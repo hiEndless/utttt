@@ -67,7 +67,9 @@ output_path = Path(sys.argv[2])
 
 def _normalize_direction(value: Any) -> str:
     out = str(value or "").strip().lower()
-    return out if out in {"long", "short", "none"} else "none"
+    if out == "none":
+        out = "neutral"
+    return out if out in {"long", "short", "neutral"} else "neutral"
 
 
 def _normalize_verdict(value: Any) -> str:
