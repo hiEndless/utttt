@@ -36,7 +36,7 @@ export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
   verification/auditors/agent_server_new/test_decision_trace_schema.py \
   verification/auditors/agent_server_new/test_llm_signal_decision_schema.py \
   verification/auditors/agent_server_new/test_decision_trace_llm_observation_contract.py \
-  verification/auditors/agent_server_new/test_trade_event_workflow_horizon_policy_gate.py \
+  verification/auditors/agent_server_new/test_trade_event_workflow_cross_horizon_policy.py \
   verification/auditors/agent_server_new/test_trade_event_workflow_execution_decider.py \
   verification/auditors/agent_server_new/test_trade_event_workflow_result.py
 

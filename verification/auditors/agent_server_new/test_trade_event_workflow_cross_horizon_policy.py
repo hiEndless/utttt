@@ -63,7 +63,7 @@ class _Events:
         return []
 
 
-def test_trade_event_workflow_horizon_wait_confirmation_no_longer_blocks_signal_plan():
+def test_trade_event_workflow_cross_horizon_wait_confirmation_no_longer_blocks_signal_plan():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -99,6 +99,6 @@ def test_trade_event_workflow_horizon_wait_confirmation_no_longer_blocks_signal_
         monkeypatch.undo()
 
 
-def test_trade_event_workflow_horizon_config_argument_is_ignored_in_minimal_pipeline():
+def test_trade_event_workflow_cross_horizon_config_argument_removed_in_minimal_pipeline():
     sig = inspect.signature(TradeEventWorkflow.__init__)
     assert "horizon_policy_config" not in set(sig.parameters.keys())
