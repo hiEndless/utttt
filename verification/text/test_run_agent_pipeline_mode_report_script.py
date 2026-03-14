@@ -83,11 +83,10 @@ def test_run_agent_pipeline_mode_report_aggregate(tmp_path: Path) -> None:
     summary = dict(report["summary"])
     assert summary["decision_trace_record_count"] == 4
     assert summary["decision_trace_event_count"] == 4
-    assert summary["legacy_count"] == 1
     assert summary["minimal_count"] == 1
-    assert summary["unknown_count"] == 1
+    assert summary["unknown_count"] == 2
     assert summary["missing_pipeline_mode_count"] == 1
-    assert summary["legacy_ratio"] == 0.5
-    assert summary["minimal_ratio"] == 0.5
-    assert len(report["unknown_samples"]) == 1
-    assert report["unknown_samples"][0]["pipeline_mode"] == "future_mode"
+    assert summary["minimal_ratio"] == 0.333333
+    assert len(report["unknown_samples"]) == 2
+    assert report["unknown_samples"][0]["pipeline_mode"] == "legacy"
+    assert report["unknown_samples"][1]["pipeline_mode"] == "future_mode"

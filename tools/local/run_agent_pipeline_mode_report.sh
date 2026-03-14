@@ -16,7 +16,7 @@ Options:
 
 Description:
   聚合 agent recorder 中 agent_name=decision_trace 的 routing.pipeline_mode，
-  输出 legacy/minimal 占比与缺失字段计数，便于灰度观测最小链路切换情况。
+  输出 minimal/unknown/missing 计数与占比，便于常态观测主链路稳定性。
 USAGE
 }
 
@@ -63,7 +63,6 @@ if len(sys.argv) != 3:
 input_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
 
-legacy_count = 0
 minimal_count = 0
 unknown_count = 0
 missing_pipeline_mode_count = 0
@@ -98,9 +97,6 @@ for raw in lines:
     if not mode:
         missing_pipeline_mode_count += 1
         continue
-    if mode == "legacy":
-        legacy_count += 1
-        continue
     if mode == "minimal":
         minimal_count += 1
         continue
@@ -114,22 +110,19 @@ for raw in lines:
             }
         )
 
-known_total = legacy_count + minimal_count
-legacy_ratio = round(float(legacy_count) / float(known_total), 6) if known_total else 0.0
+known_total = minimal_count + unknown_count
 minimal_ratio = round(float(minimal_count) / float(known_total), 6) if known_total else 0.0
 
 report = {
-    "schema_version": "agent-pipeline-mode-report-v1",
+    "schema_version": "agent-pipeline-mode-report-v2",
     "generated_at_ms": int(time.time() * 1000),
     "input_path": str(input_path),
     "summary": {
         "decision_trace_record_count": int(decision_trace_record_count),
         "decision_trace_event_count": int(len(decision_trace_event_ids)),
-        "legacy_count": int(legacy_count),
         "minimal_count": int(minimal_count),
         "unknown_count": int(unknown_count),
         "missing_pipeline_mode_count": int(missing_pipeline_mode_count),
-        "legacy_ratio": legacy_ratio,
         "minimal_ratio": minimal_ratio,
     },
     "unknown_samples": unknown_samples,
@@ -140,7 +133,6 @@ output_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", 
 print(f"[ok] wrote {output_path}")
 print(
     f"[info] decision_trace_record_count={report['summary']['decision_trace_record_count']} "
-    f"legacy_count={report['summary']['legacy_count']} "
     f"minimal_count={report['summary']['minimal_count']} "
     f"missing_pipeline_mode_count={report['summary']['missing_pipeline_mode_count']}"
 )

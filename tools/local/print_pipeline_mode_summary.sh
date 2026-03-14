@@ -16,7 +16,7 @@ Options:
 
 Description:
   从 aggregate summary 中提取 pipeline_mode 指标并输出单行日志：
-  legacy/minimal/unknown/missing 计数与 ratio。
+  minimal/unknown/missing 计数与 ratio。
 USAGE
 }
 
@@ -62,16 +62,14 @@ try:
 except Exception:
     raise SystemExit(0)
 
-legacy = int(payload.get("pipeline_mode_legacy_count") or 0)
 minimal = int(payload.get("pipeline_mode_minimal_count") or 0)
 unknown = int(payload.get("pipeline_mode_unknown_count") or 0)
 missing = int(payload.get("pipeline_mode_missing_count") or 0)
-legacy_ratio = float(payload.get("pipeline_mode_legacy_ratio") or 0.0)
 minimal_ratio = float(payload.get("pipeline_mode_minimal_ratio") or 0.0)
 
 print(
     f"[{prefix}] pipeline_mode_summary "
-    f"legacy={legacy} minimal={minimal} unknown={unknown} missing={missing} "
-    f"legacy_ratio={legacy_ratio:.6f} minimal_ratio={minimal_ratio:.6f}"
+    f"minimal={minimal} unknown={unknown} missing={missing} "
+    f"minimal_ratio={minimal_ratio:.6f}"
 )
 PY

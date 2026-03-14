@@ -29,12 +29,10 @@ def test_print_pipeline_mode_summary_help() -> None:
 def test_print_pipeline_mode_summary_output(tmp_path: Path) -> None:
     summary_path = tmp_path / "summary.json"
     payload = {
-        "pipeline_mode_legacy_count": 3,
         "pipeline_mode_minimal_count": 7,
         "pipeline_mode_unknown_count": 1,
         "pipeline_mode_missing_count": 2,
-        "pipeline_mode_legacy_ratio": 0.3,
-        "pipeline_mode_minimal_ratio": 0.7,
+        "pipeline_mode_minimal_ratio": 0.875,
     }
     summary_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
@@ -47,5 +45,5 @@ def test_print_pipeline_mode_summary_output(tmp_path: Path) -> None:
     assert proc.returncode == 0
     out = str(proc.stdout or "")
     assert "[quick] pipeline_mode_summary" in out
-    assert "legacy=3 minimal=7 unknown=1 missing=2" in out
-    assert "legacy_ratio=0.300000 minimal_ratio=0.700000" in out
+    assert "minimal=7 unknown=1 missing=2" in out
+    assert "minimal_ratio=0.875000" in out
