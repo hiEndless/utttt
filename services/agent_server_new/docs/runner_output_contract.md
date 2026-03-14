@@ -113,7 +113,7 @@ print(payload["source"], payload["action"], payload.get("reason"))
 关键字段：
 - `event_id/exchange/symbol/ts`
 - `signal_verdict/execution_plan`
-- `signal_verdict.direction` 规范值：`long|short|neutral`（兼容输入 legacy `none`，记录侧统一为 `neutral`）
+- `signal_verdict.direction` 规范值：`long|short|neutral`（兼容输入非规范 `none`，记录侧统一为 `neutral`）
 - `routing`（`pipeline_mode/decision_agent_key/decision_mode/llm_parse_status/llm_contract_error_code/llm_contract_errors/router_config_source/router_config_version/prompt_config_source/prompt_config_version/event_type_raw/event_type_normalized/event_type_match_mode`）
   - `pipeline_mode` 固定为 `minimal`
   - `llm_contract_error_code`：`""|llm_raw_content_missing|llm_json_parse_error|llm_json_not_object|llm_schema_validation_failed|llm_confidence_parse_error`

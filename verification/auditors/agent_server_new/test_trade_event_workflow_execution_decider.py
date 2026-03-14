@@ -323,7 +323,7 @@ def test_trade_event_workflow_records_execution_reject_result_as_business_outcom
         monkeypatch.undo()
 
 
-def test_trade_event_workflow_blocks_legacy_none_direction_intent_before_execution():
+def test_trade_event_workflow_blocks_noncanonical_none_direction_intent_before_execution():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 
@@ -334,12 +334,12 @@ def test_trade_event_workflow_blocks_legacy_none_direction_intent_before_executi
         )
         original_builder = mod.build_execution_decision_payload
 
-        def _legacy_payload_builder(**kwargs):  # noqa: ANN001
+        def _noncanonical_none_payload_builder(**kwargs):  # noqa: ANN001
             payload = original_builder(**kwargs)
             payload["direction_intent"] = "none"
             return payload
 
-        monkeypatch.setattr(mod, "build_execution_decision_payload", _legacy_payload_builder)
+        monkeypatch.setattr(mod, "build_execution_decision_payload", _noncanonical_none_payload_builder)
         recorder = _Recorder()
         decider = _ExecutionDecider()
         wf = TradeEventWorkflow(
