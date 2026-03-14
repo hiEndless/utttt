@@ -19,13 +19,16 @@ bash tools/local/check_release_ready_help_snapshot_guard.sh
   bash tools/local/check_release_ready.sh --print-summary-only [--summary-format text|json]
 
 说明:
-  一键执行发布就绪四步检查：
+  一键执行发布就绪检查：
   1) verify_quick
-  2) new_arch_guards_full --quick
-  3) release triage block guard
-  4) release baseline alignment --check-origin
+  2) single_path_release_gate（默认开启）
+  3) new_arch_guards_full --quick
+  4) release triage block guard
+  5) release baseline alignment --check-origin
 
 环境变量（可选）:
+  WITH_AGENT_SINGLE_PATH_RELEASE_GATE single path 发布 gate 开关（默认 1）
+  RELEASE_READY_REPORT_PATH         结构化结果输出路径（默认 verification/reports/release_ready.latest.json）
   WITH_AGENT_READYZ                  quick 观测开关（默认 0）
   MAX_AGENT_READYZ_LEVEL             quick readyz 最大级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS quick decision_trace schema guard invalid 上限（默认 -1 忽略）
@@ -40,6 +43,6 @@ bash tools/local/check_release_ready_help_snapshot_guard.sh
   AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH recommendation 报告路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
 
 参数:
-  --print-summary-only               仅打印门禁阈值摘要并退出（不执行四步检查）
+  --print-summary-only               仅打印门禁阈值摘要并退出（不执行门禁检查）
   --summary-format <text|json>       门禁摘要输出格式（默认 text）
 ```

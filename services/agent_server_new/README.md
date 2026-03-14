@@ -399,6 +399,9 @@ signal_event + active_events + MSL
   - `python -m services.agent_server_new.pipeline_smoke --exchange binance --symbol ETHUSDT --signal-direction long --use-execution-result`
 - 上线前单路径发布 gate（readyz + execution healthz + prod runner）：
   - `bash tools/local/check_agent_single_path_release_gate.sh`
+- 发布总门禁（默认包含单路径 gate）：
+  - `bash tools/local/check_release_ready.sh`
+  - 结构化结果默认落盘：`verification/reports/release_ready.latest.json`
 
 ## Contract Guards
 

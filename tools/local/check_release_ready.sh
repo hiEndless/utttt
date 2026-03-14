@@ -3,6 +3,14 @@ set -euo pipefail
 
 PRINT_SUMMARY_ONLY=0
 SUMMARY_FORMAT="text"
+RELEASE_READY_REPORT_PATH="${RELEASE_READY_REPORT_PATH:-verification/reports/release_ready.latest.json}"
+STEP_VERIFY_QUICK="pending"
+STEP_SINGLE_PATH_RELEASE_GATE="pending"
+STEP_NEW_ARCH_GUARDS="pending"
+STEP_TRIAGE_GUARD="pending"
+STEP_BASELINE_ALIGNMENT="pending"
+CURRENT_STEP="init"
+START_TS_MS="$(($(date +%s) * 1000))"
 
 while (($# > 0)); do
   case "$1" in
@@ -13,13 +21,16 @@ while (($# > 0)); do
   bash tools/local/check_release_ready.sh --print-summary-only [--summary-format text|json]
 
 说明:
-  一键执行发布就绪四步检查：
+  一键执行发布就绪检查：
   1) verify_quick
-  2) new_arch_guards_full --quick
-  3) release triage block guard
-  4) release baseline alignment --check-origin
+  2) single_path_release_gate（默认开启）
+  3) new_arch_guards_full --quick
+  4) release triage block guard
+  5) release baseline alignment --check-origin
 
 环境变量（可选）:
+  WITH_AGENT_SINGLE_PATH_RELEASE_GATE single path 发布 gate 开关（默认 1）
+  RELEASE_READY_REPORT_PATH         结构化结果输出路径（默认 verification/reports/release_ready.latest.json）
   WITH_AGENT_READYZ                  quick 观测开关（默认 0）
   MAX_AGENT_READYZ_LEVEL             quick readyz 最大级别（默认 red）
   MAX_DECISION_TRACE_SCHEMA_GUARD_INVALID_RECORDS quick decision_trace schema guard invalid 上限（默认 -1 忽略）
@@ -34,7 +45,7 @@ while (($# > 0)); do
   AGENT_SIGNAL_DECISION_REPLAY_RECOMMENDATION_REPORT_PATH recommendation 报告路径（默认 verification/reports/agent_signal_decision_replay_recommendation.latest.json）
 
 参数:
-  --print-summary-only               仅打印门禁阈值摘要并退出（不执行四步检查）
+  --print-summary-only               仅打印门禁阈值摘要并退出（不执行门禁检查）
   --summary-format <text|json>       门禁摘要输出格式（默认 text）
 USAGE
       exit 0
@@ -59,6 +70,63 @@ if [[ "$SUMMARY_FORMAT" != "text" && "$SUMMARY_FORMAT" != "json" ]]; then
   echo "[失败] --summary-format 仅支持 text 或 json，当前: $SUMMARY_FORMAT"
   exit 1
 fi
+
+write_release_ready_report() {
+  local status="${1:-unknown}"
+  local failed_step="${2:-}"
+  local message="${3:-}"
+  RELEASE_READY_STATUS="$status" \
+  RELEASE_READY_FAILED_STEP="$failed_step" \
+  RELEASE_READY_MESSAGE="$message" \
+  RELEASE_READY_REPORT_PATH="$RELEASE_READY_REPORT_PATH" \
+  RELEASE_READY_START_TS_MS="$START_TS_MS" \
+  RELEASE_READY_END_TS_MS="$(($(date +%s) * 1000))" \
+  STEP_VERIFY_QUICK="$STEP_VERIFY_QUICK" \
+  STEP_SINGLE_PATH_RELEASE_GATE="$STEP_SINGLE_PATH_RELEASE_GATE" \
+  STEP_NEW_ARCH_GUARDS="$STEP_NEW_ARCH_GUARDS" \
+  STEP_TRIAGE_GUARD="$STEP_TRIAGE_GUARD" \
+  STEP_BASELINE_ALIGNMENT="$STEP_BASELINE_ALIGNMENT" \
+  python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+path = Path(str(os.environ.get("RELEASE_READY_REPORT_PATH") or "verification/reports/release_ready.latest.json"))
+path.parent.mkdir(parents=True, exist_ok=True)
+payload = {
+    "schema_version": "release-ready-report-v1",
+    "status": str(os.environ.get("RELEASE_READY_STATUS") or "unknown"),
+    "failed_step": str(os.environ.get("RELEASE_READY_FAILED_STEP") or ""),
+    "message": str(os.environ.get("RELEASE_READY_MESSAGE") or ""),
+    "steps": {
+        "verify_quick": str(os.environ.get("STEP_VERIFY_QUICK") or "pending"),
+        "single_path_release_gate": str(os.environ.get("STEP_SINGLE_PATH_RELEASE_GATE") or "pending"),
+        "new_arch_guards_quick": str(os.environ.get("STEP_NEW_ARCH_GUARDS") or "pending"),
+        "release_triage_block_guard": str(os.environ.get("STEP_TRIAGE_GUARD") or "pending"),
+        "release_baseline_alignment": str(os.environ.get("STEP_BASELINE_ALIGNMENT") or "pending"),
+    },
+    "start_ts_ms": int(os.environ.get("RELEASE_READY_START_TS_MS") or "0"),
+    "end_ts_ms": int(os.environ.get("RELEASE_READY_END_TS_MS") or "0"),
+}
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+on_exit() {
+  local code="$?"
+  trap - EXIT
+  if [[ "$PRINT_SUMMARY_ONLY" == "1" ]]; then
+    return "$code"
+  fi
+  if [[ "$code" == "0" ]]; then
+    write_release_ready_report "passed" "" "release ready checks passed"
+  else
+    write_release_ready_report "failed" "$CURRENT_STEP" "release ready checks failed"
+  fi
+  return "$code"
+}
+
+trap on_exit EXIT
 
 MAX_LEGACY_CONFIDENCE_RATIO="${MAX_LEGACY_CONFIDENCE_RATIO:-0.05}"
 WITH_AGENT_SINGLE_PATH_RELEASE_GATE="${WITH_AGENT_SINGLE_PATH_RELEASE_GATE:-1}"
@@ -238,23 +306,34 @@ if [[ "$PRINT_SUMMARY_ONLY" == "1" ]]; then
   exit 0
 fi
 
-echo "[1/4] verify_quick"
+echo "[1/5] verify_quick"
+CURRENT_STEP="verify_quick"
 bash tools/ci/verify_quick.sh
+STEP_VERIFY_QUICK="passed"
 
 if [[ "$WITH_AGENT_SINGLE_PATH_RELEASE_GATE" == "1" ]]; then
   echo "[2/5] single_path_release_gate"
+  CURRENT_STEP="single_path_release_gate"
   bash tools/local/check_agent_single_path_release_gate.sh
+  STEP_SINGLE_PATH_RELEASE_GATE="passed"
 else
   echo "[2/5] single_path_release_gate (skip by WITH_AGENT_SINGLE_PATH_RELEASE_GATE=0)"
+  STEP_SINGLE_PATH_RELEASE_GATE="skipped"
 fi
 
 echo "[3/5] new_arch_guards_full --quick"
+CURRENT_STEP="new_arch_guards_quick"
 bash tools/ci/new_arch_guards_full.sh --quick
+STEP_NEW_ARCH_GUARDS="passed"
 
 echo "[4/5] release triage block guard"
+CURRENT_STEP="release_triage_block_guard"
 bash tools/local/check_release_triage_block_guard.sh
+STEP_TRIAGE_GUARD="passed"
 
 echo "[5/5] release baseline alignment --check-origin"
+CURRENT_STEP="release_baseline_alignment"
 bash tools/local/check_release_baseline_alignment.sh --check-origin
+STEP_BASELINE_ALIGNMENT="passed"
 
 echo "[通过] release ready 检查完成。"
