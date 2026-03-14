@@ -322,3 +322,56 @@ def test_trade_event_workflow_records_execution_reject_result_as_business_outcom
         asyncio.run(_run(monkeypatch))
     finally:
         monkeypatch.undo()
+
+
+def test_trade_event_workflow_blocks_legacy_none_direction_intent_before_execution():
+    async def _run(monkeypatch):  # noqa: ANN001
+        import services.agent_server_new.app.workflows.trade_event_workflow as mod
+
+        monkeypatch.setattr(
+            mod,
+            "evaluate_signal",
+            lambda **kwargs: SignalVerdict(direction="long", verdict="accept", confidence=Confidence(level="medium", score=0.7)),
+        )
+        original_builder = mod.build_execution_decision_payload
+
+        def _legacy_payload_builder(**kwargs):  # noqa: ANN001
+            payload = original_builder(**kwargs)
+            payload["direction_intent"] = "none"
+            return payload
+
+        monkeypatch.setattr(mod, "build_execution_decision_payload", _legacy_payload_builder)
+        recorder = _Recorder()
+        decider = _ExecutionDecider()
+        wf = TradeEventWorkflow(
+            market_state=_MarketState(),
+            position_context=_Position(),
+            active_events=_Events(),
+            execution_decider=decider,
+            recorder=recorder,
+        )
+        out = await wf.run_with_result(
+            TradeEventInput(
+                event_id="evt-exec-block-001",
+                exchange="binance",
+                symbol="ETHUSDT",
+                signal_direction="long",
+                payload={"event_type": "indicator_signal"},
+            )
+        )
+        assert out.execution_result is None
+        assert decider.called is False
+        rows = [x for x in recorder.outputs if x[1] == "execution_decider"]
+        assert rows
+        payload = rows[-1][2]
+        assert payload.get("status") == "blocked"
+        assert payload.get("error_type") == "InvalidDirectionIntent"
+        assert payload.get("direction_intent") == "none"
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        asyncio.run(_run(monkeypatch))
+    finally:
+        monkeypatch.undo()

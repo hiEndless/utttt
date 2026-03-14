@@ -363,32 +363,51 @@ class TradeEventWorkflow:
                 ai_adaptive_enabled=self._ai_adaptive_enabled,
                 ai_adaptive_mode=self._ai_adaptive_mode,
             )
-            try:
-                execution_result = await self._execution_decider.decide(decision_payload)
-                logger.info(
-                    "执行层裁决完成 event_id=%s action=%s reason=%s",
+            direction_intent = str(decision_payload.get("direction_intent") or "").strip().lower()
+            if direction_intent not in {"long", "short", "neutral"}:
+                logger.warning(
+                    "执行层裁决前阻断非法 direction_intent event_id=%s direction_intent=%s",
                     event.event_id,
-                    str(execution_result.get("execution_action") or "unknown"),
-                    str(execution_result.get("reject_reason") or ""),
+                    direction_intent,
                 )
                 if self._recorder:
                     await self._recorder.record_agent_output(
                         event.event_id,
                         "execution_decider",
-                        execution_result,
-                    )
-            except Exception as exc:  # pragma: no cover
-                logger.warning("执行层裁决失败 event_id=%s err=%s", event.event_id, exc)
-                if self._recorder:
-                    await self._recorder.record_agent_output(
-                        event.event_id,
-                        "execution_decider",
                         {
-                            "status": "error",
-                            "error_type": exc.__class__.__name__,
-                            "error": str(exc),
+                            "status": "blocked",
+                            "error_type": "InvalidDirectionIntent",
+                            "error": f"direction_intent must be long/short/neutral, got: {direction_intent}",
+                            "direction_intent": direction_intent,
                         },
                     )
+            else:
+                try:
+                    execution_result = await self._execution_decider.decide(decision_payload)
+                    logger.info(
+                        "执行层裁决完成 event_id=%s action=%s reason=%s",
+                        event.event_id,
+                        str(execution_result.get("execution_action") or "unknown"),
+                        str(execution_result.get("reject_reason") or ""),
+                    )
+                    if self._recorder:
+                        await self._recorder.record_agent_output(
+                            event.event_id,
+                            "execution_decider",
+                            execution_result,
+                        )
+                except Exception as exc:  # pragma: no cover
+                    logger.warning("执行层裁决失败 event_id=%s err=%s", event.event_id, exc)
+                    if self._recorder:
+                        await self._recorder.record_agent_output(
+                            event.event_id,
+                            "execution_decider",
+                            {
+                                "status": "error",
+                                "error_type": exc.__class__.__name__,
+                                "error": str(exc),
+                            },
+                        )
 
         if self._recorder:
             trace_payload = build_decision_trace_payload(

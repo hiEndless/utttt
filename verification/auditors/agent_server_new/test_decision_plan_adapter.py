@@ -91,6 +91,43 @@ def test_decision_plan_adapter_builds_execution_decision_payload() -> None:
     )
     assert payload["risk_hints"]["decision_confidence_source"] == "agent_signal_decision"
     assert payload["risk_hints"]["agent_action_hint"] == "add"
+    assert payload["direction_intent"] == "long"
+
+
+def test_decision_plan_adapter_maps_non_directional_signal_to_neutral_intent() -> None:
+    signal_decision = SignalDecision(
+        decision_id="evt-002",
+        exchange="binance",
+        symbol="ETHUSDT",
+        signal_direction="neutral",
+        signal_verdict="accept",
+        confidence=Confidence(level="medium", score=0.5),
+        reliability_score=0.5,
+        reasons=["neutral"],
+        evidence_refs=[],
+        llm_observation={},
+        decision_agent_key="technical",
+        decision_mode="rule",
+        llm_parse_status="rule_only",
+    )
+    plan = build_decision_plan_state(
+        signal=SignalVerdict(direction="neutral", verdict="accept", confidence=Confidence(level="medium", score=0.5)),
+        msl=None,  # type: ignore[arg-type]
+        position_context={},
+        active_events=[],
+        signal_event={},
+        cross_horizon={},
+    ).plan
+    payload = build_execution_decision_payload(
+        default_decision_id="evt-default-002",
+        default_exchange="binance",
+        default_symbol="ETHUSDT",
+        signal_decision=signal_decision,
+        plan=plan,
+        cross_horizon={"suggested_policy": "no_action"},
+    )
+    assert payload["direction_intent"] == "neutral"
+    assert payload["risk_hints"]["agent_action_hint"] == "hold"
 
 
 def test_decision_plan_adapter_builds_workflow_bridge_payload() -> None:

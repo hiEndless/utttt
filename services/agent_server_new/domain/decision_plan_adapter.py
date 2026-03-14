@@ -140,7 +140,7 @@ def build_execution_decision_payload(
     verdict = str(signal_decision.signal_verdict or "uncertain").strip().lower()
     direction = _normalize_signal_direction(signal_decision.signal_direction)
     agent_action_hint = "add" if verdict == "accept" and direction in {"long", "short"} else "hold"
-    execution_direction_intent = direction if direction in {"long", "short"} else "none"
+    execution_direction_intent = direction if direction in {"long", "short"} else "neutral"
     payload = {
         "decision_id": str(signal_decision.decision_id or default_decision_id),
         "exchange": str(signal_decision.exchange or default_exchange),
