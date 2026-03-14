@@ -16,3 +16,11 @@ def test_refactor_plan_uses_completed_status_language() -> None:
     assert "Phase D（收口阶段）" not in text
     assert "当前进展补充（已完成能力矩阵）" in text
     assert "| 能力域 | 已完成能力 | 关键锚点 |" in text
+
+
+def test_codex_task_tree_no_compat_fallback_language() -> None:
+    path = Path(PROJECT_ROOT) / "services" / "agent_server_new" / "docs" / "CODEX_TASK_TREE.md"
+    text = path.read_text(encoding="utf-8")
+    assert "compat 作为可选 fallback" not in text
+    assert "stub 仅作为 fallback" not in text
+    assert "不允许新增 compat/fallback 回退壳" in text

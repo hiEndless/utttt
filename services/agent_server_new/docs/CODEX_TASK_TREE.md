@@ -28,7 +28,7 @@
 
 - 不允许为了“先跑起来”而把 schema 校验吞掉（除非明确记录为临时降级，并写清删除条件）。
 - 不允许把原始新闻/社媒文本直接注入 Context/Decision 输入；LLM 若参与，只允许输出结构化 Evidence。
-- 不允许默认依赖旧 `agent_server/`（可以保留 compat 作为可选 fallback，但必须默认关闭，并且在文档中标注迁移状态）。
+- 不允许默认依赖旧 `agent_server/`，也不允许新增 compat/fallback 回退壳。
 - 不允许在一次 run 里做“大改目录 + 大改契约 + 大改业务逻辑”三件事同时发生。
 
 ---
@@ -76,7 +76,7 @@ P2（事件闭环与生产级关键能力）：
 - 重点：feature_service 与 market_state_engine 输出带 `schema_version`；下游显式校验/降级
 
 ### T04 切断 feature_service 对旧 agent_server 的默认运行期依赖
-- 重点：compat 只能作为可选 fallback，默认 wiring 不导入旧 agent_server
+- 重点：默认 wiring 不导入旧 agent_server，也不保留 compat/fallback 回退路径
 
 ### T05 为 feature_service 增加 null/noop providers 与独立组装模式
 - 重点：无外部依赖也能启动并返回结构完整的“空数据”
@@ -103,7 +103,7 @@ P2（事件闭环与生产级关键能力）：
 - 重点：让 agent_server_new 能从 event_center_new 读取 active events/context
 
 ### T13 agent_server_new 替换 active_events_stub 为 event_center_http provider
-- 重点：active_events 真正来自事件中心；stub 仅作为 fallback
+- 重点：active_events 真正来自事件中心；初始化失败直接报错，不保留 stub/null fallback
 
 ### T14 决策可回放闭环：DecisionTrace recorder v1
 - 重点：可按 event_id 查询 trace；同输入重放输出稳定
@@ -118,4 +118,3 @@ P2（事件闭环与生产级关键能力）：
 - 全局总控：本文件 `CODEX_TASK_TREE.md`
 - 执行包：按编号创建 `CODEX_RUN_XXX.md`（每次只投喂一个 run）
 - 若某个服务已存在 `TASKS.md`（例如 `services/feature_service/TASKS.md`），run 完成后同步更新勾选状态，并在 run 文档末尾写“完成摘要 + 验收结果”。
-
