@@ -238,6 +238,16 @@ signal_event + active_events + MSL
   - 当 profile 配置 `model_id` 时，会覆盖默认 `AGENT_LLM_MODEL_ID`，实现按事件类型路由到不同信号决策模型
 - `AGENT_SIGNAL_DECISION_LLM_MODE`
   - LLM 信号判定模式（`hybrid|observe`，默认：`hybrid`）
+
+## 生产配置基线（唯一链路）
+
+建议生产环境至少满足以下配置，保证 `signal -> decision agent -> execution` 单一闭环不被配置绕开：
+
+- `AGENT_RUNTIME_PROFILE=prod`
+- `AGENT_EXECUTION_ENABLED=true`
+- `AGENT_ACTIVE_EVENTS_PROVIDER_MODE=redis`
+- `AGENT_READY_CHECK_EXECUTION_SERVICE=true`（prod 下会被强制开启）
+- `AGENT_READY_CHECK_UPSTREAM_STRICT=true`（prod 下会被强制开启）
   - `hybrid`：LLM 参与主判，解析失败自动 `rule_fallback`
   - `observe`：仅保留 LLM 观测记录，主判固定走规则（适用于阶段 A 旁路观测）
 - `AGENT_SIGNAL_DECISION_LLM_BACKEND`
