@@ -136,7 +136,7 @@ agent_server_new -> execution_service
 - `account_id`
 - `symbol`
 - `direction_intent`
-  - 规范值：`long|short|neutral`（兼容输入：`none -> neutral`）
+  - 规范值：`long|short|neutral`
 - `decision_confidence`（主字段）
 - `confidence`（deprecated 兼容字段）
 - 若同时传两者，必须一致（防语义漂移）

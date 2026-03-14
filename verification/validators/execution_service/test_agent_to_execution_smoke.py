@@ -206,7 +206,7 @@ def test_agent_execution_adapter_marks_legacy_confidence_source() -> None:
         symbol="ETHUSDT",
         plan={
             "action": "hold",
-            "direction": "none",
+            "direction": "neutral",
             "confidence": {"level": "medium", "score": 0.5},
         },
         cross_horizon_policy={},
@@ -216,19 +216,22 @@ def test_agent_execution_adapter_marks_legacy_confidence_source() -> None:
     assert payload["risk_hints"]["decision_confidence_source"] == "confidence_legacy"
 
 
-def test_agent_execution_adapter_normalizes_none_direction_to_neutral() -> None:
-    payload = adapt_agent_execution_plan_to_decision_intent(
-        decision_id="dec-agent-003b",
-        exchange="binance",
-        symbol="ETHUSDT",
-        plan={
-            "action": "hold",
-            "direction": "none",
-            "confidence": {"level": "medium", "score": 0.5},
-        },
-        cross_horizon_policy={},
-    )
-    assert payload["direction_intent"] == "neutral"
+def test_agent_execution_adapter_rejects_legacy_none_direction() -> None:
+    try:
+        adapt_agent_execution_plan_to_decision_intent(
+            decision_id="dec-agent-003b",
+            exchange="binance",
+            symbol="ETHUSDT",
+            plan={
+                "action": "hold",
+                "direction": "none",
+                "confidence": {"level": "medium", "score": 0.5},
+            },
+            cross_horizon_policy={},
+        )
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "plan.direction" in str(exc)
 
 
 def test_agent_execution_adapter_normalizes_alternative_source_summary_in_risk_hints() -> None:

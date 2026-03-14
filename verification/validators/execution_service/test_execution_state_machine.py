@@ -95,7 +95,7 @@ def test_state_machine_skipped_status() -> None:
         submit_enabled=False,
         execution_state_store=store,
     )
-    asyncio.run(service.decide(_payload("dec-state-003", direction="none")))
+    asyncio.run(service.decide(_payload("dec-state-003", direction="neutral")))
     state = asyncio.run(store.get_state("dec-state-003"))
     assert isinstance(state, dict)
     assert state["status"] in {"decided", "skipped"}

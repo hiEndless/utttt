@@ -19,17 +19,16 @@ _ALT_REQUIRED_KEYS = set(get_alternative_source_required_keys())
 
 
 def _normalize_direction_intent(value: Any) -> str:
-    direction = str(value or "").strip().lower()
-    if direction == "none":
-        # 兼容窗口：历史 producer 仍可能发送 none，这里归一到 execution canonical neutral。
-        return "neutral"
-    return direction
+    return str(value or "").strip().lower()
 
 
 def _normalize_order_result(payload: Mapping[str, Any]) -> Dict[str, Any]:
     out = dict(payload or {})
     if "direction_intent" in out:
-        out["direction_intent"] = _normalize_direction_intent(out.get("direction_intent"))
+        direction = _normalize_direction_intent(out.get("direction_intent"))
+        if direction not in {"long", "short", "neutral"}:
+            raise ValueError("order_result.direction_intent 必须是 long/short/neutral")
+        out["direction_intent"] = direction
     return out
 
 
@@ -135,7 +134,7 @@ class DecisionIntent:
         if not symbol:
             raise ValueError("symbol 不能为空")
         if direction not in {"long", "short", "neutral"}:
-            raise ValueError("direction_intent 必须是 long/short/neutral（兼容输入 none）")
+            raise ValueError("direction_intent 必须是 long/short/neutral")
 
         confidence_raw = payload.get("confidence")
         decision_confidence_raw = payload.get("decision_confidence")

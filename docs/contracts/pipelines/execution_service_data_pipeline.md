@@ -153,7 +153,7 @@ Schema：[decision_intent.schema.json](services/execution_service/docs/decision_
 | exchange | string | Y | 非空 | 交易所（如 binance） |
 | account_id | string | Y | 非空 | 账户 ID（默认 main） |
 | symbol | string | Y | 非空 | 交易对（如 ETHUSDT） |
-| direction_intent | string | Y | long/short/neutral（兼容 none） | 方向意图（不是最终动作） |
+| direction_intent | string | Y | long/short/neutral | 方向意图（不是最终动作） |
 | decision_confidence | object | Y | 见 3.2 | 语义主字段：置信度 |
 | confidence | object | N | 见 3.2 | 兼容字段（deprecated），仅用于迁移窗口；producer 默认不应发送 |
 | cross_horizon_policy | object | Y | 任意对象 | 跨周期策略摘要（透传，用于风控解释/trace，不做强语义约束） |
@@ -175,7 +175,7 @@ Schema：[decision_confidence.schema.json](services/execution_service/docs/decis
 
 | 字段 | 枚举 |
 |---|---|
-| direction_intent | long / short / neutral（兼容 none） |
+| direction_intent | long / short / neutral |
 | execution_action | add / reduce / hold / exit / skip |
 
 ---
@@ -704,6 +704,6 @@ agent 侧会向 execution_service 发送 DecisionIntent。execution_service 仓�
 - [agent_execution_plan_adapter.py](services/execution_service/adapters/agent_execution_plan_adapter.py)
 
 其映射要点：
-- direction：从 plan.direction 映射到 direction_intent（long/short/neutral，兼容 none）
+- direction：从 plan.direction 映射到 direction_intent（long/short/neutral）
 - decision_confidence：优先使用 plan.decision_confidence，否则兼容回退 plan.confidence
 - risk_hints：注入 agent_action_hint/agent_notes/decision_confidence（用于执行侧解释与下单推导）

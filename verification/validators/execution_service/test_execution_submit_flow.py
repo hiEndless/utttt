@@ -126,7 +126,7 @@ def test_submit_retry_then_success() -> None:
     assert out.order_result["retry_meta"]["attempts"] == 2
 
 
-def test_submit_order_result_normalizes_legacy_none_direction_intent() -> None:
+def test_submit_order_result_with_legacy_none_direction_falls_back_to_skip() -> None:
     service = ExecutionService(
         position_provider=StubPositionStateProvider(),
         account_provider=StubAccountStateProvider(),
@@ -135,5 +135,7 @@ def test_submit_order_result_normalizes_legacy_none_direction_intent() -> None:
         submit_enabled=True,
     )
     out = asyncio.run(service.decide(_payload()))
+    assert out.execution_action == "skip"
+    assert out.reject_reason == "execution_submit_failed"
     assert isinstance(out.order_result, dict)
-    assert out.order_result["direction_intent"] == "neutral"
+    assert out.order_result["order_status"] == "failed"

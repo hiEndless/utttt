@@ -114,7 +114,7 @@ def test_decision_intent_v1_reject_invalid_direction() -> None:
         assert "direction_intent" in str(exc)
 
 
-def test_decision_intent_v1_accepts_none_alias_and_normalizes_to_neutral() -> None:
+def test_decision_intent_v1_rejects_none_direction() -> None:
     payload = {
         "decision_id": "dec-001-neutral",
         "exchange": "binance",
@@ -126,8 +126,11 @@ def test_decision_intent_v1_accepts_none_alias_and_normalizes_to_neutral() -> No
         "cross_horizon_policy": {},
         "risk_hints": {},
     }
-    decision = DecisionIntent.from_dict(payload)
-    assert decision.direction_intent == "neutral"
+    try:
+        DecisionIntent.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "direction_intent" in str(exc)
 
 
 def test_decision_intent_v1_accepts_neutral_canonical() -> None:
@@ -318,7 +321,7 @@ def test_execution_result_v1_parse_success() -> None:
     assert data["reject_reason"] == "position_limit_reached"
 
 
-def test_execution_result_normalizes_order_result_none_direction_to_neutral() -> None:
+def test_execution_result_rejects_order_result_none_direction() -> None:
     payload = {
         "decision_id": "dec-001-normalize",
         "execution_action": "hold",
@@ -326,9 +329,11 @@ def test_execution_result_normalizes_order_result_none_direction_to_neutral() ->
         "applied_risk_rules": [],
         "order_result": {"direction_intent": "none"},
     }
-    result = ExecutionResult.from_dict(payload)
-    data = result.to_dict()
-    assert data["order_result"]["direction_intent"] == "neutral"
+    try:
+        ExecutionResult.from_dict(payload)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "order_result.direction_intent" in str(exc)
 
 
 def test_execution_result_v1_reject_invalid_action() -> None:

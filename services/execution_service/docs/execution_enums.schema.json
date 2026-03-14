@@ -5,8 +5,7 @@
   "properties": {
     "direction_intent": {
       "type": "string",
-      "enum": ["long", "short", "neutral", "none"],
-      "description": "canonical: neutral；兼容输入：none（运行时归一为 neutral）"
+      "enum": ["long", "short", "neutral"]
     },
     "execution_action": {
       "type": "string",

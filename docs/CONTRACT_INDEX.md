@@ -73,8 +73,8 @@
 
 ## 6. execution_service
 
-- `execution_schema_mapping_version: execution-schema-mapping-v23`
-- `execution_direction_intent_canonical: neutral`（兼容输入可接受 legacy `none`，运行时统一归一为 `neutral`）
+- `execution_schema_mapping_version: execution-schema-mapping-v24`
+- `execution_direction_intent_canonical: neutral`（仅允许 `long|short|neutral`）
 - `decision_intent_canonical_field: decision_confidence`（`confidence` 兼容窗口至 `2026-06-30`，详见 schema/migration）
 - `decision_signal_mode_field: risk_hints.decision_mode`（可选：`llm|rule_fallback|rule`）
 - `decision_llm_parse_status_field: risk_hints.llm_parse_status`（可选枚举：`llm_ok|llm_invalid_payload|llm_status_not_ok|llm_not_provided|rule_only`）

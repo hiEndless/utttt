@@ -88,14 +88,14 @@ def test_exchange_sink_submit_dry_run_reduce_uses_position_side() -> None:
     assert out["request"]["quantity"] == "0.010000"
 
 
-def test_exchange_sink_submit_add_none_direction_raises() -> None:
+def test_exchange_sink_submit_add_neutral_direction_raises() -> None:
     sink = ExchangeExecutionSink(venue="binance", dry_run=True, default_order_qty=0.001)
     decision = DecisionIntent.from_dict(
         {
             "decision_id": "dec-003",
             "exchange": "binance",
             "symbol": "ETHUSDT",
-            "direction_intent": "none",
+            "direction_intent": "neutral",
             "confidence": {"level": "low", "score": 0.2},
             "decision_confidence": {"level": "low", "score": 0.2},
             "cross_horizon_policy": {},

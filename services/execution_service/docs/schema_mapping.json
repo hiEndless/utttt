@@ -1,5 +1,5 @@
 {
-  "version": "execution-schema-mapping-v23",
+  "version": "execution-schema-mapping-v24",
   "last_updated": "2026-03-14",
   "items": [
     {
@@ -511,7 +511,7 @@
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",
           "json_path": "properties.direction_intent.enum",
-          "expected": ["long", "short", "neutral", "none"]
+          "expected": ["long", "short", "neutral"]
         },
         {
           "schema": "services/execution_service/docs/execution_enums.schema.json",

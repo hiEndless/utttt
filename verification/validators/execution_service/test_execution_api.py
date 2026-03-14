@@ -34,7 +34,7 @@ def test_version() -> None:
     assert data["ruleset_version"] == "risk-rules-v1"
     assert data["state_machine_version"] == "execution-state-machine-v1"
     assert data["idempotency_version"] == "execution-idempotency-v1"
-    assert data["schema_mapping_version"] == "execution-schema-mapping-v23"
+    assert data["schema_mapping_version"] == "execution-schema-mapping-v24"
     assert isinstance(data["ts"], int)
     assert data["ts_ms"] == data["ts"]
 
@@ -122,7 +122,7 @@ def test_decide_bad_request() -> None:
     assert response.status_code == 400
 
 
-def test_decide_accepts_none_direction_alias() -> None:
+def test_decide_rejects_none_direction() -> None:
     client = TestClient(create_app())
     response = client.post(
         "/internal/execution/decide",
@@ -138,10 +138,7 @@ def test_decide_accepts_none_direction_alias() -> None:
             "risk_hints": {},
         },
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["decision_id"] == "dec-001-neutral"
-    assert data["execution_action"] in {"add", "reduce", "hold", "exit", "skip"}
+    assert response.status_code == 400
 
 
 def test_decide_rejects_invalid_alternative_source_summary_provider_state() -> None:
@@ -400,7 +397,7 @@ def test_debug_state_with_decision_id() -> None:
             "exchange": "binance",
             "account_id": "main",
             "symbol": "ETHUSDT",
-            "direction_intent": "none",
+            "direction_intent": "neutral",
             "confidence": {"level": "medium", "score": 0.66},
             "decision_confidence": {"level": "medium", "score": 0.66},
             "cross_horizon_policy": {},
