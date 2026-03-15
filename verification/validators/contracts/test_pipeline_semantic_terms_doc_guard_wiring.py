@@ -13,4 +13,4 @@ def _read(path: str) -> str:
 def test_docs_contracts_bundle_wires_pipeline_semantic_terms_doc_guard() -> None:
     text = _read("tools/local/check_docs_contracts_bundle.sh")
     assert "bash tools/local/check_pipeline_semantic_terms_doc_guard.sh" in text
-
+    assert "bash tools/local/check_direction_enum_doc_guard.sh" in text
