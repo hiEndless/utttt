@@ -114,7 +114,7 @@ runner 通过 argparse 接收参数并构造 `TradeEventInput`：
 |---|---|:---:|---|---|
 | source | string | Y | agent / agent_fallback | 来源 |
 | action | string | Y |  | agent 的计划动作（见 8.3 RiskAction） |
-| direction | string | Y | long/short/none | 方向 |
+| direction | string | Y | long/short/neutral | 方向 |
 | notes | string | Y |  | 说明 |
 
 ---
@@ -474,7 +474,7 @@ workflow 会把 agent 的 ExecutionPlan 映射为 execution_service 侧的 Decis
 | decision_id | string | Y | 复用 event_id |
 | exchange | string | Y | 交易所 |
 | symbol | string | Y | 交易对 |
-| direction_intent | string | Y | long/short/none（来自 plan.direction） |
+| direction_intent | string | Y | long/short/neutral（来自 plan.direction） |
 | decision_confidence | object | Y | {level, score}（canonical） |
 | cross_horizon_policy | object | Y | {suggested_policy, policy_reason} |
 | risk_hints | object | Y | {agent_action_hint, agent_notes, decision_confidence, decision_confidence_source, decision_agent_key, decision_mode, llm_parse_status, prompt_config_source, prompt_config_version, signal_verdict, signal_reliability_score, signal_reasons} |
@@ -496,7 +496,7 @@ execution_service 的返回体在 agent 内部不做 schema 冻结（原样 dict
 
 ### 8.1 Direction（方向）
 
-定义：`Direction = "long" | "short" | "none"`  
+定义：`Direction = "long" | "short" | "neutral"`  
 来源：[domain/contracts.py](services/agent_server_new/domain/contracts.py#L7)
 
 ### 8.2 Confidence / SignalVerdict
@@ -512,7 +512,7 @@ SignalVerdict：
 
 | 字段 | 类型 | 枚举/范围 | 含义 |
 |---|---|---|---|
-| direction | Direction | long/short/none | 信号方向 |
+| direction | Direction | long/short/neutral | 信号方向 |
 | verdict | string | accept/reject/uncertain | 信号有效性裁决 |
 | confidence | Confidence |  | 置信度 |
 | invalidation_reasons | array[string] |  | 失效原因列表 |

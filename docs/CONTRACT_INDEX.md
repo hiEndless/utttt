@@ -62,7 +62,8 @@
 ## 5. agent_server_new
 
 - `decision_trace_routing_contract_version: agent-decision-trace-routing-v10`
-- `agent_signal_direction_canonical: neutral`（兼容输入可接受 legacy `none`，内部统一归一为 `neutral`）
+- `agent_signal_direction_canonical: neutral`（仅允许 `long|short|neutral`；非规范 `none` 视为无效输入并走回退/守卫）
+- `docs/contracts/TERMINOLOGY_WHITELIST.md`（跨模块术语白名单：字段语义与可取值基线）
 - `services/agent_server_new/docs/REFACTOR_PLAN_V2.md`
 - `services/agent_server_new/docs/runner_output_contract.md`
 - `services/agent_server_new/docs/runner_output.schema.json`
