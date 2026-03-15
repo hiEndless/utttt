@@ -145,7 +145,7 @@ def test_trade_event_workflow_run_with_result_returns_execution_result():
         monkeypatch.undo()
 
 
-def test_trade_event_workflow_llm_observer_failed_still_fallbacks_to_rule_plan():
+def test_trade_event_workflow_llm_observer_failed_still_fallbacks_to_minimal_signal_decision():
     async def _run(monkeypatch):  # noqa: ANN001
         import services.agent_server_new.app.workflows.trade_event_workflow as mod
 

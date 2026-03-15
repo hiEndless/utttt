@@ -25,7 +25,7 @@
 - `event_center_new` runner health 同时写入 `updated_ms` 与 `updated_at_ms`。
 - `market_state_engine` `/healthz`、`/version` 与状态查询响应同时返回 `ts` 与 `ts_ms`。
 - `execution_service` `/healthz` 与 `/version` 同时返回 `ts` 与 `ts_ms`。
-- `agent_server_new.strategy_gate_v2` 时间读取优先 `event_ts_ms`，兼容 `ts_ms/timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
+- `agent_server_new` 决策链时间读取优先 `event_ts_ms`，兼容 `ts_ms/timestamp_ms/ts/generated_at_ms/timestamp(ISO8601)`。
 
 5. `risk_flags` 语义标准化（非破坏）
 - `market_state_engine` 聚合层统一输出 `risk_flags: array[string]`。

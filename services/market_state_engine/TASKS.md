@@ -66,6 +66,7 @@
 - [x] Task 50: `agent_server_new` 的 market_state 端口与 HTTP adapter 透传 `msl_meta/msl_bundle/cross_horizon`。
 - [x] Task 51: `ContextBuilder` 注入 `cross_horizon/msl_meta` 到 `key_market_features`，供下游决策直接消费。
 - [x] Task 52: 新增 `state->agent` 下游契约测试，锁定 `suggested_policy` 消费路径并接入守卫脚本。
+- 注：Task 53-66 为历史阶段记录，用于追溯演进；当前主链路以 `agent_server_new` 的 minimal 决策链为准。
 - [x] Task 53: 在 `TradeEventWorkflow` 增加 `horizon_policy_gate`，于 `strategy_gate` 前消费 `cross_horizon.suggested_policy`。
 - [x] Task 54: 冻结门控规则：`wait_confirmation/reduce_risk + increase intent -> skip`，其余策略不阻断。
 - [x] Task 55: 增加 workflow 回归测试（`wait_confirmation -> skip`、`follow_long_term -> allow`）并接入 `state->agent` 守卫。
