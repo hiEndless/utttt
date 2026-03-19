@@ -60,7 +60,27 @@
    - **关键差异**：短期拥挤风险是决定开仓后路径体验的关键因素
 
 后续在设计 / 评估开仓决策时，应优先考虑：
-1. 短期不拥挤（short_term.crowding_risk = low）是开仓的必要条件
-2. 中期方向对齐（mid_term.directional_alignment = ALIGNED）是基础
-3. 结构清晰（structural_clarity = CLEAR_DOMINANT_CYCLE）是保障
-4. 信号强度达标（l1_total_score 绝对值 >= 10）是门槛
+1. 短期不拥挤（short_term.crowding_risk = low）是强优先条件（路径更友好）
+2. 若短期拥挤（short_term = high），但**中期不拥挤（mid_term.crowding_risk = low）**且中期方向不冲突，可按「允许开仓例外」用低杠杆（5~10x）参与
+3. 中期方向对齐（mid_term.directional_alignment = ALIGNED）是基础
+4. 结构清晰（structural_clarity = CLEAR_DOMINANT_CYCLE）是保障
+5. 信号强度达标（l1_total_score 绝对值 >= 10）是门槛（例外场景需更高阈值）
+
+────────────────────────────────────────────────────────────────────────────
+开仓成功示例 3：TAKEUSDT 开空（2026-03-07 12:59:51）
+────────────────────────────────────────────────────────────────────────────
+
+1. 关键结构（你反馈：开仓点和方向都非常正确）
+   - trigger_event.direction = bearish，l1_total_score = -22.23（满足常规开仓强度门槛）
+   - signal_validation.dominant_cycle = mid_term，directional_alignment.mid_term = ALIGNED（中期方向与信号一致）
+   - short_term.crowding_risk = high（短期拥挤，存在路径风险）
+   - mid_term.crowding_risk = low（中期结构干净，是这笔单子的“可开”核心）
+   - long_term.crowding_percentile.zone = elevated 且 leverage_extreme = false（长期偏拥挤但未极端，不一票否决）
+   - audit_confidence.level = HIGH 且 structural_clarity = CLEAR_DOMINANT_CYCLE（结构清晰、审计置信高）
+
+2. 执行策略（与成功强相关）
+   - 采用 10x（而非 20x）降低短期拥挤下的 squeeze 风险敞口
+   - SL/TP 有明确价位，避免“方向对但没风控”导致体验崩坏
+
+3. 结果与启示
+   - 该案例证明：短期拥挤 ≠ 必然 NO_ACTION；当中期干净且对齐时，应以低杠杆参与（不赌短路径）

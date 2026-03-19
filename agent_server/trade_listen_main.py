@@ -60,7 +60,7 @@ class TradeL1Listener:
     COOLDOWN_TTL = int(os.environ.get("TRADE_L1_COOLDOWN_TTL",
                                       3))  # 同一 symbol 冷却秒数，默认 3
     MAX_CONCURRENT = int(os.environ.get("TRADE_L1_MAX_CONCURRENT",
-                                        20))  # 最大并发 workflow（默认 20）
+                                        200))  # 最大并发 workflow（默认 200，保证 L1 事件实时跑起来）
     PENDING_MIN_IDLE_MS = int(
         os.environ.get("TRADE_L1_PENDING_MIN_IDLE_MS", 30000))  # 30s 未 ack 则回收
     WORKFLOW_MAX_LIFETIME_SEC = int(

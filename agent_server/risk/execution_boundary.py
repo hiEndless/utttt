@@ -76,21 +76,37 @@ class ExecutionBoundary:
     ) -> List[str]:
         """
         从 SignalValidation 中提取【必须禁止】的行为
-        只处理“结构性 veto / block”级别
+        只处理“结构性 veto / block”级别。
+
+        放宽逻辑（与 Trade Decision 一致）：
+        - 仅当「主导周期方向真正冲突」时才禁止 open，避免因短期拥挤/噪音就一刀切。
+        - structural_clarity == DOMINANT_CONFLICT 且 dominant_cycle 的 directional_alignment 为 CONFLICT → 禁止 open。
+        - structural_clarity == DOMINANT_CONFLICT 但 dominant_cycle 为 ALIGNED/NEUTRAL（例如仅短期拥挤）→ 不禁止 open，交给 Trade Decision 用 5~10x 决定。
         """
 
         forbidden: List[str] = []
 
         audit_conf = signal_validation.get("audit_confidence", {})
         structural_clarity = audit_conf.get("structural_clarity")
+        audit_breakdown = signal_validation.get("audit_breakdown", {})
+        directional_alignment = audit_breakdown.get("directional_alignment") or {}
+        dominant_cycle = signal_validation.get("dominant_cycle") or "mid_term"
+
+        # 主导周期方向对齐情况：取 dominant_cycle 对应周期（如 mid_term）的 alignment
+        dominant_alignment = (directional_alignment.get(dominant_cycle) or "").upper() if isinstance(directional_alignment, dict) else ""
 
         if structural_clarity == "DOMINANT_CONFLICT":
-            forbidden += [
-                "open",
-                "aggressive_add",
-                "scale_in_small",
-                "reverse_position",
-            ]
+            # 仅当「主导周期方向为 CONFLICT」时才禁止 open；否则只禁止激进加仓等，允许 Trade Decision 用低杠杆开仓
+            if dominant_alignment == "CONFLICT":
+                forbidden += [
+                    "open",
+                    "aggressive_add",
+                    "scale_in_small",
+                    "reverse_position",
+                ]
+            else:
+                # 主导周期 ALIGNED/NEUTRAL，仅短期或它周期冲突/拥挤 → 不禁止 open，只禁止激进加仓
+                forbidden += ["aggressive_add", "scale_in_small", "reverse_position"]
 
         risk_flags = signal_validation.get("risk_exposure_flags", [])
         for f in risk_flags:
@@ -164,7 +180,7 @@ class ExecutionBoundary:
         tags: List[str] = []
 
         audit_conf = signal_validation.get("audit_confidence", {})
-        if audit_conf.get("structural_clarity") == "DOMINANT_CONFLICT":
+        if audit_conf.get("structural_clarity") == "DOMINANT_CONFLICT" and "open" in forbidden_actions:
             tags.append("dominant_structural_conflict")
 
         if any(a in forbidden_actions for a in ("aggressive_add", "scale_in_small")):

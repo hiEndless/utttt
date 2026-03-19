@@ -53,3 +53,37 @@
 
 后续类似「中期拥挤 high + 长期 elevated + 区间市做多」的形态，应参考本失败样本，一律 NO_ACTION 或仅允许低杠杆试探。
 
+────────────────────────────────────────────────────────────────────────────
+开仓失败示例 3：PLAYUSDT 开多（2026-03-07 12:53:31）
+────────────────────────────────────────────────────────────────────────────
+
+1. 你给出的关键判断
+   - “已经到了最大的点，后面其实应该要下降了” → 该笔可作为失败示例。
+
+2. 结构上为什么不该开（用系统输入字段解释）
+   - mid_term.structural_risks.crowding_risk = high
+   - long_term.structural_context.crowding_percentile.zone = elevated
+   - mid_term.market_mode = range_flow 且 dominant_flow = balanced（区间拉锯，追多追空体验差）
+   - realtime_market_data.buy_pressure = none、large_order_intensity = none（缺少推动力）
+
+3. 结果（按你提供的账户表现）
+   - used_margin ≈ 3.98U
+   - 浮亏 -0.20U（-5.09%）
+
+4. 经验教训（用于提示词/规则）
+   - 「中期拥挤 high + 长期 elevated/extreme」应一票否决开仓（规则 9 的核心价值），避免在区间/拥挤环境追单。
+   - 对 range_flow + balanced 的结构，除非上游明确允许且出现强一致的趋势流（dominant_flow 与方向一致 + 明确压力），否则更偏 NO_ACTION。
+
+────────────────────────────────────────────────────────────────────────────
+不适合开仓示例：BTCUSDT 开多（2026-03-07 12:54:37）
+────────────────────────────────────────────────────────────────────────────
+
+1. 你给出的关键判断
+   - “有点上线震荡的意思，其实不太适合开仓”
+
+2. 结构上需要新增的“方向一致性检查”
+   - 该笔输入里 mid_term.behavioral_intent.taker_bias.dominant_flow = active_sell，但触发信号为 bullish 并开多
+   - 说明仅看 directional_alignment = ALIGNED 仍不够，需要补充：dominant_flow 不得与开仓方向相反（bullish 禁 active_sell；bearish 禁 active_buy）
+
+3. 经验教训（用于提示词/规则）
+   - 继续坚持：mid_term.crowding_risk = high 且 long_term.zone ∈ [elevated, extreme] 时，无论实时大单/买压如何，一律 NO_ACTION（不在拥挤环境参与震荡推升）。

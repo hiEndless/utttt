@@ -20,6 +20,7 @@ from agent_server.risk.global_overlay import (
 )
 from agent_server.risk.execution_boundary import ExecutionBoundary
 from agent_server.agent_context.builder import build_agent_context
+from agent_server.agent_context.market_structure.technical_context import build_technical_context
 
 trade_logger = logging.getLogger("trade_decision")
 ai_reasoning_logger = logging.getLogger("trade_ai_reasoning")
@@ -183,6 +184,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
         market_structure: Dict,
         mark_price: float,
         global_risk_desc: str,
+        technical_context: Optional[Dict] = None,
     ) -> Dict:
         """构建符合 prompt 的确定格式 query（对齐风控 Agent 输入结构）"""
         symbol = event_data.get("symbol", "")
@@ -224,6 +226,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             "global_risk_overlay": global_risk_desc,
             "mark_price": mark_price,
             "realtime_market_data": realtime_data,  # 实时市场数据（大订单、爆仓）
+            "technical_context": technical_context or {},  # Redis klines 提取的周期性/空间特征
         }
 
     async def execute(self, ctx: StepInput) -> str:
@@ -286,6 +289,14 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             trade_logger.warning(f"无法获取价格: {symbol}")
             mark_price = 0.0
 
+        # 从 Redis klines 提取“近期高低点/ATR/区间位置”等周期性与空间特征（用于过滤追高/追低 + 生成TP/SL）
+        technical_context = {}
+        try:
+            if mark_price and mark_price > 0:
+                technical_context = await build_technical_context(exchange, symbol, ref_price=mark_price)
+        except Exception as e:
+            trade_logger.debug(f"构建 technical_context 失败: {e}")
+
         global_overlay_data = await _read_global_overlay_raw(exchange)
         global_risk_desc = get_global_risk_narrative(global_overlay_data) or ""
 
@@ -296,6 +307,7 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             market_structure=market_structure,
             mark_price=mark_price,
             global_risk_desc=global_risk_desc,
+            technical_context=technical_context,
         )
 
         ai_reasoning_logger.info(

@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from redis import asyncio as aioredis
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from event_center.config import cfg
 
@@ -32,7 +33,19 @@ class FinalGrader:
     }
 
     def __init__(self, redis_url: str = cfg.redis_url):
+        self.redis_url = redis_url
         self.redis = aioredis.from_url(redis_url)
+        self._load_scripts()
+        
+    async def _reconnect(self) -> None:
+        # Redis 短暂断连时重建连接，避免整个后台退出
+        try:
+            if getattr(self, "redis", None):
+                await self.redis.aclose()
+        except Exception:
+            pass
+        self.redis = aioredis.from_url(self.redis_url)
+        # 重新注册脚本，避免脚本缓存绑定到旧连接
         self._load_scripts()
 
     def _load_scripts(self):
@@ -106,13 +119,27 @@ class FinalGrader:
         require_bg = self.FINAL_REQUIRE_BACKGROUND  # 背景就绪开关
 
         while True:
-            res = await self.redis.xreadgroup(
-                group,
-                consumer,
-                streams={cfg.l1_stream: ">"},
-                count=20,
-                block=5000,
-            )
+            try:
+                res = await self.redis.xreadgroup(
+                    group,
+                    consumer,
+                    streams={cfg.l1_stream: ">"},
+                    count=20,
+                    block=5000,
+                )
+            except RedisConnectionError as e:
+                print(f"[Final] redis断连，重连并继续：{e}")
+                await asyncio.sleep(1)
+                await self._reconnect()
+                try:
+                    await self.redis.xgroup_create(cfg.l1_stream, group, id="0", mkstream=True)
+                except Exception:
+                    pass
+                continue
+            except Exception as e:
+                print(f"[Final] xreadgroup错误，稍后重试：{e}")
+                await asyncio.sleep(0.5)
+                continue
 
             if not res:
                 continue

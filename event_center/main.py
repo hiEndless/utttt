@@ -93,7 +93,8 @@ async def main():
         asyncio.create_task(l1.run()),
         asyncio.create_task(fg.run()),
     ])
-    await asyncio.gather(*tasks)
+    # 单个任务异常时不应把整个进程打死；各任务内部会做断连处理
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

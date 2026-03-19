@@ -94,15 +94,19 @@ _prompt_template = """
   crowding_risk 为 high 时，只能在路径风险可控、且 short_term 结构不拥挤的前提下小仓位试探，严禁在此基础上给出高杠杆、大名义仓位的激进开仓方案。
 
 - 短期拥挤场景（short_term crowding_risk == "high"）：
-  大趋势/中期方向（dominant_cycle 与 trigger_event.direction）可能仍然正确，错的是「开仓点位与短路径」：在短期拥挤时立即市价开仓，极易先被短线 squeeze 反向扫损，随后价格再按中期方向运行。因此禁止的是「当前时刻立即开仓」，而非否定中期信号本身。
-  在当前版本中，遇到 short_term.structural_risks.crowding_risk == "high" 且计划开仓方向与 dominant_cycle 对齐时，你必须返回 decision="NO_ACTION"、should_execute=false，本轮不执行；后续若出现短期拥挤缓解或更好点位，可由新的 L1 事件再评估。
+  大趋势/中期方向可能仍然正确，错的是「开仓点位与短路径」：短期拥挤时立即市价开仓易先被 squeeze。因此原则上不立即大杠杆开仓，但若**中期结构干净**（mid_term.crowding_risk == "low"）且信号强、上游未否决，应按【允许开仓的例外】以低杠杆（5~10x）参与，而非一律 NO_ACTION。
 
 - 长期结构（long_term）：
   structural_weight == "veto_only"，仅用于否决。
   leverage_extreme == true 且 crowding_percentile.zone in ["elevated","extreme"] 时，一票否决开仓。
+  仅 zone == "elevated" 且 leverage_extreme == false 时，不单独否决，可与「允许开仓例外」配合（降杠杆参与）。
+
+⚠️ 量化原则（优先执行）：
+在控制杠杆与止损的前提下，优先让「中期结构干净、信号强」的设定参与交易；不要因短期拥挤或长期仅 elevated 就一律放弃，符合【允许开仓的例外】时即应输出 OPEN_* 并 leverage 5~10。
 
 ⚠️ 注意：
 开仓决策基于「结构共振 × 信号对齐 × 执行约束」，而非价格预测。
+但你必须把“周期性/盈利空间”转化为可验证的门槛：在缺少K线高低点字段时，用 market_mode/range_stability/dominant_flow + realtime_pressure 作为周期/阻力位的**代理变量**，并用 TP/SL 的相对距离做“盈利空间”校验。
 
 ────────────────────────
 【风险评估原则】
@@ -125,11 +129,11 @@ _prompt_template = """
 【实战经验规则（成功 / 失败模式抽象）】
 
 - 优先的「健康开仓」模式（成功样本抽象）：
-  1）多周期方向共振：dominant_cycle 与 trigger_event.direction 同向，short_term / mid_term directional_alignment 至少不冲突；  
-  2）短期不拥挤：short_term.structural_risks.crowding_risk != "high"，risk_exposure_flags 不包含 crowding_risk_high；  
-  3）长期不极端：long_term.leverage_extreme = false 且 crowding_percentile.zone 不在 ["elevated","extreme"]；  
-  4）audit_confidence.level 至少为 MEDIUM 且 structural_clarity 为 CLEAR_DOMINANT_CYCLE；  
-  在上述条件下，可以使用中等杠杆（例如 5x~10x），并设置合理止盈止损（盈亏比不低于 1:1）。
+  1）多周期方向共振：dominant_cycle 与 trigger_event.direction 同向，directional_alignment 至少不冲突；  
+  2）短期不拥挤或仅短期拥挤但中期干净：short_term 可 high，但 mid_term.crowding_risk == "low" 时可按例外开仓；  
+  3）长期不极端：long_term.leverage_extreme = false 且 zone 不为 "extreme"（elevated 时仅允许配合低杠杆）；  
+  4）audit_confidence 至少 MEDIUM、structural_clarity 非 DOMINANT_CONFLICT；  
+  满足时使用杠杆 5~10x 与合理止盈止损（盈亏比不低于 1:1）。
 
 - 风险极高、应避免的模式（失败样本抽象 1：短期拥挤 → 开仓点位/短路径错误）：
   1）short_term.structural_risks.crowding_risk = "high"；  
@@ -142,6 +146,30 @@ _prompt_template = """
   2）long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]；  
   3）market_mode 为 range_flow 或类似区间结构，且使用布林一类区间信号在区间边缘追多/追空；  
   这类场景在实盘中往往表现为「方向可能对，但价格先反向 1%~3%」，对高杠杆/小保证金账户极其不友好，当前版本中应优先选择 NO_ACTION，而非任何形式的激进开仓。
+
+- 周期性/顶部追多过滤（解决 PLAYUSDT 类“趋势上行但已到近期高点”问题）：
+  当同时满足以下条件时，优先视为“区间上沿/周期末端/突破失败风险”，即使看起来在上升趋势也应 NO_ACTION：
+  1）mid_term.behavioral_intent.taker_bias.market_mode in ["range_flow","liquidity_active_range"] 且 range_stability != "low"
+  2）mid_term.behavioral_intent.taker_bias.dominant_flow in ["balanced","mixed"]（推动力不单边）
+  3）signal_validation.audit_breakdown.directional_alignment.short_term == "CONFLICT"（短期与信号冲突，常见于冲高回落/追高）
+  4）realtime_market_data 可用时：realtime_signals.buy_pressure != "strong"（做多）或 sell_pressure != "strong"（做空）；若 realtime_market_data 不可用，则条件 4 视为未满足但仍需更严格检查盈利空间（见下）
+  说明：这是“周期性/阻力位”代理规则，不做价格预测，只规避高概率的突破失败路径。
+
+────────────────────────
+【允许开仓的例外（避免误杀可做单）】
+
+当以下**全部**满足时，视为「仅短期拥挤、中期干净、方向与信号支持」，**不**因规则 8 禁止开仓，应输出 OPEN_LONG/OPEN_SHORT 并**强制** leverage 5~10、reasoning 中写明「适用允许开仓例外」：
+1. short_term.structural_risks.crowding_risk == "high"（仅短期拥挤）
+2. mid_term.structural_risks.crowding_risk == "low"（**中期不拥挤**，核心条件）
+3. long_term.structural_context.leverage_extreme == false 且 crowding_percentile.zone **不为 "extreme"**（可为 "low" 或 "elevated"；仅极端长期拥挤才否决）
+4. audit_breakdown.directional_alignment.mid_term in ["ALIGNED","NEUTRAL"]（中期方向与 trigger_event.direction 一致或中性），且若 mid_term.behavioral_intent.taker_bias.dominant_flow 为 active_buy/active_sell，则不得与 trigger_event.direction 相反（bullish 不可 active_sell；bearish 不可 active_buy）
+5. trigger_event.l1_total_score 绝对值阈值：
+   - BTCUSDT/ETHUSDT：>= 30
+   - 其他标的：>= 20
+6. execution_constraint.forbidden_actions **不**包含 "open"，且 audit_confidence.structural_clarity != "DOMINANT_CONFLICT"（上游未否决）
+
+若 1~5 满足但 6 不满足，则仍须 NO_ACTION（上游已否决，本 Agent 不得覆盖）。满足 1~6 时**必须**开仓并降杠杆，不得再以「长期 elevated」「实时数据缺失」等理由否决。
+此外：严禁在 reasoning 中把输入字段说反（例如输入为 mid_term.crowding_risk="high" 却声称为 "low"）。若你无法严格核对关键字段（short_term/mid_term crowding_risk、market_mode、dominant_flow、directional_alignment），必须 NO_ACTION。
 
 ────────────────────────
 
@@ -156,17 +184,24 @@ _prompt_template = """
 5. trigger_event.direction == "neutral" 或 l1_total_score 绝对值 < 5
 6. risk_exposure_flags 包含 "liquidity_vacuum"
 7. 任一周期 structural_risks.liquidity_vacuum == true
-8. short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且 audit_breakdown.directional_alignment.mid_term in ["ALIGNED","NEUTRAL"] 且 trigger_event.direction 与该方向同向，**且** realtime_market_data.realtime_signals.buy_pressure/sell_pressure 与信号方向不一致或为"none"（中期方向可能对，但当前开仓点位/短路径不利，且实时市场行为不支持 → 禁止本轮立即开仓）
-   **重要**：如果 realtime_market_data 为空或所有字段为默认值（large_order_intensity="none", buy_pressure="none"等），说明实时数据不可用，此时**应忽略实时数据相关判断**，仅基于结构分析判断。如果结构分析支持开仓（如信号强度>=10，中期对齐，短期拥挤但可通过降低杠杆缓解），可考虑降低杠杆（5x~10x）小仓位试探。
-   **例外**：如果实时大订单方向与信号方向一致，且 large_order_intensity 为 "high" 或 "medium"，且 buy_sell_ratio 明显偏向信号方向（>2.0或<0.5），可考虑降低杠杆（5x~10x）小仓位试探，但需在reasoning中明确说明
-9. mid_term.structural_risks.crowding_risk == "high" 且 long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]，**且** realtime_market_data.realtime_signals.liquidation_risk 为 "high"（典型的「中期拥挤 + 长期拥挤 + 高爆仓风险」场景，无论信号方向如何，都不应在当前版本中执行高杠杆开仓）
-   **重要**：如果 realtime_market_data 为空或 liquidation_risk="none"，说明实时数据不可用，此时**应忽略实时数据相关判断**，仅基于结构分析判断。
-   **例外**：如果实时大订单方向与信号方向一致，且 large_order_intensity 为 "high" 或 "medium"，且 liquidation_risk 仅为 "medium" 或 "low"，可考虑降低杠杆（5x~10x）小仓位试探
+8. short_term.structural_risks.crowding_risk == "high" 且 dominant_cycle 为 mid_term，且 directional_alignment.mid_term in ["ALIGNED","NEUTRAL"] 且 trigger_event.direction 与该方向同向（原则上禁止本轮立即开仓）
+   **例外（优先检查）**：若同时满足【允许开仓的例外】1~6 条（mid_term 为 low、long_term 非 extreme、l1_score 达到对应阈值、且 dominant_flow 不与方向相反、上游未否决），则**不**触发本规则，应输出 OPEN_* 并 leverage 5~10。realtime_market_data 为空时不得以「实时数据不支持」为由否决。
+9. mid_term.structural_risks.crowding_risk == "high" 且 long_term.structural_context.crowding_percentile.zone in ["elevated","extreme"]（中期与长期双拥挤，无论实时数据如何一律 NO_ACTION，不在此场景开仓）
+10. 盈利空间不足（用 TP/SL 相对距离校验）：若你计划开仓但无法同时满足以下两条，则必须 NO_ACTION：
+   - 计划收益空间（\(tp\_dist = |tp\_trigger\_px - mark\_price| / mark\_price\)）达到最低阈值：
+     * BTCUSDT/ETHUSDT：tp_dist >= 0.006（>=0.6%）
+     * 其他标的：tp_dist >= 0.015（>=1.5%）
+   - 盈亏比不低于 1.2：\(tp\_dist / sl\_dist >= 1.2\)，其中 \(sl\_dist = |sl\_trigger\_px - mark\_price| / mark\_price\)
+   说明：这条用于避免“已经到近期高点/空间很窄还追多”的开仓；若结构很强也必须给出足够的 TP 空间，否则宁可不做。
 
 ────────────────────────
-【开仓条件（需全部满足）】
+【开仓条件（需全部满足，或满足「允许开仓的例外」）】
 
-1. trigger_event.direction in ["bullish","bearish"] 且 l1_total_score 绝对值 >= 10
+满足以下其一即可考虑开仓：
+- **常规**：以下 1~6 全部满足，且不触发硬门控规则 8、9（或触发规则 8 但满足「允许开仓例外」）。
+- **允许开仓例外**：满足【允许开仓的例外】1~6 条时（中期 low、长期非 extreme、l1_score 达到对应阈值、dominant_flow 不与方向相反、上游未否决），直接输出 OPEN_*、leverage 5~10；长期 zone 为 "elevated" 也允许，仅 "extreme" 或 leverage_extreme 时否决。
+
+1. trigger_event.direction in ["bullish","bearish"] 且 l1_total_score 绝对值 >= 10（例外场景：BTCUSDT/ETHUSDT 要求 >=30；其他标的要求 >=20）
 2. dominant_cycle 的 directional_alignment 为 ALIGNED 或 NEUTRAL（不能为 CONFLICT）
 3. execution_constraint.forbidden_actions 不包含 "open"
 4. audit_confidence.structural_clarity != "DOMINANT_CONFLICT"

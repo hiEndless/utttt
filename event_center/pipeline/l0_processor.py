@@ -2,12 +2,14 @@ import asyncio
 import json
 import uuid
 from redis import asyncio as aioredis
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from event_center.config import cfg
 
 
 class L0Processor:
     def __init__(self, redis_url: str = cfg.redis_url):
+        self.redis_url = redis_url
         self.redis = aioredis.from_url(redis_url)
         self.default_priority = "low"
         self.window_seconds = 300
@@ -15,6 +17,15 @@ class L0Processor:
         self.min_score = 2.0
         self.high_score = 3.0
         self.consistency_ratio = 0.6
+        
+    async def _reconnect(self) -> None:
+        # Redis 短暂断连时重建连接，避免整个后台退出
+        try:
+            if getattr(self, "redis", None):
+                await self.redis.aclose()
+        except Exception:
+            pass
+        self.redis = aioredis.from_url(self.redis_url)
 
     def tf_rank(self, tf: str) -> int:
         order = {"1m": 1, "5m": 2, "15m": 3, "30m": 4, "1h": 5, "2h": 6, "4h": 7, "1d": 8}
@@ -272,7 +283,28 @@ class L0Processor:
             pass
         print(f"[L0] 启动 原始流={cfg.raw_stream} 输出流={cfg.l0_stream} 消费组={group}")
         while True:
-            res = await self.redis.xreadgroup(group, consumer, streams={cfg.raw_stream: ">"}, count=10, block=5000)
+            try:
+                res = await self.redis.xreadgroup(
+                    group,
+                    consumer,
+                    streams={cfg.raw_stream: ">"},
+                    count=10,
+                    block=5000,
+                )
+            except RedisConnectionError as e:
+                print(f"[L0] redis断连，重连并继续：{e}")
+                await asyncio.sleep(1)
+                await self._reconnect()
+                # Redis 重启后消费组可能消失，尝试重建
+                try:
+                    await self.redis.xgroup_create(cfg.raw_stream, group, id="0", mkstream=True)
+                except Exception:
+                    pass
+                continue
+            except Exception as e:
+                print(f"[L0] xreadgroup错误，稍后重试：{e}")
+                await asyncio.sleep(0.5)
+                continue
             if not res:
                 continue
             for stream_name, entries in res:
