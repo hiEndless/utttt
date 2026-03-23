@@ -94,6 +94,96 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             redis_config=self._get_trade_redis_config(),
         )
 
+    @staticmethod
+    def _open_score_threshold(symbol: str) -> float:
+        s = str(symbol or "").upper()
+        return 30.0 if s in ("BTCUSDT", "ETHUSDT") else 20.0
+
+    def _enforce_no_action(self, td_output: Dict, reason: str) -> None:
+        td_output["blocked_decision"] = td_output.get("decision", "NO_ACTION")
+        td_output["decision"] = "NO_ACTION"
+        td_output["should_execute"] = False
+        td_output["trade_pushed"] = False
+        td_output["hard_gate_reason"] = reason
+        rs = td_output.get("reasoning")
+        if isinstance(rs, list):
+            rs.insert(0, f"硬门控拦截: {reason}")
+        else:
+            td_output["reasoning"] = [f"硬门控拦截: {reason}"]
+
+    def _validate_open_hard_gates(
+        self,
+        td_output: Dict,
+        event_data: Dict,
+        sv_output: Dict,
+        execution_constraint: Dict,
+        trade_json: Dict,
+        mark_price: float,
+    ) -> tuple[bool, str]:
+        symbol = str(event_data.get("symbol") or trade_json.get("symbol") or "")
+        direction = str(event_data.get("direction") or "neutral").strip().lower()
+        l1_score = float(
+            event_data.get("l1_total_score")
+            or (event_data.get("analysis_context") or {}).get("l1_total_score", 0)
+        )
+        decision = str(td_output.get("decision") or "").upper()
+
+        if direction not in ("bullish", "bearish"):
+            return False, f"direction={direction} 非 bullish/bearish"
+        if decision == "OPEN_LONG" and direction != "bullish":
+            return False, f"decision={decision} 与 direction={direction} 不一致"
+        if decision == "OPEN_SHORT" and direction != "bearish":
+            return False, f"decision={decision} 与 direction={direction} 不一致"
+
+        min_score = self._open_score_threshold(symbol)
+        if abs(l1_score) < min_score:
+            return False, f"abs(l1_total_score)={abs(l1_score):.4f} < 阈值{min_score:.0f}"
+
+        forbidden = execution_constraint.get("forbidden_actions") or []
+        if "open" in [str(x).lower() for x in forbidden]:
+            return False, "execution_constraint.forbidden_actions 包含 open"
+
+        risk_flags = sv_output.get("risk_exposure_flags") or []
+        risk_text = " ".join(str(x).lower() for x in risk_flags)
+        if "liquidity_vacuum" in risk_text:
+            return False, "risk_exposure_flags 包含 liquidity_vacuum"
+
+        audit = sv_output.get("audit_confidence") or {}
+        if str(audit.get("structural_clarity", "")).upper() == "DOMINANT_CONFLICT":
+            return False, "audit_confidence.structural_clarity=DOMINANT_CONFLICT"
+
+        if not mark_price or mark_price <= 0:
+            return False, f"mark_price={mark_price} 非法"
+
+        tp = float(trade_json.get("tp_trigger_px") or 0)
+        sl = float(trade_json.get("sl_trigger_px") or 0)
+        if tp <= 0 or sl <= 0:
+            return False, f"tp/sl 非法 tp={tp} sl={sl}"
+
+        if decision == "OPEN_LONG":
+            if not (tp > mark_price and sl < mark_price):
+                return False, f"LONG 的 tp/sl 方向错误 tp={tp} mark={mark_price} sl={sl}"
+            tp_dist = abs(tp - mark_price) / mark_price
+            sl_dist = abs(mark_price - sl) / mark_price
+        else:
+            if not (tp < mark_price and sl > mark_price):
+                return False, f"SHORT 的 tp/sl 方向错误 tp={tp} mark={mark_price} sl={sl}"
+            tp_dist = abs(mark_price - tp) / mark_price
+            sl_dist = abs(sl - mark_price) / mark_price
+
+        if sl_dist <= 0:
+            return False, f"sl_dist={sl_dist} 非法"
+        rr = tp_dist / sl_dist
+
+        s = symbol.upper()
+        min_tp_dist = 0.006 if s in ("BTCUSDT", "ETHUSDT") else 0.015
+        if tp_dist < min_tp_dist:
+            return False, f"tp_dist={tp_dist:.6f} < 最小收益空间{min_tp_dist:.6f}"
+        if rr < 1.2:
+            return False, f"盈亏比 rr={rr:.4f} < 1.2"
+
+        return True, "ok"
+
     def _build_trade_json(self, decision: Dict, event_data: Dict,
                           mark_price: float) -> Optional[Dict]:
         """
@@ -388,13 +478,30 @@ class TradeDecisionExecutionComponent(BaseWorkflowComponent):
             trade_json = self._build_trade_json(td_output, event_data,
                                                 mark_price)
             if trade_json:
-                trade_pushed = await self._push_to_trade_queue(trade_json)
-                td_output["trade_pushed"] = trade_pushed
-                td_output["trade_json"] = trade_json
-                if trade_pushed:
-                    trade_logger.info(f"交易已推送: {symbol} | {decision}")
+                gate_ok, gate_reason = self._validate_open_hard_gates(
+                    td_output=td_output,
+                    event_data=event_data,
+                    sv_output=sv_output,
+                    execution_constraint=execution_constraint,
+                    trade_json=trade_json,
+                    mark_price=mark_price,
+                )
+                if not gate_ok:
+                    self._enforce_no_action(td_output, gate_reason)
+                    trade_logger.warning(
+                        f"[硬门控拦截] symbol={symbol} event_id={event_id} blocked_decision={decision} reason={gate_reason}"
+                    )
+                else:
+                    trade_pushed = await self._push_to_trade_queue(trade_json)
+                    td_output["trade_pushed"] = trade_pushed
+                    td_output["trade_json"] = trade_json
+                    if trade_pushed:
+                        trade_logger.info(f"交易已推送: {symbol} | {decision}")
         else:
             td_output["trade_pushed"] = False
+
+        decision = td_output.get("decision", decision)
+        should_execute = td_output.get("should_execute", should_execute)
 
         reasoning = td_output.get("reasoning", [])
         r0 = str(reasoning[0]) if reasoning and reasoning[0] else ""

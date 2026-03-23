@@ -81,15 +81,16 @@ _prompt_template = """
 
 ────────────────────────
 
-【短中长期开仓原则（对齐风控周期语义）】
+【短中长期开仓原则（15m 主视角）】
 
-你必须将多周期结构视为开仓的「共振条件」，而非单一信号。
+你必须将多周期结构视为开仓的「共振条件」，并且默认以 15m 为主决策周期（execution_tf）。
+只有当 15m 与 1h 不冲突时，才允许考虑开仓；1h 仅作确认，不可反客为主。
 
 - 短期结构（short_term）：
   容忍更高结构噪声，但 structural_risks.liquidity_vacuum 为 true 时禁止开仓。
   behavioral_intent.taker_bias 可辅助验证买卖方倾向与 direction 是否一致。
 
-- 中期结构（mid_term）：
+- 中期结构（mid_term，默认对应 15m 主决策）：
   通常为 dominant_cycle，directional_alignment 必须为 ALIGNED 或 NEUTRAL，不能为 CONFLICT。
   crowding_risk 为 high 时，只能在路径风险可控、且 short_term 结构不拥挤的前提下小仓位试探，严禁在此基础上给出高杠杆、大名义仓位的激进开仓方案。
 
@@ -103,6 +104,22 @@ _prompt_template = """
 
 ⚠️ 量化原则（优先执行）：
 在控制杠杆与止损的前提下，优先让「中期结构干净、信号强」的设定参与交易；不要因短期拥挤或长期仅 elevated 就一律放弃，符合【允许开仓的例外】时即应输出 OPEN_* 并 leverage 5~10。
+
+⚠️ 注意（执行顺序必须固定）：
+1) 先判定市场状态（trend / range / conflict）  
+2) 再判定 15m 方向是否清晰且与 trigger_event.direction 一致  
+3) 再判定动力是否充足（不能只看方向正确）  
+4) 最后才判定是否开仓与参数  
+
+若任何一步不满足，直接 NO_ACTION。
+
+⚠️ 注意（专业术语要求）：
+reasoning 中必须使用并解释以下术语中的至少 2 个：  
+- 结构：HH/HL、LH/LL、结构破位（BOS/CHOCH）  
+- 动量：推进效率、ATR 归一化波动、动量衰减  
+- 市场状态：趋势延续、区间震荡、假突破风险  
+
+术语必须映射到输入字段，不得空泛套话。
 
 ⚠️ 注意：
 开仓决策基于「结构共振 × 信号对齐 × 执行约束」，而非价格预测。
@@ -156,6 +173,25 @@ _prompt_template = """
   说明：这是“周期性/阻力位”代理规则，不做价格预测，只规避高概率的突破失败路径。
 
 ────────────────────────
+【针对你近期问题的对应示例（必须遵守）】
+
+示例 A（ETHUSDT 容易方向反）：
+- 若 trigger_event.direction 与 15m 主导方向不一致，或 15m 为 NEUTRAL/CONFLICT，必须 NO_ACTION。
+- 即使 l1_total_score 达标，也不能“逆 15m 方向”硬开仓。
+
+示例 B（PIPPINUSDT 大方向易反）：
+- 若 15m 显示区间主导（range_flow + balanced/mixed），且 directional_alignment 非 ALIGNED，必须 NO_ACTION。
+- 不允许仅凭单点信号（如 single_signal）直接逆向开仓。
+
+示例 C（BTCUSDT 方向对但动力不足）：
+- 即使方向正确，若动量证据不足（如 directional_alignment 多为 NEUTRAL，或 buy/sell_pressure 非 strong），必须 NO_ACTION。
+- 结论要明确写“方向正确但动力不足，拒绝入场”。
+
+示例 D（PLAYUSDT 震荡偏空却误开多）：
+- 当 market_mode=range_flow 且 dominant_flow=balanced/mixed 时，默认视为震荡市场。
+- 震荡市场中禁止追涨追跌；只有出现明确方向一致性 + 动量增强证据，才可开仓，否则 NO_ACTION。
+
+────────────────────────
 【允许开仓的例外（避免误杀可做单）】
 
 当以下**全部**满足时，视为「仅短期拥挤、中期干净、方向与信号支持」，**不**因规则 8 禁止开仓，应输出 OPEN_LONG/OPEN_SHORT 并**强制** leverage 5~10、reasoning 中写明「适用允许开仓例外」：
@@ -193,6 +229,7 @@ _prompt_template = """
      * 其他标的：tp_dist >= 0.015（>=1.5%）
    - 盈亏比不低于 1.2：\(tp\_dist / sl\_dist >= 1.2\)，其中 \(sl\_dist = |sl\_trigger\_px - mark\_price| / mark\_price\)
    说明：这条用于避免“已经到近期高点/空间很窄还追多”的开仓；若结构很强也必须给出足够的 TP 空间，否则宁可不做。
+11. 15m 主视角否决：若 dominant_cycle 不是 mid_term 且 mid_term directional_alignment 为 CONFLICT，或 mid_term 为 NEUTRAL 且无动量增强证据，必须 NO_ACTION。
 
 ────────────────────────
 【开仓条件（需全部满足，或满足「允许开仓的例外」）】
@@ -201,7 +238,7 @@ _prompt_template = """
 - **常规**：以下 1~6 全部满足，且不触发硬门控规则 8、9（或触发规则 8 但满足「允许开仓例外」）。
 - **允许开仓例外**：满足【允许开仓的例外】1~6 条时（中期 low、长期非 extreme、l1_score 达到对应阈值、dominant_flow 不与方向相反、上游未否决），直接输出 OPEN_*、leverage 5~10；长期 zone 为 "elevated" 也允许，仅 "extreme" 或 leverage_extreme 时否决。
 
-1. trigger_event.direction in ["bullish","bearish"] 且 l1_total_score 绝对值 >= 10（例外场景：BTCUSDT/ETHUSDT 要求 >=30；其他标的要求 >=20）
+1. trigger_event.direction in ["bullish","bearish"] 且 l1_total_score 达到阈值（BTCUSDT/ETHUSDT 要求 >=30；其他标的要求 >=20）
 2. dominant_cycle 的 directional_alignment 为 ALIGNED 或 NEUTRAL（不能为 CONFLICT）
 3. execution_constraint.forbidden_actions 不包含 "open"
 4. audit_confidence.structural_clarity != "DOMINANT_CONFLICT"

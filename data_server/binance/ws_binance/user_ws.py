@@ -1,6 +1,7 @@
 import asyncio
 import os
 import traceback
+import logging
 
 import websockets
 import json
@@ -11,9 +12,201 @@ from urllib.parse import urlencode
 import ssl
 from data_server.binance.ws_binance.utils.redis_client import get_async_redis
 from data_server.binance.ws_binance.utils.binance_pos_analysis import BinanceAnalysisService
+from agent_server.utils.trade_push import push_trade_to_redis
+
+try:
+    from openai import OpenAI
+except Exception:  # pragma: no cover
+    OpenAI = None
 
 redis_client = get_async_redis()
 analysis_service = BinanceAnalysisService()
+logger = logging.getLogger("position_guardian")
+guardian = None
+
+
+class PositionGuardian:
+    """
+    智能仓位守护：
+    1) 硬止损（MAE 控制）
+    2) 浮盈回撤保护（Trailing Stop）
+    3) 可选 LLM 二次判断（失败回退规则）
+    """
+
+    def __init__(self, api_key: str, api_secret: str, use_testnet: bool = True):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.base_url = "https://testnet.binancefuture.com" if use_testnet else "https://fapi.binance.com"
+        self.enabled = os.getenv("POSITION_GUARDIAN_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+        self.use_llm = os.getenv("POSITION_GUARDIAN_USE_LLM", "false").strip().lower() in ("1", "true", "yes", "on")
+        self.stop_loss_ratio = float(os.getenv("POSITION_GUARDIAN_STOP_LOSS_RATIO", "-0.15"))  # -15%
+        self.take_profit_arm = float(os.getenv("POSITION_GUARDIAN_TAKE_PROFIT_ARM", "0.02"))   # +2% 后启动跟踪
+        self.trailing_drawdown = float(os.getenv("POSITION_GUARDIAN_TRAILING_DRAWDOWN", "0.012"))  # 回撤 1.2% 触发
+        self.min_hold_seconds = int(os.getenv("POSITION_GUARDIAN_MIN_HOLD_SECONDS", "30"))
+        self.cooldown_seconds = int(os.getenv("POSITION_GUARDIAN_COOLDOWN_SECONDS", "20"))
+        self._peak_pnl_ratio = {}   # key: symbol:side -> peak pnl ratio
+        self._last_action_ts = {}   # key: symbol:side -> ts
+        self._llm_client = None
+        self._llm_model = os.getenv("POSITION_GUARDIAN_LLM_MODEL", "qwen-plus-character")
+        self._llm_base = os.getenv("POSITION_GUARDIAN_LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+        self._llm_key = os.getenv("POSITION_GUARDIAN_LLM_API_KEY", "")
+        if self.use_llm and OpenAI and self._llm_key:
+            try:
+                self._llm_client = OpenAI(base_url=self._llm_base, api_key=self._llm_key, timeout=8.0)
+            except Exception as e:
+                logger.warning(f"[Guardian] LLM client init failed: {e}")
+                self._llm_client = None
+
+    @staticmethod
+    def _to_float(v, default=0.0):
+        try:
+            return float(str(v))
+        except Exception:
+            return default
+
+    @staticmethod
+    def _key(pos: dict) -> str:
+        return f"{pos.get('symbol','')}:{pos.get('positionSide','')}"
+
+    def _sign(self, params: dict) -> str:
+        query_string = urlencode(sorted(params.items()))
+        return hmac.new(self.api_secret.encode(), query_string.encode(), hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def _build_close_trade_json(pos: dict, qty: float, reason: str) -> dict:
+        symbol = str(pos.get("symbol") or "")
+        position_side = str(pos.get("positionSide") or "LONG").upper()
+        side = "SELL" if position_side == "LONG" else "BUY"
+        mark_price = PositionGuardian._to_float(pos.get("markPrice"), 0.0)
+        leverage = max(1.0, PositionGuardian._to_float(pos.get("leverage"), 1.0))
+        q = f"{qty:.8f}".rstrip("0").rstrip(".")
+        if not q:
+            q = "0"
+        return {
+            "order_type": "close",
+            "symbol": symbol,
+            "exchange": "binance",
+            "positionSide": position_side,
+            "side": side,
+            "leverage": leverage,
+            "sums": q,
+            "quantity": q,
+            "openAvgPx": mark_price,
+            "task_id": 23,
+            "user_id": 2,
+            "api_id": 0,
+            "trade_trigger_mode": 0,
+            "tp_trigger_px": 0,
+            "sl_trigger_px": 0,
+            "acc": {
+                "key": "",
+                "secret": "",
+                "passphrase": "",
+                "proxies": {},
+                "exchange": 2,
+            },
+            "flag": "1",
+            "uniqueName": "position_guardian",
+            "guardian_reason": reason,
+            "guardian_ts": int(time.time() * 1000),
+        }
+
+    def _rule_decision(self, pos: dict, pnl_ratio: float, peak: float, age_s: float) -> tuple[bool, str]:
+        if age_s < self.min_hold_seconds:
+            return False, f"持仓未达最短观察期 age={age_s:.1f}s"
+        if pnl_ratio <= self.stop_loss_ratio:
+            return True, f"触发止损 pnl_ratio={pnl_ratio:.4f} <= {self.stop_loss_ratio:.4f}"
+        if peak >= self.take_profit_arm and (peak - pnl_ratio) >= self.trailing_drawdown:
+            return True, (
+                f"触发浮盈回撤保护 peak={peak:.4f}, now={pnl_ratio:.4f}, "
+                f"dd={peak - pnl_ratio:.4f} >= {self.trailing_drawdown:.4f}"
+            )
+        return False, "规则未触发"
+
+    def _llm_decision(self, pos: dict, pnl_ratio: float, peak: float, age_s: float) -> tuple[bool, str]:
+        if not self._llm_client:
+            return False, "LLM未启用"
+        try:
+            prompt = {
+                "task": "position_guardian",
+                "goal": "资金保护优先，先保本后扩利，只允许 HOLD 或 FULL_CLOSE",
+                "position": {
+                    "symbol": pos.get("symbol"),
+                    "positionSide": pos.get("positionSide"),
+                    "positionAmt": pos.get("positionAmt"),
+                    "entryPrice": pos.get("entryPrice"),
+                    "markPrice": pos.get("markPrice"),
+                    "unRealizedProfit": pos.get("unRealizedProfit"),
+                    "pnl_ratio": pnl_ratio,
+                    "peak_pnl_ratio": peak,
+                    "age_seconds": age_s,
+                },
+                "risk_rules": {
+                    "stop_loss_ratio": self.stop_loss_ratio,
+                    "take_profit_arm": self.take_profit_arm,
+                    "trailing_drawdown": self.trailing_drawdown,
+                    "min_hold_seconds": self.min_hold_seconds,
+                },
+                "output": {"action": "HOLD|FULL_CLOSE", "reason": "string"},
+            }
+            r = self._llm_client.chat.completions.create(
+                model=self._llm_model,
+                messages=[{"role": "user", "content": json.dumps(prompt, ensure_ascii=False)}],
+                max_tokens=120,
+                temperature=0,
+            )
+            txt = (r.choices[0].message.content or "").strip()
+            data = json.loads(txt) if txt.startswith("{") else {"action": "HOLD", "reason": txt}
+            action = str(data.get("action", "HOLD")).upper()
+            reason = str(data.get("reason", ""))
+            return action == "FULL_CLOSE", f"LLM:{reason}"
+        except Exception as e:
+            return False, f"LLM异常回退规则: {e}"
+
+    async def on_positions(self, positions: list):
+        if not self.enabled:
+            return
+        now = time.time()
+        for pos in positions or []:
+            amt = self._to_float(pos.get("positionAmt"), 0.0)
+            if amt == 0.0:
+                continue
+            key = self._key(pos)
+            last_ts = self._last_action_ts.get(key, 0)
+            if now - last_ts < self.cooldown_seconds:
+                continue
+            update_ms = self._to_float(pos.get("updateTime"), now * 1000)
+            age_s = max(0.0, now - (update_ms / 1000.0))
+            up = self._to_float(pos.get("unRealizedProfit"), 0.0)
+            im = self._to_float(pos.get("initialMargin"), 0.0)
+            pnl_ratio = (up / im) if im > 0 else 0.0
+            peak = self._peak_pnl_ratio.get(key, pnl_ratio)
+            peak = max(peak, pnl_ratio)
+            self._peak_pnl_ratio[key] = peak
+
+            should_close, reason = self._rule_decision(pos, pnl_ratio, peak, age_s)
+            if not should_close and self.use_llm:
+                llm_close, llm_reason = self._llm_decision(pos, pnl_ratio, peak, age_s)
+                if llm_close:
+                    should_close, reason = True, llm_reason
+                else:
+                    reason = llm_reason if "异常" in llm_reason else reason
+
+            if should_close:
+                qty = abs(amt)
+                symbol = str(pos.get("symbol"))
+                pside = str(pos.get("positionSide", "LONG")).upper()
+                try:
+                    trade_json = self._build_close_trade_json(pos, qty, reason)
+                    result = await push_trade_to_redis(trade_json)
+                    self._last_action_ts[key] = now
+                    logger.warning(
+                        f"[Guardian] 已推送平仓任务 symbol={symbol} side={pside} qty={qty} reason={reason} pushed={result}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"[Guardian] 平仓任务推送失败 symbol={symbol} side={pside} qty={qty} reason={reason} err={e}"
+                    )
 
 
 class BinanceUserWS:
@@ -149,6 +342,11 @@ async def user_callback(data):
             analysis_service.analysis(positions)
         except Exception as e:
             print(f"分析错误: {e}，{traceback.print_exc()}")
+        try:
+            if guardian is not None:
+                await guardian.on_positions(positions)
+        except Exception as e:
+            print(f"Guardian 错误: {e}")
 
     # 情况 2: 状态响应 (Dict) - 来自 v2/account.status
     elif isinstance(result, dict):
@@ -187,5 +385,6 @@ if __name__ == "__main__":
 
     ws_client = BinanceUserWS(api_key=api_key, api_secret=api_secret, ws_url=ws_url)
     ws_client.register_callback(user_callback)
+    guardian = PositionGuardian(api_key=api_key, api_secret=api_secret, use_testnet=use_testnet)
 
     asyncio.run(ws_client.run())
