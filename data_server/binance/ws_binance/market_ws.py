@@ -13,6 +13,7 @@ from data_server.binance.ws_binance.utils.force_order import handle_force_order
 from data_server.binance.ws_binance.utils.reids_connect import RedisClient
 from data_server.binance.ws_binance.utils.spike_trigger import SpikeDetector
 from data_server.binance.ws_binance.utils.depth import update_depth
+from data_server.binance.rest_binance.app.signals.aggregate import compute_all_indicators
 
 redis_client = RedisClient()
 
@@ -20,6 +21,8 @@ redis_client = RedisClient()
 # 直接 conn.hset 写入，不经过 batch writer，避免 Too many connections 等导致写入失败
 BINANCE_TRADES_URL_MAIN = "https://fapi.binance.com/fapi/v1/trades"
 BINANCE_TRADES_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/trades"
+BINANCE_KLINES_URL_MAIN = "https://fapi.binance.com/fapi/v1/klines"
+BINANCE_KLINES_URL_TEST = "https://testnet.binancefuture.com/fapi/v1/klines"
 
 
 def _write_price_direct(key: str, ts_ms: int, price: float):
@@ -73,6 +76,127 @@ def _rest_ticker_write_loop_thread(interval_s: float = 0.8):
         except Exception as e:
             logging.warning(f"[REST trades] loop error: {e}")
         time.sleep(interval_s)
+
+
+_IND_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"]
+_IND_SCHEDULE_SECONDS = {
+    "1m": 20,
+    "5m": 150,
+    "15m": 300,
+    "30m": 600,
+    "1h": 900,
+    "2h": 1800,
+    "4h": 3600,
+    "1d": 21600,
+}
+
+
+def _fetch_klines_rows(base_url: str, symbol: str, interval: str, limit: int = 300):
+    try:
+        r = requests.get(
+            base_url,
+            params={"symbol": symbol, "interval": interval, "limit": limit},
+            timeout=8,
+        )
+        if r.status_code != 200:
+            return []
+        data = r.json()
+        if isinstance(data, list):
+            return data
+    except Exception as e:
+        logging.warning(f"[IND write] fetch klines error symbol={symbol} interval={interval}: {e}")
+    return []
+
+
+def _indicator_write_loop_thread():
+    """
+    在 market_ws 内补齐 indicators:* 写入链路，避免依赖 rest_binance 进程。
+    - 数据源：/fapi/v1/klines
+    - 产出：indicators:binance:* / indicators:prev:binance:* / klines:binance:*
+    """
+    use_testnet = os.environ.get("BINANCE_TESTNET", "true").strip().lower() in ("1", "true", "yes", "on")
+    base_url = BINANCE_KLINES_URL_TEST if use_testnet else BINANCE_KLINES_URL_MAIN
+    next_run = {iv: 0.0 for iv in _IND_INTERVALS}
+    sample_mod = max(1, int(os.environ.get("IND_WRITE_LOG_SAMPLE_MOD", "5")))
+    cycle = 0
+    logging.info("[IND write] indicators:binance 写入任务已启动（独立线程）")
+
+    while True:
+        now = time.time()
+        due_intervals = [iv for iv in _IND_INTERVALS if now >= next_run[iv]]
+        if not due_intervals:
+            time.sleep(1.0)
+            continue
+        for iv in due_intervals:
+            next_run[iv] = now + float(_IND_SCHEDULE_SECONDS.get(iv, 60))
+
+        symbols = set()
+        try:
+            raw = redis_client.conn.smembers("symbol:binance")
+            symbols = {str(s).upper() for s in raw} if raw else set()
+        except Exception as e:
+            logging.warning(f"[IND write] read symbol:binance error: {e}")
+            time.sleep(1.0)
+            continue
+
+        cycle += 1
+        if not symbols:
+            if cycle % sample_mod == 0:
+                logging.info("[IND write] symbol:binance 为空，跳过本轮")
+            time.sleep(1.0)
+            continue
+
+        written = 0
+        missing_prev = 0
+        for sym in symbols:
+            for iv in due_intervals:
+                rows = _fetch_klines_rows(base_url, sym, iv, limit=300)
+                if not rows:
+                    continue
+                try:
+                    cur_ind = compute_all_indicators(rows)
+                except Exception as e:
+                    logging.warning(f"[IND write] compute current error symbol={sym} interval={iv}: {e}")
+                    continue
+
+                prev_ind = None
+                if len(rows) >= 2:
+                    try:
+                        prev_ind = compute_all_indicators(rows[:-1])
+                    except Exception as e:
+                        logging.warning(f"[IND write] compute prev error symbol={sym} interval={iv}: {e}")
+                if prev_ind is None:
+                    missing_prev += 1
+                    logging.warning(f"[IND write] prev indicators missing symbol={sym} interval={iv}")
+                    prev_ind = {}
+
+                try:
+                    redis_client.conn.set(
+                        f"indicators:binance:{sym}:{iv}",
+                        json.dumps(cur_ind, ensure_ascii=False),
+                    )
+                    redis_client.conn.set(
+                        f"indicators:prev:binance:{sym}:{iv}",
+                        json.dumps(prev_ind, ensure_ascii=False),
+                    )
+                    redis_client.conn.set(
+                        f"klines:binance:{sym}:{iv}",
+                        json.dumps(rows, ensure_ascii=False),
+                    )
+                    written += 1
+                except Exception as e:
+                    logging.warning(f"[IND write] redis set error symbol={sym} interval={iv}: {e}")
+
+        if cycle % sample_mod == 0:
+            logging.info(
+                "[IND write] cycle=%s symbols=%s due_intervals=%s writes=%s missing_prev=%s",
+                cycle,
+                len(symbols),
+                len(due_intervals),
+                written,
+                missing_prev,
+            )
+        time.sleep(1.0)
 
 
 # ---- SpikeDetector integration state ----
@@ -456,6 +580,12 @@ async def main():
         await ws.start()
         t = threading.Thread(target=_rest_ticker_write_loop_thread, args=(0.8,), daemon=True)
         t.start()
+        write_indicators = os.environ.get("MARKET_WS_WRITE_INDICATORS", "true").strip().lower() in (
+            "1", "true", "yes", "on"
+        )
+        if write_indicators:
+            t_ind = threading.Thread(target=_indicator_write_loop_thread, daemon=True)
+            t_ind.start()
         asyncio.create_task(monitor_symbols(ws))
         print("已启动")
         while True:

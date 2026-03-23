@@ -21,7 +21,11 @@ def _redis_client(db: int | None = None) -> redis.Redis:
 
 
 def load_symbols(client: redis.Redis, exchange: str) -> List[str]:
-    key = f"symbols:{exchange}"
+    # 兼容两种写入方命名：
+    # - market_ws 目前写的是 `symbol:{exchange}`（单数）
+    # - 旧逻辑/部分模块可能写的是 `symbols:{exchange}`（复数）
+    # 这里优先读单数，避免一直拿不到交易对导致休眠。
+    key = f"symbol:{exchange}"
     try:
         members = client.smembers(key)
         if members:
@@ -40,6 +44,16 @@ def load_symbols(client: redis.Redis, exchange: str) -> List[str]:
                     return sorted(parts)
     except Exception:
         pass
+
+    # fallback: 读取复数 key
+    fallback_key = f"symbols:{exchange}"
+    try:
+        members = client.smembers(fallback_key)
+        if members:
+            return sorted(list(members))
+    except Exception:
+        pass
+
     discovered: Set[str] = set()
     try:
         pattern = f"indicators:{exchange}:*:" + "1m"
